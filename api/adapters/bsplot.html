@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.24">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>bsplot – TVB-O Documentation</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,10 +80,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-305ec0c320a3d60cc5bda611d56c9e28.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -123,7 +129,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo light-content">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">TVB-O Documentation</span>
@@ -179,7 +186,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
       <a href="../../index.html" class="sidebar-logo-link">
-      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
       </a>
       </div>
     <div class="sidebar-menu-container"> 
@@ -234,13 +242,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specification (Widoco)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
  <span class="menu-text">WebVOWL visualisation</span></a>
   </div>
 </li>
@@ -1352,12 +1360,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/Case.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Case</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/ClassReference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Class Reference</span></a>
   </div>
@@ -1384,6 +1386,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/CodeSource.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Code Source</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/CohortRule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1484,12 +1498,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/DerivedObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Derived Observation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DerivedParameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Derived Parameter</span></a>
   </div>
@@ -1534,6 +1542,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DistributionConfig.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Distribution Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Document.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Document</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1664,6 +1678,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/HeldParameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Held Parameter</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Inference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Inference</span></a>
   </div>
@@ -1760,6 +1780,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeTemplate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Template</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Noise.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise</span></a>
   </div>
@@ -1804,12 +1836,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Parameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parameter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/ParameterSpec.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Parameter Spec</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1874,6 +1900,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/PropagationGate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Propagation Gate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Provenance</span></a>
   </div>
@@ -1912,12 +1944,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Region Mapping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1966,6 +1992,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Session.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Session</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Significance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2024,6 +2056,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StateSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">State Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StateValue.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">State Value</span></a>
   </div>
@@ -2054,12 +2092,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Collection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyDirectory.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Directory</span></a>
   </div>
@@ -2074,12 +2106,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyLayout.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Layout</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Member</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2311,6 +2337,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/align_labels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">align_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/allow_self_connections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">allow_self_connections</span></a>
   </div>
@@ -2367,6 +2399,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/application_category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">application_category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/applied.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">applied</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2485,6 +2523,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_margin.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_margin</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/axis_width.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">axis_width</span></a>
   </div>
@@ -2511,6 +2561,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/background.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">background</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/bar_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bar_edge_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2599,12 +2655,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/boundaries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">boundaries</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/boundary_conditions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">boundary_conditions</span></a>
   </div>
@@ -2641,12 +2691,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/bundle.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">bundle</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/by.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">by</span></a>
   </div>
@@ -2673,12 +2717,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">capture</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">cases</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2791,6 +2829,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohort_id.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohort_id</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohorts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohorts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/col_label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">col_label_pad</span></a>
   </div>
@@ -2817,6 +2867,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/colorbar.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">colorbar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_outline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_outline</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2869,6 +2931,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/components.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">components</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/concept_iri.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">concept_iri</span></a>
   </div>
@@ -2889,12 +2957,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/condition_states.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">condition_states</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/conditional.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">conditional</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3061,12 +3123,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/coupling_terms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">coupling_terms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
   </div>
@@ -3081,6 +3137,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/cpus_per_task.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cpus_per_task</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/criterion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">criterion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3139,14 +3201,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_path.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_path</span></a>
+  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dataset_type</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_type</span></a>
+  <a href="../../datamodel/slots/datasets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">datasets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3243,12 +3305,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/derived_from_model.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">derived_from_model</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/derived_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">derived_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3433,6 +3489,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/drop.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">drop</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/ds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds</span></a>
   </div>
@@ -3517,6 +3579,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/editable_text.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">editable_text</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/efield.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">efield</span></a>
   </div>
@@ -3583,12 +3651,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/emit_provenance.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">emit_provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/empirical_data.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">empirical_data</span></a>
   </div>
@@ -3597,6 +3659,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/encoding.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/end_tick_reach.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">end_tick_reach</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3657,6 +3725,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/equation_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">equation_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/errorbar_cap_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">errorbar_cap_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3739,6 +3813,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/exponent_as_power.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">exponent_as_power</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/expression.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">expression</span></a>
   </div>
@@ -3817,6 +3897,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/font_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">font_weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">format</span></a>
   </div>
@@ -3847,12 +3933,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/free.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">free</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/free_parameters.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">free_parameters</span></a>
   </div>
@@ -3867,6 +3947,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/frequency.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">frequency</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/from_iteration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">from_iteration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3955,8 +4041,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_below.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_below</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/grid_lines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">grid_lines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_style.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3969,6 +4073,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/group.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">group</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3993,6 +4103,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/handle_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">handle_length</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/handles.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">handles</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4029,6 +4145,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/height_ratios.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">height_ratios</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/held_parameters.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">held_parameters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4093,6 +4215,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/homologue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">homologue</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/how_to_acknowledge.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">how_to_acknowledge</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/hspace.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">hspace</span></a>
   </div>
@@ -4107,12 +4241,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">id</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/ifabsent.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ifabsent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4183,12 +4311,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/inner_coupling.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">inner_coupling</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/inner_iterations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inner_iterations</span></a>
   </div>
@@ -4213,14 +4335,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">integration</span></a>
+  <a href="../../datamodel/slots/instance_of.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">instance_of</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/intensity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">intensity</span></a>
+  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">integration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4303,6 +4425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/keep.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">keep</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">key</span></a>
   </div>
@@ -4335,6 +4463,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">label_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4405,12 +4545,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/lefthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">lefthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend</span></a>
   </div>
@@ -4429,14 +4563,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_handle_text_pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_handle_text_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_label_spacing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_label_spacing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_marker_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_marker_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend_pad</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/level.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">level</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/levels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">levels</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4461,6 +4631,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/likelihood.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">likelihood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/line_cap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">line_cap</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4573,6 +4749,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/marker_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">marker_edge_width</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/marker_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">marker_size</span></a>
   </div>
@@ -4591,6 +4773,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/math_font.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">math_font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_bisection_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_bisection_steps</span></a>
   </div>
@@ -4605,6 +4793,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_steps</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/max_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">max_ticks</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4641,6 +4835,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/members_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4693,6 +4893,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/min_dispersion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">min_dispersion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_tick_length</span></a>
   </div>
@@ -4707,6 +4913,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_ticks.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/mirror_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">mirror_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing_color.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing_color</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4753,12 +4977,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">modes</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modified.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modified</span></a>
   </div>
@@ -4795,6 +5013,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/n_groups.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">n_groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_inversion.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_inversion</span></a>
   </div>
@@ -4813,12 +5037,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_regions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_regions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_sections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_sections</span></a>
   </div>
@@ -4833,12 +5051,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_trials.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_trials</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_vertices.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_vertices</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4917,6 +5129,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/node_mapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">node_mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/node_selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">node_selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5239,6 +5457,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_case.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_format</span></a>
   </div>
@@ -5257,8 +5481,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5307,6 +5543,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/parcellation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parcellation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/parent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5371,6 +5613,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/persist.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">persist</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/phenotype_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">phenotype_file</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/pipeline.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">pipeline</span></a>
   </div>
@@ -5379,6 +5633,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/placeholder.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">placeholder</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/placement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5479,6 +5739,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/propagation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">propagation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/protocols.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">protocols</span></a>
   </div>
@@ -5487,12 +5753,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/provenance_format.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">provenance_format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5541,18 +5801,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/random_state.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">random_state</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/range.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">range</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">recipe</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5619,18 +5867,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/region_mapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">region_mapping</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/regional_connectivity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">regional_connectivity</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5737,12 +5973,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/righthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">righthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/rng.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">rng</span></a>
   </div>
@@ -5769,6 +5999,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/row_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">row_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5833,8 +6069,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/schema_version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">schema_version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/scipy_ode_base.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">scipy_ode_base</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/scope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">scope</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5865,6 +6113,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/sel.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">sel</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5941,6 +6195,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">significance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/simulation_experiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">simulation_experiments</span></a>
   </div>
@@ -5955,12 +6215,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">size</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/skip_t.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">skip_t</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6001,6 +6255,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/source_arguments.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">source_arguments</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_branch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_branch</span></a>
   </div>
@@ -6021,12 +6281,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_network</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/source_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">source_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6069,6 +6323,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/spine_trim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_trim</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6201,6 +6461,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/subjects.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">subjects</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/subjects_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">subjects_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6445,6 +6711,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_format.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_length</span></a>
   </div>
@@ -6465,6 +6743,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_steps.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_steps</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6511,12 +6795,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_scale.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_scale</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_unit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_unit</span></a>
   </div>
@@ -6541,8 +6819,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/title_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">title_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6613,6 +6909,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/transparent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">transparent</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">triangle</span></a>
   </div>
@@ -6643,8 +6945,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tvbo_class.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo_class</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/unicode_minus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">unicode_minus</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6669,6 +6983,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/update_rules.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">update_rules</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/update_start.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">update_start</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6757,12 +7077,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/vertex_to_region.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">vertex_to_region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/vertices_field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">vertices_field</span></a>
   </div>
@@ -6819,12 +7133,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup_from.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup_from</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/warmup_source.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">warmup_source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7092,6 +7400,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AnnotationPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Annotation Placement</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AxisEnds.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/AxisReductionStatistic.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Axis Reduction Statistic</span></a>
   </div>
@@ -7130,6 +7450,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/BoundaryConditionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Boundary Condition Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/CohortGrouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7212,6 +7538,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/FontWeight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Font Weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/FrameRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Frame Role</span></a>
   </div>
@@ -7254,8 +7586,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LetterCase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Letter Case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineCap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Cap</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineStyle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/MarkType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Mark Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MathFont.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Math Font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MissingValuePolicy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Missing Value Policy</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7320,12 +7682,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/PhysicalDimension.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Physical Dimension</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ProcedureStepType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Procedure Step Type</span></a>
   </div>
@@ -7340,12 +7696,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/Projection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Projection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/ProvenanceFormat.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Provenance Format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7392,6 +7742,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionScope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Scope</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SexEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sex Enum</span></a>
   </div>
@@ -7412,6 +7774,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SpecimenEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specimen Enum</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/Spines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Spines</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7464,6 +7832,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TextAlign.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Align</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Direction</span></a>
   </div>
@@ -7472,6 +7846,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickFormat.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TickPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tick Placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7730,6 +8110,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/analysis/units.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Units</span></a>
   </div>
@@ -7794,6 +8180,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/atlas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Atlas</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/continuation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Continuation</span></a>
   </div>
@@ -7824,14 +8216,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/function.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Function</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/integrator.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Integrator</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/observation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/perturbation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Perturbation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/phenotype.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phenotype</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/software.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Software</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
   </div>
 </li>
       </ul>
@@ -7909,6 +8337,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/classes/observation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/optimization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimization</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8008,6 +8442,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/cli/migrate_iris.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migrate Iris</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/cli/network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Network</span></a>
   </div>
@@ -8091,6 +8531,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dims</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/codegen/functions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functions</span></a>
   </div>
@@ -8162,6 +8608,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/data/cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/data/connectome_build.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Connectome Build</span></a>
   </div>
@@ -8182,6 +8634,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/data/experiment_result_io.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Experiment Result Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/iri_migration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Iri Migration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8271,6 +8729,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/datamodel/schema.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Schema</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/text_slots.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Slots</span></a>
   </div>
 </li>
       </ul>
@@ -8477,6 +8941,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/axis_rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Rule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Capture</span></a>
   </div>
@@ -8566,6 +9036,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-52" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/run/backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Backends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Compgraph</span></a>
   </div>
@@ -8580,6 +9056,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/run/julia.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Julia</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/lanes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lanes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
   </div>
 </li>
       </ul>
@@ -8681,14 +9175,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/jax_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Jax Precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/pydantic_loader.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Pydantic Loader</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/pytree.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pytree</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/report.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Report</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/source.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8749,16 +9261,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
   <ul class="collapse">
+  <li><a href="#tvbo.adapters.bsplot.adopt_theme" id="toc-tvbo.adapters.bsplot.adopt_theme" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.adopt_theme">adopt_theme</a></li>
   <li><a href="#tvbo.adapters.bsplot.build_context" id="toc-tvbo.adapters.bsplot.build_context" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.build_context">build_context</a></li>
+  <li><a href="#tvbo.adapters.bsplot.caption_matches" id="toc-tvbo.adapters.bsplot.caption_matches" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.caption_matches">caption_matches</a></li>
   <li><a href="#tvbo.adapters.bsplot.colorbar_panel" id="toc-tvbo.adapters.bsplot.colorbar_panel" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.colorbar_panel">colorbar_panel</a></li>
   <li><a href="#tvbo.adapters.bsplot.compose_caption" id="toc-tvbo.adapters.bsplot.compose_caption" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.compose_caption">compose_caption</a></li>
   <li><a href="#tvbo.adapters.bsplot.expand_bare_axes" id="toc-tvbo.adapters.bsplot.expand_bare_axes" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.expand_bare_axes">expand_bare_axes</a></li>
   <li><a href="#tvbo.adapters.bsplot.fan_colors" id="toc-tvbo.adapters.bsplot.fan_colors" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.fan_colors">fan_colors</a></li>
   <li><a href="#tvbo.adapters.bsplot.heatmap_orientation" id="toc-tvbo.adapters.bsplot.heatmap_orientation" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.heatmap_orientation">heatmap_orientation</a></li>
   <li><a href="#tvbo.adapters.bsplot.legend_panel" id="toc-tvbo.adapters.bsplot.legend_panel" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.legend_panel">legend_panel</a></li>
+  <li><a href="#tvbo.adapters.bsplot.letter_case" id="toc-tvbo.adapters.bsplot.letter_case" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.letter_case">letter_case</a></li>
   <li><a href="#tvbo.adapters.bsplot.load_layer" id="toc-tvbo.adapters.bsplot.load_layer" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.load_layer">load_layer</a></li>
+  <li><a href="#tvbo.adapters.bsplot.load_scalar" id="toc-tvbo.adapters.bsplot.load_scalar" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.load_scalar">load_scalar</a></li>
   <li><a href="#tvbo.adapters.bsplot.network_panel" id="toc-tvbo.adapters.bsplot.network_panel" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.network_panel">network_panel</a></li>
   <li><a href="#tvbo.adapters.bsplot.output_format" id="toc-tvbo.adapters.bsplot.output_format" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.output_format">output_format</a></li>
+  <li><a href="#tvbo.adapters.bsplot.reading_results" id="toc-tvbo.adapters.bsplot.reading_results" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.reading_results">reading_results</a></li>
   <li><a href="#tvbo.adapters.bsplot.register_panel" id="toc-tvbo.adapters.bsplot.register_panel" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.register_panel">register_panel</a></li>
   <li><a href="#tvbo.adapters.bsplot.register_transform" id="toc-tvbo.adapters.bsplot.register_transform" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.register_transform">register_transform</a></li>
   <li><a href="#tvbo.adapters.bsplot.registered" id="toc-tvbo.adapters.bsplot.registered" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.registered">registered</a></li>
@@ -8769,9 +9286,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#tvbo.adapters.bsplot.resolve_path" id="toc-tvbo.adapters.bsplot.resolve_path" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.resolve_path">resolve_path</a></li>
   <li><a href="#tvbo.adapters.bsplot.retired_options" id="toc-tvbo.adapters.bsplot.retired_options" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.retired_options">retired_options</a></li>
   <li><a href="#tvbo.adapters.bsplot.scale_colormap" id="toc-tvbo.adapters.bsplot.scale_colormap" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.scale_colormap">scale_colormap</a></li>
+  <li><a href="#tvbo.adapters.bsplot.significance_marks" id="toc-tvbo.adapters.bsplot.significance_marks" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.significance_marks">significance_marks</a></li>
   <li><a href="#tvbo.adapters.bsplot.surface_panel" id="toc-tvbo.adapters.bsplot.surface_panel" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.surface_panel">surface_panel</a></li>
   <li><a href="#tvbo.adapters.bsplot.theme_rcparams" id="toc-tvbo.adapters.bsplot.theme_rcparams" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.theme_rcparams">theme_rcparams</a></li>
   <li><a href="#tvbo.adapters.bsplot.theme_spec" id="toc-tvbo.adapters.bsplot.theme_spec" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.theme_spec">theme_spec</a></li>
+  <li><a href="#tvbo.adapters.bsplot.type_scales" id="toc-tvbo.adapters.bsplot.type_scales" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.type_scales">type_scales</a></li>
   <li><a href="#tvbo.adapters.bsplot.volume_panel" id="toc-tvbo.adapters.bsplot.volume_panel" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.volume_panel">volume_panel</a></li>
   <li><a href="#tvbo.adapters.bsplot.write_caption" id="toc-tvbo.adapters.bsplot.write_caption" class="nav-link" data-scroll-target="#tvbo.adapters.bsplot.write_caption">write_caption</a></li>
   </ul></li>
@@ -8815,6 +9334,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>The schema’s hemisphere vocabulary in the surface backend’s spelling. One vocabulary in the spec, whatever each backend calls it.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.adapters.bsplot.SIGNIFICANCE_LEVELS">SIGNIFICANCE_LEVELS</a></td>
+<td>The thresholds an annotation’s <code>significance</code> counts asterisks against when it declares none.</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.adapters.bsplot.THEME_CONSUMERS">THEME_CONSUMERS</a></td>
+<td>Every geometry slot of a Theme the adapter reads outside the axis rule. With the rule’s own slots it covers the whole Theme, which a test pins, so a slot added to the schema cannot be accepted and then ignored.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.TRANSFORMS">TRANSFORMS</a></td>
 <td></td>
 </tr>
@@ -8832,8 +9359,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.adapters.bsplot.adopt_theme">adopt_theme</a></td>
+<td>Hand <em>figure</em> the theme of the study it belongs to, and return it.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.build_context">build_context</a></td>
 <td>Resolve a <code>Figure</code> into the template context (all IO paths + names resolved).</td>
+</tr>
+<tr class="odd">
+<td><a href="#tvbo.adapters.bsplot.caption_matches">caption_matches</a></td>
+<td>Whether <em>text</em> is the caption <em>figure</em> composes, any number its caption annotations read standing in for their format fields.</td>
 </tr>
 <tr class="even">
 <td><a href="#tvbo.adapters.bsplot.colorbar_panel">colorbar_panel</a></td>
@@ -8860,8 +9395,16 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>A free-standing key occupying its own mosaic slot — the built-in <code>kind: legend</code>.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.adapters.bsplot.letter_case">letter_case</a></td>
+<td>A panel letter in the case the theme draws letters in, or as typed where it states none.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.load_layer">load_layer</a></td>
 <td>Open a custom panel’s resolved layer into a DataArray (public API).</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.adapters.bsplot.load_scalar">load_scalar</a></td>
+<td>The one number a resolved layer names, for a statistic a figure prints instead of plots (public API).</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.network_panel">network_panel</a></td>
@@ -8872,44 +9415,52 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>The file extension a figure’s render writes, without the dot.</td>
 </tr>
 <tr class="odd">
+<td><a href="#tvbo.adapters.bsplot.reading_results">reading_results</a></td>
+<td>Resolve the containers a figure reads from its own study in <em>results_dir</em> for the duration of the block, in place of that study’s results directory; <code>None</code> keeps the study’s own. A <code>--limit</code> sample’s figures read the sample this way.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.register_panel">register_panel</a></td>
 <td>Register a <code>custom</code>-panel callable <code>fn(fig, ax, ctx)</code> under <em>name</em> (decorator).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.register_transform">register_transform</a></td>
 <td>Register a presentation-only layer transform <code>fn(da) -&gt; da</code> under <em>name</em> (decorator).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.registered">registered</a></td>
 <td>Look a spec-declared name up in a registry, or raise an actionable error (public API).</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.render">render</a></td>
 <td>Render and run the figure. Writes the script to <em>script_path</em> if given.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.render_code">render_code</a></td>
 <td>Render the <code>Figure</code> into a self-contained <code>plot.py</code> string.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.resolve_color">resolve_color</a></td>
 <td>A declared colour as a drawn one — public API, and the only place the translation happens.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.resolve_colormap">resolve_colormap</a></td>
 <td>A declared colormap as a resolvable name — public API, and the only place the translation happens.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.resolve_path">resolve_path</a></td>
 <td>Resolve a spec-relative file reference against <em>base_dir</em> (the study dir) — public API.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.retired_options">retired_options</a></td>
 <td>Every panel option of <em>kind</em> that is a declared slot now, mapped to the <code>(slot, attribute)</code> that replaced it.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.scale_colormap">scale_colormap</a></td>
 <td>A declared colormap name as the map a field is drawn with, pinned to <em>center</em> where one is asked for.</td>
+</tr>
+<tr class="even">
+<td><a href="#tvbo.adapters.bsplot.significance_marks">significance_marks</a></td>
+<td>The asterisks a p-value earns: one per threshold in <em>levels</em> it is below (public API).</td>
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.surface_panel">surface_panel</a></td>
@@ -8921,26 +9472,42 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.theme_spec">theme_spec</a></td>
-<td>The look a figure declares, with the curated theme it names merged underneath it.</td>
+<td>The look a figure is drawn in: every layer that states one, weakest first.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.adapters.bsplot.type_scales">type_scales</a></td>
+<td><code>{rcParam: multiple of the body size}</code> for the type sizes a theme fixes.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.adapters.bsplot.volume_panel">volume_panel</a></td>
 <td>Per-region values painted into a labelled volume and projected — the built-in <code>kind: volume</code>.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.bsplot.write_caption">write_caption</a></td>
-<td>Write a figure’s composed caption to <code>&lt;out_dir&gt;/&lt;name&gt;.caption.qmd</code> and return the path.</td>
+<td>Write a figure’s composed caption to <code>&lt;out_dir&gt;/&lt;name&gt;.caption.qmd</code> and return the path, its caption annotations’ numbers read under <em>base_dir</em>.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.adapters.bsplot.adopt_theme" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.adopt_theme">adopt_theme</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.adopt_theme(figure, theme)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Hand <em>figure</em> the theme of the study it belongs to, and return it.</p>
+<p>A study states its look once (<code>SimulationStudy.theme</code>) and its figures are separate records, so the one rule has to travel with each of them to wherever it is rendered or captioned. Loading a study does this for every figure in its <code>figures</code> list; a caller that builds a Figure by hand and wants a study’s look calls it directly.</p>
+</section>
 <section id="tvbo.adapters.bsplot.build_context" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.build_context">build_context</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.build_context(figure, base_dir, outfile)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.build_context(figure, base_dir, outfile)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Resolve a <code>Figure</code> into the template context (all IO paths + names resolved).</p>
+</section>
+<section id="tvbo.adapters.bsplot.caption_matches" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.caption_matches">caption_matches</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.caption_matches(figure, text)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Whether <em>text</em> is the caption <em>figure</em> composes, any number its caption annotations read standing in for their format fields.</p>
+<p>What lets a committed caption be checked against its spec where the containers its numbers come from are absent, as they are in a build. A sentence of a panel with a <code>placeholder</code> (:data:<code>_MAYBE</code>) may be missing along with one space that joins it to its neighbours, since a caption written while that panel’s container was absent leaves it out.</p>
 </section>
 <section id="tvbo.adapters.bsplot.colorbar_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.colorbar_panel">colorbar_panel</h3>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.colorbar_panel(fig, ax, ctx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.colorbar_panel(fig, ax, ctx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A colour scale occupying its own mosaic slot — the built-in <code>kind: colorbar</code>.</p>
 <p>Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel’s width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.</p>
 <p>A spec declares all of this as <code>colorbar:</code> — the <code>Colorbar</code> class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a <code>colormap</code> of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and <code>center</code> resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing.</p>
@@ -8948,13 +9515,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bsplot.compose_caption" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.compose_caption">compose_caption</h3>
-<div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.compose_caption(figure)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.compose_caption(figure, base_dir<span class="op">=</span><span class="va">None</span>, <span class="op">*</span>, any_value<span class="op">=</span><span class="va">False</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Compose a figure’s caption from its spec — the authored lead plus one clause per panel.</p>
-<p>Each panel contributes <code>(letter) label — &lt;structural descriptor&gt; &lt;Panel.description&gt;</code> in layout order, the letter taken from the same identity the panel draws (:func:<code>_letter_identity</code>) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling’s authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel’s layers (:func:<code>_panel_descriptor</code>); the authored <code>Figure.description</code> (lead) and <code>Panel.description</code> (per-panel interpretation) are the only parts a human writes.</p>
+<p>Each panel contributes <code>(letter) label — &lt;structural descriptor&gt; &lt;Panel.description&gt; &lt;caption annotations&gt;</code> in layout order, the caption annotations’ numbers read from the containers under <em>base_dir</em> (:func:<code>_caption_annotations</code>), the letter taken from the same identity the panel draws (:func:<code>_letter_identity</code>) so caption and figure cannot disagree. Cells sharing a paper letter share its clause, each adding only what the clause does not already say, so a grid does not repeat one descriptor per cell and a sibling’s authored prose is not dropped with its letter. A sibling that authors no prose and derives no descriptor contributes nothing at all: its drawn title is a label on the figure, not a sentence in the caption. The structural descriptor is derived from the panel’s layers (:func:<code>_panel_descriptor</code>); the authored <code>Figure.description</code> (lead) and <code>Panel.description</code> (per-panel interpretation) are the only parts a human writes. With <em>any_value</em> each bound number is left as :data:<code>_ANY_VALUE</code> and each sentence a placeholder may stand in for is marked with :data:<code>_MAYBE</code>, for :func:<code>caption_matches</code>.</p>
 </section>
 <section id="tvbo.adapters.bsplot.expand_bare_axes" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.expand_bare_axes">expand_bare_axes</h3>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.expand_bare_axes(fig, axes, pad<span class="op">=</span><span class="fl">0.004</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.expand_bare_axes(fig, axes, pad<span class="op">=</span><span class="fl">0.004</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Grow each of <em>axes</em> until it meets a neighbour’s ink, and return the ones moved.</p>
 <p>A layout engine sizes rows and columns uniformly and reserves each cell’s margins for whichever panel in that row or column needs the most of them: ticks, tick labels, an axis label. A panel that draws none of that — a schematic, a chain diagram, a captured graph — is padded to match its neighbours and prints smaller than the slot it owns, which on a print figure is millimetres of a panel that had to fit in the first place.</p>
 <p>The rule is about ink rather than about cells: a panel expands in each direction until it reaches the <em>drawn</em> extent of the nearest panel that could collide with it, so it can never overlap anything and needs to know nothing about how the grid was divided. Nothing shrinks, and only space no one draws in is taken. Panels are grown one at a time against where the previous one now ends, so two panels sharing a gap cannot both claim it. The layout engine is switched off first, since it would recompute these positions away on the next draw.</p>
@@ -8962,13 +9529,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bsplot.fan_colors" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.fan_colors">fan_colors</h3>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.fan_colors(n)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.fan_colors(n)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Colours for a categorical line fan — public API, imported by the emitted plot script.</p>
 <p>A fan over a categorical dim asserts unrelated entries, and the palette’s own doctrine (see <code>palette.ramp</code>) gives unrelated entries hues rather than samples of an ordered ramp. Beyond the distinct hues a cycle would hand two categories one colour, so a larger fan falls back to even samples of the sequential scale, which stay pairwise distinct.</p>
 </section>
 <section id="tvbo.adapters.bsplot.heatmap_orientation" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.heatmap_orientation">heatmap_orientation</h3>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.heatmap_orientation(da, C, x, y, nx, ny)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.heatmap_orientation(da, C, x, y, nx, ny)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A heatmap’s array as <code>(y, x)</code>, the order <code>pcolormesh</code> reads (public API).</p>
 <p>Decided by DIM NAME whenever the encoding names dims of the array. A SQUARE grid makes the two orientations indistinguishable by shape, so a shape test transposes half of them at random — silently swapping which axis the field varies along, which is a wrong figure rather than an ugly one. Falls back to the shape test only when the encoded channels are not dims of the array (a matrix addressed by index), where names cannot decide it.</p>
 <p>Shared with the emitted plot.py, which imports it: the orientation is a keying decision, so it lives beside the other reference resolvers rather than being inlined per script.</p>
@@ -9032,99 +9599,120 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bsplot.legend_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.legend_panel">legend_panel</h3>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.legend_panel(fig, ax, ctx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.legend_panel(fig, ax, ctx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A free-standing key occupying its own mosaic slot — the built-in <code>kind: legend</code>.</p>
 <p>A convention shared by several panels belongs to none of them; drawing it inside one both shrinks that panel and implies the convention is local to it. Papers put it in the grid’s spare cell, which is what this kind is.</p>
-<p>The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: <code>labels</code> names them and <code>colors</code> / <code>linestyles</code> / <code>markers</code> style them, each falling back to a sensible default when shorter than <code>labels</code>.</p>
+<p>The entries are parallel declared lists rather than one encoded string per entry, so each is a typed value the spec can validate: <code>labels</code> names them and <code>colors</code> / <code>linestyles</code> / <code>markers</code> / <code>handles</code> style them, each falling back to a sensible default when shorter than <code>labels</code>. A colour may be a palette role or hue, resolved as every other colour is; a <code>patch</code> handle is a filled swatch, the sample a coloured area is keyed by.</p>
 <p>A spec declares all of this as <code>legend:</code> — the same slot every other panel uses for its own key, because this panel IS one. The <code>Legend</code> class names and documents every attribute; here the entry lists are what it is for.</p>
+</section>
+<section id="tvbo.adapters.bsplot.letter_case" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.letter_case">letter_case</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.letter_case(ident, case)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>A panel letter in the case the theme draws letters in, or as typed where it states none.</p>
 </section>
 <section id="tvbo.adapters.bsplot.load_layer" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.load_layer">load_layer</h3>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.load_layer(layer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.load_layer(layer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Open a custom panel’s resolved layer into a DataArray (public API).</p>
 <p>A registered <code>custom</code> panel receives <code>ctx</code> with a <code>layers</code> list of resolved-layer dicts (container path, output, transform, selector — all resolved by <code>build_context</code>); it calls <code>bsplot.load_layer(ctx["layers"][i])</code> to open the i-th one as an xarray <code>DataArray</code> with the declared <code>transform</code> and <code>.sel</code> already applied. A <code>Layer.transform</code> runs before the selection and a <code>DataRef.transform</code> after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.</p>
 <p>Under an animation the emitted script binds <code>frame_dim</code>/<code>frame_pos</code> onto each layer before handing the context over, so a drawer that knows nothing about animation still draws the frame the rest of the figure is at.</p>
 </section>
+<section id="tvbo.adapters.bsplot.load_scalar" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.load_scalar">load_scalar</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.load_scalar(layer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The one number a resolved layer names, for a statistic a figure prints instead of plots (public API).</p>
+<p>An output holding several values is refused: a label or a caption states one number, and the first of many would be a plausible wrong one.</p>
+</section>
 <section id="tvbo.adapters.bsplot.network_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.network_panel">network_panel</h3>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.network_panel(fig, ax, ctx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.network_panel(fig, ax, ctx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The connectome as a node-link graph, its nodes coloured by a layer — the built-in <code>kind: network</code>.</p>
 <p>The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so <code>kind: network</code> needs no <code>code_modules</code>; the graph itself is built by bsplot’s own <code>create_network</code>, which is where the edge threshold and the node/edge attributes are defined.</p>
 <p>A spec declares all of this as <code>network:</code> — the <code>Graph</code> class names and documents every attribute, <code>connectome</code> being the only required one. What is only true here: <code>symmetric</code> defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; <code>projection</code> defaults to axial, <code>edge_percentile</code> to 92, and <code>labels</code> to off, since 87 region names on one panel is a block of text rather than a figure. Edge widths scale with the weight on top of <code>edge_width</code>, so a strong connection reads as strong. With no layer the panel draws the bare graph in <code>color</code>.</p>
 </section>
 <section id="tvbo.adapters.bsplot.output_format" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.output_format">output_format</h3>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.output_format(figure)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.output_format(figure)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The file extension a figure’s render writes, without the dot.</p>
 <p>An animated figure’s output is its movie, so the animation’s container replaces the still’s format rather than sitting beside it — a figure written as both a png and a gif is two artefacts claiming to be one figure. Asked by <code>figure_outputs</code> and by the renderer, so the name they agree on is derived once.</p>
 </section>
+<section id="tvbo.adapters.bsplot.reading_results" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.reading_results">reading_results</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.reading_results(results_dir)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Resolve the containers a figure reads from its own study in <em>results_dir</em> for the duration of the block, in place of that study’s results directory; <code>None</code> keeps the study’s own. A <code>--limit</code> sample’s figures read the sample this way.</p>
+</section>
 <section id="tvbo.adapters.bsplot.register_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.register_panel">register_panel</h3>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.register_panel(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.register_panel(name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Register a <code>custom</code>-panel callable <code>fn(fig, ax, ctx)</code> under <em>name</em> (decorator).</p>
 </section>
 <section id="tvbo.adapters.bsplot.register_transform" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.register_transform">register_transform</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.register_transform(name)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.register_transform(name)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Register a presentation-only layer transform <code>fn(da) -&gt; da</code> under <em>name</em> (decorator).</p>
 </section>
 <section id="tvbo.adapters.bsplot.registered" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.registered">registered</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.registered(registry, name, kind)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.registered(registry, name, kind)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Look a spec-declared name up in a registry, or raise an actionable error (public API).</p>
 <p>Shared by the adapter and the emitted plot.py, which imports it, so both report a miss the same way. The registries are empty until a figure’s code_modules are imported and their register_* decorators run, so a miss almost always means code_modules is missing the module, or importing it failed.</p>
 </section>
 <section id="tvbo.adapters.bsplot.render" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.render">render</h3>
-<div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.render(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    figure,</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    base_dir<span class="op">=</span><span class="st">'.'</span>,</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    outfile<span class="op">=</span><span class="st">'figure.png'</span>,</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    script_path<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.render(</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>    figure,</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    base_dir<span class="op">=</span><span class="st">'.'</span>,</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    outfile<span class="op">=</span><span class="st">'figure.png'</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    script_path<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render and run the figure. Writes the script to <em>script_path</em> if given.</p>
 </section>
 <section id="tvbo.adapters.bsplot.render_code" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.render_code">render_code</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.render_code(figure, base_dir<span class="op">=</span><span class="st">'.'</span>, outfile<span class="op">=</span><span class="st">'figure.png'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.render_code(figure, base_dir<span class="op">=</span><span class="st">'.'</span>, outfile<span class="op">=</span><span class="st">'figure.png'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render the <code>Figure</code> into a self-contained <code>plot.py</code> string.</p>
 </section>
 <section id="tvbo.adapters.bsplot.resolve_color" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.resolve_color">resolve_color</h3>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.resolve_color(value)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.resolve_color(value)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A declared colour as a drawn one — public API, and the only place the translation happens.</p>
 <p>A palette role (<code>highlight</code>) or hue (<code>palette.2</code>) resolves against the palette in force; a hex, a backend colour name, a sequence or <code>None</code> passes through untouched, so a spec written before the palette existed draws exactly as it did. A <code>custom</code> panel colouring by role should call this rather than reading the palette itself, so one rule covers the grammar and the escape hatch alike.</p>
 </section>
 <section id="tvbo.adapters.bsplot.resolve_colormap" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.resolve_colormap">resolve_colormap</h3>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.resolve_colormap(value, default<span class="op">=</span><span class="st">'sequential'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.resolve_colormap(value, default<span class="op">=</span><span class="st">'sequential'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A declared colormap as a resolvable name — public API, and the only place the translation happens.</p>
 <p>A key the project’s theme declares (<code>diverging</code>, or its own <code>meg</code>) becomes whatever that key holds; anything else is left for the backend’s own registry, so <code>cividis</code> and <code>parula</code> are untouched. <code>None</code> takes <em>default</em>, which is how a mark that names no scale lands on the project’s rather than on matplotlib’s.</p>
 </section>
 <section id="tvbo.adapters.bsplot.resolve_path" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.resolve_path">resolve_path</h3>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.resolve_path(p, base_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.resolve_path(p, base_dir)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Resolve a spec-relative file reference against <em>base_dir</em> (the study dir) — public API.</p>
 <p>A file a figure points at (an <code>image</code> panel’s path, a study .mplstyle) is written relative to the spec that declares it, so the spec stays portable; the emitted plot.py runs from an arbitrary cwd and needs an absolute one. An absolute path is passed through untouched. Returns <em>p</em> unchanged when it is empty.</p>
 <p>A <code>custom</code> panel resolving its own study-relative input (<code>ctx["opts"]</code> naming a tvbo Network yaml, say) should call this with <code>ctx["base_dir"]</code> so it follows the same rule as the rest of the spec rather than re-implementing the join.</p>
 </section>
 <section id="tvbo.adapters.bsplot.retired_options" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.retired_options">retired_options</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.retired_options(kind<span class="op">=</span><span class="st">''</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.retired_options(kind<span class="op">=</span><span class="st">''</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Every panel option of <em>kind</em> that is a declared slot now, mapped to the <code>(slot, attribute)</code> that replaced it.</p>
 <p>An empty <code>slot</code> means the option became a slot of the panel itself. This is the single statement of the renaming half of the retirement: :func:<code>_panel_opts</code> refuses from it and <code>scripts/migrate_panel_marks.py</code> rewrites from it, so what a spec is converted into is exactly what the renderer will accept. The retirements that are a change of SHAPE rather than of name — a rule, a region, a viewpoint — are <code>_RESHAPED_OPTS</code>, because there is no attribute to point at.</p>
 </section>
 <section id="tvbo.adapters.bsplot.scale_colormap" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.scale_colormap">scale_colormap</h3>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.scale_colormap(name, lo<span class="op">=</span><span class="va">None</span>, hi<span class="op">=</span><span class="va">None</span>, center<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.scale_colormap(name, lo<span class="op">=</span><span class="va">None</span>, hi<span class="op">=</span><span class="va">None</span>, center<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A declared colormap name as the map a field is drawn with, pinned to <em>center</em> where one is asked for.</p>
 <p>An undeclared map takes the theme’s, and which of the theme’s depends on what the field is: a centred scale is signed, so it takes <code>diverging</code>; anything else takes <code>sequential</code>. That is the rule the <code>symmetric</code> default already encodes for the limits, applied to the map as well, so a field of signed deviations is not drawn on a one-directional ramp.</p>
 <p><code>center</code> fixes the map’s neutral colour at a value — zero for a signed change, where the sign is the reading. The limits stay the data’s own and the map is truncated to the half-range the data actually reaches, so a unit of change is the same colour distance either side of the centre and the scale carries no colour the field never takes.</p>
 <p>The mesh and the bar that keys it both resolve here. A bar built from the untruncated map would put the neutral colour at the middle of a scale whose field crosses the centre anywhere else, and every value the reader looks up would be wrong.</p>
 </section>
+<section id="tvbo.adapters.bsplot.significance_marks" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.significance_marks">significance_marks</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.significance_marks(p_value, levels<span class="op">=</span>SIGNIFICANCE_LEVELS)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The asterisks a p-value earns: one per threshold in <em>levels</em> it is below (public API).</p>
+</section>
 <section id="tvbo.adapters.bsplot.surface_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.surface_panel">surface_panel</h3>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.surface_panel(fig, ax, ctx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.surface_panel(fig, ax, ctx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Per-vertex values painted on a mesh — the built-in <code>kind: surface</code>.</p>
 <p>A brain map is the most-drawn panel in a network-neuroscience paper and needs no study code: the mesh is geometry the network already carries, the values are a layer like any other, and everything else is presentation. Registered here rather than shipped per study, so <code>kind: surface</code> works with no <code>code_modules</code>.</p>
 <p>A spec declares all of this as <code>surface:</code> — the <code>Surface</code> class names and documents every attribute, and <code>_KIND_RENAMES</code> says where one reaches this callable under a different word. What is only true here:</p>
@@ -9132,19 +9720,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bsplot.theme_rcparams" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.theme_rcparams">theme_rcparams</h3>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.theme_rcparams(theme)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.theme_rcparams(theme)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The Theme’s geometry as rcParams, applied after every style layer so a declared look always wins.</p>
 <p>Only what the theme states: a slot left unset is not a value, so the layer underneath keeps it.</p>
 </section>
 <section id="tvbo.adapters.bsplot.theme_spec" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.theme_spec">theme_spec</h3>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.theme_spec(figure, base_dir)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>The look a figure declares, with the curated theme it names merged underneath it.</p>
-<p>Returns the whole Theme as a plain dict — colours and geometry together — because both halves travel to the same place: the colours become the palette the emitted script puts in force, the geometry becomes the rcParams applied after every style layer. The curated theme is the base under both halves, so a figure that declares nothing, and one that declares a single tick length, get the same look everywhere it did not speak.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.theme_spec(figure, base_dir<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The look a figure is drawn in: every layer that states one, weakest first.</p>
+<p>TVB-O’s shipped theme is the base. Over it comes the curated house axis rule when the figure asks for a rule with <code>auto_format: true</code>, then the theme of the figure’s study, then the figure’s own theme, then the look slots the figure carries directly. Each theme brings the curated one it names by <code>iri</code> in underneath its own statements. <code>auto_format: false</code> then switches the axis rule off for this figure, whoever stated it.</p>
+<p>Returns the whole look as one plain dict, colours, geometry and axis rule together, because all of it travels to the same emitted script: the colours become the palette it puts in force, the geometry the rcParams applied after every style layer, the rule the pass run over the drawn axes. A figure that declares nothing, and one that declares a single tick length, get the same look everywhere they did not speak.</p>
+</section>
+<section id="tvbo.adapters.bsplot.type_scales" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.type_scales">type_scales</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.type_scales(theme)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>{rcParam: multiple of the body size}</code> for the type sizes a theme fixes.</p>
+<p>With a body size declared every text size in the figure follows from it, each at its own scale and at the body size where none is stated, so no style sheet’s size survives beside a declared one. Without one only the stated scales apply, to whatever body size the style sheets leave in force when the script runs.</p>
 </section>
 <section id="tvbo.adapters.bsplot.volume_panel" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.volume_panel">volume_panel</h3>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.volume_panel(fig, ax, ctx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.volume_panel(fig, ax, ctx)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Per-region values painted into a labelled volume and projected — the built-in <code>kind: volume</code>.</p>
 <p>The volumetric counterpart of <code>kind: surface</code>: same layer, same colour options, geometry from an atlas instead of a mesh. Registered here rather than shipped per study, so a glass brain needs no <code>code_modules</code> and no per-study index table.</p>
 <p>Values are placed BY LABEL through the atlas crosswalk, never by array position — a per-region array ordered differently from the atlas would otherwise paint every region with its neighbour’s number and still look like a brain.</p>
@@ -9152,8 +9747,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.bsplot.write_caption" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.bsplot.write_caption">write_caption</h3>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.write_caption(figure, out_dir, <span class="op">*</span>, name<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>Write a figure’s composed caption to <code>&lt;out_dir&gt;/&lt;name&gt;.caption.qmd</code> and return the path.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>adapters.bsplot.write_caption(figure, out_dir, <span class="op">*</span>, name<span class="op">=</span><span class="va">None</span>, base_dir<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Write a figure’s composed caption to <code>&lt;out_dir&gt;/&lt;name&gt;.caption.qmd</code> and return the path, its caption annotations’ numbers read under <em>base_dir</em>.</p>
 <p>A Quarto partial the manuscript pulls in with <code>{{&lt; include &lt;name&gt;.caption.qmd &gt;}}</code>, so the caption is generated from the figure spec and regenerates whenever a panel moves or a layer is rebound — never hand-maintained beside the figure it describes.</p>
 
 
@@ -9213,13 +9808,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -9234,7 +9830,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

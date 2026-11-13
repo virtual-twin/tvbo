@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.24">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>Heterogeneous Kuramoto Oscillators – TVB-O Documentation</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -58,7 +64,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </style>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="../../site_libs/quarto-nav/headroom.min.js"></script>
 <script src="../../site_libs/clipboard/clipboard.min.js"></script>
 <script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
@@ -74,10 +80,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-305ec0c320a3d60cc5bda611d56c9e28.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -105,7 +111,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
 
 <script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer">
@@ -113,7 +119,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../_static/tvbo-icons.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -126,7 +132,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -155,7 +161,8 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo light-content">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">TVB-O Documentation</span>
@@ -211,7 +218,8 @@ window.Quarto = {
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
       <a href="../../index.html" class="sidebar-logo-link">
-      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
       </a>
       </div>
     <div class="sidebar-menu-container"> 
@@ -266,13 +274,13 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specification (Widoco)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
  <span class="menu-text">WebVOWL visualisation</span></a>
   </div>
 </li>
@@ -1384,12 +1392,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/Case.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Case</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/ClassReference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Class Reference</span></a>
   </div>
@@ -1416,6 +1418,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/CodeSource.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Code Source</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/CohortRule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1516,12 +1530,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/DerivedObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Derived Observation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DerivedParameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Derived Parameter</span></a>
   </div>
@@ -1566,6 +1574,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DistributionConfig.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Distribution Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Document.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Document</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1696,6 +1710,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/HeldParameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Held Parameter</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Inference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Inference</span></a>
   </div>
@@ -1792,6 +1812,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeTemplate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Template</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Noise.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise</span></a>
   </div>
@@ -1836,12 +1868,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Parameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parameter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/ParameterSpec.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Parameter Spec</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1906,6 +1932,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/PropagationGate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Propagation Gate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Provenance</span></a>
   </div>
@@ -1944,12 +1976,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Region Mapping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1998,6 +2024,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Session.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Session</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Significance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2056,6 +2088,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StateSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">State Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StateValue.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">State Value</span></a>
   </div>
@@ -2086,12 +2124,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Collection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyDirectory.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Directory</span></a>
   </div>
@@ -2106,12 +2138,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyLayout.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Layout</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Member</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2343,6 +2369,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/align_labels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">align_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/allow_self_connections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">allow_self_connections</span></a>
   </div>
@@ -2399,6 +2431,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/application_category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">application_category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/applied.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">applied</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2517,6 +2555,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_margin.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_margin</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/axis_width.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">axis_width</span></a>
   </div>
@@ -2543,6 +2593,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/background.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">background</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/bar_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bar_edge_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2631,12 +2687,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/boundaries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">boundaries</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/boundary_conditions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">boundary_conditions</span></a>
   </div>
@@ -2673,12 +2723,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/bundle.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">bundle</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/by.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">by</span></a>
   </div>
@@ -2705,12 +2749,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">capture</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">cases</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2823,6 +2861,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohort_id.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohort_id</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohorts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohorts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/col_label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">col_label_pad</span></a>
   </div>
@@ -2849,6 +2899,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/colorbar.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">colorbar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_outline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_outline</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2901,6 +2963,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/components.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">components</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/concept_iri.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">concept_iri</span></a>
   </div>
@@ -2921,12 +2989,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/condition_states.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">condition_states</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/conditional.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">conditional</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3093,12 +3155,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/coupling_terms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">coupling_terms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
   </div>
@@ -3113,6 +3169,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/cpus_per_task.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cpus_per_task</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/criterion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">criterion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3171,14 +3233,14 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_path.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_path</span></a>
+  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dataset_type</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_type</span></a>
+  <a href="../../datamodel/slots/datasets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">datasets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3275,12 +3337,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/derived_from_model.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">derived_from_model</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/derived_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">derived_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3465,6 +3521,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/drop.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">drop</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/ds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds</span></a>
   </div>
@@ -3549,6 +3611,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/editable_text.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">editable_text</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/efield.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">efield</span></a>
   </div>
@@ -3615,12 +3683,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/emit_provenance.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">emit_provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/empirical_data.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">empirical_data</span></a>
   </div>
@@ -3629,6 +3691,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/encoding.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/end_tick_reach.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">end_tick_reach</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3689,6 +3757,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/equation_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">equation_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/errorbar_cap_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">errorbar_cap_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3771,6 +3845,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/exponent_as_power.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">exponent_as_power</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/expression.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">expression</span></a>
   </div>
@@ -3849,6 +3929,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/font_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">font_weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">format</span></a>
   </div>
@@ -3879,12 +3965,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/free.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">free</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/free_parameters.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">free_parameters</span></a>
   </div>
@@ -3899,6 +3979,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/frequency.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">frequency</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/from_iteration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">from_iteration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3987,8 +4073,26 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_below.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_below</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/grid_lines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">grid_lines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_style.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4001,6 +4105,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/group.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">group</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4025,6 +4135,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/handle_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">handle_length</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/handles.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">handles</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4061,6 +4177,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/height_ratios.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">height_ratios</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/held_parameters.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">held_parameters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4125,6 +4247,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/homologue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">homologue</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/how_to_acknowledge.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">how_to_acknowledge</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/hspace.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">hspace</span></a>
   </div>
@@ -4139,12 +4273,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">id</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/ifabsent.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ifabsent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4215,12 +4343,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/inner_coupling.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">inner_coupling</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/inner_iterations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inner_iterations</span></a>
   </div>
@@ -4245,14 +4367,14 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">integration</span></a>
+  <a href="../../datamodel/slots/instance_of.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">instance_of</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/intensity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">intensity</span></a>
+  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">integration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4335,6 +4457,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/keep.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">keep</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">key</span></a>
   </div>
@@ -4367,6 +4495,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">label_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4437,12 +4577,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/lefthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">lefthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend</span></a>
   </div>
@@ -4461,14 +4595,50 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_handle_text_pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_handle_text_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_label_spacing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_label_spacing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_marker_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_marker_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend_pad</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/level.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">level</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/levels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">levels</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4493,6 +4663,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/likelihood.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">likelihood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/line_cap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">line_cap</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4605,6 +4781,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/marker_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">marker_edge_width</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/marker_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">marker_size</span></a>
   </div>
@@ -4623,6 +4805,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/math_font.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">math_font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_bisection_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_bisection_steps</span></a>
   </div>
@@ -4637,6 +4825,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_steps</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/max_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">max_ticks</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4673,6 +4867,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/members_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4725,6 +4925,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/min_dispersion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">min_dispersion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_tick_length</span></a>
   </div>
@@ -4739,6 +4945,24 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_ticks.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/mirror_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">mirror_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing_color.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing_color</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4785,12 +5009,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">modes</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modified.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modified</span></a>
   </div>
@@ -4827,6 +5045,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/n_groups.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">n_groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_inversion.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_inversion</span></a>
   </div>
@@ -4845,12 +5069,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_regions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_regions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_sections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_sections</span></a>
   </div>
@@ -4865,12 +5083,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_trials.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_trials</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_vertices.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_vertices</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4949,6 +5161,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/node_mapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">node_mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/node_selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">node_selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5271,6 +5489,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_case.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_format</span></a>
   </div>
@@ -5289,8 +5513,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5339,6 +5575,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/parcellation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parcellation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/parent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5403,6 +5645,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/persist.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">persist</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/phenotype_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">phenotype_file</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/pipeline.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">pipeline</span></a>
   </div>
@@ -5411,6 +5665,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/placeholder.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">placeholder</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/placement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5511,6 +5771,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/propagation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">propagation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/protocols.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">protocols</span></a>
   </div>
@@ -5519,12 +5785,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/provenance_format.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">provenance_format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5573,18 +5833,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/random_state.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">random_state</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/range.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">range</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">recipe</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5651,18 +5899,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/region_mapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">region_mapping</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/regional_connectivity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">regional_connectivity</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5769,12 +6005,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/righthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">righthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/rng.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">rng</span></a>
   </div>
@@ -5801,6 +6031,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/row_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">row_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5865,8 +6101,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/schema_version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">schema_version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/scipy_ode_base.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">scipy_ode_base</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/scope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">scope</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5897,6 +6145,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/sel.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">sel</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5973,6 +6227,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">significance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/simulation_experiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">simulation_experiments</span></a>
   </div>
@@ -5987,12 +6247,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">size</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/skip_t.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">skip_t</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6033,6 +6287,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/source_arguments.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">source_arguments</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_branch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_branch</span></a>
   </div>
@@ -6053,12 +6313,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_network</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/source_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">source_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6101,6 +6355,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/spine_trim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_trim</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6233,6 +6493,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/subjects.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">subjects</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/subjects_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">subjects_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6477,6 +6743,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_format.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_length</span></a>
   </div>
@@ -6497,6 +6775,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_steps.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_steps</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6543,12 +6827,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_scale.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_scale</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_unit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_unit</span></a>
   </div>
@@ -6573,8 +6851,26 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/title_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">title_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6645,6 +6941,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/transparent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">transparent</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">triangle</span></a>
   </div>
@@ -6675,8 +6977,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tvbo_class.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo_class</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/unicode_minus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">unicode_minus</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6701,6 +7015,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/update_rules.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">update_rules</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/update_start.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">update_start</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6789,12 +7109,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/vertex_to_region.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">vertex_to_region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/vertices_field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">vertices_field</span></a>
   </div>
@@ -6851,12 +7165,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup_from.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup_from</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/warmup_source.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">warmup_source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7124,6 +7432,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AnnotationPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Annotation Placement</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AxisEnds.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/AxisReductionStatistic.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Axis Reduction Statistic</span></a>
   </div>
@@ -7162,6 +7482,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/BoundaryConditionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Boundary Condition Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/CohortGrouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7244,6 +7570,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/FontWeight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Font Weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/FrameRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Frame Role</span></a>
   </div>
@@ -7286,8 +7618,38 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LetterCase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Letter Case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineCap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Cap</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineStyle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/MarkType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Mark Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MathFont.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Math Font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MissingValuePolicy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Missing Value Policy</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7352,12 +7714,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/PhysicalDimension.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Physical Dimension</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ProcedureStepType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Procedure Step Type</span></a>
   </div>
@@ -7372,12 +7728,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/Projection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Projection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/ProvenanceFormat.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Provenance Format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7424,6 +7774,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionScope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Scope</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SexEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sex Enum</span></a>
   </div>
@@ -7444,6 +7806,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SpecimenEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specimen Enum</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/Spines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Spines</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7496,6 +7864,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TextAlign.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Align</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Direction</span></a>
   </div>
@@ -7504,6 +7878,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickFormat.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TickPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tick Placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7762,6 +8142,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/analysis/units.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Units</span></a>
   </div>
@@ -7826,6 +8212,12 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/atlas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Atlas</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/continuation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Continuation</span></a>
   </div>
@@ -7856,14 +8248,50 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/function.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Function</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/integrator.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Integrator</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/observation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/perturbation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Perturbation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/phenotype.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phenotype</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/software.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Software</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
   </div>
 </li>
       </ul>
@@ -7941,6 +8369,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/classes/observation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/optimization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimization</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8040,6 +8474,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/cli/migrate_iris.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migrate Iris</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/cli/network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Network</span></a>
   </div>
@@ -8123,6 +8563,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dims</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/codegen/functions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functions</span></a>
   </div>
@@ -8194,6 +8640,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/data/cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/data/connectome_build.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Connectome Build</span></a>
   </div>
@@ -8214,6 +8666,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/data/experiment_result_io.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Experiment Result Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/iri_migration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Iri Migration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8303,6 +8761,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/datamodel/schema.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Schema</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/text_slots.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Slots</span></a>
   </div>
 </li>
       </ul>
@@ -8509,6 +8973,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/axis_rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Rule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Capture</span></a>
   </div>
@@ -8598,6 +9068,12 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-52" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/run/backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Backends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Compgraph</span></a>
   </div>
@@ -8612,6 +9088,24 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/run/julia.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Julia</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/lanes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lanes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
   </div>
 </li>
       </ul>
@@ -8713,14 +9207,32 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/jax_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Jax Precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/pydantic_loader.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Pydantic Loader</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/pytree.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pytree</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/report.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Report</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/source.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8778,24 +9290,10 @@ window.Quarto = {
   <ul>
   <li><a href="#yaml-specification" id="toc-yaml-specification" class="nav-link active" data-scroll-target="#yaml-specification">YAML Specification</a></li>
   <li><a href="#model-report" id="toc-model-report" class="nav-link" data-scroll-target="#model-report">Model Report</a></li>
-  <li><a href="#heterogeneous-kuramoto-oscillators" id="toc-heterogeneous-kuramoto-oscillators" class="nav-link" data-scroll-target="#heterogeneous-kuramoto-oscillators">Heterogeneous Kuramoto Oscillators</a>
-  <ul class="collapse">
-  <li><a href="#brain-network-8-node-ring-watts-strogatz-k2-p0" id="toc-brain-network-8-node-ring-watts-strogatz-k2-p0" class="nav-link" data-scroll-target="#brain-network-8-node-ring-watts-strogatz-k2-p0">1. Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</a>
-  <ul class="collapse">
-  <li><a href="#coupling-kuramoto-sinusoidal-coupling" id="toc-coupling-kuramoto-sinusoidal-coupling" class="nav-link" data-scroll-target="#coupling-kuramoto-sinusoidal-coupling">Coupling: Kuramoto sinusoidal coupling</a></li>
-  </ul></li>
-  <li><a href="#local-dynamics-kuramoto-phase-oscillator" id="toc-local-dynamics-kuramoto-phase-oscillator" class="nav-link" data-scroll-target="#local-dynamics-kuramoto-phase-oscillator">2. Local Dynamics: Kuramoto phase oscillator</a>
-  <ul class="collapse">
-  <li><a href="#state-equations" id="toc-state-equations" class="nav-link" data-scroll-target="#state-equations">2.1 State Equations</a></li>
-  <li><a href="#parameters" id="toc-parameters" class="nav-link" data-scroll-target="#parameters">2.2 Parameters</a></li>
-  </ul></li>
-  <li><a href="#numerical-integration" id="toc-numerical-integration" class="nav-link" data-scroll-target="#numerical-integration">3. Numerical Integration</a></li>
-  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
   <li><a href="#generated-julia-code" id="toc-generated-julia-code" class="nav-link" data-scroll-target="#generated-julia-code">Generated Julia Code</a></li>
   <li><a href="#run-plot" id="toc-run-plot" class="nav-link" data-scroll-target="#run-plot">Run &amp; Plot</a></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
   <li><a href="#animate" id="toc-animate" class="nav-link" data-scroll-target="#animate">Animate</a></li>
-  </ul></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/virtual-twin/tvbo/edit/main/Interoperability/NetworkDynamics.jl/kuramoto.qmd" class="toc-action"><i class="bi bi-github"></i>Edit this page</a></li><li><a href="https://github.com/virtual-twin/tvbo/issues/new/choose" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -8826,7 +9324,7 @@ window.Quarto = {
 <p>Replicates the <a href="https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/">NetworkDynamics.jl Heterogeneous System tutorial</a> — Kuramoto phase oscillators on an 8-node ring with heterogeneous natural frequencies.</p>
 <section id="yaml-specification" class="level2">
 <h2 class="anchored" data-anchor-id="yaml-specification">YAML Specification</h2>
-<div id="e5f0c51c" class="cell" data-execution_count="2">
+<div id="b2cf05c8" class="cell" data-execution_count="1">
 <div class="cell-output cell-output-display" data-execution_count="1">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -8902,22 +9400,12 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .output_html .vg { color: #19177C } /* Name.Variable.Global */
 .output_html .vi { color: #19177C } /* Name.Variable.Instance */
 .output_html .vm { color: #19177C } /* Name.Variable.Magic */
-.output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="c1"># =============================================================================</span>
-<span class="c1"># Heterogeneous Kuramoto Oscillators</span>
-<span class="c1"># =============================================================================</span>
-<span class="c1"># Source: https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/</span>
-<span class="c1">#</span>
-<span class="c1"># Kuramoto phase oscillators on a ring (Watts-Strogatz k=2, p=0) with</span>
-<span class="c1"># heterogeneous natural frequencies and sinusoidal coupling K sin(theta_j - theta_i).</span>
-<span class="c1"># =============================================================================</span>
+.output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="c1"># Heterogeneous Kuramoto oscillators on a ring (NetworkDynamics.jl Heterogeneous System tutorial)</span>
 
 <span class="nt">id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">101</span>
 <span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Heterogeneous</span><span class="nv"> </span><span class="s">Kuramoto</span><span class="nv"> </span><span class="s">Oscillators"</span>
 <span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-<span class="w">    </span><span class="no">Kuramoto model on an 8-node ring network.  Each oscillator has a natural</span>
-<span class="w">    </span><span class="no">frequency omega_0 and is coupled to its nearest neighbours via</span>
-<span class="w">    </span><span class="no">K sin(theta_src - theta_dst).  Demonstrates heterogeneous per-node parameters.</span>
-<span class="w">    </span><span class="no">Recreates the NetworkDynamics.jl Heterogeneous System tutorial.</span>
+<span class="w">    </span><span class="no">Kuramoto model on an 8-node ring network. Each oscillator has a natural frequency omega_0 and is coupled to its nearest neighbours via K sin(theta_src - theta_dst). Demonstrates heterogeneous per-node parameters. Recreates the NetworkDynamics.jl Heterogeneous System tutorial.</span>
 <span class="nt">references</span><span class="p">:</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/"</span>
 <span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"Kuramoto,</span><span class="nv"> </span><span class="s">Y.</span><span class="nv"> </span><span class="s">(1975).</span><span class="nv"> </span><span class="s">Self-entrainment</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">population</span><span class="nv"> </span><span class="s">of</span><span class="nv"> </span><span class="s">coupled</span><span class="nv"> </span><span class="s">non-linear</span><span class="nv"> </span><span class="s">oscillators."</span>
@@ -8927,8 +9415,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Kuramoto</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Kuramoto</span><span class="nv"> </span><span class="s">phase</span><span class="nv"> </span><span class="s">oscillator"</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-<span class="w">        </span><span class="no">Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges).</span>
-<span class="w">        </span><span class="no">The natural frequency omega_0 is a per-node parameter (heterogeneous).</span>
+<span class="w">        </span><span class="no">Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges). The natural frequency omega_0 is a per-node parameter (heterogeneous).</span>
 <span class="w">    </span><span class="nt">system_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">continuous</span>
 <span class="w">    </span><span class="nt">autonomous</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">    </span><span class="nt">parameters</span><span class="p">:</span>
@@ -8941,7 +9428,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">            </span><span class="nt">distribution</span><span class="p">:</span>
 <span class="w">                </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Uniform</span>
 <span class="w">                </span><span class="nt">domain</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt"> lo</span><span class="p">:</span><span class="w"> </span><span class="nv">0.2</span><span class="p p-Indicator">,</span><span class="nt"> hi</span><span class="p">:</span><span class="w"> </span><span class="nv">1.0</span><span class="w"> </span><span class="p p-Indicator">}</span>
-<span class="w">    </span><span class="nt">coupling_terms</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">coupling_inputs</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">c_coupling</span><span class="p">:</span>
 <span class="w">            </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Aggregated</span><span class="nv"> </span><span class="s">sinusoidal</span><span class="nv"> </span><span class="s">coupling</span><span class="nv"> </span><span class="s">from</span><span class="nv"> </span><span class="s">incident</span><span class="nv"> </span><span class="s">edges"</span>
 <span class="w">    </span><span class="nt">state_variables</span><span class="p">:</span>
@@ -8961,9 +9448,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="nt">network</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"8-node</span><span class="nv"> </span><span class="s">ring</span><span class="nv"> </span><span class="s">(Watts-Strogatz</span><span class="nv"> </span><span class="s">k=2,</span><span class="nv"> </span><span class="s">p=0)"</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-<span class="w">        </span><span class="no">Regular ring lattice: each node is connected to its 2 nearest</span>
-<span class="w">        </span><span class="no">neighbours on each side.  Equivalent to watts_strogatz(8, 2, 0)</span>
-<span class="w">        </span><span class="no">in Graphs.jl.</span>
+<span class="w">        </span><span class="no">Regular ring lattice: each node is connected to its nearest neighbour on each side, k = 2 neighbours in all. With no rewiring (p = 0) it is the graph watts_strogatz(8, 2, 0) builds in Graphs.jl.</span>
 <span class="w">    </span><span class="nt">number_of_nodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
 <span class="w">    </span><span class="nt">graph_generator</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">watts_strogatz</span>
@@ -8977,8 +9462,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">KuramotoCoupling</span>
 <span class="w">            </span><span class="nt">label</span><span class="p">:</span><span class="w"> </span><span class="s">"Kuramoto</span><span class="nv"> </span><span class="s">sinusoidal</span><span class="nv"> </span><span class="s">coupling"</span>
 <span class="w">            </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
-<span class="w">                </span><span class="no">Antisymmetric coupling: K sin(theta_src - theta_dst).</span>
-<span class="w">                </span><span class="no">The AntiSymmetric wrapper ensures g_src = -g_dst.</span>
+<span class="w">                </span><span class="no">Antisymmetric coupling: K sin(theta_src - theta_dst). Each direction of a connection is its own edge, so each node receives its own term.</span>
 <span class="w">            </span><span class="nt">delayed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">            </span><span class="nt">parameters</span><span class="p">:</span>
 <span class="w">                </span><span class="nt">K</span><span class="p">:</span>
@@ -8995,6 +9479,7 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="nt">integration</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="s">"Explicit</span><span class="nv"> </span><span class="s">Runge-Kutta</span><span class="nv"> </span><span class="s">(Tsit5)</span><span class="nv"> </span><span class="s">with</span><span class="nv"> </span><span class="s">dt=0.05</span><span class="nv"> </span><span class="s">over</span><span class="nv"> </span><span class="s">t</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">[0,</span><span class="nv"> </span><span class="s">10]"</span>
 <span class="w">    </span><span class="nt">method</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Tsit5</span>
+<span class="w">    </span><span class="nt">coupling_evaluation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">per_stage</span>
 <span class="w">    </span><span class="nt">step_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.05</span>
 <span class="w">    </span><span class="nt">duration</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10.0</span>
 <span class="w">    </span><span class="nt">time_scale</span><span class="p">:</span><span class="w"> </span><span class="s">"s"</span>
@@ -9004,21 +9489,175 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="model-report" class="level2">
 <h2 class="anchored" data-anchor-id="model-report">Model Report</h2>
-</section>
-<section id="heterogeneous-kuramoto-oscillators" class="level1">
-<h1>Heterogeneous Kuramoto Oscillators</h1>
+<pre><code>* Owlready2 * Warning: ignoring cyclic subclass of/subproperty of, involving:
+  http://uri.interlex.org/tgbugs/uris/readable/atlas/Space
+</code></pre>
+<p><strong>Heterogeneous Kuramoto Oscillators</strong></p>
 <p>Kuramoto model on an 8-node ring network. Each oscillator has a natural frequency omega_0 and is coupled to its nearest neighbours via K sin(theta_src - theta_dst). Demonstrates heterogeneous per-node parameters. Recreates the NetworkDynamics.jl Heterogeneous System tutorial.</p>
-<hr>
-<section id="brain-network-8-node-ring-watts-strogatz-k2-p0" class="level2">
-<h2 class="anchored" data-anchor-id="brain-network-8-node-ring-watts-strogatz-k2-p0">1. Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</h2>
-<p>Regular ring lattice: each node is connected to its 2 nearest neighbours on each side. Equivalent to watts_strogatz(8, 2, 0) in Graphs.jl.</p>
-<ul>
-<li><strong>Regions:</strong> 8</li>
-</ul>
-<section id="coupling-kuramoto-sinusoidal-coupling" class="level3">
-<h3 class="anchored" data-anchor-id="coupling-kuramoto-sinusoidal-coupling">Coupling: Kuramoto sinusoidal coupling</h3>
-<p>Antisymmetric coupling: K sin(theta_src - theta_dst). The AntiSymmetric wrapper ensures g_src = -g_dst.</p>
+<p><strong>Local Dynamics: Kuramoto phase oscillator</strong></p>
+<p>Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges). The natural frequency omega_0 is a per-node parameter (heterogeneous).</p>
+<p>system: continuous; autonomous: True; modes: 1; state variables: 1; parameters: 1.</p>
+<p><strong>State Equations</strong></p>
+<p><span class="math display">\[\dot{\theta} = c_{coupling} + \omega_{0}\]</span></p>
+<p><strong>State Variables</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 14%">
+<col style="width: 9%">
+<col style="width: 23%">
+<col style="width: 32%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: left;">Initial Value</th>
+<th style="text-align: left;">Unit</th>
+<th style="text-align: left;">Equation</th>
+<th style="text-align: left;">Domain / Sampling</th>
+<th style="text-align: left;">Flags</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\theta\)</span></td>
+<td style="text-align: left;">0</td>
+<td style="text-align: left;"><span class="math inline">\(\mathrm{rad}\)</span></td>
+<td style="text-align: left;">differential (order 1)</td>
+<td style="text-align: left;">Uniform [0, 6.2832] axis=space</td>
+<td style="text-align: left;">recorded</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parameters</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 9%">
+<col style="width: 27%">
+<col style="width: 44%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Parameter</th>
+<th style="text-align: right;">Value</th>
+<th style="text-align: left;">Unit</th>
+<th style="text-align: left;">Domain / Sampling</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\omega_{0}\)</span></td>
+<td style="text-align: right;">0</td>
+<td style="text-align: left;"><span class="math inline">\(\frac{\mathrm{rad}}{\mathrm{s}}\)</span></td>
+<td style="text-align: left;">Uniform [0.2, 1] axis=space</td>
+<td style="text-align: left;">Intrinsic angular frequency of the oscillator (heterogeneous per node)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Dimensional Check</strong></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Equation</th>
+<th style="text-align: left;">Dimensional check</th>
+<th style="text-align: left;">Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;"><span class="math inline">\(\dot{\theta}\)</span></td>
+<td style="text-align: left;">underdetermined</td>
+<td style="text-align: left;">c_coupling has no declared unit</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Coupling Inputs</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 15%">
+<col style="width: 17%">
+<col style="width: 24%">
+<col style="width: 13%">
+<col style="width: 28%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Input</th>
+<th style="text-align: left;">Source</th>
+<th style="text-align: right;">Dimension</th>
+<th style="text-align: left;">Keys</th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">c_coupling</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">—</td>
+<td style="text-align: left;">Aggregated sinusoidal coupling from incident edges</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Brain Network: 8-node ring (Watts-Strogatz k=2, p=0)</strong></p>
+<p>Regular ring lattice: each node is connected to its nearest neighbour on each side, k = 2 neighbours in all. With no rewiring (p = 0) it is the graph watts_strogatz(8, 2, 0) builds in Graphs.jl.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Setting</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Regions</td>
+<td style="text-align: left;">8</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Conduction velocity</td>
+<td style="text-align: left;">3.0 mm_per_ms</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Distance unit</td>
+<td style="text-align: left;">mm</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Nodes</td>
+<td style="text-align: left;">8 explicit nodes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Graph generator</td>
+<td style="text-align: left;">WattsStrogatz</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Weights</td>
+<td style="text-align: left;">shape=8x8, dtype=float64</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Coupling: Kuramoto sinusoidal coupling</strong></p>
+<p>Antisymmetric coupling: K sin(theta_src - theta_dst). Each direction of a connection is its own edge, so each node receives its own term.</p>
+<p><span class="math display">\[c = \sum_{j=0}^{-1 + N} K \cdot {w}_{i,j} \cdot \sin{\left(x_{j} - x_{i} \right)}\]</span></p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Property</th>
+<th style="text-align: left;">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Symmetry</td>
+<td style="text-align: left;">directed</td>
+</tr>
+</tbody>
+</table>
 <p><strong>Pre-synaptic:</strong> <span class="math inline">\(c_{\text{pre}} = - K \cdot \sin{\left(x_{i} - x_{j} \right)}\)</span></p>
+<p><strong>Post-synaptic:</strong> <span class="math inline">\(c_{\text{post}} = gx\)</span></p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -9030,68 +9669,61 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <tbody>
 <tr class="odd">
 <td style="text-align: left;"><span class="math inline">\(K\)</span></td>
-<td style="text-align: right;">3.0</td>
+<td style="text-align: right;">3</td>
 <td style="text-align: left;">Global coupling strength between oscillators</td>
 </tr>
 </tbody>
 </table>
-</section>
-</section>
-<section id="local-dynamics-kuramoto-phase-oscillator" class="level2">
-<h2 class="anchored" data-anchor-id="local-dynamics-kuramoto-phase-oscillator">2. Local Dynamics: Kuramoto phase oscillator</h2>
-<p>Single-variable phase oscillator: d(theta)/dt = omega_0 + sum(edges). The model comprises <strong>1 state variables</strong>.</p>
-<section id="state-equations" class="level3">
-<h3 class="anchored" data-anchor-id="state-equations">2.1 State Equations</h3>
-<p><span class="math display">\[\dot{\theta} = c_{coupling} + \omega_{0}\]</span></p>
-</section>
-<section id="parameters" class="level3">
-<h3 class="anchored" data-anchor-id="parameters">2.2 Parameters</h3>
+<p><strong>Numerical Integration</strong></p>
+<p>Explicit Runge-Kutta (Tsit5) with dt=0.05 over t in [0, 10]</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 29%">
-<col style="width: 18%">
-<col style="width: 16%">
-<col style="width: 35%">
-</colgroup>
 <thead>
 <tr class="header">
-<th style="text-align: left;">Parameter</th>
-<th style="text-align: right;">Value</th>
-<th style="text-align: left;">Unit</th>
-<th style="text-align: left;">Description</th>
+<th style="text-align: left;">Setting</th>
+<th style="text-align: left;">Value</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;"><span class="math inline">\(\omega_{0}\)</span></td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: left;">rad_per_s</td>
-<td style="text-align: left;">Intrinsic angular frequency of the oscillator (heterogeneous per node)</td>
+<td style="text-align: left;">Method</td>
+<td style="text-align: left;">Tsit5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Time step</td>
+<td style="text-align: left;"><span class="math inline">\(\Delta t = 0.05\)</span> ms</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Duration</td>
+<td style="text-align: left;">10.0 ms</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Absolute tolerance</td>
+<td style="text-align: left;">1e-10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Relative tolerance</td>
+<td style="text-align: left;">1e-10</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Stages</td>
+<td style="text-align: left;">1</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Delayed state history</td>
+<td style="text-align: left;">True</td>
 </tr>
 </tbody>
 </table>
-</section>
-</section>
-<section id="numerical-integration" class="level2">
-<h2 class="anchored" data-anchor-id="numerical-integration">3. Numerical Integration</h2>
-<ul>
-<li><strong>Method:</strong> Tsit5</li>
-<li><strong>Time step:</strong> <span class="math inline">\(\Delta t = 0.05\)</span> ms</li>
-<li><strong>Duration:</strong> 10.0 ms</li>
-</ul>
-<hr>
-</section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p>Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators. <em>Lecture Notes in Physics</em>, 420-422.</p>
+<p><strong>References</strong></p>
 <p>Cabral, J., Hugues, E., Sporns, O., &amp; Deco, G. (2011). Role of local network oscillations in resting-state functional connectivity. <em>NeuroImage</em>, 57(1), 130-139.</p>
-<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20. - https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/ - Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators.</p>
+<p>Strogatz, S. (2000). From kuramoto to crawford: exploring the onset of synchronization in populations of coupled oscillators. <em>Physica D: Nonlinear Phenomena</em>, 143(1–4), 1-20.</p>
+<p>Kuramoto, Y. (1975). Self-entrainment of a population of coupled nonlinear oscillators. <em>International Symposium on Mathematical Problems in Theoretical Physics</em>, 39. - https://juliadynamics.github.io/NetworkDynamics.jl/stable/generated/heterogeneous_system/ - Kuramoto, Y. (1975). Self-entrainment of a population of coupled non-linear oscillators.</p>
 </section>
 <section id="generated-julia-code" class="level2">
 <h2 class="anchored" data-anchor-id="generated-julia-code">Generated Julia Code</h2>
-<div id="1ae40d31" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp is already loaded in the 'Model Report' section above</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="be6c8e0a" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># exp is already loaded in the 'Model Report' section above</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Code(exp.render_code(<span class="st">"networkdynamics"</span>), language<span class="op">=</span><span class="st">'julia'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display" data-execution_count="3">
 <style>pre { line-height: 125%; }
 td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
@@ -9169,20 +9801,14 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .output_html .vm { color: #19177C } /* Name.Variable.Magic */
 .output_html .il { color: #666 } /* Literal.Number.Integer.Long */</style><div class="highlight"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Graphs</span>
 <span class="k">using</span><span class="w"> </span><span class="n">NetworkDynamics</span>
-
 <span class="k">using</span><span class="w"> </span><span class="n">OrdinaryDiffEqTsit5</span>
-
-
-
-
-
 
 
 <span class="k">function</span><span class="w"> </span><span class="n">Kuramoto_f!</span><span class="p">(</span><span class="n">dx</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">esum</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">omega0</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
 <span class="w">    </span><span class="n">theta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
 <span class="w">    </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">esum</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-<span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">omega0</span>
+<span class="w">    </span><span class="n">dx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">c_coupling</span><span class="w"> </span><span class="o">.+</span><span class="w"> </span><span class="n">omega0</span>
 <span class="w">    </span><span class="nb">nothing</span>
 <span class="k">end</span>
 
@@ -9195,38 +9821,31 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="p">)</span>
 
 
-
-
-
-
-
-
-<span class="k">function</span><span class="w"> </span><span class="n">KuramotoCoupling_edge_g!</span><span class="p">(</span><span class="n">e_dst</span><span class="p">,</span><span class="w"> </span><span class="n">v_src</span><span class="p">,</span><span class="w"> </span><span class="n">v_dst</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">K</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
-<span class="w">    </span><span class="n">e_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">K</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="n">sin</span><span class="p">(</span><span class="n">v_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">v_src</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">function</span><span class="w"> </span><span class="n">KuramotoCoupling_edge_g!</span><span class="p">(</span><span class="n">e_dst</span><span class="p">,</span><span class="w"> </span><span class="n">v_src</span><span class="p">,</span><span class="w"> </span><span class="n">v_dst</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="n">K</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,),</span><span class="w"> </span><span class="n">t</span><span class="p">)</span>
+<span class="w">    </span><span class="n">e_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">w</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="o">-</span><span class="n">K</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="n">sin</span><span class="p">(</span><span class="n">v_dst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">.-</span><span class="w"> </span><span class="n">v_src</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 <span class="w">    </span><span class="nb">nothing</span>
 <span class="k">end</span>
 
 <span class="n">edge_KuramotoCoupling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EdgeModel</span><span class="p">(;</span>
-<span class="w">    </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">AntiSymmetric</span><span class="p">(</span><span class="n">KuramotoCoupling_edge_g!</span><span class="p">),</span>
+<span class="w">    </span><span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Directed</span><span class="p">(</span><span class="n">KuramotoCoupling_edge_g!</span><span class="p">),</span>
 <span class="w">    </span><span class="n">outsym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:coupling</span><span class="p">],</span>
-<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:K</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">3.0</span><span class="p">],</span>
+<span class="w">    </span><span class="n">psym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="ss">:K</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">3.0</span><span class="p">,</span><span class="w"> </span><span class="ss">:w</span><span class="w"> </span><span class="o">=&gt;</span><span class="w"> </span><span class="mf">1.0</span><span class="p">],</span>
 <span class="w">    </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ss">:KuramotoCoupling</span><span class="p">,</span>
 <span class="p">)</span>
 
 
-
-
-<span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">watts_strogatz</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="k">using</span><span class="w"> </span><span class="n">SimpleWeightedGraphs</span>
+<span class="n">W</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="n">g</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SimpleDiGraph</span><span class="p">(</span><span class="n">SimpleWeightedDiGraph</span><span class="p">(</span><span class="n">W</span><span class="p">))</span>
+<span class="n">edge_weights</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kt">Float64</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">,</span><span class="w"> </span><span class="mf">1.0</span><span class="p">]</span>
 
 
 <span class="n">nw</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Network</span><span class="p">(</span><span class="n">g</span><span class="p">,</span><span class="w"> </span><span class="n">vertex_Kuramoto</span><span class="p">,</span><span class="w"> </span><span class="n">edge_KuramotoCoupling</span><span class="p">)</span>
 
 
-
-
 <span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NWState</span><span class="p">(</span><span class="n">nw</span><span class="p">)</span>
 <span class="k">using</span><span class="w"> </span><span class="n">Random</span>
-<span class="n">rng</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MersenneTwister</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">rng</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">MersenneTwister</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <span class="k">for</span><span class="w"> </span><span class="n">node</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="n">nv</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
 <span class="w">    </span><span class="n">s</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="ss">:theta</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">.+</span><span class="w"> </span><span class="p">(</span><span class="mf">6.283185</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="n">rand</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
@@ -9235,6 +9854,8 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 <span class="w">    </span><span class="n">s</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v</span><span class="p">[</span><span class="n">node</span><span class="p">,</span><span class="w"> </span><span class="ss">:omega0</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.2</span><span class="w"> </span><span class="o">.+</span><span class="w"> </span><span class="p">(</span><span class="mf">1.0</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mf">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">.*</span><span class="w"> </span><span class="n">rand</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
 <span class="k">end</span>
 
+
+<span class="n">s</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">e</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="n">ne</span><span class="p">(</span><span class="n">g</span><span class="p">),</span><span class="w"> </span><span class="ss">:w</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">edge_weights</span>
 
 
 <span class="n">tspan</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0</span><span class="p">)</span>
@@ -9283,16 +9904,16 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="run-plot" class="level2">
 <h2 class="anchored" data-anchor-id="run-plot">Run &amp; Plot</h2>
-<div id="9e5e0e6a" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="9664978e" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> exp.run(<span class="bu">format</span><span class="op">=</span><span class="st">"networkdynamics"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ts.plot()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython</code></pre>
 </div>
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 <figure class="figure">
-<p><img src="kuramoto_files/figure-html/cell-5-output-2.png" class="img-fluid figure-img"></p>
+<p><img src="kuramoto_files/figure-html/cell-5-output-2.png" width="1840" height="1322" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -9300,19 +9921,19 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>
-<div id="0e3a9336" class="cell" data-execution_count="6">
+<div id="13792ac1" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>Shape: (201, 1, 8)
 Time range: 0.0 – 10.0
-Final theta range: [6.293, 12.570]</code></pre>
+Final theta range: [7.024, 13.366]</code></pre>
 </div>
 </div>
 </section>
 <section id="animate" class="level2">
 <h2 class="anchored" data-anchor-id="animate">Animate</h2>
-<div id="073f3792" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"theta"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"kuramoto.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="81ae4867" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>ani <span class="op">=</span> ts.animate(<span class="st">"theta"</span>, <span class="bu">format</span><span class="op">=</span><span class="st">"dots"</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ani.save(<span class="st">"kuramoto.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">20</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -9322,7 +9943,6 @@ Final theta range: [6.293, 12.570]</code></pre>
 </div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
@@ -9377,13 +9997,14 @@ Final theta range: [6.293, 12.570]</code></pre>
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -9398,7 +10019,7 @@ Final theta range: [6.293, 12.570]</code></pre>
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

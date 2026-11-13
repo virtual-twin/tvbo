@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.24">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>neuroml – TVB-O Documentation</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,10 +80,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-305ec0c320a3d60cc5bda611d56c9e28.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -123,7 +129,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo light-content">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">TVB-O Documentation</span>
@@ -179,7 +186,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
       <a href="../../index.html" class="sidebar-logo-link">
-      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
       </a>
       </div>
     <div class="sidebar-menu-container"> 
@@ -234,13 +242,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specification (Widoco)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
  <span class="menu-text">WebVOWL visualisation</span></a>
   </div>
 </li>
@@ -1352,12 +1360,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/Case.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Case</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/ClassReference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Class Reference</span></a>
   </div>
@@ -1384,6 +1386,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/CodeSource.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Code Source</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/CohortRule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1484,12 +1498,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/DerivedObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Derived Observation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DerivedParameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Derived Parameter</span></a>
   </div>
@@ -1534,6 +1542,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DistributionConfig.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Distribution Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Document.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Document</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1664,6 +1678,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/HeldParameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Held Parameter</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Inference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Inference</span></a>
   </div>
@@ -1760,6 +1780,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeTemplate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Template</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Noise.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise</span></a>
   </div>
@@ -1804,12 +1836,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Parameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parameter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/ParameterSpec.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Parameter Spec</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1874,6 +1900,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/PropagationGate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Propagation Gate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Provenance</span></a>
   </div>
@@ -1912,12 +1944,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Region Mapping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1966,6 +1992,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Session.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Session</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Significance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2024,6 +2056,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StateSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">State Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StateValue.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">State Value</span></a>
   </div>
@@ -2054,12 +2092,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Collection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyDirectory.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Directory</span></a>
   </div>
@@ -2074,12 +2106,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyLayout.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Layout</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Member</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2311,6 +2337,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/align_labels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">align_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/allow_self_connections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">allow_self_connections</span></a>
   </div>
@@ -2367,6 +2399,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/application_category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">application_category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/applied.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">applied</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2485,6 +2523,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_margin.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_margin</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/axis_width.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">axis_width</span></a>
   </div>
@@ -2511,6 +2561,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/background.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">background</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/bar_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bar_edge_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2599,12 +2655,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/boundaries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">boundaries</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/boundary_conditions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">boundary_conditions</span></a>
   </div>
@@ -2641,12 +2691,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/bundle.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">bundle</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/by.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">by</span></a>
   </div>
@@ -2673,12 +2717,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">capture</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">cases</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2791,6 +2829,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohort_id.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohort_id</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohorts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohorts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/col_label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">col_label_pad</span></a>
   </div>
@@ -2817,6 +2867,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/colorbar.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">colorbar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_outline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_outline</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2869,6 +2931,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/components.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">components</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/concept_iri.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">concept_iri</span></a>
   </div>
@@ -2889,12 +2957,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/condition_states.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">condition_states</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/conditional.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">conditional</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3061,12 +3123,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/coupling_terms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">coupling_terms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
   </div>
@@ -3081,6 +3137,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/cpus_per_task.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cpus_per_task</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/criterion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">criterion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3139,14 +3201,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_path.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_path</span></a>
+  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dataset_type</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_type</span></a>
+  <a href="../../datamodel/slots/datasets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">datasets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3243,12 +3305,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/derived_from_model.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">derived_from_model</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/derived_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">derived_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3433,6 +3489,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/drop.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">drop</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/ds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds</span></a>
   </div>
@@ -3517,6 +3579,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/editable_text.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">editable_text</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/efield.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">efield</span></a>
   </div>
@@ -3583,12 +3651,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/emit_provenance.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">emit_provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/empirical_data.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">empirical_data</span></a>
   </div>
@@ -3597,6 +3659,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/encoding.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/end_tick_reach.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">end_tick_reach</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3657,6 +3725,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/equation_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">equation_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/errorbar_cap_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">errorbar_cap_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3739,6 +3813,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/exponent_as_power.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">exponent_as_power</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/expression.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">expression</span></a>
   </div>
@@ -3817,6 +3897,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/font_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">font_weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">format</span></a>
   </div>
@@ -3847,12 +3933,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/free.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">free</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/free_parameters.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">free_parameters</span></a>
   </div>
@@ -3867,6 +3947,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/frequency.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">frequency</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/from_iteration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">from_iteration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3955,8 +4041,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_below.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_below</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/grid_lines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">grid_lines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_style.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3969,6 +4073,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/group.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">group</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3993,6 +4103,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/handle_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">handle_length</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/handles.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">handles</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4029,6 +4145,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/height_ratios.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">height_ratios</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/held_parameters.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">held_parameters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4093,6 +4215,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/homologue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">homologue</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/how_to_acknowledge.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">how_to_acknowledge</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/hspace.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">hspace</span></a>
   </div>
@@ -4107,12 +4241,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">id</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/ifabsent.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ifabsent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4183,12 +4311,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/inner_coupling.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">inner_coupling</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/inner_iterations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inner_iterations</span></a>
   </div>
@@ -4213,14 +4335,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">integration</span></a>
+  <a href="../../datamodel/slots/instance_of.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">instance_of</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/intensity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">intensity</span></a>
+  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">integration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4303,6 +4425,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/keep.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">keep</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">key</span></a>
   </div>
@@ -4335,6 +4463,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">label_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4405,12 +4545,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/lefthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">lefthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend</span></a>
   </div>
@@ -4429,14 +4563,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_handle_text_pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_handle_text_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_label_spacing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_label_spacing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_marker_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_marker_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend_pad</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/level.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">level</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/levels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">levels</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4461,6 +4631,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/likelihood.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">likelihood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/line_cap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">line_cap</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4573,6 +4749,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/marker_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">marker_edge_width</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/marker_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">marker_size</span></a>
   </div>
@@ -4591,6 +4773,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/math_font.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">math_font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_bisection_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_bisection_steps</span></a>
   </div>
@@ -4605,6 +4793,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_steps</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/max_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">max_ticks</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4641,6 +4835,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/members_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4693,6 +4893,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/min_dispersion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">min_dispersion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_tick_length</span></a>
   </div>
@@ -4707,6 +4913,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_ticks.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/mirror_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">mirror_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing_color.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing_color</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4753,12 +4977,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">modes</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modified.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modified</span></a>
   </div>
@@ -4795,6 +5013,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/n_groups.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">n_groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_inversion.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_inversion</span></a>
   </div>
@@ -4813,12 +5037,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_regions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_regions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_sections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_sections</span></a>
   </div>
@@ -4833,12 +5051,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_trials.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_trials</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_vertices.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_vertices</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4917,6 +5129,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/node_mapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">node_mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/node_selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">node_selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5239,6 +5457,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_case.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_format</span></a>
   </div>
@@ -5257,8 +5481,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5307,6 +5543,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/parcellation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parcellation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/parent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5371,6 +5613,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/persist.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">persist</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/phenotype_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">phenotype_file</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/pipeline.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">pipeline</span></a>
   </div>
@@ -5379,6 +5633,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/placeholder.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">placeholder</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/placement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5479,6 +5739,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/propagation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">propagation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/protocols.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">protocols</span></a>
   </div>
@@ -5487,12 +5753,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/provenance_format.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">provenance_format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5541,18 +5801,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/random_state.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">random_state</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/range.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">range</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">recipe</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5619,18 +5867,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/region_mapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">region_mapping</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/regional_connectivity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">regional_connectivity</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5737,12 +5973,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/righthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">righthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/rng.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">rng</span></a>
   </div>
@@ -5769,6 +5999,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/row_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">row_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5833,8 +6069,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/schema_version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">schema_version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/scipy_ode_base.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">scipy_ode_base</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/scope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">scope</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5865,6 +6113,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/sel.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">sel</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5941,6 +6195,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">significance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/simulation_experiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">simulation_experiments</span></a>
   </div>
@@ -5955,12 +6215,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">size</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/skip_t.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">skip_t</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6001,6 +6255,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/source_arguments.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">source_arguments</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_branch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_branch</span></a>
   </div>
@@ -6021,12 +6281,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_network</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/source_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">source_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6069,6 +6323,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/spine_trim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_trim</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6201,6 +6461,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/subjects.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">subjects</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/subjects_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">subjects_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6445,6 +6711,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_format.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_length</span></a>
   </div>
@@ -6465,6 +6743,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_steps.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_steps</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6511,12 +6795,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_scale.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_scale</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_unit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_unit</span></a>
   </div>
@@ -6541,8 +6819,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/title_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">title_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6613,6 +6909,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/transparent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">transparent</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">triangle</span></a>
   </div>
@@ -6643,8 +6945,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tvbo_class.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo_class</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/unicode_minus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">unicode_minus</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6669,6 +6983,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/update_rules.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">update_rules</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/update_start.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">update_start</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6757,12 +7077,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/vertex_to_region.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">vertex_to_region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/vertices_field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">vertices_field</span></a>
   </div>
@@ -6819,12 +7133,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup_from.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup_from</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/warmup_source.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">warmup_source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7092,6 +7400,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AnnotationPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Annotation Placement</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AxisEnds.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/AxisReductionStatistic.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Axis Reduction Statistic</span></a>
   </div>
@@ -7130,6 +7450,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/BoundaryConditionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Boundary Condition Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/CohortGrouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7212,6 +7538,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/FontWeight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Font Weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/FrameRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Frame Role</span></a>
   </div>
@@ -7254,8 +7586,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LetterCase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Letter Case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineCap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Cap</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineStyle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/MarkType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Mark Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MathFont.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Math Font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MissingValuePolicy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Missing Value Policy</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7320,12 +7682,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/PhysicalDimension.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Physical Dimension</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ProcedureStepType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Procedure Step Type</span></a>
   </div>
@@ -7340,12 +7696,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/Projection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Projection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/ProvenanceFormat.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Provenance Format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7392,6 +7742,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionScope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Scope</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SexEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sex Enum</span></a>
   </div>
@@ -7412,6 +7774,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SpecimenEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specimen Enum</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/Spines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Spines</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7464,6 +7832,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TextAlign.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Align</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Direction</span></a>
   </div>
@@ -7472,6 +7846,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickFormat.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TickPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tick Placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7730,6 +8110,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/analysis/units.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Units</span></a>
   </div>
@@ -7794,6 +8180,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/atlas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Atlas</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/continuation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Continuation</span></a>
   </div>
@@ -7824,14 +8216,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/function.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Function</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/integrator.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Integrator</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/observation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/perturbation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Perturbation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/phenotype.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phenotype</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/software.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Software</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
   </div>
 </li>
       </ul>
@@ -7909,6 +8337,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/classes/observation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/optimization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimization</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8008,6 +8442,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/cli/migrate_iris.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migrate Iris</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/cli/network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Network</span></a>
   </div>
@@ -8091,6 +8531,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dims</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/codegen/functions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functions</span></a>
   </div>
@@ -8162,6 +8608,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/data/cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/data/connectome_build.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Connectome Build</span></a>
   </div>
@@ -8182,6 +8634,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/data/experiment_result_io.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Experiment Result Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/iri_migration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Iri Migration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8271,6 +8729,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/datamodel/schema.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Schema</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/text_slots.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Slots</span></a>
   </div>
 </li>
       </ul>
@@ -8477,6 +8941,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/axis_rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Rule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Capture</span></a>
   </div>
@@ -8566,6 +9036,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <ul id="quarto-sidebar-section-52" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/run/backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Backends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Compgraph</span></a>
   </div>
@@ -8580,6 +9056,24 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <div class="sidebar-item-container"> 
   <a href="../../api/run/julia.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Julia</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/lanes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lanes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
   </div>
 </li>
       </ul>
@@ -8681,14 +9175,32 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/jax_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Jax Precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/pydantic_loader.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Pydantic Loader</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/pytree.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pytree</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/report.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Report</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/source.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8749,6 +9261,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#attributes" id="toc-attributes" class="nav-link" data-scroll-target="#attributes">Attributes</a></li>
   <li><a href="#classes" id="toc-classes" class="nav-link" data-scroll-target="#classes">Classes</a>
   <ul class="collapse">
+  <li><a href="#tvbo.adapters.neuroml.LemsClock" id="toc-tvbo.adapters.neuroml.LemsClock" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.LemsClock">LemsClock</a></li>
   <li><a href="#tvbo.adapters.neuroml.NeuroMLAdapter" id="toc-tvbo.adapters.neuroml.NeuroMLAdapter" class="nav-link" data-scroll-target="#tvbo.adapters.neuroml.NeuroMLAdapter">NeuroMLAdapter</a></li>
   </ul></li>
   <li><a href="#functions" id="toc-functions" class="nav-link" data-scroll-target="#functions">Functions</a>
@@ -8798,26 +9311,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td><a href="#tvbo.adapters.neuroml.ALL_INPUT_TYPES">ALL_INPUT_TYPES</a></td>
-<td></td>
-</tr>
-<tr class="even">
-<td><a href="#tvbo.adapters.neuroml.CURRENT_INPUT_TYPES">CURRENT_INPUT_TYPES</a></td>
-<td></td>
-</tr>
-<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.DIMENSIONS">DIMENSIONS</a></td>
 <td></td>
 </tr>
 <tr class="even">
-<td><a href="#tvbo.adapters.neuroml.EVENT_SOURCE_TYPES">EVENT_SOURCE_TYPES</a></td>
-<td></td>
-</tr>
-<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.LEMS_EXAMPLES">LEMS_EXAMPLES</a></td>
 <td></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.UNITS">UNITS</a></td>
 <td></td>
 </tr>
@@ -8835,14 +9336,63 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
+<td><a href="#tvbo.adapters.neuroml.LemsClock">LemsClock</a></td>
+<td>The clock a LEMS run is emitted on, every value in <code>unit</code>.</td>
+</tr>
+<tr class="even">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter">NeuroMLAdapter</a></td>
 <td>Adapter for exporting a SimulationExperiment (or bare Dynamics) as LEMS XML.</td>
 </tr>
 </tbody>
 </table>
+<section id="tvbo.adapters.neuroml.LemsClock" class="level3">
+<h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.LemsClock">LemsClock</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.LemsClock()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>The clock a LEMS run is emitted on, every value in <code>unit</code>.</p>
+<p>LEMS counts time from the start of the run and has no settle of its own, so a declared settle is integrated as the head of the run: <code>length</code> spans the settle and the measured window, and every input onset and every reading of <code>t</code> is moved <code>settle</code> later (<code>_on_the_run_clock</code>, <code>_on_the_measurement_clock</code>). The run is then reported on the measurement clock (<code>NeuroMLAdapter.run</code>).</p>
+<section id="attributes-1" class="level4 doc-section doc-section-attributes">
+<h4 class="doc-section doc-section-attributes anchored" data-anchor-id="attributes-1">Attributes</h4>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 8%">
+<col style="width: 8%">
+<col style="width: 83%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>step</td>
+<td>float</td>
+<td>The integration step.</td>
+</tr>
+<tr class="even">
+<td>length</td>
+<td>float</td>
+<td>The LEMS <code>&lt;Simulation&gt;</code> length, the settle and the measured window together.</td>
+</tr>
+<tr class="odd">
+<td>settle</td>
+<td>float</td>
+<td>The declared <code>transient_time</code>.</td>
+</tr>
+<tr class="even">
+<td>unit</td>
+<td>str</td>
+<td>The LEMS spelling of the time unit (<code>_lems_time_unit</code>).</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter">NeuroMLAdapter</h3>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter(source<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter(source<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Adapter for exporting a SimulationExperiment (or bare Dynamics) as LEMS XML.</p>
 <p>Supports both a single monolithic file and a canonical three-file split:</p>
 <ul>
@@ -8856,6 +9406,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <p><code>render('lems')</code> produces a self-contained <code>&lt;Lems&gt;</code> file. <code>render('neuroml')</code> produces a <code>&lt;neuroml&gt;</code> document with custom ComponentType definitions — no mapping to native NeuroML cell types.</p>
 <p>All <code>render_*</code> methods pass a fully pre-computed context via :func:<code>build_lems_context</code> so templates stay logic-free.</p>
+<section id="attributes-2" class="level4">
+<h4 class="anchored" data-anchor-id="attributes-2">Attributes</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.DELAY_CARRIERS">DELAY_CARRIERS</a></td>
+<td>Edge attributes a delayed coupling is lowered from: an explicit per-edge <code>delay</code>, emitted on its connection. Nothing here derives a delay from a tract length, so a network carrying lengths alone would integrate instantaneous.</td>
+</tr>
+</tbody>
+</table>
+</section>
 <section id="methods" class="level4">
 <h4 class="anchored" data-anchor-id="methods">Methods</h4>
 <table class="caption-top table">
@@ -8871,34 +9438,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>Export LEMS or NeuroML XML to a directory.</td>
 </tr>
 <tr class="even">
+<td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.refuse_unrenderable">refuse_unrenderable</a></td>
+<td><code>BaseAdapter.refuse_unrenderable</code>, and an input a declared settle cannot be run ahead of.</td>
+</tr>
+<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.render_code">render_code</a></td>
 <td>Render a complete, self-contained LEMS simulation file (<code>&lt;Lems&gt;</code> root).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.render_dynamics">render_dynamics</a></td>
 <td>Render a standalone LEMS file with only ComponentType definitions.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.render_lems_wrapper">render_lems_wrapper</a></td>
 <td>Render a LEMS simulation wrapper for a NeuroML file.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.render_network">render_network</a></td>
 <td>Render a LEMS Network document.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.render_neuroml">render_neuroml</a></td>
 <td>Render a NeuroML v2 document (<code>&lt;neuroml&gt;</code> root).</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.render_simulation">render_simulation</a></td>
 <td>Render a LEMS Simulation document.</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.run">run</a></td>
 <td>Run the LEMS simulation through a downstream simulator.</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><a href="#tvbo.adapters.neuroml.NeuroMLAdapter.validate">validate</a></td>
 <td>Validate rendered LEMS XML with PyLEMS. Returns True or raises.</td>
 </tr>
@@ -8906,13 +9477,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.export" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.export">export</h5>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.export(</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">dir</span>,</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'lems'</span>,</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    split<span class="op">=</span><span class="va">False</span>,</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    validate<span class="op">=</span><span class="va">True</span>,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.export(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">dir</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">format</span><span class="op">=</span><span class="st">'lems'</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    split<span class="op">=</span><span class="va">False</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    validate<span class="op">=</span><span class="va">True</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="op">**</span>kwargs,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Export LEMS or NeuroML XML to a directory.</p>
 <section id="parameters" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters">Parameters</h6>
@@ -8926,10 +9497,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>dict Mapping of role to absolute file paths.</p>
 </section>
 </section>
+<section id="tvbo.adapters.neuroml.NeuroMLAdapter.refuse_unrenderable" class="level5">
+<h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.refuse_unrenderable">refuse_unrenderable</h5>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.refuse_unrenderable()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><code>BaseAdapter.refuse_unrenderable</code>, and an input a declared settle cannot be run ahead of.</p>
+<p>A settle is integrated as the head of the LEMS run (<code>LemsClock</code>), with every declared onset moved a settle later. An input timed from the start of the run with no onset to move (<code>settle_refusal</code>) would instead fire differently in the measured window than without the settle, so it is refused by name.</p>
+<section id="raises" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 6%">
+<col style="width: 16%">
+<col style="width: 76%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td></td>
+<td>ValueError</td>
+<td>Where the network lacks an edge attribute this backend reads.</td>
+</tr>
+<tr class="even">
+<td></td>
+<td>NotImplementedError</td>
+<td>If the experiment declares a positive <code>transient_time</code> and an input <code>settle_refusal</code> names.</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.render_code" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.render_code">render_code</h5>
-<div class="sourceCode" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_code(use_standard_types<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_code(use_standard_types<span class="op">=</span><span class="va">False</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render a complete, self-contained LEMS simulation file (<code>&lt;Lems&gt;</code> root).</p>
+<p>Refuses first, through <code>refuse_unrenderable</code>, as every other backend’s <code>render_context</code> does, so a declaration this backend would drop part of is never emitted as well-formed LEMS for the rest.</p>
 <section id="parameters-1" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-1">Parameters</h6>
 <p>use_standard_types : bool When True and the dynamics uses NeuroML standard types (<code>iri: neuroml:*</code>), emit standard components with <code>&lt;Include file="Cells.xml"/&gt;</code> etc. These includes are resolved by jNeuroML at runtime but NOT by the Python <code>lems</code> validator, so this should only be True when the output is destined for <code>run()</code>.</p>
@@ -8937,13 +9544,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.render_dynamics" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.render_dynamics">render_dynamics</h5>
-<div class="sourceCode" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_dynamics(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_dynamics(<span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render a standalone LEMS file with only ComponentType definitions.</p>
 <p>The output is a valid LEMS document containing dimensions, units, the dynamics <code>ComponentType</code>, the <code>Coupling</code> <code>ComponentType</code>, and the default <code>Component</code> instances. No <code>Network</code> or <code>Simulation</code> elements are included, making it suitable for inclusion in larger LEMS documents via <code>&lt;Include file="..."/&gt;</code>.</p>
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.render_lems_wrapper" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.render_lems_wrapper">render_lems_wrapper</h5>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_lems_wrapper(neuroml_file<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_lems_wrapper(neuroml_file<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render a LEMS simulation wrapper for a NeuroML file.</p>
 <p>The wrapper includes standard NeuroML type files and the given NeuroML document, then defines a <code>&lt;Simulation&gt;</code> targeting the network defined in the <code>.nml</code> file.</p>
 <section id="parameters-2" class="level6 doc-section doc-section-parameters">
@@ -8953,7 +9560,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.render_network" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.render_network">render_network</h5>
-<div class="sourceCode" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_network(dynamics_file<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_network(dynamics_file<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render a LEMS Network document.</p>
 <section id="parameters-3" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-3">Parameters</h6>
@@ -8962,14 +9569,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.render_neuroml" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.render_neuroml">render_neuroml</h5>
-<div class="sourceCode" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_neuroml(<span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_neuroml(<span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render a NeuroML v2 document (<code>&lt;neuroml&gt;</code> root).</p>
 <p>Uses custom <code>&lt;ComponentType&gt;</code> definitions for the dynamics model rather than mapping to native NeuroML cell types. The output contains ComponentType definitions, Component instances, and a <code>&lt;network&gt;</code> with populations.</p>
 <p>To run the output, pair it with a LEMS simulation wrapper generated by :meth:<code>render_lems_wrapper</code>.</p>
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.render_simulation" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.render_simulation">render_simulation</h5>
-<div class="sourceCode" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_simulation(network_file<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.render_simulation(network_file<span class="op">=</span><span class="va">None</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Render a LEMS Simulation document.</p>
 <section id="parameters-4" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-4">Parameters</h6>
@@ -8978,9 +9585,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.run" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.run">run</h5>
-<div class="sourceCode" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.run(backend<span class="op">=</span><span class="st">'jneuroml'</span>, <span class="op">**</span>kwargs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.run(backend<span class="op">=</span><span class="st">'jneuroml'</span>, <span class="op">**</span>kwargs)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Run the LEMS simulation through a downstream simulator.</p>
 <p>Exports a self-contained monolithic LEMS file and executes it with one of the pyNeuroML runners.</p>
+<p>A declared settle is the head of the same run (<code>LemsClock</code>). The result is reported on the measurement clock, in the SI seconds LEMS writes: the settle, from the initial state to <code>t = 0</code>, stays on <code>.transient</code> and <code>.data</code> opens one step later; without a settle <code>.data</code> is the whole run, from the initial state at <code>t = 0</code>.</p>
 <p>Where the output lands depends on the backend: jNeuroML and NEURON respect the path the LEMS file asks for (<code>results/*.dat</code>), while Brian2 and EDEN write to the working directory, so both are searched. A multi-population or multi-compartment run writes one file per population, each with its own columns; those are loaded in stem order — deterministic, and matching the order the <code>OutputFile</code> elements were emitted in — and their value columns concatenated. Column names come from the rendered LEMS <code>OutputColumn</code> quantities rather than being reconstructed, since those are what actually got written.</p>
 <section id="parameters-5" class="level6 doc-section doc-section-parameters">
 <h6 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-5">Parameters</h6>
@@ -9039,8 +9647,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
-<section id="raises" class="level6 doc-section doc-section-raises">
-<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises">Raises</h6>
+<section id="raises-1" class="level6 doc-section doc-section-raises">
+<h6 class="doc-section doc-section-raises anchored" data-anchor-id="raises-1">Raises</h6>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -9066,7 +9674,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.NeuroMLAdapter.validate" class="level5">
 <h5 class="anchored" data-anchor-id="tvbo.adapters.neuroml.NeuroMLAdapter.validate">validate</h5>
-<div class="sourceCode" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.validate(xml_string<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.NeuroMLAdapter.validate(xml_string<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Validate rendered LEMS XML with PyLEMS. Returns True or raises.</p>
 <p>Standard NeuroML type outputs (<code>&lt;Include file="Cells.xml"/&gt;</code> etc.) cannot be validated by PyLEMS because the type definition files are bundled with jNeuroML, not PyLEMS. For those, validation is skipped here (jNeuroML validates them at runtime).</p>
 </section>
@@ -9143,7 +9751,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 <section id="tvbo.adapters.neuroml.build_lems_context" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.build_lems_context">build_lems_context</h3>
-<div class="sourceCode" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.build_lems_context(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.build_lems_context(experiment)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Build the shared rendering context passed to all LEMS Mako templates.</p>
 <p>Pre-computes every variable the templates need — model objects, name lists for safe SymPy parsing, expression helpers, and integration and network scalars. Templates receive it as <code>template.render(**build_lems_context(experiment))</code>.</p>
 <p><strong>Resolving the top-level dynamics.</strong> A network-only experiment has none, and gets an empty placeholder: its cell types live in <code>experiment.network.dynamics</code> and render separately. A bare <code>model: ModelName</code> reference that names a row in the TVBO database is loaded from it. A NeuroML or otherwise external reference — an <code>iri</code> starting with <code>neuroml:</code>, or a name the database does not hold — is left alone and emitted through the network template.</p>
@@ -9174,9 +9782,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-2">Returns</h4>
 <table class="caption-top table">
 <colgroup>
-<col style="width: 2%">
-<col style="width: 2%">
-<col style="width: 95%">
+<col style="width: 1%">
+<col style="width: 1%">
+<col style="width: 96%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -9189,7 +9797,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td></td>
 <td></td>
-<td>The context dict, keyed <code>dyn</code>, <code>dyn_id</code>, <code>params</code>, <code>svs</code>, <code>dvs</code>, <code>events</code>, <code>coupling_inputs</code>, <code>coupling_meta</code>, <code>coupling_params</code>, <code>coupling_pre_rhs</code>, <code>coupling_post_rhs</code>, <code>coupling_global</code>, <code>sv_names_set</code>, <code>n_nodes</code>, <code>dt</code>, <code>duration</code>, and the callables <code>lems_expr</code>, <code>_parse_piecewise</code>, <code>lems_dim</code> and <code>safe_id</code>.</td>
+<td>The context dict, keyed <code>dyn</code>, <code>dyn_id</code>, <code>params</code>, <code>svs</code>, <code>dvs</code>, <code>events</code>, <code>coupling_inputs</code>, <code>coupling_meta</code>, <code>coupling_params</code>, <code>coupling_pre_rhs</code>, <code>coupling_post_rhs</code>, <code>sv_names_set</code>, <code>n_nodes</code>, the clock’s <code>dt</code>, <code>length</code> (the settle and the measured window together) and <code>settle_constant</code> (<code>LemsClock</code>), and the callables <code>lems_expr</code>, <code>_parse_piecewise</code>, <code>lems_dim</code> and <code>safe_id</code>, whose expressions read <code>t</code> on the measurement clock.</td>
 </tr>
 </tbody>
 </table>
@@ -9197,7 +9805,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.build_std_lems_context" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.build_std_lems_context">build_std_lems_context</h3>
-<div class="sourceCode" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.build_std_lems_context(experiment)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.build_std_lems_context(experiment)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Build a context dict for standard NeuroML-type Mako templates.</p>
 <p>Inspects the experiment to determine whether it uses standard NeuroML types (<code>iri: neuroml:*</code>). When it does, extracts <em>all</em> data that the Mako templates need — integration parameters, pre-rendered XML fragments for cells/channels/synapses, population lists, connection lists, and simulation metadata.</p>
 <section id="returns-3" class="level4 doc-section doc-section-returns">
@@ -9210,15 +9818,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.compare_traces" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.compare_traces">compare_traces</h3>
-<div class="sourceCode" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.compare_traces(</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    ref_data,</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    tvbo_data,</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    ref_cols,</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    tvbo_cols,</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    time_col<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>    rtol<span class="op">=</span><span class="fl">0.05</span>,</span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    atol<span class="op">=</span><span class="fl">0.0001</span>,</span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.compare_traces(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    ref_data,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    tvbo_data,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    ref_cols,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    tvbo_cols,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    time_col<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    rtol<span class="op">=</span><span class="fl">0.05</span>,</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    atol<span class="op">=</span><span class="fl">0.0001</span>,</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Compare reference and TVBO traces, print metrics.</p>
 <section id="parameters-7" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-7">Parameters</h4>
@@ -9227,12 +9835,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.get_lems_examples_dir" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.get_lems_examples_dir">get_lems_examples_dir</h3>
-<div class="sourceCode" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.get_lems_examples_dir()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.get_lems_examples_dir()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return the path to the LEMSexamples directory in the NeuroML2 repo.</p>
 </section>
 <section id="tvbo.adapters.neuroml.normalize_unit" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.normalize_unit">normalize_unit</h3>
-<div class="sourceCode" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.normalize_unit(unit_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.normalize_unit(unit_str)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Normalize a unit string to its canonical TVBO form.</p>
 <p>Strips surrounding whitespace and resolves known aliases (for example <code>"millisecond"</code> to <code>"ms"</code> or <code>"µm"</code> to <code>"um"</code>) via the <code>_ALIASES</code> table. Strings without an alias are returned unchanged.</p>
 <section id="parameters-8" class="level4 doc-section doc-section-parameters">
@@ -9289,7 +9897,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.parse_lems_displays" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.parse_lems_displays">parse_lems_displays</h3>
-<div class="sourceCode" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.parse_lems_displays(lems_file)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.parse_lems_displays(lems_file)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Parse Display + Line elements from a LEMS XML file.</p>
 <section id="parameters-9" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-9">Parameters</h4>
@@ -9302,7 +9910,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.parse_lems_output_columns" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.parse_lems_output_columns">parse_lems_output_columns</h3>
-<div class="sourceCode" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.parse_lems_output_columns(lems_file)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.parse_lems_output_columns(lems_file)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Parse OutputFile → OutputColumn quantities from a LEMS file.</p>
 <section id="returns-6" class="level4 doc-section doc-section-returns">
 <h4 class="doc-section doc-section-returns anchored" data-anchor-id="returns-6">Returns:</h4>
@@ -9311,15 +9919,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.plot_comparison" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.plot_comparison">plot_comparison</h3>
-<div class="sourceCode" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.plot_comparison(</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    ref_data,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    tvbo_data,</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    ref_cols,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    tvbo_cols,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">''</span>,</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="fl">1.0</span>,</span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">'s'</span>,</span>
-<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.plot_comparison(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    ref_data,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    tvbo_data,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>    ref_cols,</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    tvbo_cols,</span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>    time_scale<span class="op">=</span><span class="fl">1.0</span>,</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>    time_unit<span class="op">=</span><span class="st">'s'</span>,</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Plot overlaid traces: reference vs TVBO.</p>
 <section id="parameters-10" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-10">Parameters</h4>
@@ -9328,12 +9936,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.plot_lems_comparison" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.plot_lems_comparison">plot_lems_comparison</h3>
-<div class="sourceCode" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.plot_lems_comparison(</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>    lems_file,</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    ref_outputs,</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>    tvbo_result<span class="op">=</span><span class="va">None</span>,</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>    title_prefix<span class="op">=</span><span class="st">''</span>,</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.plot_lems_comparison(</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>    lems_file,</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    ref_outputs,</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    tvbo_result<span class="op">=</span><span class="va">None</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    title_prefix<span class="op">=</span><span class="st">''</span>,</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Create publication-quality comparison plots mirroring LEMS Display layout.</p>
 <p>For each Display in the LEMS file, creates one subplot panel with: - Reference traces as solid lines (using original colors from LEMS) - TVBO traces as dashed lines (same color, slightly transparent)</p>
 <section id="parameters-11" class="level4 doc-section doc-section-parameters">
@@ -9343,7 +9951,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.run_lems_example" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.run_lems_example">run_lems_example</h3>
-<div class="sourceCode" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.run_lems_example(lems_file, cwd<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.run_lems_example(lems_file, cwd<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Run a LEMS XML file via jNeuroML and return {filename: array} for each .dat output.</p>
 <section id="parameters-12" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-12">Parameters</h4>
@@ -9356,14 +9964,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.standard_type_dynamics" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.standard_type_dynamics">standard_type_dynamics</h3>
-<div class="sourceCode" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.standard_type_dynamics(nml_type)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.standard_type_dynamics(nml_type)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The canonical LEMS dynamics of a standard NeuroML type, or <code>None</code> if not indexed.</p>
 <p>Transcribed from the NeuroML2 core type definitions (<code>Synapses.xml</code>). A recipe that references such a type by <code>neuroml:</code> iri carries no equations of its own, so a consumer needing the symbolic system — the report’s model cards — resolves it here. <code>v</code> is the postsynaptic membrane potential, bound at the projection target.</p>
 <p>Returns a datamodel-shaped dict (<code>state_variables</code> / <code>derived_variables</code> / <code>events</code>) ready to merge onto such a component. It is a fresh copy, so a caller may hand it straight to a constructor that normalises its argument in place.</p>
 </section>
 <section id="tvbo.adapters.neuroml.sympy_to_lems" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.sympy_to_lems">sympy_to_lems</h3>
-<div class="sourceCode" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.sympy_to_lems(expr_str, parameters<span class="op">=</span><span class="va">None</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.sympy_to_lems(expr_str, parameters<span class="op">=</span><span class="va">None</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Convert a TVBO equation RHS string (or SymPy expr) to LEMS syntax.</p>
 <section id="parameters-13" class="level4 doc-section doc-section-parameters">
 <h4 class="doc-section doc-section-parameters anchored" data-anchor-id="parameters-13">Parameters</h4>
@@ -9372,7 +9980,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.unit_to_dimension" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.unit_to_dimension">unit_to_dimension</h3>
-<div class="sourceCode" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.unit_to_dimension(unit_str)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.unit_to_dimension(unit_str)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Return the physical dimension name for a unit string.</p>
 <p>Normalizes the unit and looks it up in the <code>UNITS</code> table, returning its dimension label (for example <code>"voltage"</code>, <code>"current"</code>, <code>"conductance"</code>). Unknown or empty units map to <code>"none"</code>.</p>
 <section id="parameters-14" class="level4 doc-section doc-section-parameters">
@@ -9429,7 +10037,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="tvbo.adapters.neuroml.validate_lems_xml" class="level3">
 <h3 class="anchored" data-anchor-id="tvbo.adapters.neuroml.validate_lems_xml">validate_lems_xml</h3>
-<div class="sourceCode" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.validate_lems_xml(xml_string)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>adapters.neuroml.validate_lems_xml(xml_string)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Validate a LEMS XML string using PyLEMS.</p>
 <p>Raises if the XML is not valid LEMS.</p>
 
@@ -9490,13 +10098,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -9511,7 +10120,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.24">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -10,10 +10,16 @@
 
 <title>Ex18: Goldman-Hodgkin-Katz – TVB-O Documentation</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -73,10 +79,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../site_libs/bootstrap/bootstrap-305ec0c320a3d60cc5bda611d56c9e28.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -109,7 +115,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../../_static/tvbo-icons.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -122,7 +128,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -151,7 +157,8 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo">
+    <img src="../../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo light-content">
+    <img src="../../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="../../../index.html">
     <span class="navbar-title">TVB-O Documentation</span>
@@ -246,8 +253,8 @@ window.Quarto = {
 </section>
 <section id="define-hhghk-cell-in-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="define-hhghk-cell-in-tvbo">1. Define HH+GHK Cell in TVBO</h2>
-<div id="63aa29fc" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
+<div id="67dd7ae4" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> SimulationExperiment</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment.from_string(<span class="st">"""</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="st">label: "NeuroML Ex18: HH with GHK"</span></span>
@@ -437,18 +444,23 @@ window.Quarto = {
 <span id="cb1-188"><a href="#cb1-188" aria-hidden="true" tabindex="-1"></a><span class="st">  time_scale: ms</span></span>
 <span id="cb1-189"><a href="#cb1-189" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span>)</span>
 <span id="cb1-190"><a href="#cb1-190" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Model: </span><span class="sc">{</span>exp<span class="sc">.</span>dynamics<span class="sc">.</span>name <span class="cf">if</span> exp<span class="sc">.</span>dynamics <span class="cf">else</span> <span class="st">'network'</span><span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Components: </span><span class="sc">{</span><span class="bu">list</span>(exp.dynamics.modes.keys())<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-191"><a href="#cb1-191" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Components: </span><span class="sc">{</span><span class="bu">list</span>(exp.dynamics.components.keys())<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Model: na_k_ca
-Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</code></pre>
+Components: ['na_chan', 'k_chan', 'ca_chan', 'leak', 'simple_decay', 'IClamp']</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>* Owlready2 * Warning: ignoring cyclic subclass of/subproperty of, involving:
+  http://uri.interlex.org/tgbugs/uris/readable/atlas/Space
+</code></pre>
 </div>
 </div>
 </section>
 <section id="render-lems-xml" class="level2">
 <h2 class="anchored" data-anchor-id="render-lems-xml">2. Render LEMS XML</h2>
-<div id="22351cca" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>, use_standard_types<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">3000</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="a9bce1b2" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>xml <span class="op">=</span> exp.render(<span class="st">"lems"</span>, use_standard_types<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(xml[:<span class="dv">3000</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>&lt;Lems&gt;
   &lt;Target component="sim_NeuroML_Ex18__HH_with_GHK"/&gt;
@@ -458,38 +470,38 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
   &lt;Include file="Inputs.xml"/&gt;
   &lt;Include file="Simulation.xml"/&gt;
 
-    &lt;concentrationModel id="simple_decay" type="fixedFactorConcentrationModel" decayConstant="1 ms" ion="ca" restingConc="3e-6 mol_per_m3" rho="3e-1 mol_per_m_per_A_per_s"/&gt;
+    &lt;concentrationModel id="simple_decay" type="fixedFactorConcentrationModel" ion="ca" restingConc="3e-6 mol_per_m3" decayConstant="1 ms" rho="3e-1 mol_per_m_per_A_per_s"/&gt;
 
-    &lt;ionChannelHH id="ca_chan" conductance="10 pS" species="ca"&gt;
-        &lt;gateHHrates id="p" instances="2"&gt;
-            &lt;forwardRate type="HHExpLinearRate" midpoint="-40 mV" rate="1 per_ms" scale="10 mV"/&gt;
-            &lt;q10Settings type="q10Fixed" experimentalTemp="6.3 degC" fixedQ10="0.5"/&gt;
-            &lt;reverseRate type="HHExpRate" midpoint="-65 mV" rate="4 per_ms" scale="-18 mV"/&gt;
+    &lt;ionChannelHH id="na_chan" conductance="10 pS" species="na"&gt;
+        &lt;gateHHrates id="m" instances="3"&gt;
+            &lt;q10Settings type="q10ExpTemp" q10Factor="3" experimentalTemp="6.3 degC"/&gt;
+            &lt;forwardRate type="HHExpLinearRate" rate="1 per_ms" midpoint="-40 mV" scale="10 mV"/&gt;
+            &lt;reverseRate type="HHExpRate" rate="4 per_ms" midpoint="-65 mV" scale="-18 mV"/&gt;
+        &lt;/gateHHrates&gt;
+        &lt;gateHHrates id="h" instances="1"&gt;
+            &lt;q10Settings type="q10ExpTemp" q10Factor="3" experimentalTemp="6.3 degC"/&gt;
+            &lt;forwardRate type="HHExpRate" rate="0.07 per_ms" midpoint="-65 mV" scale="-20 mV"/&gt;
+            &lt;reverseRate type="HHSigmoidRate" rate="1 per_ms" midpoint="-35 mV" scale="10 mV"/&gt;
         &lt;/gateHHrates&gt;
     &lt;/ionChannelHH&gt;
 
     &lt;ionChannelHH id="k_chan" conductance="10 pS" species="k"&gt;
         &lt;gateHHrates id="n" instances="4"&gt;
-            &lt;forwardRate type="HHExpLinearRate" midpoint="-55 mV" rate="0.1 per_ms" scale="10 mV"/&gt;
-            &lt;q10Settings type="q10ExpTemp" experimentalTemp="6.3 degC" q10Factor="3"/&gt;
-            &lt;reverseRate type="HHExpRate" midpoint="-65 mV" rate="0.125 per_ms" scale="-80 mV"/&gt;
+            &lt;q10Settings type="q10ExpTemp" q10Factor="3" experimentalTemp="6.3 degC"/&gt;
+            &lt;forwardRate type="HHExpLinearRate" rate="0.1 per_ms" midpoint="-55 mV" scale="10 mV"/&gt;
+            &lt;reverseRate type="HHExpRate" rate="0.125 per_ms" midpoint="-65 mV" scale="-80 mV"/&gt;
+        &lt;/gateHHrates&gt;
+    &lt;/ionChannelHH&gt;
+
+    &lt;ionChannelHH id="ca_chan" conductance="10 pS" species="ca"&gt;
+        &lt;gateHHrates id="p" instances="2"&gt;
+            &lt;q10Settings type="q10Fixed" fixedQ10="0.5" experimentalTemp="6.3 degC"/&gt;
+            &lt;forwardRate type="HHExpLinearRate" rate="1 per_ms" midpoint="-40 mV" scale="10 mV"/&gt;
+            &lt;reverseRate type="HHExpRate" rate="4 per_ms" midpoint="-65 mV" scale="-18 mV"/&gt;
         &lt;/gateHHrates&gt;
     &lt;/ionChannelHH&gt;
 
     &lt;ionChannelPassive id="leak" conductance="10 pS" species="non_specific"/&gt;
-
-    &lt;ionChannelHH id="na_chan" conductance="10 pS" species="na"&gt;
-        &lt;gateHHrates id="h" instances="1"&gt;
-            &lt;forwardRate type="HHExpRate" midpoint="-65 mV" rate="0.07 per_ms" scale="-20 mV"/&gt;
-            &lt;q10Settings type="q10ExpTemp" experimentalTemp="6.3 degC" q10Factor="3"/&gt;
-            &lt;reverseRate type="HHSigmoidRate" midpoint="-35 mV" rate="1 per_ms" scale="10 mV"/&gt;
-        &lt;/gateHHrates&gt;
-        &lt;gateHHrates id="m" instances="3"&gt;
-            &lt;forwardRate type="HHExpLinearRate" midpoint="-40 mV" rate="1 per_ms" scale="10 mV"/&gt;
-            &lt;q10Settings type="q10ExpTemp" experimentalTemp="6.3 degC" q10Factor="3"/&gt;
-            &lt;reverseRate type="HHExpRate" midpoint="-65 mV" rate="4 per_ms" scale="-18 mV"/&gt;
-        &lt;/gateHHrates&gt;
-    &lt;/ionChannelHH&gt;
 
     &lt;cell id="na_k_ca"&gt;
         &lt;morphology id="na_k_ca_morphology"&gt;
@@ -506,20 +518,20 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
         &lt;/morphology&gt;
         &lt;biophysicalProperties id="biophys"&gt;
             &lt;membraneProperties&gt;
-                &lt;channelDensityGHK permeability="2.5e-07 m_per_s" id="ca_chan_all" ionChannel="ca_chan" ion="ca"/&gt;
+                &lt;channelDensity condDensity="0.12 S_per_cm2" id="na_chan_all" ionChannel="na_chan" erev="50.799202 mV" ion="na"/&gt;
                 &lt;channelDensity condDensity="0.036 S_per_cm2" id="k_chan_all" ionChannel="k_chan" erev="-77 mV" ion="k"/&gt;
-                &lt;channelDensity condDensity="0.0003 S_per_cm2" id="leak_all" ionChannel="leak" erev="-</code></pre>
+                &lt;channelDensityGHK permeability="2.5e-07 m_per_s" id="ca_chan_all" ionC</code></pre>
 </div>
 </div>
 </section>
 <section id="run-reference" class="level2">
 <h2 class="anchored" data-anchor-id="run-reference">3. Run Reference</h2>
-<div id="f2b3662c" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> run_lems_example</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="ff9db0f6" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> run_lems_example</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>ref_outputs <span class="op">=</span> run_lems_example(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, arr <span class="kw">in</span> ref_outputs.items():</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"  </span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">: shape=</span><span class="sc">{</span>arr<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  ex18.dat: shape=(50001, 4)</code></pre>
 </div>
@@ -527,43 +539,43 @@ Components: ['IClamp', 'ca_chan', 'k_chan', 'leak', 'na_chan', 'simple_decay']</
 </section>
 <section id="run-tvbo" class="level2">
 <h2 class="anchored" data-anchor-id="run-tvbo">4. Run TVBO</h2>
-<div id="9950f414" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: </span><span class="sc">{</span>da<span class="sc">.</span>dims<span class="sc">}</span><span class="ss">, shape=</span><span class="sc">{</span>da<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="18955179" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"neuroml"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>da <span class="op">=</span> result.integration.data</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"TVBO: </span><span class="sc">{</span>da<span class="sc">.</span>dims<span class="sc">}</span><span class="ss">, shape=</span><span class="sc">{</span>da<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stderr">
-<pre><code>pyNeuroML &gt;&gt;&gt; 17:13:24 - INFO - Loading LEMS file: tvbo_lems_sim.xml and running with jNeuroML
-pyNeuroML &gt;&gt;&gt; 17:13:24 - INFO - Executing: (java -Xmx400M  -Djava.awt.headless=true -jar  "/Users/leonmartin_bih/tools/tvbo/.venv/lib/python3.12/site-packages/pyneuroml/utils/./../lib/jNeuroML-0.14.0-jar-with-dependencies.jar"  tvbo_lems_sim.xml  -nogui -I '') in directory: /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tmp7frtcmyy
-pyNeuroML &gt;&gt;&gt; 17:13:25 - INFO - Command completed successfully!</code></pre>
+<pre><code>pyNeuroML &gt;&gt;&gt; 18:36:30 - INFO - Loading LEMS file: tvbo_lems_sim.xml and running with jNeuroML
+pyNeuroML &gt;&gt;&gt; 18:36:30 - INFO - Executing: (java -Xmx400M  -Djava.awt.headless=true -jar  "/usr/local/lib/python3.13/site-packages/pyneuroml/utils/./../lib/jNeuroML-0.14.0-jar-with-dependencies.jar"  tvbo_lems_sim.xml  -nogui -I '') in directory: /tmp/tmpzc8gdmlh
+pyNeuroML &gt;&gt;&gt; 18:36:31 - INFO - Command completed successfully!</code></pre>
 </div>
 <div class="cell-output cell-output-stdout">
-<pre><code>TVBO: ('time', 'variable'), shape=(50001, 1)</code></pre>
+<pre><code>TVBO: ('time', 'variable'), shape=(50000, 1)</code></pre>
 </div>
 </div>
 </section>
 <section id="compare-plot" class="level2">
 <h2 class="anchored" data-anchor-id="compare-plot">5. Compare &amp; Plot</h2>
-<div id="b9593b1d" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> plot_lems_comparison</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>plot_lems_comparison(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>, ref_outputs, result.integration.data, title_prefix<span class="op">=</span><span class="st">"Ex18"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="81333f33" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo.adapters.neuroml <span class="im">import</span> plot_lems_comparison</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>plot_lems_comparison(<span class="st">"LEMS_NML2_Ex18_GHK.xml"</span>, ref_outputs, result.integration.data, title_prefix<span class="op">=</span><span class="st">"Ex18"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Ex18_GHK_files/figure-html/cell-6-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="Ex18_GHK_files/figure-html/cell-6-output-1.png" width="2950" height="998" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Ex18_GHK_files/figure-html/cell-6-output-2.png" class="img-fluid figure-img"></p>
+<p><img src="Ex18_GHK_files/figure-html/cell-6-output-2.png" width="2950" height="998" class="figure-img"></p>
 </figure>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="Ex18_GHK_files/figure-html/cell-6-output-3.png" class="img-fluid figure-img"></p>
+<p><img src="Ex18_GHK_files/figure-html/cell-6-output-3.png" width="2950" height="998" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -624,13 +636,14 @@ pyNeuroML &gt;&gt;&gt; 17:13:25 - INFO - Command completed successfully!</code><
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -645,7 +658,7 @@ pyNeuroML &gt;&gt;&gt; 17:13:25 - INFO - Command completed successfully!</code><
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

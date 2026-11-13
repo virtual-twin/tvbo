@@ -1,7 +1,0 @@
-# data { #tvbo.data }
-
-`data`
-
-Data Module.
-
-Access and manage TVB-O data.

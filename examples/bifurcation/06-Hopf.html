@@ -2,17 +2,23 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.7.24">
+<meta name="generator" content="quarto-1.10.18">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
 <title>6. Hopf Normal Form – TVB-O Documentation</title>
 <style>
-code{white-space: pre-wrap;}
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
 span.smallcaps{font-variant: small-caps;}
-div.columns{display: flex; gap: min(4vw, 1.5em);}
-div.column{flex: auto; overflow-x: auto;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
 div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
 ul.task-list{list-style: none;}
 ul.task-list li input[type="checkbox"] {
@@ -74,10 +80,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
 <script src="../../site_libs/quarto-html/anchor.min.js"></script>
 <link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-a37c72dd2dbac68997fcdc15a3622e78.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../site_libs/bootstrap/bootstrap-bd2e66b9acdd73783da7cb9fe8307e2a.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../site_libs/bootstrap/bootstrap-305ec0c320a3d60cc5bda611d56c9e28.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -110,7 +116,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="../../_static/tvbo-icons.js"></script>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
 <script type="text/javascript">
 const typesetMath = (el) => {
@@ -123,7 +129,7 @@ const typesetMath = (el) => {
     var macros = [];
     for (var i = 0; i < mathElements.length; i++) {
       var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
         window.katex.render(texText.data, mathElements[i], {
           displayMode: mathElements[i].classList.contains('display'),
           throwOnError: false,
@@ -152,7 +158,8 @@ window.Quarto = {
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
     <a href="../../index.html" class="navbar-brand navbar-brand-logo">
-    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo light-content">
+    <img src="../../_static/tvbo_favicon.png" alt="TVB-O logo" class="navbar-logo dark-content">
     </a>
     <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">TVB-O Documentation</span>
@@ -208,7 +215,8 @@ window.Quarto = {
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
       <a href="../../index.html" class="sidebar-logo-link">
-      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo light-content py-0 d-lg-inline d-none">
+      <img src="../../_static/tvbo_logo.png" alt="" class="sidebar-logo dark-content py-0 d-lg-inline d-none">
       </a>
       </div>
     <div class="sidebar-menu-container"> 
@@ -263,13 +271,13 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/index-en.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specification (Widoco)</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../1-explore/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
+  <a href="https://virtual-twin.github.io/tvbo/ontology/spec/webvowl/index.html#ontology" class="sidebar-item-text sidebar-link">
  <span class="menu-text">WebVOWL visualisation</span></a>
   </div>
 </li>
@@ -1381,12 +1389,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/Case.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Case</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/ClassReference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Class Reference</span></a>
   </div>
@@ -1413,6 +1415,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/CodeSource.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Code Source</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/CohortRule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1513,12 +1527,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/DerivedObservation.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Derived Observation</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DerivedParameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Derived Parameter</span></a>
   </div>
@@ -1563,6 +1571,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/DistributionConfig.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Distribution Config</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Document.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Document</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1693,6 +1707,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/HeldParameter.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Held Parameter</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Inference.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Inference</span></a>
   </div>
@@ -1789,6 +1809,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/NodeTemplate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Node Template</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Noise.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Noise</span></a>
   </div>
@@ -1833,12 +1865,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Parameter.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Parameter</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/ParameterSpec.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Parameter Spec</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1903,6 +1929,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/PropagationGate.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Propagation Gate</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Provenance</span></a>
   </div>
@@ -1941,12 +1973,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/RegionMapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Region Mapping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -1995,6 +2021,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/Session.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Session</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/Significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Significance</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2053,6 +2085,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/classes/StateSelection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">State Selection</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StateValue.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">State Value</span></a>
   </div>
@@ -2083,12 +2121,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyCollection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Collection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyDirectory.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Directory</span></a>
   </div>
@@ -2103,12 +2135,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/classes/StudyLayout.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Study Layout</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/classes/StudyMember.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Study Member</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2340,6 +2366,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/align_labels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">align_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/allow_self_connections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">allow_self_connections</span></a>
   </div>
@@ -2396,6 +2428,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/application_category.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">application_category</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/applied.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">applied</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2514,6 +2552,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/axis_margin.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">axis_margin</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/axis_width.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">axis_width</span></a>
   </div>
@@ -2540,6 +2590,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/background.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">background</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/bar_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">bar_edge_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2628,12 +2684,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/boundaries.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">boundaries</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/boundary_conditions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">boundary_conditions</span></a>
   </div>
@@ -2670,12 +2720,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/bundle.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">bundle</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/by.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">by</span></a>
   </div>
@@ -2702,12 +2746,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">capture</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/cases.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">cases</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2820,6 +2858,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohort_id.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohort_id</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/cohorts.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">cohorts</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/col_label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">col_label_pad</span></a>
   </div>
@@ -2846,6 +2896,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/colorbar.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">colorbar</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_ends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/colorbar_outline.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">colorbar_outline</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -2898,6 +2960,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/components.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">components</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/concept_iri.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">concept_iri</span></a>
   </div>
@@ -2918,12 +2986,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/condition_states.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">condition_states</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/conditional.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">conditional</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3090,12 +3152,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/coupling_terms.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">coupling_terms</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/coupling_variable.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">coupling_variable</span></a>
   </div>
@@ -3110,6 +3166,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/cpus_per_task.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">cpus_per_task</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/criterion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">criterion</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3168,14 +3230,14 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_path.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_path</span></a>
+  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">dataset_type</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/dataset_type.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">dataset_type</span></a>
+  <a href="../../datamodel/slots/datasets.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">datasets</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3272,12 +3334,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/derived_from_model.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">derived_from_model</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/derived_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">derived_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3462,6 +3518,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/drop.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">drop</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/ds.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">ds</span></a>
   </div>
@@ -3546,6 +3608,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/editable_text.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">editable_text</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/efield.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">efield</span></a>
   </div>
@@ -3612,12 +3680,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/emit_provenance.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">emit_provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/empirical_data.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">empirical_data</span></a>
   </div>
@@ -3626,6 +3688,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/encoding.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">encoding</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/end_tick_reach.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">end_tick_reach</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3686,6 +3754,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/equation_type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">equation_type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/errorbar_cap_size.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">errorbar_cap_size</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3768,6 +3842,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/exponent_as_power.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">exponent_as_power</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/expression.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">expression</span></a>
   </div>
@@ -3846,6 +3926,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/font_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">font_weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">format</span></a>
   </div>
@@ -3876,12 +3962,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/free.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">free</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/free_parameters.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">free_parameters</span></a>
   </div>
@@ -3896,6 +3976,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/frequency.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">frequency</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/from_iteration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">from_iteration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3984,8 +4070,26 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_below.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_below</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/grid_lines.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">grid_lines</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_style.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grid_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grid_width</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -3998,6 +4102,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/group.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">group</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/grouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4022,6 +4132,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/handle_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">handle_length</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/handles.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">handles</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4058,6 +4174,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/height_ratios.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">height_ratios</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/held_parameters.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">held_parameters</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4122,6 +4244,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/homologue.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">homologue</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/how_to_acknowledge.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">how_to_acknowledge</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/hspace.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">hspace</span></a>
   </div>
@@ -4136,12 +4270,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/id.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">id</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/ifabsent.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">ifabsent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4212,12 +4340,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/inner_coupling.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">inner_coupling</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/inner_iterations.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">inner_iterations</span></a>
   </div>
@@ -4242,14 +4364,14 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">integration</span></a>
+  <a href="../../datamodel/slots/instance_of.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">instance_of</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/intensity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">intensity</span></a>
+  <a href="../../datamodel/slots/integration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">integration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4332,6 +4454,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/keep.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">keep</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/key.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">key</span></a>
   </div>
@@ -4364,6 +4492,18 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/label_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">label_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/label_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">label_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4434,12 +4574,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/lefthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">lefthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend</span></a>
   </div>
@@ -4458,14 +4592,50 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_handle_text_pad.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_handle_text_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_label_spacing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_label_spacing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_marker_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_marker_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/legend_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">legend_pad</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/legend_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">legend_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/level.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">level</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/levels.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">levels</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4490,6 +4660,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/likelihood.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">likelihood</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/line_cap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">line_cap</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4602,6 +4778,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/marker_edge_width.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">marker_edge_width</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/marker_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">marker_size</span></a>
   </div>
@@ -4620,6 +4802,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/math_font.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">math_font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_bisection_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_bisection_steps</span></a>
   </div>
@@ -4634,6 +4822,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/max_steps.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">max_steps</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/max_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">max_ticks</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4670,6 +4864,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/members.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">members</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/members_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">members_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4722,6 +4922,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/min_dispersion.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">min_dispersion</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_tick_length</span></a>
   </div>
@@ -4736,6 +4942,24 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/minor_ticks.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">minor_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/mirror_ticks.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">mirror_ticks</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/missing_color.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">missing_color</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4782,12 +5006,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/modes.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">modes</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/modified.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">modified</span></a>
   </div>
@@ -4824,6 +5042,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/n_groups.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">n_groups</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_inversion.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_inversion</span></a>
   </div>
@@ -4842,12 +5066,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_regions.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_regions</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_sections.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_sections</span></a>
   </div>
@@ -4862,12 +5080,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/n_trials.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">n_trials</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/n_vertices.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">n_vertices</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -4946,6 +5158,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/node_mapping.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">node_mapping</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/node_selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">node_selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5268,6 +5486,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_case.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_format.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_format</span></a>
   </div>
@@ -5286,8 +5510,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/panel_number_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">panel_number_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/panel_number_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">panel_number_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5336,6 +5572,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/parcellation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">parcellation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/parent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">parent</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5400,6 +5642,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/persist.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">persist</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/phenotype_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">phenotype_file</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/pipeline.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">pipeline</span></a>
   </div>
@@ -5408,6 +5662,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/placeholder.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">placeholder</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/placement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5508,6 +5768,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/propagation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">propagation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/protocols.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">protocols</span></a>
   </div>
@@ -5516,12 +5782,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/provenance.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">provenance</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/provenance_format.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">provenance_format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5570,18 +5830,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/random_state.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">random_state</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/range.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">range</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/recipe.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">recipe</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5648,18 +5896,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/region.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/region_mapping.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">region_mapping</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/regional_connectivity.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">regional_connectivity</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5766,12 +6002,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/righthandside.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">righthandside</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/rng.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">rng</span></a>
   </div>
@@ -5798,6 +6028,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/row_labels.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">row_labels</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">rule</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5862,8 +6098,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/schema_version.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">schema_version</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/scipy_ode_base.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">scipy_ode_base</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/scope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">scope</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5894,6 +6142,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/sel.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">sel</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">selection</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -5970,6 +6224,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/significance.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">significance</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/simulation_experiments.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">simulation_experiments</span></a>
   </div>
@@ -5984,12 +6244,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">size</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/skip_t.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">skip_t</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6030,6 +6284,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/source_arguments.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">source_arguments</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_branch.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_branch</span></a>
   </div>
@@ -6050,12 +6310,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/source_network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">source_network</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/source_observations.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">source_observations</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6098,6 +6352,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/spine_offset.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">spine_offset</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/spine_trim.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">spine_trim</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6230,6 +6490,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/subjects.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">subjects</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/subjects_file.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">subjects_file</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6474,6 +6740,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_format.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_label_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_label_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_length.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_length</span></a>
   </div>
@@ -6494,6 +6772,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/tick_size.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">tick_size</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tick_steps.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tick_steps</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6540,12 +6824,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/time_scale.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">time_scale</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/time_unit.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">time_unit</span></a>
   </div>
@@ -6570,8 +6848,26 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_loc.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_loc</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/title_pad.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">title_pad</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_scale.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_scale</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/title_weight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">title_weight</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6642,6 +6938,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/transparent.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">transparent</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/triangle.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">triangle</span></a>
   </div>
@@ -6672,8 +6974,20 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/tvbo_class.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">tvbo_class</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/type.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/unicode_minus.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">unicode_minus</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6698,6 +7012,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/update_rules.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">update_rules</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/slots/update_start.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">update_start</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -6786,12 +7106,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/vertex_to_region.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">vertex_to_region</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/vertices_field.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">vertices_field</span></a>
   </div>
@@ -6848,12 +7162,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/slots/warmup_from.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">warmup_from</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/slots/warmup_source.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">warmup_source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7121,6 +7429,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AnnotationPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Annotation Placement</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/AxisEnds.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Ends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/AxisReductionStatistic.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Axis Reduction Statistic</span></a>
   </div>
@@ -7159,6 +7479,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/BoundaryConditionType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Boundary Condition Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/CohortGrouping.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort Grouping</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7241,6 +7567,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/FontWeight.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Font Weight</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/FrameRole.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Frame Role</span></a>
   </div>
@@ -7283,8 +7615,38 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LetterCase.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Letter Case</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineCap.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Cap</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/LineStyle.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Line Style</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/MarkType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Mark Type</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MathFont.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Math Font</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/MissingValuePolicy.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Missing Value Policy</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7349,12 +7711,6 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/PhysicalDimension.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Physical Dimension</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/ProcedureStepType.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Procedure Step Type</span></a>
   </div>
@@ -7369,12 +7725,6 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/Projection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Projection</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../datamodel/enums/ProvenanceFormat.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Provenance Format</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7421,6 +7771,18 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionMode.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Mode</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/SelectionScope.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Selection Scope</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SexEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Sex Enum</span></a>
   </div>
@@ -7441,6 +7803,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/SpecimenEnum.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Specimen Enum</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/Spines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Spines</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7493,6 +7861,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TextAlign.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Align</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickDirection.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Direction</span></a>
   </div>
@@ -7501,6 +7875,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../datamodel/enums/TickFormat.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Tick Format</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../datamodel/enums/TickPlacement.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Tick Placement</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -7759,6 +8139,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/analysis/statistics.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Statistics</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/analysis/units.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Units</span></a>
   </div>
@@ -7823,6 +8209,12 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-38" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/atlas.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Atlas</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/continuation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Continuation</span></a>
   </div>
@@ -7853,14 +8245,50 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/function.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Function</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/integrator.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Integrator</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/noise.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Noise</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/observation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/behaviour/perturbation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Perturbation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/phenotype.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Phenotype</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/software.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Software</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/behaviour/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
   </div>
 </li>
       </ul>
@@ -7938,6 +8366,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/classes/observation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Observation</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/classes/optimization.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Optimization</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8037,6 +8471,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/cli/migrate_iris.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Migrate Iris</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/cli/network.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Network</span></a>
   </div>
@@ -8120,6 +8560,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/codegen/dims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Dims</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/codegen/functions.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Functions</span></a>
   </div>
@@ -8191,6 +8637,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/data/cohort.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Cohort</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/data/connectome_build.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Connectome Build</span></a>
   </div>
@@ -8211,6 +8663,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/data/experiment_result_io.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Experiment Result Io</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/data/iri_migration.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Iri Migration</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8300,6 +8758,12 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/datamodel/schema.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Schema</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/datamodel/text_slots.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Text Slots</span></a>
   </div>
 </li>
       </ul>
@@ -8506,6 +8970,12 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/plot/axis_rule.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Axis Rule</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/plot/capture.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Capture</span></a>
   </div>
@@ -8595,6 +9065,12 @@ window.Quarto = {
       <ul id="quarto-sidebar-section-52" class="collapse list-unstyled sidebar-section depth2 ">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/run/backends.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Backends</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/run/compgraph.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Compgraph</span></a>
   </div>
@@ -8609,6 +9085,24 @@ window.Quarto = {
   <div class="sidebar-item-container"> 
   <a href="../../api/run/julia.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Julia</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/lanes.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Lanes</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/study.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Study</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/run/workflow.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Workflow</span></a>
   </div>
 </li>
       </ul>
@@ -8710,14 +9204,32 @@ window.Quarto = {
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/jax_precision.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Jax Precision</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/pydantic_loader.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Pydantic Loader</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
+  <a href="../../api/utils/pytree.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Pytree</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
   <a href="../../api/utils/report.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Report</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../api/utils/source.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Source</span></a>
   </div>
 </li>
           <li class="sidebar-item">
@@ -8805,8 +9317,8 @@ window.Quarto = {
 
 
 <nav class="tvbo-phase tvbo-phase--examples" style="--phase-color:#3f5457" aria-label="Documentation phase"><i class="fa-solid fa-flask-vial" aria-hidden="true"></i><span class="tvbo-phase__name">Examples &amp; Use-Cases</span><span class="tvbo-phase__sep">·</span><span class="tvbo-phase__section">Bifurcation track</span></nav>
-<div id="b6704aeb" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
+<div id="f7097c0b" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> IPython.display <span class="im">import</span> Markdown</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> tvbo <span class="im">import</span> Dynamics, Continuation, SimulationExperiment</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
@@ -8843,25 +9355,30 @@ window.Quarto = {
 <span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>dyn_a <span class="op">=</span> Dynamics.from_string(HOPF_YAML)</span>
 <span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>Markdown(dyn_a.render(<span class="st">'markdown'</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>Markdown(dyn_a.render(<span class="st">'markdown'</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>* Owlready2 * Warning: ignoring cyclic subclass of/subproperty of, involving:
+  http://uri.interlex.org/tgbugs/uris/readable/atlas/Space
+</code></pre>
+</div>
 <div class="cell-output cell-output-display cell-output-markdown" data-execution_count="1">
 <p><strong>HopfNF</strong></p>
 <p>Supercritical Hopf normal form (Cartesian). For <span class="math inline">\(a &lt; 0\)</span> the origin is a stable focus; at <span class="math inline">\(a = 0\)</span> a Hopf bifurcation gives birth to a stable limit cycle of radius <span class="math inline">\(\sqrt a\)</span> and angular frequency <span class="math inline">\(w\)</span>. The legacy figures <code>HopfPhasePortrait_and_BifDiag3D_a={-2,-1,-0.15,0.5,1,1.5}.png</code> show, for each <span class="math inline">\(a\)</span>, the 2D phase portrait alongside the 3D bifurcation diagram with the periodic-orbit tube.</p>
 <p>autonomous: True; modes: 1; state variables: 2; parameters: 2.</p>
 <p><strong>State Equations</strong></p>
 <p><span class="math display">\[
-\dot{x_{1}} = x_{1}*\left(a - x_{1}^{2} - x_{2}^{2}\right) - w*x_{2}
+\dot{x_{1}} = x_{1} \left(a - x_{1}^{2} - x_{2}^{2}\right) - w x_{2}
 \]</span> <span class="math display">\[
-\dot{x_{2}} = w*x_{1} + x_{2}*\left(a - x_{1}^{2} - x_{2}^{2}\right)
+\dot{x_{2}} = w x_{1} + x_{2} \left(a - x_{1}^{2} - x_{2}^{2}\right)
 \]</span></p>
 <p><strong>State Variables</strong></p>
 <table class="caption-top table table-sm table-striped small">
 <colgroup>
-<col style="width: 11%">
-<col style="width: 19%">
-<col style="width: 32%">
-<col style="width: 25%">
-<col style="width: 11%">
+<col style="width: 12%">
+<col style="width: 18%">
+<col style="width: 31%">
+<col style="width: 24%">
+<col style="width: 12%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -8917,20 +9434,20 @@ window.Quarto = {
 <section id="phase-portraits-across-a-static-grid-legacy-figures" class="level2">
 <h2 class="anchored" data-anchor-id="phase-portraits-across-a-static-grid-legacy-figures">Phase portraits across <span class="math inline">\(a\)</span> — static grid (legacy figures)</h2>
 <p>For reference, the same six values rendered as a static grid using <code>kind='phaseplane'</code>:</p>
-<div id="bb0a9318" class="cell" data-execution_count="3">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>a_values <span class="op">=</span> [<span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">0.15</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">1.5</span>]</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">7.5</span>))</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, a <span class="kw">in</span> <span class="bu">zip</span>(axes.flat, a_values):</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    dyn_a.parameters[<span class="st">'a'</span>].value <span class="op">=</span> a</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    dyn_a.plot(<span class="st">"x1"</span>, <span class="st">"x2"</span>, kind<span class="op">=</span><span class="st">"phaseplane"</span>, ax<span class="op">=</span>ax,</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>               grid_n<span class="op">=</span><span class="dv">22</span>, n_trajectories<span class="op">=</span><span class="dv">2</span>, duration<span class="op">=</span><span class="dv">15</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"$a = </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">$"</span>)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    ax.set_xlim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="0819323a" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>a_values <span class="op">=</span> [<span class="op">-</span><span class="fl">2.0</span>, <span class="op">-</span><span class="fl">1.0</span>, <span class="op">-</span><span class="fl">0.15</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">1.5</span>]</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">2</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">7.5</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, a <span class="kw">in</span> <span class="bu">zip</span>(axes.flat, a_values):</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    dyn_a.parameters[<span class="st">'a'</span>].value <span class="op">=</span> a</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    dyn_a.plot(<span class="st">"x1"</span>, <span class="st">"x2"</span>, kind<span class="op">=</span><span class="st">"phaseplane"</span>, ax<span class="op">=</span>ax,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>               grid_n<span class="op">=</span><span class="dv">22</span>, n_trajectories<span class="op">=</span><span class="dv">2</span>, duration<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"$a = </span><span class="sc">{</span>a<span class="sc">}</span><span class="ss">$"</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    ax.set_xlim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="06-Hopf_files/figure-html/cell-3-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="06-Hopf_files/figure-html/cell-3-output-1.png" width="3266" height="2180" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -8939,40 +9456,40 @@ window.Quarto = {
 <section id="bifurcation-diagram-with-limit-cycle-continuation" class="level2">
 <h2 class="anchored" data-anchor-id="bifurcation-diagram-with-limit-cycle-continuation">Bifurcation diagram with limit-cycle continuation</h2>
 <p>A single 1-parameter sweep in <span class="math inline">\(a\)</span> for the equilibrium branch, plus a nested branch that picks up periodic orbits from each detected Hopf point:</p>
-<div id="5fd60611" class="cell" data-execution_count="4">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>dyn <span class="op">=</span> Dynamics.from_string(HOPF_YAML)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>CONT_YAML <span class="op">=</span> <span class="st">"""</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="st">name: hopf_in_a</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics: HopfNF</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">free_parameters:</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="st">  - name: a</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="st">    domain: { lo: -2.0, hi: 2.0 }</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="st">max_steps: 400</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">ds: 0.01</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">bothside: true</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st">branches:</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="st">  - name: po_from_hopf</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">    source_point: "hopf:all"</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">    bothside: true</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>cont <span class="op">=</span> Continuation.from_string(CONT_YAML)</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>dyn, continuations<span class="op">=</span>[cont])</span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"bifurcationkit.jl"</span>)</span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>hopf <span class="op">=</span> result.continuations[<span class="st">"hopf_in_a"</span>]</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>hopf.plot(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="44538933" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>dyn <span class="op">=</span> Dynamics.from_string(HOPF_YAML)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>CONT_YAML <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">name: hopf_in_a</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">dynamics: HopfNF</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">free_parameters:</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">  - name: a</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">    domain: { lo: -2.0, hi: 2.0 }</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="st">max_steps: 400</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="st">ds: 0.01</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="st">bothside: true</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="st">branches:</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="st">  - name: po_from_hopf</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="st">    source_point: "hopf:all"</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a><span class="st">    bothside: true</span></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>cont <span class="op">=</span> Continuation.from_string(CONT_YAML)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>exp <span class="op">=</span> SimulationExperiment(dynamics<span class="op">=</span>dyn, continuations<span class="op">=</span>[cont])</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> exp.run(<span class="st">"bifurcationkit.jl"</span>)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>hopf <span class="op">=</span> result.continuations[<span class="st">"hopf_in_a"</span>]</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>hopf.plot(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Detected IPython. Loading juliacall extension. See https://juliapy.github.io/PythonCall.jl/stable/compat/#IPython
-CT: 1.063861 seconds (2.60 M allocations: 129.708 MiB, 4.02% gc time, 99.93% compilation time)
-CT: 0.000237 seconds (2.14 k allocations: 191.859 KiB)
-CT: 5.140689 seconds (3.97 M allocations: 555.047 MiB, 7.41% gc time, 83.07% compilation time)
-CT: 0.267288 seconds (226.88 k allocations: 390.487 MiB, 5.74% gc time)</code></pre>
+CT: 1.001118 seconds (1.89 M allocations: 102.621 MiB, 3.78% gc time, 99.96% compilation time)
+CT: 0.000153 seconds (2.14 k allocations: 179.398 KiB)
+CT: 2.027065 seconds (2.75 M allocations: 505.209 MiB, 2.63% gc time, 93.02% compilation time)
+CT: 0.098725 seconds (226.88 k allocations: 387.997 MiB, 18.42% gc time)</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="06-Hopf_files/figure-html/cell-4-output-2.png" class="img-fluid figure-img"></p>
+<p><img src="06-Hopf_files/figure-html/cell-4-output-2.png" width="1251" height="965" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -8981,12 +9498,12 @@ CT: 0.267288 seconds (226.88 k allocations: 390.487 MiB, 5.74% gc time)</code></
 <section id="d-bifurcation-diagram" class="level2">
 <h2 class="anchored" data-anchor-id="d-bifurcation-diagram">3D bifurcation diagram</h2>
 <p>The full picture: equilibrium spine (with stability colouring), Hopf point, and the limit-cycle tube whose radius grows like <span class="math inline">\(\sqrt a\)</span>:</p>
-<div id="d7809062" class="cell" data-execution_count="5">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>hopf.plot_3d(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="475f1fd5" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>hopf.plot_3d(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="06-Hopf_files/figure-html/cell-5-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="06-Hopf_files/figure-html/cell-5-output-1.png" width="1452" height="1300" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -8995,13 +9512,13 @@ CT: 0.267288 seconds (226.88 k allocations: 390.487 MiB, 5.74% gc time)</code></
 <section id="combined-sweep-phase-portrait-3d-diagram" class="level2">
 <h2 class="anchored" data-anchor-id="combined-sweep-phase-portrait-3d-diagram">Combined sweep: phase portrait + 3D diagram</h2>
 <p><code>BifurcationResult.animate(...)</code> ties the two views together. The left panel re-renders the phase portrait at the current value of <span class="math inline">\(a\)</span>; the right panel shows the 3D diagram once with a moving red marker that tracks the position on the equilibrium backbone.</p>
-<div id="96061eba" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>anim <span class="op">=</span> hopf.animate(dyn, <span class="st">"a"</span>, np.linspace(<span class="op">-</span><span class="fl">2.0</span>, <span class="fl">1.5</span>, <span class="dv">24</span>),</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"x1"</span>, <span class="st">"x2"</span>, VOI<span class="op">=</span><span class="st">"x1"</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                    grid_n<span class="op">=</span><span class="dv">18</span>, n_trajectories<span class="op">=</span><span class="dv">3</span>, duration<span class="op">=</span><span class="dv">15</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                    figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">4.8</span>),</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                    title_fmt<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="vs">a = {value:</span><span class="op">+</span><span class="dv">.</span><span class="vs">2f}</span><span class="dv">$</span><span class="vs">"</span>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>anim.save(<span class="st">"hopf_sweep.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">8</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="3da9b71a" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>anim <span class="op">=</span> hopf.animate(dyn, <span class="st">"a"</span>, np.linspace(<span class="op">-</span><span class="fl">2.0</span>, <span class="fl">1.5</span>, <span class="dv">24</span>),</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"x1"</span>, <span class="st">"x2"</span>, VOI<span class="op">=</span><span class="st">"x1"</span>,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>                    grid_n<span class="op">=</span><span class="dv">18</span>, n_trajectories<span class="op">=</span><span class="dv">3</span>, duration<span class="op">=</span><span class="dv">15</span>,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>                    figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">4.8</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>                    title_fmt<span class="op">=</span><span class="vs">r"</span><span class="dv">$</span><span class="vs">a = {value:</span><span class="op">+</span><span class="dv">.</span><span class="vs">2f}</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>anim.save(<span class="st">"hopf_sweep.gif"</span>, writer<span class="op">=</span><span class="st">"pillow"</span>, fps<span class="op">=</span><span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -9013,320 +9530,202 @@ CT: 0.267288 seconds (226.88 k allocations: 390.487 MiB, 5.74% gc time)</code></
 <section id="auto-07p-numcont" class="level2">
 <h2 class="anchored" data-anchor-id="auto-07p-numcont">AUTO-07p (NumCont)</h2>
 <p>Mirrors the standalone <code>PhasePortraitHopf.py</code> example: AUTO-07p time-integrates from the YAML defaults to a stable focus (or limit cycle), sweeps <span class="math inline">\(a\)</span> in both directions, and – when the equilibrium branch yields a Hopf label – continues the periodic orbit out via the nested branch declared above as <code>source_point: "hopf:all"</code>.</p>
-<div id="faf112db" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result_auto <span class="op">=</span> exp.run(<span class="st">"auto-07p"</span>)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>hopf_auto <span class="op">=</span> result_auto.continuations[<span class="st">"hopf_in_a"</span>]</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>hopf_auto.plot(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="4e3b3caa" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>result_auto <span class="op">=</span> exp.run(<span class="st">"auto-07p"</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>hopf_auto <span class="op">=</span> result_auto.continuations[<span class="st">"hopf_in_a"</span>]</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>hopf_auto.plot(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>/opt/homebrew/bin/gfortran -arch arm64 -O -fopenmp -O -c /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model.f90 -o /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model.o
-/opt/homebrew/bin/gfortran -arch arm64 -O -fopenmp -O /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model.o -o /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model.exe /Applications/auto-07p/lib/*.o
-Starting /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model ...</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>ld: warning: duplicate -rpath '/Library/Developer/CommandLineTools/SDKs/MacOSX26.4.sdk/usr/lib' ignored</code></pre>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-  BR    PT  TY  LAB       a          L2-NORM          x1            x2      
-   1     1  EP    1   5.00000E-01   0.00000E+00   0.00000E+00   0.00000E+00
-   1    10        2   1.06000E+00   0.00000E+00   0.00000E+00   0.00000E+00
-   1    20  EP    3   2.06000E+00   0.00000E+00   0.00000E+00   0.00000E+00
-
- Total Time    0.895E-02
-/var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model ... done
-Starting /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model ...
+<pre><code>gfortran -g -fopenmp -O -c /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model.f90 -o /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model.o
+gfortran -g -fopenmp -O /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model.o -o /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model.exe /auto-07p/lib/*.o
+Starting /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ...
 
   BR    PT  TY  LAB       a          L2-NORM          x1            x2      
    1     1  EP    1   5.00000E-01   0.00000E+00   0.00000E+00   0.00000E+00
-   1    10  HB    2   6.00002E-09   0.00000E+00   0.00000E+00   0.00000E+00
-   1    20        3  -1.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00
-   1    30  EP    4  -2.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00
+   1    10        2   8.80000E-01   0.00000E+00   0.00000E+00   0.00000E+00
+   1    20        3   1.38000E+00   0.00000E+00   0.00000E+00   0.00000E+00
+   1    30        4   1.88000E+00   0.00000E+00   0.00000E+00   0.00000E+00
+   1    33  EP    5   2.03000E+00   0.00000E+00   0.00000E+00   0.00000E+00
 
- Total Time    0.126E-02
-/var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model ... done
+ Total Time    0.672E-03
+/tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ... done
+Starting /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ...
+
+  BR    PT  TY  LAB       a          L2-NORM          x1            x2      
+   1     1  EP    1   5.00000E-01   0.00000E+00   0.00000E+00   0.00000E+00
+   1    10        2   1.20000E-01   0.00000E+00   0.00000E+00   0.00000E+00
+   1    13  HB    3   3.00002E-09   0.00000E+00   0.00000E+00   0.00000E+00
+   1    20        4  -3.50000E-01   0.00000E+00   0.00000E+00   0.00000E+00
+   1    30        5  -8.50000E-01   0.00000E+00   0.00000E+00   0.00000E+00
+   1    40        6  -1.35000E+00   0.00000E+00   0.00000E+00   0.00000E+00
+   1    50        7  -1.85000E+00   0.00000E+00   0.00000E+00   0.00000E+00
+   1    53  EP    8  -2.00000E+00   0.00000E+00   0.00000E+00   0.00000E+00
+
+ Total Time    0.794E-03
+/tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ... done
 Merge done
 Saving to hopf_in_a, hopf_in_a, and hopf_in_a ... done
-Starting /var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model ...
+Starting /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ...
 
   BR    PT  TY  LAB       a          L2-NORM        MAX x1        MAX x2        PERIOD    
-   3     1        7   6.00002E-09   0.00000E+00   0.00000E+00   0.00000E+00   6.28319E+00
-   3     2        8   1.00000E-04   1.00000E-02   1.00000E-02   1.00000E-02   6.28319E+00
-   3     3        9   3.99900E-04   1.99975E-02   1.99951E-02   1.99951E-02   6.28319E+00
-   3     4       10   8.99222E-04   2.99870E-02   2.99828E-02   2.99828E-02   6.28319E+00
-   3     5       11   1.59717E-03   3.99646E-02   3.99590E-02   3.99590E-02   6.28319E+00
-   3     6       12   2.49265E-03   4.99264E-02   4.99193E-02   4.99193E-02   6.28319E+00
-   3     7       13   3.58425E-03   5.98686E-02   5.98601E-02   5.98601E-02   6.28319E+00
-   3     8       14   4.87030E-03   6.97875E-02   6.97776E-02   6.97776E-02   6.28319E+00
-   3     9       15   6.34883E-03   7.96795E-02   7.96682E-02   7.96682E-02   6.28319E+00
-   3    10       16   8.01762E-03   8.95412E-02   8.95285E-02   8.95285E-02   6.28319E+00
-   3    11       17   9.87423E-03   9.93692E-02   9.93551E-02   9.93551E-02   6.28319E+00
-   3    12       18   1.19160E-02   1.09160E-01   1.09145E-01   1.09145E-01   6.28319E+00
-   3    13       19   1.41400E-02   1.18912E-01   1.18895E-01   1.18895E-01   6.28319E+00
-   3    14       20   1.65432E-02   1.28620E-01   1.28602E-01   1.28602E-01   6.28319E+00
-   3    15       21   1.91224E-02   1.38284E-01   1.38264E-01   1.38264E-01   6.28319E+00
-   3    16       22   2.18742E-02   1.47899E-01   1.47878E-01   1.47878E-01   6.28319E+00
-   3    17       23   2.47952E-02   1.57465E-01   1.57442E-01   1.57442E-01   6.28319E+00
-   3    18       24   2.78817E-02   1.66978E-01   1.66954E-01   1.66954E-01   6.28319E+00
-   3    19       25   3.11301E-02   1.76437E-01   1.76412E-01   1.76412E-01   6.28319E+00
-   3    20       26   3.45368E-02   1.85841E-01   1.85814E-01   1.85814E-01   6.28319E+00
-   3    21       27   3.80978E-02   1.95187E-01   1.95159E-01   1.95159E-01   6.28319E+00
-   3    22       28   4.18095E-02   2.04474E-01   2.04445E-01   2.04445E-01   6.28319E+00
-   3    23       29   4.56680E-02   2.13701E-01   2.13670E-01   2.13670E-01   6.28319E+00
-   3    24       30   4.96695E-02   2.22867E-01   2.22835E-01   2.22835E-01   6.28319E+00
-   3    25       31   5.38102E-02   2.31970E-01   2.31937E-01   2.31937E-01   6.28319E+00
-   3    26       32   5.80863E-02   2.41011E-01   2.40977E-01   2.40977E-01   6.28319E+00
-   3    27       33   6.24942E-02   2.49988E-01   2.49953E-01   2.49953E-01   6.28319E+00
-   3    28       34   6.70301E-02   2.58902E-01   2.58865E-01   2.58865E-01   6.28319E+00
-   3    29       35   7.16903E-02   2.67750E-01   2.67713E-01   2.67713E-01   6.28319E+00
-   3    30       36   7.64714E-02   2.76535E-01   2.76495E-01   2.76495E-01   6.28319E+00
-   3    31       37   8.13697E-02   2.85254E-01   2.85213E-01   2.85213E-01   6.28319E+00
-   3    32       38   8.63819E-02   2.93908E-01   2.93866E-01   2.93866E-01   6.28319E+00
-   3    33       39   9.15046E-02   3.02497E-01   3.02454E-01   3.02454E-01   6.28319E+00
-   3    34       40   9.67344E-02   3.11022E-01   3.10977E-01   3.10977E-01   6.28319E+00
-   3    35       41   1.02068E-01   3.19481E-01   3.19436E-01   3.19436E-01   6.28319E+00
-   3    36       42   1.07503E-01   3.27876E-01   3.27830E-01   3.27830E-01   6.28319E+00
-   3    37       43   1.13035E-01   3.36207E-01   3.36160E-01   3.36160E-01   6.28319E+00
-   3    38       44   1.18663E-01   3.44475E-01   3.44426E-01   3.44426E-01   6.28319E+00
-   3    39       45   1.24382E-01   3.52678E-01   3.52628E-01   3.52628E-01   6.28319E+00
-   3    40       46   1.30190E-01   3.60819E-01   3.60768E-01   3.60768E-01   6.28319E+00
-   3    41       47   1.36085E-01   3.68898E-01   3.68845E-01   3.68845E-01   6.28319E+00
-   3    42       48   1.42064E-01   3.76914E-01   3.76861E-01   3.76861E-01   6.28319E+00
-   3    43       49   1.48124E-01   3.84869E-01   3.84815E-01   3.84815E-01   6.28319E+00
-   3    44       50   1.54263E-01   3.92764E-01   3.92708E-01   3.92708E-01   6.28319E+00
-   3    45       51   1.60479E-01   4.00598E-01   4.00541E-01   4.00541E-01   6.28319E+00
-   3    46       52   1.66769E-01   4.08373E-01   4.08315E-01   4.08315E-01   6.28319E+00
-   3    47       53   1.73130E-01   4.16089E-01   4.16030E-01   4.16030E-01   6.28319E+00
-   3    48       54   1.79562E-01   4.23747E-01   4.23687E-01   4.23687E-01   6.28319E+00
-   3    49       55   1.86061E-01   4.31348E-01   4.31286E-01   4.31286E-01   6.28319E+00
-   3    50       56   1.92626E-01   4.38891E-01   4.38829E-01   4.38829E-01   6.28319E+00
-   3    51       57   1.99254E-01   4.46379E-01   4.46316E-01   4.46316E-01   6.28319E+00
-   3    52       58   2.05945E-01   4.53812E-01   4.53747E-01   4.53747E-01   6.28319E+00
-   3    53       59   2.12696E-01   4.61190E-01   4.61124E-01   4.61124E-01   6.28319E+00
-   3    54       60   2.19505E-01   4.68514E-01   4.68447E-01   4.68447E-01   6.28319E+00
-   3    55       61   2.26371E-01   4.75785E-01   4.75717E-01   4.75717E-01   6.28319E+00
-   3    56       62   2.33292E-01   4.83003E-01   4.82935E-01   4.82935E-01   6.28319E+00
-   3    57       63   2.40266E-01   4.90170E-01   4.90100E-01   4.90100E-01   6.28319E+00
-   3    58       64   2.47293E-01   4.97286E-01   4.97215E-01   4.97215E-01   6.28319E+00
-   3    59       65   2.54370E-01   5.04351E-01   5.04279E-01   5.04279E-01   6.28319E+00
-   3    60       66   2.61496E-01   5.11367E-01   5.11294E-01   5.11294E-01   6.28319E+00
-   3    61       67   2.68670E-01   5.18334E-01   5.18260E-01   5.18260E-01   6.28319E+00
-   3    62       68   2.75890E-01   5.25253E-01   5.25178E-01   5.25178E-01   6.28319E+00
-   3    63       69   2.83156E-01   5.32124E-01   5.32049E-01   5.32049E-01   6.28319E+00
-   3    64       70   2.90466E-01   5.38949E-01   5.38872E-01   5.38872E-01   6.28319E+00
-   3    65       71   2.97818E-01   5.45727E-01   5.45650E-01   5.45650E-01   6.28319E+00
-   3    66       72   3.05212E-01   5.52460E-01   5.52382E-01   5.52382E-01   6.28319E+00
-   3    67       73   3.12647E-01   5.59148E-01   5.59069E-01   5.59069E-01   6.28319E+00
-   3    68       74   3.20121E-01   5.65792E-01   5.65712E-01   5.65712E-01   6.28319E+00
-   3    69       75   3.27633E-01   5.72392E-01   5.72311E-01   5.72311E-01   6.28319E+00
-   3    70       76   3.35183E-01   5.78950E-01   5.78868E-01   5.78868E-01   6.28319E+00
-   3    71       77   3.42770E-01   5.85465E-01   5.85382E-01   5.85382E-01   6.28319E+00
-   3    72       78   3.50392E-01   5.91939E-01   5.91855E-01   5.91855E-01   6.28319E+00
-   3    73       79   3.58048E-01   5.98371E-01   5.98287E-01   5.98287E-01   6.28319E+00
-   3    74       80   3.65739E-01   6.04763E-01   6.04678E-01   6.04678E-01   6.28319E+00
-   3    75       81   3.73462E-01   6.11116E-01   6.11029E-01   6.11029E-01   6.28319E+00
-   3    76       82   3.81218E-01   6.17429E-01   6.17341E-01   6.17341E-01   6.28319E+00
-   3    77       83   3.89005E-01   6.23703E-01   6.23614E-01   6.23614E-01   6.28319E+00
-   3    78       84   3.96823E-01   6.29939E-01   6.29849E-01   6.29849E-01   6.28319E+00
-   3    79       85   4.04670E-01   6.36137E-01   6.36047E-01   6.36047E-01   6.28319E+00
-   3    80       86   4.12547E-01   6.42298E-01   6.42207E-01   6.42207E-01   6.28319E+00
-   3    81       87   4.20452E-01   6.48423E-01   6.48331E-01   6.48331E-01   6.28319E+00
-   3    82       88   4.28385E-01   6.54511E-01   6.54418E-01   6.54418E-01   6.28319E+00
-   3    83       89   4.36345E-01   6.60564E-01   6.60471E-01   6.60471E-01   6.28319E+00
-   3    84       90   4.44332E-01   6.66582E-01   6.66488E-01   6.66488E-01   6.28319E+00
-   3    85       91   4.52344E-01   6.72565E-01   6.72470E-01   6.72470E-01   6.28319E+00
-   3    86       92   4.60382E-01   6.78515E-01   6.78418E-01   6.78418E-01   6.28319E+00
-   3    87       93   4.68445E-01   6.84430E-01   6.84333E-01   6.84333E-01   6.28319E+00
-   3    88       94   4.76532E-01   6.90313E-01   6.90215E-01   6.90215E-01   6.28319E+00
-   3    89       95   4.84642E-01   6.96163E-01   6.96064E-01   6.96064E-01   6.28319E+00
-   3    90       96   4.92776E-01   7.01980E-01   7.01881E-01   7.01881E-01   6.28319E+00
-   3    91       97   5.00933E-01   7.07766E-01   7.07666E-01   7.07666E-01   6.28319E+00
-   3    92       98   5.09111E-01   7.13520E-01   7.13419E-01   7.13419E-01   6.28319E+00
-   3    93       99   5.17311E-01   7.19244E-01   7.19142E-01   7.19142E-01   6.28319E+00
-   3    94      100   5.25533E-01   7.24936E-01   7.24834E-01   7.24834E-01   6.28319E+00
-   3    95      101   5.33775E-01   7.30599E-01   7.30496E-01   7.30496E-01   6.28319E+00
-   3    96      102   5.42038E-01   7.36232E-01   7.36128E-01   7.36128E-01   6.28319E+00
-   3    97      103   5.50320E-01   7.41836E-01   7.41731E-01   7.41731E-01   6.28319E+00
-   3    98      104   5.58622E-01   7.47410E-01   7.47304E-01   7.47304E-01   6.28319E+00
-   3    99      105   5.66944E-01   7.52957E-01   7.52850E-01   7.52850E-01   6.28319E+00
-   3   100      106   5.75283E-01   7.58474E-01   7.58367E-01   7.58367E-01   6.28319E+00
-   3   101      107   5.83642E-01   7.63964E-01   7.63856E-01   7.63856E-01   6.28319E+00
-   3   102      108   5.92018E-01   7.69427E-01   7.69318E-01   7.69318E-01   6.28319E+00
-   3   103      109   6.00412E-01   7.74862E-01   7.74753E-01   7.74753E-01   6.28319E+00
-   3   104      110   6.08823E-01   7.80271E-01   7.80160E-01   7.80160E-01   6.28319E+00
-   3   105      111   6.17251E-01   7.85653E-01   7.85542E-01   7.85542E-01   6.28319E+00
-   3   106      112   6.25696E-01   7.91009E-01   7.90897E-01   7.90897E-01   6.28319E+00
-   3   107      113   6.34157E-01   7.96340E-01   7.96227E-01   7.96227E-01   6.28319E+00
-   3   108      114   6.42634E-01   8.01645E-01   8.01531E-01   8.01531E-01   6.28319E+00
-   3   109      115   6.51127E-01   8.06924E-01   8.06810E-01   8.06810E-01   6.28319E+00
-   3   110      116   6.59635E-01   8.12179E-01   8.12064E-01   8.12064E-01   6.28319E+00
-   3   111      117   6.68158E-01   8.17409E-01   8.17293E-01   8.17293E-01   6.28319E+00
-   3   112      118   6.76696E-01   8.22615E-01   8.22499E-01   8.22499E-01   6.28319E+00
-   3   113      119   6.85249E-01   8.27797E-01   8.27680E-01   8.27680E-01   6.28319E+00
-   3   114      120   6.93815E-01   8.32956E-01   8.32838E-01   8.32838E-01   6.28319E+00
-   3   115      121   7.02396E-01   8.38091E-01   8.37972E-01   8.37972E-01   6.28319E+00
-   3   116      122   7.10991E-01   8.43203E-01   8.43083E-01   8.43083E-01   6.28319E+00
-   3   117      123   7.19599E-01   8.48292E-01   8.48172E-01   8.48172E-01   6.28319E+00
-   3   118      124   7.28221E-01   8.53359E-01   8.53237E-01   8.53237E-01   6.28319E+00
-   3   119      125   7.36855E-01   8.58403E-01   8.58281E-01   8.58281E-01   6.28319E+00
-   3   120      126   7.45503E-01   8.63425E-01   8.63303E-01   8.63303E-01   6.28319E+00
-   3   121      127   7.54163E-01   8.68425E-01   8.68302E-01   8.68302E-01   6.28319E+00
-   3   122      128   7.62835E-01   8.73404E-01   8.73281E-01   8.73281E-01   6.28319E+00
-   3   123      129   7.71520E-01   8.78362E-01   8.78237E-01   8.78237E-01   6.28319E+00
-   3   124      130   7.80216E-01   8.83299E-01   8.83173E-01   8.83173E-01   6.28319E+00
-   3   125      131   7.88925E-01   8.88214E-01   8.88088E-01   8.88088E-01   6.28319E+00
-   3   126      132   7.97645E-01   8.93110E-01   8.92983E-01   8.92983E-01   6.28319E+00
-   3   127      133   8.06376E-01   8.97984E-01   8.97857E-01   8.97857E-01   6.28319E+00
-   3   128      134   8.15119E-01   9.02839E-01   9.02711E-01   9.02711E-01   6.28319E+00
-   3   129      135   8.23872E-01   9.07674E-01   9.07545E-01   9.07545E-01   6.28319E+00
-   3   130      136   8.32637E-01   9.12489E-01   9.12360E-01   9.12360E-01   6.28319E+00
-   3   131      137   8.41412E-01   9.17285E-01   9.17155E-01   9.17155E-01   6.28319E+00
-   3   132      138   8.50197E-01   9.22061E-01   9.21931E-01   9.21931E-01   6.28319E+00
-   3   133      139   8.58993E-01   9.26819E-01   9.26687E-01   9.26687E-01   6.28319E+00
-   3   134      140   8.67799E-01   9.31557E-01   9.31425E-01   9.31425E-01   6.28319E+00
-   3   135      141   8.76615E-01   9.36277E-01   9.36144E-01   9.36144E-01   6.28319E+00
-   3   136      142   8.85441E-01   9.40979E-01   9.40845E-01   9.40845E-01   6.28319E+00
-   3   137      143   8.94277E-01   9.45662E-01   9.45528E-01   9.45528E-01   6.28319E+00
-   3   138      144   9.03122E-01   9.50327E-01   9.50192E-01   9.50192E-01   6.28319E+00
-   3   139      145   9.11976E-01   9.54975E-01   9.54839E-01   9.54839E-01   6.28319E+00
-   3   140      146   9.20840E-01   9.59604E-01   9.59468E-01   9.59468E-01   6.28319E+00
-   3   141      147   9.29713E-01   9.64216E-01   9.64080E-01   9.64080E-01   6.28319E+00
-   3   142      148   9.38595E-01   9.68811E-01   9.68674E-01   9.68674E-01   6.28319E+00
-   3   143      149   9.47486E-01   9.73389E-01   9.73251E-01   9.73251E-01   6.28319E+00
-   3   144      150   9.56385E-01   9.77949E-01   9.77811E-01   9.77811E-01   6.28319E+00
-   3   145      151   9.65293E-01   9.82493E-01   9.82354E-01   9.82354E-01   6.28319E+00
-   3   146      152   9.74210E-01   9.87021E-01   9.86881E-01   9.86881E-01   6.28319E+00
-   3   147      153   9.83135E-01   9.91531E-01   9.91391E-01   9.91391E-01   6.28319E+00
-   3   148      154   9.92068E-01   9.96026E-01   9.95885E-01   9.95885E-01   6.28319E+00
-   3   149      155   1.00101E+00   1.00050E+00   1.00036E+00   1.00036E+00   6.28319E+00
-   3   150      156   1.00996E+00   1.00497E+00   1.00482E+00   1.00482E+00   6.28319E+00
-   3   151      157   1.01892E+00   1.00941E+00   1.00927E+00   1.00927E+00   6.28319E+00
-   3   152      158   1.02788E+00   1.01384E+00   1.01370E+00   1.01370E+00   6.28319E+00
-   3   153      159   1.03685E+00   1.01826E+00   1.01812E+00   1.01812E+00   6.28319E+00
-   3   154      160   1.04583E+00   1.02266E+00   1.02251E+00   1.02251E+00   6.28319E+00
-   3   155      161   1.05482E+00   1.02704E+00   1.02690E+00   1.02690E+00   6.28319E+00
-   3   156      162   1.06381E+00   1.03141E+00   1.03127E+00   1.03127E+00   6.28319E+00
-   3   157      163   1.07282E+00   1.03577E+00   1.03562E+00   1.03562E+00   6.28319E+00
-   3   158      164   1.08183E+00   1.04011E+00   1.03996E+00   1.03996E+00   6.28319E+00
-   3   159      165   1.09084E+00   1.04443E+00   1.04429E+00   1.04429E+00   6.28319E+00
-   3   160      166   1.09987E+00   1.04874E+00   1.04860E+00   1.04860E+00   6.28319E+00
-   3   161      167   1.10890E+00   1.05304E+00   1.05289E+00   1.05289E+00   6.28319E+00
-   3   162      168   1.11793E+00   1.05732E+00   1.05717E+00   1.05717E+00   6.28319E+00
-   3   163      169   1.12698E+00   1.06159E+00   1.06144E+00   1.06144E+00   6.28319E+00
-   3   164      170   1.13603E+00   1.06584E+00   1.06569E+00   1.06569E+00   6.28319E+00
-   3   165      171   1.14508E+00   1.07009E+00   1.06993E+00   1.06993E+00   6.28319E+00
-   3   166      172   1.15415E+00   1.07431E+00   1.07416E+00   1.07416E+00   6.28319E+00
-   3   167      173   1.16321E+00   1.07852E+00   1.07837E+00   1.07837E+00   6.28319E+00
-   3   168      174   1.17229E+00   1.08272E+00   1.08257E+00   1.08257E+00   6.28319E+00
-   3   169      175   1.18137E+00   1.08691E+00   1.08676E+00   1.08676E+00   6.28319E+00
-   3   170      176   1.19046E+00   1.09108E+00   1.09093E+00   1.09093E+00   6.28319E+00
-   3   171      177   1.19955E+00   1.09524E+00   1.09509E+00   1.09509E+00   6.28319E+00
-   3   172      178   1.20865E+00   1.09939E+00   1.09923E+00   1.09923E+00   6.28319E+00
-   3   173      179   1.21776E+00   1.10352E+00   1.10336E+00   1.10336E+00   6.28319E+00
-   3   174      180   1.22687E+00   1.10764E+00   1.10748E+00   1.10748E+00   6.28319E+00
-   3   175      181   1.23599E+00   1.11175E+00   1.11159E+00   1.11159E+00   6.28319E+00
-   3   176      182   1.24511E+00   1.11585E+00   1.11569E+00   1.11569E+00   6.28319E+00
-   3   177      183   1.25424E+00   1.11993E+00   1.11977E+00   1.11977E+00   6.28319E+00
-   3   178      184   1.26337E+00   1.12400E+00   1.12384E+00   1.12384E+00   6.28319E+00
-   3   179      185   1.27251E+00   1.12806E+00   1.12790E+00   1.12790E+00   6.28319E+00
-   3   180      186   1.28166E+00   1.13210E+00   1.13194E+00   1.13194E+00   6.28319E+00
-   3   181      187   1.29081E+00   1.13614E+00   1.13598E+00   1.13598E+00   6.28319E+00
-   3   182      188   1.29996E+00   1.14016E+00   1.14000E+00   1.14000E+00   6.28319E+00
-   3   183      189   1.30912E+00   1.14417E+00   1.14401E+00   1.14401E+00   6.28319E+00
-   3   184      190   1.31829E+00   1.14817E+00   1.14801E+00   1.14801E+00   6.28319E+00
-   3   185      191   1.32746E+00   1.15215E+00   1.15199E+00   1.15199E+00   6.28319E+00
-   3   186      192   1.33664E+00   1.15613E+00   1.15597E+00   1.15597E+00   6.28319E+00
-   3   187      193   1.34582E+00   1.16009E+00   1.15993E+00   1.15993E+00   6.28319E+00
-   3   188      194   1.35500E+00   1.16405E+00   1.16388E+00   1.16388E+00   6.28319E+00
-   3   189      195   1.36419E+00   1.16799E+00   1.16782E+00   1.16782E+00   6.28319E+00
-   3   190      196   1.37339E+00   1.17192E+00   1.17175E+00   1.17175E+00   6.28319E+00
-   3   191      197   1.38259E+00   1.17584E+00   1.17567E+00   1.17567E+00   6.28319E+00
-   3   192      198   1.39179E+00   1.17974E+00   1.17958E+00   1.17958E+00   6.28319E+00
-   3   193      199   1.40100E+00   1.18364E+00   1.18347E+00   1.18347E+00   6.28319E+00
-   3   194      200   1.41022E+00   1.18753E+00   1.18736E+00   1.18736E+00   6.28319E+00
-   3   195      201   1.41944E+00   1.19140E+00   1.19123E+00   1.19123E+00   6.28319E+00
-   3   196      202   1.42866E+00   1.19527E+00   1.19510E+00   1.19510E+00   6.28319E+00
-   3   197      203   1.43789E+00   1.19912E+00   1.19895E+00   1.19895E+00   6.28319E+00
-   3   198      204   1.44712E+00   1.20296E+00   1.20279E+00   1.20279E+00   6.28319E+00
-   3   199      205   1.45636E+00   1.20680E+00   1.20662E+00   1.20662E+00   6.28319E+00
-   3   200      206   1.46560E+00   1.21062E+00   1.21045E+00   1.21045E+00   6.28319E+00
-   3   201      207   1.47484E+00   1.21443E+00   1.21426E+00   1.21426E+00   6.28319E+00
-   3   202      208   1.48409E+00   1.21823E+00   1.21806E+00   1.21806E+00   6.28319E+00
-   3   203      209   1.49334E+00   1.22202E+00   1.22185E+00   1.22185E+00   6.28319E+00
-   3   204      210   1.50260E+00   1.22581E+00   1.22563E+00   1.22563E+00   6.28319E+00
-   3   205      211   1.51186E+00   1.22958E+00   1.22940E+00   1.22940E+00   6.28319E+00
-   3   206      212   1.52113E+00   1.23334E+00   1.23317E+00   1.23317E+00   6.28319E+00
-   3   207      213   1.53040E+00   1.23709E+00   1.23692E+00   1.23692E+00   6.28319E+00
-   3   208      214   1.53967E+00   1.24083E+00   1.24066E+00   1.24066E+00   6.28319E+00
-   3   209      215   1.54895E+00   1.24457E+00   1.24439E+00   1.24439E+00   6.28319E+00
-   3   210      216   1.55823E+00   1.24829E+00   1.24811E+00   1.24811E+00   6.28319E+00
-   3   211      217   1.56751E+00   1.25200E+00   1.25183E+00   1.25183E+00   6.28319E+00
-   3   212      218   1.57680E+00   1.25571E+00   1.25553E+00   1.25553E+00   6.28319E+00
-   3   213      219   1.58610E+00   1.25940E+00   1.25922E+00   1.25922E+00   6.28319E+00
-   3   214      220   1.59539E+00   1.26309E+00   1.26291E+00   1.26291E+00   6.28319E+00
-   3   215      221   1.60469E+00   1.26676E+00   1.26658E+00   1.26658E+00   6.28319E+00
-   3   216      222   1.61399E+00   1.27043E+00   1.27025E+00   1.27025E+00   6.28319E+00
-   3   217      223   1.62330E+00   1.27409E+00   1.27391E+00   1.27391E+00   6.28319E+00
-   3   218      224   1.63261E+00   1.27774E+00   1.27756E+00   1.27756E+00   6.28319E+00
-   3   219      225   1.64193E+00   1.28138E+00   1.28120E+00   1.28120E+00   6.28319E+00
-   3   220      226   1.65124E+00   1.28501E+00   1.28483E+00   1.28483E+00   6.28319E+00
-   3   221      227   1.66057E+00   1.28863E+00   1.28845E+00   1.28845E+00   6.28319E+00
-   3   222      228   1.66989E+00   1.29224E+00   1.29206E+00   1.29206E+00   6.28319E+00
-   3   223      229   1.67922E+00   1.29585E+00   1.29566E+00   1.29566E+00   6.28319E+00
-   3   224      230   1.68855E+00   1.29944E+00   1.29926E+00   1.29926E+00   6.28319E+00
-   3   225      231   1.69788E+00   1.30303E+00   1.30284E+00   1.30284E+00   6.28319E+00
-   3   226      232   1.70722E+00   1.30661E+00   1.30642E+00   1.30642E+00   6.28319E+00
-   3   227      233   1.71656E+00   1.31018E+00   1.30999E+00   1.30999E+00   6.28319E+00
-   3   228      234   1.72591E+00   1.31374E+00   1.31355E+00   1.31355E+00   6.28319E+00
-   3   229      235   1.73525E+00   1.31729E+00   1.31710E+00   1.31710E+00   6.28319E+00
-   3   230      236   1.74461E+00   1.32084E+00   1.32065E+00   1.32065E+00   6.28319E+00
-   3   231      237   1.75396E+00   1.32437E+00   1.32418E+00   1.32418E+00   6.28319E+00
-   3   232      238   1.76332E+00   1.32790E+00   1.32771E+00   1.32771E+00   6.28319E+00
-   3   233      239   1.77268E+00   1.33142E+00   1.33123E+00   1.33123E+00   6.28319E+00
-   3   234      240   1.78204E+00   1.33493E+00   1.33474E+00   1.33474E+00   6.28319E+00
-   3   235      241   1.79141E+00   1.33843E+00   1.33824E+00   1.33824E+00   6.28319E+00
-   3   236      242   1.80077E+00   1.34193E+00   1.34174E+00   1.34174E+00   6.28319E+00
-   3   237      243   1.81015E+00   1.34542E+00   1.34523E+00   1.34523E+00   6.28319E+00
-   3   238      244   1.81952E+00   1.34890E+00   1.34871E+00   1.34871E+00   6.28319E+00
-   3   239      245   1.82890E+00   1.35237E+00   1.35218E+00   1.35218E+00   6.28319E+00
-   3   240      246   1.83828E+00   1.35583E+00   1.35564E+00   1.35564E+00   6.28319E+00
-   3   241      247   1.84766E+00   1.35929E+00   1.35910E+00   1.35910E+00   6.28319E+00
-   3   242      248   1.85705E+00   1.36274E+00   1.36254E+00   1.36254E+00   6.28319E+00
-   3   243      249   1.86644E+00   1.36618E+00   1.36598E+00   1.36598E+00   6.28319E+00
-   3   244      250   1.87583E+00   1.36961E+00   1.36942E+00   1.36942E+00   6.28319E+00
-   3   245      251   1.88523E+00   1.37304E+00   1.37284E+00   1.37284E+00   6.28319E+00
-   3   246      252   1.89463E+00   1.37645E+00   1.37626E+00   1.37626E+00   6.28319E+00
-   3   247      253   1.90403E+00   1.37986E+00   1.37967E+00   1.37967E+00   6.28319E+00
-   3   248      254   1.91343E+00   1.38327E+00   1.38307E+00   1.38307E+00   6.28319E+00
-   3   249      255   1.92284E+00   1.38666E+00   1.38647E+00   1.38647E+00   6.28319E+00
-   3   250      256   1.93224E+00   1.39005E+00   1.38985E+00   1.38985E+00   6.28319E+00
-   3   251      257   1.94165E+00   1.39343E+00   1.39324E+00   1.39324E+00   6.28319E+00
-   3   252      258   1.95107E+00   1.39681E+00   1.39661E+00   1.39661E+00   6.28319E+00
-   3   253      259   1.96048E+00   1.40017E+00   1.39997E+00   1.39997E+00   6.28319E+00
-   3   254      260   1.96990E+00   1.40353E+00   1.40333E+00   1.40333E+00   6.28319E+00
-   3   255      261   1.97932E+00   1.40688E+00   1.40669E+00   1.40669E+00   6.28319E+00
-   3   256      262   1.98875E+00   1.41023E+00   1.41003E+00   1.41003E+00   6.28319E+00
-   3   257      263   1.99818E+00   1.41357E+00   1.41337E+00   1.41337E+00   6.28319E+00
-   3   258  EP  264   2.00760E+00   1.41690E+00   1.41670E+00   1.41670E+00   6.28319E+00
+   6     1       13   3.00002E-09   0.00000E+00   0.00000E+00   0.00000E+00   6.28319E+00
+   6     2       14   1.00000E-04   1.00000E-02   1.00000E-02   1.00000E-02   6.28319E+00
+   6     3       15   6.24775E-04   2.49955E-02   2.49925E-02   2.49925E-02   6.28319E+00
+   6     4       16   2.25173E-03   4.74523E-02   4.74457E-02   4.74457E-02   6.28319E+00
+   6     5       17   4.87501E-03   6.98213E-02   6.98114E-02   6.98114E-02   6.28319E+00
+   6     6       18   8.47383E-03   9.20534E-02   9.20404E-02   9.20404E-02   6.28319E+00
+   6     7       19   1.30211E-02   1.14110E-01   1.14094E-01   1.14094E-01   6.28319E+00
+   6     8       20   1.84843E-02   1.35957E-01   1.35938E-01   1.35938E-01   6.28319E+00
+   6     9       21   2.48264E-02   1.57564E-01   1.57542E-01   1.57542E-01   6.28319E+00
+   6    10       22   3.20072E-02   1.78905E-01   1.78880E-01   1.78880E-01   6.28319E+00
+   6    11       23   3.99844E-02   1.99961E-01   1.99933E-01   1.99933E-01   6.28319E+00
+   6    12       24   4.87147E-02   2.20714E-01   2.20683E-01   2.20683E-01   6.28319E+00
+   6    13       25   5.81546E-02   2.41153E-01   2.41118E-01   2.41118E-01   6.28319E+00
+   6    14       26   6.82613E-02   2.61269E-01   2.61232E-01   2.61232E-01   6.28319E+00
+   6    15       27   7.89930E-02   2.81057E-01   2.81017E-01   2.81017E-01   6.28319E+00
+   6    16       28   9.03096E-02   3.00516E-01   3.00473E-01   3.00473E-01   6.28319E+00
+   6    17       29   1.02173E-01   3.19645E-01   3.19599E-01   3.19599E-01   6.28319E+00
+   6    18       30   1.14546E-01   3.38447E-01   3.38399E-01   3.38399E-01   6.28319E+00
+   6    19       31   1.27396E-01   3.56926E-01   3.56875E-01   3.56875E-01   6.28319E+00
+   6    20       32   1.40690E-01   3.75086E-01   3.75033E-01   3.75033E-01   6.28319E+00
+   6    21       33   1.54398E-01   3.92936E-01   3.92880E-01   3.92880E-01   6.28319E+00
+   6    22       34   1.68494E-01   4.10480E-01   4.10422E-01   4.10422E-01   6.28319E+00
+   6    23       35   1.82951E-01   4.27727E-01   4.27667E-01   4.27667E-01   6.28319E+00
+   6    24       36   1.97745E-01   4.44685E-01   4.44622E-01   4.44622E-01   6.28319E+00
+   6    25       37   2.12855E-01   4.61362E-01   4.61297E-01   4.61297E-01   6.28319E+00
+   6    26       38   2.28260E-01   4.77766E-01   4.77698E-01   4.77698E-01   6.28319E+00
+   6    27       39   2.43942E-01   4.93905E-01   4.93835E-01   4.93835E-01   6.28319E+00
+   6    28       40   2.59884E-01   5.09788E-01   5.09716E-01   5.09716E-01   6.28319E+00
+   6    29       41   2.76068E-01   5.25422E-01   5.25348E-01   5.25348E-01   6.28319E+00
+   6    30       42   2.92482E-01   5.40816E-01   5.40739E-01   5.40739E-01   6.28319E+00
+   6    31       43   3.17502E-01   5.63474E-01   5.63394E-01   5.63394E-01   6.28319E+00
+   6    32       44   3.42967E-01   5.85634E-01   5.85551E-01   5.85551E-01   6.28319E+00
+   6    33       45   3.68836E-01   6.07319E-01   6.07233E-01   6.07233E-01   6.28319E+00
+   6    34       46   3.95077E-01   6.28551E-01   6.28462E-01   6.28462E-01   6.28319E+00
+   6    35       47   4.21660E-01   6.49353E-01   6.49261E-01   6.49261E-01   6.28319E+00
+   6    36       48   4.48558E-01   6.69745E-01   6.69650E-01   6.69650E-01   6.28319E+00
+   6    37       49   4.75748E-01   6.89745E-01   6.89647E-01   6.89647E-01   6.28319E+00
+   6    38       50   5.03208E-01   7.09372E-01   7.09271E-01   7.09271E-01   6.28319E+00
+   6    39       51   5.30919E-01   7.28642E-01   7.28539E-01   7.28539E-01   6.28319E+00
+   6    40       52   5.58864E-01   7.47572E-01   7.47466E-01   7.47466E-01   6.28319E+00
+   6    41       53   5.87026E-01   7.66176E-01   7.66067E-01   7.66067E-01   6.28319E+00
+   6    42       54   6.15391E-01   7.84469E-01   7.84357E-01   7.84357E-01   6.28319E+00
+   6    43       55   6.58293E-01   8.11352E-01   8.11237E-01   8.11237E-01   6.28319E+00
+   6    44       56   7.01585E-01   8.37606E-01   8.37488E-01   8.37488E-01   6.28319E+00
+   6    45       57   7.45230E-01   8.63267E-01   8.63144E-01   8.63144E-01   6.28319E+00
+   6    46       58   7.89198E-01   8.88368E-01   8.88242E-01   8.88242E-01   6.28319E+00
+   6    47       59   8.33463E-01   9.12942E-01   9.12813E-01   9.12813E-01   6.28319E+00
+   6    48       60   8.78001E-01   9.37017E-01   9.36884E-01   9.36884E-01   6.28319E+00
+   6    49       61   9.22790E-01   9.60620E-01   9.60484E-01   9.60484E-01   6.28319E+00
+   6    50       62   9.67813E-01   9.83775E-01   9.83635E-01   9.83635E-01   6.28319E+00
+   6    51       63   1.01305E+00   1.00650E+00   1.00636E+00   1.00636E+00   6.28319E+00
+   6    52       64   1.05849E+00   1.02883E+00   1.02868E+00   1.02868E+00   6.28319E+00
+   6    53       65   1.10412E+00   1.05077E+00   1.05062E+00   1.05062E+00   6.28319E+00
+   6    54       66   1.17288E+00   1.08300E+00   1.08284E+00   1.08284E+00   6.28319E+00
+   6    55       67   1.24200E+00   1.11445E+00   1.11429E+00   1.11429E+00   6.28319E+00
+   6    56       68   1.31145E+00   1.14518E+00   1.14502E+00   1.14502E+00   6.28319E+00
+   6    57       69   1.38119E+00   1.17524E+00   1.17507E+00   1.17507E+00   6.28319E+00
+   6    58       70   1.45120E+00   1.20466E+00   1.20449E+00   1.20449E+00   6.28319E+00
+   6    59       71   1.52146E+00   1.23347E+00   1.23330E+00   1.23330E+00   6.28319E+00
+   6    60       72   1.59195E+00   1.26172E+00   1.26155E+00   1.26155E+00   6.28319E+00
+   6    61       73   1.66265E+00   1.28944E+00   1.28926E+00   1.28926E+00   6.28319E+00
+   6    62       74   1.73355E+00   1.31664E+00   1.31646E+00   1.31646E+00   6.28319E+00
+   6    63       75   1.80463E+00   1.34337E+00   1.34318E+00   1.34318E+00   6.28319E+00
+   6    64       76   1.87588E+00   1.36963E+00   1.36944E+00   1.36944E+00   6.28319E+00
+   6    65       77   1.96996E+00   1.40355E+00   1.40335E+00   1.40335E+00   6.28319E+00
+   6    66  EP   78   2.06428E+00   1.43676E+00   1.43656E+00   1.43656E+00   6.28319E+00
 
- Total Time    0.119E+01
-/var/folders/ym/9kw1g21j1nd7kwfn8c0z3st40000gn/T/tvbo_numcont_HopfNF_nxadhqn6/model ... done
-Saving to b.hopf_in_a_HB0, s.hopf_in_a_HB0, and d.hopf_in_a_HB0 ... done</code></pre>
+ Total Time    0.164E+00
+/tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ... done
+Starting /tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ...
+
+  BR    PT  TY  LAB       a          L2-NORM        MAX x1        MAX x2        PERIOD    
+   6     1       13   3.00002E-09   0.00000E+00   0.00000E+00   0.00000E+00   6.28319E+00
+   6     2       14   1.00000E-04   1.00000E-02   1.00000E-02   1.00000E-02   6.28319E+00
+   6     3       15   6.24775E-04   2.49955E-02   2.49925E-02   2.49925E-02   6.28319E+00
+   6     4       16   2.25173E-03   4.74523E-02   4.74457E-02   4.74457E-02   6.28319E+00
+   6     5       17   4.87501E-03   6.98213E-02   6.98114E-02   6.98114E-02   6.28319E+00
+   6     6       18   8.47383E-03   9.20534E-02   9.20404E-02   9.20404E-02   6.28319E+00
+   6     7       19   1.30211E-02   1.14110E-01   1.14094E-01   1.14094E-01   6.28319E+00
+   6     8       20   1.84843E-02   1.35957E-01   1.35938E-01   1.35938E-01   6.28319E+00
+   6     9       21   2.48264E-02   1.57564E-01   1.57542E-01   1.57542E-01   6.28319E+00
+   6    10       22   3.20072E-02   1.78905E-01   1.78880E-01   1.78880E-01   6.28319E+00
+   6    11       23   3.99844E-02   1.99961E-01   1.99933E-01   1.99933E-01   6.28319E+00
+   6    12       24   4.87147E-02   2.20714E-01   2.20683E-01   2.20683E-01   6.28319E+00
+   6    13       25   5.81546E-02   2.41153E-01   2.41118E-01   2.41118E-01   6.28319E+00
+   6    14       26   6.82613E-02   2.61269E-01   2.61232E-01   2.61232E-01   6.28319E+00
+   6    15       27   7.89930E-02   2.81057E-01   2.81017E-01   2.81017E-01   6.28319E+00
+   6    16       28   9.03096E-02   3.00516E-01   3.00473E-01   3.00473E-01   6.28319E+00
+   6    17       29   1.02173E-01   3.19645E-01   3.19599E-01   3.19599E-01   6.28319E+00
+   6    18       30   1.14546E-01   3.38447E-01   3.38399E-01   3.38399E-01   6.28319E+00
+   6    19       31   1.27396E-01   3.56926E-01   3.56875E-01   3.56875E-01   6.28319E+00
+   6    20       32   1.40690E-01   3.75086E-01   3.75033E-01   3.75033E-01   6.28319E+00
+   6    21       33   1.54398E-01   3.92936E-01   3.92880E-01   3.92880E-01   6.28319E+00
+   6    22       34   1.68494E-01   4.10480E-01   4.10422E-01   4.10422E-01   6.28319E+00
+   6    23       35   1.82951E-01   4.27727E-01   4.27667E-01   4.27667E-01   6.28319E+00
+   6    24       36   1.97745E-01   4.44685E-01   4.44622E-01   4.44622E-01   6.28319E+00
+   6    25       37   2.12855E-01   4.61362E-01   4.61297E-01   4.61297E-01   6.28319E+00
+   6    26       38   2.28260E-01   4.77766E-01   4.77698E-01   4.77698E-01   6.28319E+00
+   6    27       39   2.43942E-01   4.93905E-01   4.93835E-01   4.93835E-01   6.28319E+00
+   6    28       40   2.59884E-01   5.09788E-01   5.09716E-01   5.09716E-01   6.28319E+00
+   6    29       41   2.76068E-01   5.25422E-01   5.25348E-01   5.25348E-01   6.28319E+00
+   6    30       42   2.92482E-01   5.40816E-01   5.40739E-01   5.40739E-01   6.28319E+00
+   6    31       43   3.17502E-01   5.63474E-01   5.63394E-01   5.63394E-01   6.28319E+00
+   6    32       44   3.42967E-01   5.85634E-01   5.85551E-01   5.85551E-01   6.28319E+00
+   6    33       45   3.68836E-01   6.07319E-01   6.07233E-01   6.07233E-01   6.28319E+00
+   6    34       46   3.95077E-01   6.28551E-01   6.28462E-01   6.28462E-01   6.28319E+00
+   6    35       47   4.21660E-01   6.49353E-01   6.49261E-01   6.49261E-01   6.28319E+00
+   6    36       48   4.48558E-01   6.69745E-01   6.69650E-01   6.69650E-01   6.28319E+00
+   6    37       49   4.75748E-01   6.89745E-01   6.89647E-01   6.89647E-01   6.28319E+00
+   6    38       50   5.03208E-01   7.09372E-01   7.09271E-01   7.09271E-01   6.28319E+00
+   6    39       51   5.30919E-01   7.28642E-01   7.28539E-01   7.28539E-01   6.28319E+00
+   6    40       52   5.58864E-01   7.47572E-01   7.47466E-01   7.47466E-01   6.28319E+00
+   6    41       53   5.87026E-01   7.66176E-01   7.66067E-01   7.66067E-01   6.28319E+00
+   6    42       54   6.15391E-01   7.84469E-01   7.84357E-01   7.84357E-01   6.28319E+00
+   6    43       55   6.58293E-01   8.11352E-01   8.11237E-01   8.11237E-01   6.28319E+00
+   6    44       56   7.01585E-01   8.37606E-01   8.37488E-01   8.37488E-01   6.28319E+00
+   6    45       57   7.45230E-01   8.63267E-01   8.63144E-01   8.63144E-01   6.28319E+00
+   6    46       58   7.89198E-01   8.88368E-01   8.88242E-01   8.88242E-01   6.28319E+00
+   6    47       59   8.33463E-01   9.12942E-01   9.12813E-01   9.12813E-01   6.28319E+00
+   6    48       60   8.78001E-01   9.37017E-01   9.36884E-01   9.36884E-01   6.28319E+00
+   6    49       61   9.22790E-01   9.60620E-01   9.60484E-01   9.60484E-01   6.28319E+00
+   6    50       62   9.67813E-01   9.83775E-01   9.83635E-01   9.83635E-01   6.28319E+00
+   6    51       63   1.01305E+00   1.00650E+00   1.00636E+00   1.00636E+00   6.28319E+00
+   6    52       64   1.05849E+00   1.02883E+00   1.02868E+00   1.02868E+00   6.28319E+00
+   6    53       65   1.10412E+00   1.05077E+00   1.05062E+00   1.05062E+00   6.28319E+00
+   6    54       66   1.17288E+00   1.08300E+00   1.08284E+00   1.08284E+00   6.28319E+00
+   6    55       67   1.24200E+00   1.11445E+00   1.11429E+00   1.11429E+00   6.28319E+00
+   6    56       68   1.31145E+00   1.14518E+00   1.14502E+00   1.14502E+00   6.28319E+00
+   6    57       69   1.38119E+00   1.17524E+00   1.17507E+00   1.17507E+00   6.28319E+00
+   6    58       70   1.45120E+00   1.20466E+00   1.20449E+00   1.20449E+00   6.28319E+00
+   6    59       71   1.52146E+00   1.23347E+00   1.23330E+00   1.23330E+00   6.28319E+00
+   6    60       72   1.59195E+00   1.26172E+00   1.26155E+00   1.26155E+00   6.28319E+00
+   6    61       73   1.66265E+00   1.28944E+00   1.28926E+00   1.28926E+00   6.28319E+00
+   6    62       74   1.73355E+00   1.31664E+00   1.31646E+00   1.31646E+00   6.28319E+00
+   6    63       75   1.80463E+00   1.34337E+00   1.34318E+00   1.34318E+00   6.28319E+00
+   6    64       76   1.87588E+00   1.36963E+00   1.36944E+00   1.36944E+00   6.28319E+00
+   6    65       77   1.96996E+00   1.40355E+00   1.40335E+00   1.40335E+00   6.28319E+00
+   6    66  EP   78   2.06428E+00   1.43676E+00   1.43656E+00   1.43656E+00   6.28319E+00
+
+ Total Time    0.700E-01
+/tmp/tvbo_numcont_HopfNF_fdr5zjaw/model ... done
+Merge done
+Saving to b.po_from_hopf_HB1, s.po_from_hopf_HB1, and d.po_from_hopf_HB1 ... done</code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="06-Hopf_files/figure-html/cell-7-output-4.png" class="img-fluid figure-img"></p>
+<p><img src="06-Hopf_files/figure-html/cell-7-output-2.png" width="1251" height="965" class="figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
 <p>The 3D view uses the unified style registry: stable LC segments are rendered as a tube surface, unstable ones as a wireframe.</p>
-<div id="5c307d5f" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>hopf_auto.plot_3d(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div id="c6fda01f" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>hopf_auto.plot_3d(VOI<span class="op">=</span><span class="st">"x1"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="06-Hopf_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="06-Hopf_files/figure-html/cell-8-output-1.png" width="1452" height="1300" class="figure-img"></p>
 </figure>
 </div>
 </div>
@@ -9388,13 +9787,14 @@ Saving to b.hopf_in_a_HB0, s.hopf_in_a_HB0, and d.hopf_in_a_HB0 ... done</code><
       e.clearSelection();
     }
     const getTextToCopy = function(trigger) {
-        const codeEl = trigger.previousElementSibling.cloneNode(true);
-        for (const childEl of codeEl.children) {
-          if (isCodeAnnotation(childEl)) {
-            childEl.remove();
-          }
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
         }
-        return codeEl.innerText;
+      }
+      return codeEl.innerText;
     }
     const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
       text: getTextToCopy
@@ -9409,7 +9809,7 @@ Saving to b.hopf_in_a_HB0, s.hopf_in_a_HB0, and d.hopf_in_a_HB0 ... done</code><
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp("https:\/\/virtual-twin\.github\.io\/tvbo\/");
+        var filterRegex = new RegExp('/' + window.location.host + '/');
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }
