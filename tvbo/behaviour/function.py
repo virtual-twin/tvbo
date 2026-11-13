@@ -51,9 +51,9 @@ class FunctionBehaviour(Catalogued):
     def resolved_callable(self):
         """The Python callable this function records, or ``None`` when it records only an equation.
 
-        Named for what it returns rather than ``function``, because a ``FunctionCall`` has a *slot* by that name holding the function it calls: one class with a property and another with a slot, both spelled ``function``, is a probe like ``hasattr(obj, "function")`` deciding the wrong way. Resolving reaches for the recorded module and qualname first, then re-executes the recorded source.
+        Named for what it returns rather than ``function``, because a ``FunctionCall`` has a *slot* by that name holding the function it calls: one class with a property and another with a slot, both spelled ``function``, is a probe like ``hasattr(obj, "function")`` deciding the wrong way. Resolving imports the recorded module and looks the recorded name up in it first, then re-executes the recorded source.
         """
-        # Preferred: resolve via recorded callable path (module + qualname)
+        # Preferred: the recorded callable, by its module and name
         func = self._resolve_function_from_callable_path()
         if func is not None:
             return func
@@ -65,20 +65,20 @@ class FunctionBehaviour(Catalogued):
         return None
 
     def _resolve_function_from_callable_path(self):
-        """Resolve the function by importing its module and traversing qualname."""
+        """Resolve the function by importing its recorded module and looking its recorded name up in it, one dotted part at a time."""
         if not self.callable:
             return None
 
         module_name = self.callable.module
-        qualname = self.callable.qualname or self.callable.name
-        if not module_name or not qualname:
+        name = self.callable.name
+        if not module_name or not name:
             return None
 
         module = importlib.import_module(module_name)
 
-        # Traverse qualname (handles nested objects/classes)
+        # A dotted name reaches an object nested in a class or another object
         obj = module
-        for part in qualname.split("."):
+        for part in name.split("."):
             if part == "<locals>":
                 # Skip '<locals>' artifacts from nested function names
                 continue

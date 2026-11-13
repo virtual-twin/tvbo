@@ -170,16 +170,23 @@ def expand_iri(cls_name: str, data: dict) -> dict:
 
     The record the ``iri`` addresses is :func:`tvbo.data.registry.curated_key`'s answer: a scoped ``tvbo:observation_models/bold_tvb`` names ``bold_tvb`` among observations, an unscoped ``tvbo:BOLD_TVB`` its local name. An ``iri`` naming no curated record merges nothing: it may point at an entity that exists only in the ontology, and this pass cannot tell that from a typo. The record then takes that name as its ``name`` when it states none, and ``tvbo validate`` is where a name that resolves nowhere is reported. A scope of another class, or a ``result/`` reference, is left exactly as written.
 
+    An invocation names what it invokes the same way (:func:`_invoked_class`): a ``FunctionCall``, and every class that is one, written with ``iri: tvbo:functions/<name>`` takes every slot of that curated function it declares itself except the name, its equation or callable and its arguments among them, and states only its own arguments beside it. Its ``iri`` is read as a ``Function`` reads its own, so every other spelling :func:`~tvbo.data.registry.curated_key` accepts for a function names it too, the unscoped ``tvbo:<name>`` among them. A scoped ``iri`` naming no curated function is an error, since the scope says a function was meant and the invocation would have nothing to invoke. An unscoped one naming none merges nothing, as everywhere else, and is an error only where the invocation states no ``equation``, ``callable``, ``class_call``, ``function`` or ``type`` of its own either, since it would then run nothing; ``type`` is how an ``Analysis`` of the solve names what it runs. An invocation runs one thing, so one that names a curated function and also states an ``equation``, ``callable``, ``class_call`` or ``function`` of a kind that function does not record is refused rather than left with two.
+
     Once an ``iri`` has expanded, it survives only for a class that keeps one as a slot, where it is grounding worth recording. ``Network`` does not: its curated record is reached through ``iri`` but its own connectivity is the ``data_file`` the expansion just merged in, so keeping the key would hand ``Network.__init__`` a keyword it has no slot for.
     """
     from tvbo.data.registry import curated_key
     from tvbo.utils import deep_merge
 
     iri = data.get("iri")
-    key = curated_key(iri, cls_name) if isinstance(iri, str) else None
+    if not isinstance(iri, str):
+        return data
+    addressed = _invoked_class(cls_name)
+    key = curated_key(iri, addressed)
     if key is None:
         return data
-    entry = curated_entry(cls_name, key)
+    entry = curated_entry(addressed, key)
+    if addressed != cls_name:
+        entry = _invoked_entry(cls_name, iri, addressed, key, entry, data)
     if entry is None:
         if data.get("name") is None and _has_slot(cls_name, "name"):
             data["name"] = key
@@ -190,6 +197,52 @@ def expand_iri(cls_name: str, data: dict) -> dict:
     data.clear()
     data.update(merged)
     return data
+
+
+INVOCATION_FORMS = ("equation", "callable", "class_call", "function")
+"""The slots through which an invocation says what it runs; a record states one of them."""
+
+
+def _listed(slots, joiner: str = "and", article: bool = True) -> str:
+    """Slot names as backticked text in a sentence, the last joined by *joiner* and each with its article unless *article* is off."""
+    names = [f"{('an ' if slot[0] in 'aeiou' else 'a ') if article else ''}`{slot}`" for slot in slots]
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} {joiner} {names[-1]}"
+
+
+def _invoked_class(cls_name: str) -> str:
+    """The class of the curated records an ``iri`` on a *cls_name* record addresses: ``Function`` for an invocation, and *cls_name* itself for every other class.
+
+    An invocation is not filed in the database itself, so its ``iri`` cannot address a record of its own class; it addresses the function it invokes. A ``FunctionCall`` is an invocation, and so is every class that is one, a study-level ``Analysis`` among them.
+    """
+    from tvbo.datamodel import schema
+
+    cls, call = getattr(schema, cls_name, None), getattr(schema, "FunctionCall", None)
+    return "Function" if isinstance(cls, type) and isinstance(call, type) and issubclass(cls, call) else cls_name
+
+
+def _invoked_entry(cls_name: str, iri: str, addressed: str, key: str, entry: dict | None, data: dict) -> dict | None:
+    """The slots of the curated *addressed* record *entry* that the *cls_name* invocation *data* takes, or ``None`` when its *iri* matched no record and it states something of its own to run.
+
+    Raises:
+        ValueError: when a scoped *iri* names no curated record, when an unscoped one names none and *data* states no form and no ``type`` of its own either, or when *data* states a form of a kind *entry* does not record.
+    """
+    from tvbo.data.registry import iri_target
+
+    if entry is None:
+        if iri_target(iri) is not None:
+            raise ValueError(f"{cls_name} names {iri!r}, and the curated database holds no {addressed} called {key!r}.")
+        if data.get("type") is None and all(data.get(form) is None for form in INVOCATION_FORMS):
+            raise ValueError(
+                f"{cls_name} names {iri!r}, which matched no curated function, and states no {_listed(INVOCATION_FORMS, 'or', article=False)} of its own, so it has nothing to run."
+            )
+        return None
+    recorded = [form for form in INVOCATION_FORMS if entry.get(form) is not None]
+    own = [form for form in INVOCATION_FORMS if data.get(form) is not None and form not in recorded]
+    if own and recorded:
+        raise ValueError(
+            f"{cls_name} names {iri!r}, which records {_listed(recorded)}, and states {_listed(own)} of its own; an invocation runs one of them. State only arguments beside the `iri`, or drop the `iri`."
+        )
+    return {slot: value for slot, value in entry.items() if slot != "name" and _has_slot(cls_name, slot)}
 
 
 def _has_slot(cls_name: str, slot: str) -> bool:

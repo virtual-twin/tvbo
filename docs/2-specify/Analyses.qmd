@@ -93,6 +93,32 @@ The schedule and the staleness check both follow the network. The analysis runs 
 
 A workflow kit carries dataset files and result containers, and no network file a reference names. An experiment that needs such a layer reads it through an analysis, whose container travels with the kit; `tvbo workflow` refuses the direct reference to a file and says which one. A curated network named by its id is installed with the package on the node and passes.
 
+## A curated function, named by `iri`
+
+A statistic several studies share is defined once, in `tvbo/database/functions/`, and an analysis names it by `iri` instead of pointing at study code. The analysis takes the function's equation or callable and the descriptions and defaults of its arguments, and states its own arguments beside them. A `tvbo:functions/<name>` that names no curated function is refused when the study is loaded, and so is an analysis that names a function and states an `equation` or a `callable` of a kind the function does not record, since it would then have two things to run; one of a kind the function records replaces the function's at the leaf, as everything else the analysis states overrides the function's entry. The unscoped `tvbo:<name>` and the older singular `tvbo:function/<name>` still name the same function, and `tvbo migrate-iris` rewrites both into the folder form; an unscoped one that matches no curated function is refused where the analysis states nothing of its own to run, neither a form nor a `type`.
+
+```yaml
+analyses:
+  - name: score_vs_response_time
+    iri: tvbo:functions/GroupedCorrelation
+    arguments:
+      x: {used: {analysis: item_table, output: score}}
+      y: {used: {analysis: item_table, output: response_time}}
+      n_groups: 20
+      dim: subject
+  - name: score_vs_response_time_kept
+    iri: tvbo:functions/FalseDiscoveryControl
+    arguments:
+      p: {used: {analysis: score_vs_response_time, output: p}}
+      q: 0.1
+```
+
+`GroupedCorrelation` cuts the units of `dim` into `n_groups` groups by `x`, or by another variable named as `by`, in bins of equal width (`grouping: equal_width`, the default) or in runs of equal size (`equal_count`), and correlates the group means. It returns `x_mean`, `y_mean`, `y_sd`, `y_se` and `size` on `group`, the least-squares line over the group means (`slope`, `intercept`, and its two ends as `fit_x` and `fit_y`), their `r` and `p`, and `r_unit` and `p_unit` over single units. A unit enters where every input is finite, labelled inputs are paired on the labels of `dim`, each of which names one unit, and every other dimension an input carries is kept: `y` on `(subject, question)` gives one correlation per question from one analysis.
+
+`FalseDiscoveryControl` adjusts a family of p-values by Benjamini-Hochberg or Benjamini-Yekutieli and, given a rate `q`, marks the tests it keeps as `selected`; a test that was not made is passed as NaN and stays out of the family, and any other value outside 0 to 1 is refused. The rate is one number above 0 and below 1: at 1 nothing would be controlled, and at 0 nothing could be kept. `Histogram` counts values in `n_bins` equal-width bins from `lower` to `upper`, optionally only those a mask marks with `where`; a labelled mask is paired with labelled values by label and carries the same labels. What a figure needs on top of these, such as the number of tests below a threshold, is an `equation:` analysis over their outputs.
+
+The equation-based curated functions (`FCCorrelation`, `WelchPSD`, `SoftPeakFrequency`, `SetMean`, `SetCosine`) are named the same way, with `execution: {backend: tvboptim}` beside the `iri`.
+
 ## Ordering
 
 There is no ordering field, and there should not be. An analysis runs once the containers it `used:` exist, so the reference graph *is* the schedule. An analysis that reads only experiments runs after those experiments; one that reads another analysis runs after it; one that reads only empirical data can run before anything is simulated at all.
