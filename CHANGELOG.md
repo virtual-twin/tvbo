@@ -1,11 +1,16 @@
 ## Unreleased
 
+- The clinical graph reaches the Jansen-Rit model Stefanovski et al. (2019) ran: `study-Stefanovski2019` now `usesNodeDynamics` `models/JansenRit`, beside its `model-JansenRit` survey entry, so a query from the study arrives at a runnable model and its parameters.
+
 - `tvbo[knowledge]` holds setuptools below 81: pybel imports `pkg_resources`, which setuptools 81 removed, so a fresh install of the extra failed on `import pybel`.
 
 - `references.bib`: 295 author fields written as "Surname AB" are now "Surname, A. B.", so citation styles read surname and initials correctly (APA printed "A et al." for Spiegler A); the stray `date` of Jirsa2017 that overrode its year is removed.
 
 ### Added
 - **A colour role can name one of the palette's hues: `highlight: palette.5`.** A theme that `!include`s another and moves one role onto a hue it already lists writes that colour once, in the list, and the role follows the hue if the list changes.
+- **A labelled histogram for a study analysis.** `callable: {module: tvbo.analysis.distributions, name: histogram}` counts the finite entries of a labelled array into equal bins and returns the counts on a `bin` dimension whose coordinate is the bin centre, so a figure draws the distribution of a connectome's tract lengths or delays with `mark: bar` and `encoding: {x: bin}` and no study code of its own. Entries outside `lo`/`hi` are left out, which keeps the zeros of a connectivity matrix out of the picture.
+- **The clinical layer is counted from the ontology: `tvbo.ontology.clinical`.** `clinical_landscape()` reads the clinical application studies of the shipped merged ontology with SPARQL and returns the distinct studies per clinical domain and node dynamical model as a `(domain, model)` array, the studies per domain with each domain's ICD-11 code and chapter as coordinates, and the totals of studies, domains and models, shaped as a study analysis callable so a figure binds the landscape by dimension and its numbers grow with curation.
+- **The biological grounding is counted from the ontology: `tvbo.ontology.grounding`.** `go_grounding()` reads every link from a TVB-O entity to a Gene Ontology term out of the shipped merged ontology and returns the links and grounded entities per domain (parameter, state variable, derived variable, dynamics, concept) as labelled arrays beside the five totals, shaped as a study analysis callable so a figure's bar panel binds them by dimension instead of a script counting them beside the paper.
 - **A theme names its raised face and its monospace: `Palette.surface`, `Theme.mono_font`.** `surface` is the colour of a legend box, an inset or a card standing on the `background`, applied as `legend.facecolor` and exported with the other roles, so a document drawn from the theme (the documentation site, a slide deck) and its figures agree on what a layer looks like. `mono_font` is the typeface list code and identifiers are set in, the backend's monospace family. The shipped `tvbo:themes/default` states its surface.
 
 ## 0.9.0rc1 – unreleased

@@ -27,7 +27,7 @@
         <terms:description xml:lang="en">TVB-O, The Virtual Brain Ontology, describes large-scale brain network models and their simulation: neural mass and neural field models with their parameters, state variables and equations, coupling functions, connectomes and brain atlases, integrators and noise, observation models, and the simulation experiments and studies that combine them. Every model, network and experiment curated in the TVB-O database is an individual of the ontology at https://w3id.org/tvbo/&lt;collection&gt;/&lt;name&gt;.</terms:description>
         <terms:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2025-11-20</terms:issued>
         <terms:license rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>
-        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-10-21</terms:modified>
+        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-11-09</terms:modified>
         <terms:title xml:lang="en">The Virtual Brain Ontology</terms:title>
         <pav:version>0.9.0rc1</pav:version>
         <vann:preferredNamespacePrefix>tvbo</vann:preferredNamespacePrefix>
@@ -1364,6 +1364,17 @@
     
 
 
+    <!-- https://w3id.org/tvbo/arrangement -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/arrangement">
+        <rdfs:label>arrangement (slot)</rdfs:label>
+        <skos:definition>Hanging from ceilings (the default), lying on walls, a chain or a ring.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>arrangement</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/associated_with -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/associated_with">
@@ -1935,6 +1946,12 @@
     <!-- https://w3id.org/tvbo/coupling -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/coupling"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/coupling_color -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/coupling_color"/>
     
 
 
@@ -2918,6 +2935,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/hide_yaxis -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/hide_yaxis"/>
+    
+
+
     <!-- https://w3id.org/tvbo/hide_yticklabels -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/hide_yticklabels"/>
@@ -3184,6 +3207,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/label_format -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/label_format"/>
+    
+
+
     <!-- https://w3id.org/tvbo/label_weight -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/label_weight">
@@ -3417,6 +3446,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/mass -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/mass"/>
+    
+
+
     <!-- https://w3id.org/tvbo/math_font -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/math_font">
@@ -3627,6 +3662,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/mono_font -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/mono_font"/>
+    
+
+
     <!-- https://w3id.org/tvbo/muted -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/muted"/>
@@ -3739,12 +3780,6 @@
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>nextflow</skos:notation>
     </owl:ObjectProperty>
-    
-
-
-    <!-- https://w3id.org/tvbo/node_edge_color -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/node_edge_color"/>
     
 
 
@@ -4324,7 +4359,7 @@
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/projection">
         <rdfs:label>projection (slot)</rdfs:label>
-        <skos:definition>Which plane the region centres flatten onto.</skos:definition>
+        <skos:definition>Which side the brain is seen from: axial from above, coronal from the front, sagittal from the left.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>projection</skos:notation>
     </owl:ObjectProperty>
@@ -4913,6 +4948,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/spring -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/spring"/>
+    
+
+
     <!-- https://w3id.org/tvbo/stages -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/stages"/>
@@ -5069,6 +5110,12 @@
     <!-- https://w3id.org/tvbo/surface -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/surface"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/surface_color -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/surface_color"/>
     
 
 
@@ -5565,6 +5612,12 @@
     <!-- https://w3id.org/tvbo/waves -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/waves"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/weight -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/weight"/>
     
 
 
@@ -7293,6 +7346,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/coupling_color -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/coupling_color"/>
+    
+
+
     <!-- https://w3id.org/tvbo/coupling_variable -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/coupling_variable"/>
@@ -7732,6 +7791,17 @@
     
 
 
+    <!-- https://w3id.org/tvbo/equilibrium -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/equilibrium">
+        <rdfs:label>equilibrium (slot)</rdfs:label>
+        <skos:definition>Where each mass rests, drawn as a dashed mark. Unset, it is read from the experiment&apos;s own dynamics, the state where its right-hand side vanishes at the selected cell&apos;s parameters, so a loaded spring&apos;s shifted rest is computed rather than typed.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>equilibrium</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/errorbar_cap_size -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/errorbar_cap_size">
@@ -8061,6 +8131,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/hide_yaxis -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/hide_yaxis"/>
+    
+
+
     <!-- https://w3id.org/tvbo/hide_yticklabels -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/hide_yticklabels"/>
@@ -8149,6 +8225,18 @@
     
 
 
+    <!-- https://w3id.org/tvbo/instance_of -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/instance_of">
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:label>instance_of (slot)</rdfs:label>
+        <skos:definition>The ontology classes this record is an instance of (`tvbo:GlobalCouplingScaling`). A class membership, where `iri` is the record&apos;s own address and `grounding` names what it stands in for.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>instance_of</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/intensity_projection -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/intensity_projection"/>
@@ -8226,6 +8314,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/label_format -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/label_format"/>
+    
+
+
     <!-- https://w3id.org/tvbo/label_pad -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/label_pad">
@@ -8244,6 +8338,17 @@
         <skos:definition>Size of an axis label as a multiple of the body size. Unset draws it at the body size.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>label_scale</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/label_size -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/label_size">
+        <rdfs:label>label_size (slot)</rdfs:label>
+        <skos:definition>Type size of the node names in points. Unset is 4, small enough for a whole parcellation; a graph of a few named regions states a readable size.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>label_size</skos:notation>
     </owl:DatatypeProperty>
     
 
@@ -8489,6 +8594,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/mass -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/mass"/>
+    
+
+
     <!-- https://w3id.org/tvbo/max_bisection_steps -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/max_bisection_steps"/>
@@ -8665,6 +8776,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/mono_font -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/mono_font"/>
+    
+
+
     <!-- https://w3id.org/tvbo/mtime -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/mtime">
@@ -8777,23 +8894,6 @@
     
 
 
-    <!-- https://w3id.org/tvbo/node_edge_color -->
-
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/node_edge_color"/>
-    
-
-
-    <!-- https://w3id.org/tvbo/node_edge_width -->
-
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/node_edge_width">
-        <rdfs:label>node_edge_width (slot)</rdfs:label>
-        <skos:definition>Outline weight of the region markers.</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
-        <skos:notation>node_edge_width</skos:notation>
-    </owl:DatatypeProperty>
-    
-
-
     <!-- https://w3id.org/tvbo/node_mapping -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/node_mapping"/>
@@ -8804,7 +8904,7 @@
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/node_size">
         <rdfs:label>node_size (slot)</rdfs:label>
-        <skos:definition>Marker size for the regions.</skos:definition>
+        <skos:definition>Radius of each region&apos;s sphere in millimetres of the brain; unset is 2.5.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>node_size</skos:notation>
     </owl:DatatypeProperty>
@@ -9167,6 +9267,12 @@
     <!-- https://w3id.org/tvbo/queue -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/queue"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/radial -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/radial"/>
     
 
 
@@ -9591,6 +9697,17 @@
     
 
 
+    <!-- https://w3id.org/tvbo/stretch -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/stretch">
+        <rdfs:label>stretch (slot)</rdfs:label>
+        <skos:definition>The largest displacement as a fraction of a spring&apos;s rest length (or of the spacing in a chain or ring).</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>stretch</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/structural_measures -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/structural_measures"/>
@@ -9627,9 +9744,32 @@
     
 
 
+    <!-- https://w3id.org/tvbo/surface -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/surface"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/surface_alpha -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/surface_alpha">
+        <rdfs:label>surface_alpha (slot)</rdfs:label>
+        <skos:definition>Opacity of that cortex; unset is 0.12, enough to place the nodes in a brain without hiding the ones behind it.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>surface_alpha</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/surface_atlas -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/surface_atlas"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/surface_color -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/surface_color"/>
     
 
 
@@ -10191,6 +10331,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/walls -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/walls"/>
+    
+
+
     <!-- https://w3id.org/tvbo/warmup -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/warmup"/>
@@ -10205,12 +10351,7 @@
 
     <!-- https://w3id.org/tvbo/weight -->
 
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/weight">
-        <rdfs:label>weight (slot)</rdfs:label>
-        <skos:definition>Connection weight (explicit edges)</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
-        <skos:notation>weight</skos:notation>
-    </owl:DatatypeProperty>
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/weight"/>
     
 
 
@@ -10255,6 +10396,17 @@
         <skos:definition>Relative widths of the mosaic columns.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>width_ratios</skos:notation>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/window -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/window">
+        <rdfs:label>window (slot)</rdfs:label>
+        <skos:definition>The stretch `[start, end]` of the animated dimension the frames advance through, in that dimension&apos;s own coordinate (seconds or milliseconds of simulated time, as recorded). A run kept long for a statistic, twenty minutes for a correlation matrix, is shown a minute at a time without a second, shorter run that would draw a different noise realisation. Unset, the frames cover the whole dimension.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>window</skos:notation>
     </owl:DatatypeProperty>
     
 
@@ -13752,6 +13904,18 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/window"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/window"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>Animation</rdfs:label>
         <skos:definition>A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show.</skos:definition>
@@ -13820,6 +13984,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/FontWeight"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -13875,6 +14045,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/va"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -13947,6 +14123,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/va"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -19281,6 +19463,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/connectivity"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -19377,6 +19565,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/delay"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
             </owl:Restriction>
@@ -19420,12 +19614,6 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/valid_diagonal"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -19462,12 +19650,6 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/valid_diagonal"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -21954,6 +22136,7 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
                     <rdf:Description rdf:about="https://w3id.org/tvbo/FrameRole#cursor"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/FrameRole#slice"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/FrameRole#static"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/FrameRole#trail"/>
                 </owl:unionOf>
             </owl:Class>
         </owl:equivalentClass>
@@ -21965,6 +22148,7 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/FrameRole#cursor"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/FrameRole#slice"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/FrameRole#static"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/FrameRole#trail"/>
     </owl:Class>
     
 
@@ -22763,18 +22947,18 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_edge_color"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/projection"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Projection"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_color"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -22799,13 +22983,13 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_edge_color"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/projection"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/projection"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_color"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -22835,18 +23019,18 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_edge_color"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/projection"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_color"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/edge_alpha"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
             </owl:Restriction>
@@ -22865,13 +23049,19 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_edge_width"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/label_size"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_size"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_alpha"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -22895,13 +23085,19 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_edge_width"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/label_size"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_size"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_alpha"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -22925,19 +23121,25 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_edge_width"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/label_size"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/node_size"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_alpha"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>Graph</rdfs:label>
-        <skos:definition>A node-link panel&apos;s graph and how it is drawn: the connectome the model actually ran on, with a state living on it. The geometry is the network&apos;s own — one marker per region at its anatomical centre — and a layer supplies one value per region, placed by label.</skos:definition>
+        <skos:definition>A node-link panel&apos;s graph and how it is drawn: the connectome the model actually ran on, with a state living on it, rendered on the cortical surface. The geometry is the network&apos;s own — one sphere per region at its anatomical centre, one tube per kept connection — and a layer supplies one value per region or one per pair of regions, placed by label.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
     </owl:Class>
     
@@ -24041,6 +24243,12 @@ A directive that varies down the rows or across the columns is still written as 
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yaxis"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yticklabels"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
@@ -24140,6 +24348,12 @@ A directive that varies down the rows or across the columns is still written as 
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/rules"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Rule"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/spring"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Springs"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -24300,6 +24514,12 @@ A directive that varies down the rows or across the columns is still written as 
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yaxis"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yticklabels"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -24385,6 +24605,12 @@ A directive that varies down the rows or across the columns is still written as 
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/rules"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/spring"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -24528,6 +24754,12 @@ A directive that varies down the rows or across the columns is still written as 
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yaxis"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yticklabels"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -24589,6 +24821,12 @@ A directive that varies down the rows or across the columns is still written as 
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/render"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/spring"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -25894,6 +26132,7 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
                     <rdf:Description rdf:about="https://w3id.org/tvbo/MarkType#line"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/MarkType#rule"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/MarkType#scatter"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/MarkType#stream"/>
                 </owl:unionOf>
             </owl:Class>
         </owl:equivalentClass>
@@ -25909,6 +26148,7 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/MarkType#line"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/MarkType#rule"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/MarkType#scatter"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/MarkType#stream"/>
     </owl:Class>
     
 
@@ -29345,6 +29585,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/background"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -29387,6 +29633,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/background"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -29418,6 +29670,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/muted"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -29496,6 +29754,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_xticklabels"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yaxis"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -29636,6 +29900,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/source"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/spring"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Springs"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -29802,6 +30072,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yaxis"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yticklabels"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -29923,6 +30199,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/source"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/spring"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -30078,6 +30360,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yaxis"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/hide_yticklabels"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -30169,6 +30457,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/source"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/spring"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -30525,6 +30819,7 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
                     <rdf:Description rdf:about="https://w3id.org/tvbo/PanelKind#legend"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/PanelKind#line3d"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/PanelKind#network"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/PanelKind#spring"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/PanelKind#surface"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/PanelKind#volume"/>
                 </owl:unionOf>
@@ -30544,6 +30839,7 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/PanelKind#legend"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/PanelKind#line3d"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/PanelKind#network"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/PanelKind#spring"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/PanelKind#surface"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/PanelKind#volume"/>
     </owl:Class>
@@ -30954,6 +31250,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/instance_of"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/reported_optimum"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
             </owl:Restriction>
@@ -30979,6 +31281,12 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/grounding"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/instance_of"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -34969,6 +35277,206 @@ Named for the entity rather than for the experiment because an analysis containe
     
 
 
+    <!-- https://w3id.org/tvbo/SpringArrangement -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SpringArrangement">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/SpringArrangement#chain"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/SpringArrangement#hanging"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/SpringArrangement#lying"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/SpringArrangement#ring"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>SpringArrangement</rdfs:label>
+        <skos:definition>How the masses of a `spring` panel are mounted.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SpringArrangement#chain"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SpringArrangement#hanging"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SpringArrangement#lying"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SpringArrangement#ring"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/Springs -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/Springs">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/arrangement"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/SpringArrangement"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/coupling_color"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/label_format"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/labels"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/mass"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/radial"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/walls"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/arrangement"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/coupling_color"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/label_format"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/labels"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/mass"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/arrangement"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/coupling_color"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/label_format"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/labels"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/mass"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/equilibrium"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/stretch"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/equilibrium"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/radial"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/stretch"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/walls"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/equilibrium"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/radial"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/stretch"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/walls"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>Springs</rdfs:label>
+        <skos:definition>How a `spring` panel mounts its masses. The masses themselves come from the layers: one per entry along a layer&apos;s `color` dim, coloured as a line fan over that dim is, so a mass and its trace in the panel beside it share a colour.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/StandardGraphType -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/StandardGraphType">
@@ -36675,6 +37183,12 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/mono_font"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/opts"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/Argument"/>
             </owl:Restriction>
@@ -36850,6 +37364,12 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/max_ticks"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/mono_font"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -40953,6 +41473,18 @@ Named for the entity rather than for the experiment because an analysis containe
     
 
 
+    <!-- https://w3id.org/tvbo/FrameRole#trail -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/FrameRole#trail">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/FrameRole"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>trail (FrameRole)</rdfs:label>
+        <skos:definition>Draw the layer from the start of the animated dimension up to the current frame — a trajectory that grows as it is traced, a time series written as the clock runs. What a phase-plane orbit or an optimiser&apos;s path needs, where the history up to now is the point and a single slice would be one dot.</skos:definition>
+        <skos:notation>trail</skos:notation>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/GraphRepresentation#auto -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/GraphRepresentation#auto">
@@ -41525,6 +42057,18 @@ Named for the entity rather than for the experiment because an analysis containe
     
 
 
+    <!-- https://w3id.org/tvbo/MarkType#stream -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/MarkType#stream">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/MarkType"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>stream (MarkType)</rdfs:label>
+        <skos:definition>The vector field of the experiment&apos;s own dynamics on the plane its `x` and `y` channels name (two state variables), drawn as streamlines coloured by speed with its equilibria marked. The model is read from the result&apos;s provenance sidecar and evaluated on a grid over the panel&apos;s `xlim`/`ylim`, or over the range the run covers; state variables off the plane are held at their initial values and a swept parameter takes the selected cell&apos;s value. So the arrows a phase plane is read against come from the model that traced the orbits, not from a second recording. Static under an animation.</skos:definition>
+        <skos:notation>stream</skos:notation>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/MathFont#cm -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/MathFont#cm">
@@ -42015,8 +42559,20 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/PanelKind"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
         <rdfs:label>network (PanelKind)</rdfs:label>
-        <skos:definition>The connectome as a node-link graph: one marker per region at its anatomical centre, edges drawn for the connections that survive `edge_percentile`. A layer supplies one value per region and colours the markers with it, so what the panel shows is a state living ON the network rather than beside it. Geometry comes from the `network:` the panel names, values are placed BY LABEL through the node labels, and `projection` picks the anatomical plane the centres flatten onto. Needs no code_modules — the drawing is built in.</skos:definition>
+        <skos:definition>The connectome on the cortical surface: one sphere per region at its anatomical centre and a tube for each connection that survives `edge_percentile`, drawn with a translucent `plot_surf` cortex as bsplot draws a brain network. A layer with one value per region colours the spheres, so what the panel shows is a state living ON the network rather than beside it; a layer with one value per pair of regions (`node_i`, `node_j`) colours the tubes instead, so a connectome&apos;s weights or tract lengths are read on the brain. Geometry comes from the `network:` the panel names, or from the network a bound experiment ran on, which the run writes beside its result; values are placed BY LABEL through the node labels, and `projection` picks the side the brain is seen from. Needs no code_modules — the drawing is built in.</skos:definition>
         <skos:notation>network</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/PanelKind#spring -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/PanelKind#spring">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/PanelKind"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>spring (PanelKind)</rdfs:label>
+        <skos:definition>Masses on coil springs drawn where a layer&apos;s displacement puts them: one mass per entry along the layer&apos;s `color` dim, side by side on their own walls or joined into a chain or a ring (`spring:`). Under an animation the masses move with the frame, so the mechanism and its time series beside it are one picture. The rest position is read from the experiment&apos;s own dynamics. Needs no code_modules — the drawing is built in.</skos:definition>
+        <skos:notation>spring</skos:notation>
     </owl:Class>
     
 
@@ -42673,6 +43229,54 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:label>open (Spines)</rdfs:label>
         <skos:definition>Left and bottom only: the two that carry a scale.</skos:definition>
         <skos:notation>open</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SpringArrangement#chain -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SpringArrangement#chain">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/SpringArrangement"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>chain (SpringArrangement)</rdfs:label>
+        <skos:definition>The masses in one row, neighbours joined by coupling springs and the ends held by walls: coupled oscillators.</skos:definition>
+        <skos:notation>chain</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SpringArrangement#hanging -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SpringArrangement#hanging">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/SpringArrangement"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>hanging (SpringArrangement)</rdfs:label>
+        <skos:definition>Each mass hangs from its own ceiling, the springs in a row; a positive displacement moves the mass up, as its trace rises.</skos:definition>
+        <skos:notation>hanging</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SpringArrangement#lying -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SpringArrangement#lying">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/SpringArrangement"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>lying (SpringArrangement)</rdfs:label>
+        <skos:definition>Each mass lies on its own wall, the springs stacked; a positive displacement moves the mass to the right, away from the wall.</skos:definition>
+        <skos:notation>lying</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SpringArrangement#ring -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SpringArrangement#ring">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/SpringArrangement"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/struct"/>
+        <rdfs:label>ring (SpringArrangement)</rdfs:label>
+        <skos:definition>The masses on a circle, each joined to its two neighbours: a ring a wave can travel round.</skos:definition>
+        <skos:notation>ring</skos:notation>
     </owl:Class>
     
 
@@ -53166,6 +53770,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/ClinicalApplicationStudy"/>
         <clinical:appliesToClinicalDomain rdf:resource="https://w3id.org/tvbo/clinical/domain-Alzheimer"/>
         <clinical:usesNodeDynamics rdf:resource="https://w3id.org/tvbo/clinical/model-JansenRit"/>
+        <clinical:usesNodeDynamics rdf:resource="https://w3id.org/tvbo/models/JansenRit"/>
         <clinical:studyKind>patient-application</clinical:studyKind>
         <terms:date rdf:datatype="http://www.w3.org/2001/XMLSchema#gYear">2019</terms:date>
         <terms:title>Linking Molecular Pathways and Large-Scale Computational Modeling to Assess Candidate Disease Mechanisms and Pharmacodynamics in Alzheimer’s Disease</terms:title>
@@ -54541,7 +55146,7 @@ is the dyadic map with symbolic dynamics given by binary shift.</terms:descripti
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CakanObermayer">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4981"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5043"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -54588,7 +55193,7 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CakanObermayer/state_variables/mu_si"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4981">
+    <rdf:Description rdf:nodeID="genid5043">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -54627,7 +55232,7 @@ bifurcation route to chaos. [^Chua2007]</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CoombesByrne">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4982"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5044"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -54655,7 +55260,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CoombesByrne/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4982">
+    <rdf:Description rdf:nodeID="genid5044">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -54666,7 +55271,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CoombesByrne2D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4983"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5045"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -54685,7 +55290,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CoombesByrne2D/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4983">
+    <rdf:Description rdf:nodeID="genid5045">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -54828,7 +55433,7 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/DumontGutkin">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4984"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5046"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -54864,7 +55469,7 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/DumontGutkin/state_variables/s_ii"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4984">
+    <rdf:Description rdf:nodeID="genid5046">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -54875,8 +55480,8 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Epileptor">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4985"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4986"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5047"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5048"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -54922,11 +55527,11 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Epileptor/state_variables/z"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4985">
+    <rdf:Description rdf:nodeID="genid5047">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
     </rdf:Description>
-    <rdf:Description rdf:nodeID="genid4986">
+    <rdf:Description rdf:nodeID="genid5048">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -54937,7 +55542,7 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Epileptor2D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4987"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5049"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -54975,7 +55580,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Epileptor2D/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4987">
+    <rdf:Description rdf:nodeID="genid5049">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -55013,7 +55618,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Epileptor5D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4988"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5050"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -55072,7 +55677,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Epileptor5D/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4988">
+    <rdf:Description rdf:nodeID="genid5050">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -55183,7 +55788,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/EpileptorRestingState">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4989"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5051"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -55246,7 +55851,7 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/EpileptorRestingState/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4989">
+    <rdf:Description rdf:nodeID="genid5051">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -55310,7 +55915,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/GastSchmidtKnosche_SD">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4990"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5052"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -55354,7 +55959,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/GastSchmidtKnosche_SD/state_variables/r"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4990">
+    <rdf:Description rdf:nodeID="genid5052">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -55365,7 +55970,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/GastSchmidtKnosche_SF">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4991"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5053"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -55392,7 +55997,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/GastSchmidtKnosche_SF/state_variables/r"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4991">
+    <rdf:Description rdf:nodeID="genid5053">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -55403,8 +56008,8 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Generic2dOscillator">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4992"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4993"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5054"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5055"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Excitable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -55434,13 +56039,13 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Generic2dOscillator/state_variables/W"/>
         <tvbo:model_type>generic</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4992">
-        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
-    </rdf:Description>
-    <rdf:Description rdf:nodeID="genid4993">
+    <rdf:Description rdf:nodeID="genid5054">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+    </rdf:Description>
+    <rdf:Description rdf:nodeID="genid5055">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -55923,7 +56528,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Jansen1995">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4994"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5056"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -55959,7 +56564,7 @@ rich strange attractors.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Jansen1995/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4994">
+    <rdf:Description rdf:nodeID="genid5056">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -55970,7 +56575,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/JansenRit">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4995"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5057"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -56014,7 +56619,7 @@ rich strange attractors.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/JansenRit/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4995">
+    <rdf:Description rdf:nodeID="genid5057">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -56025,7 +56630,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/JansenRit1995">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4996"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5058"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -56055,7 +56660,7 @@ rich strange attractors.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/JansenRit1995/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4996">
+    <rdf:Description rdf:nodeID="genid5058">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -56066,7 +56671,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/KIonEx">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4997"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5059"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -56154,7 +56759,7 @@ The model is derived as the mathematical limit of an infinite number of all-to-a
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/KIonEx/state_variables/x"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4997">
+    <rdf:Description rdf:nodeID="genid5059">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -56229,7 +56834,7 @@ vector field.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/LarterBreakspear">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4998"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5060"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Chaotic"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -56305,7 +56910,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/LarterBreakspear/state_variables/Z"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4998">
+    <rdf:Description rdf:nodeID="genid5060">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -56517,8 +57122,8 @@ bursts separated by quiescent phases.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MontbrioPazoRoxin">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid4999"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5000"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5061"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5062"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -56541,11 +57146,11 @@ bursts separated by quiescent phases.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MontbrioPazoRoxin/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid4999">
+    <rdf:Description rdf:nodeID="genid5061">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
-    <rdf:Description rdf:nodeID="genid5000">
+    <rdf:Description rdf:nodeID="genid5062">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57252,7 +57857,7 @@ dynamics decouple giving stable limit cycle of radius sqrt(mu) for mu &gt; 0.</t
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/SupHopf">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5001"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5063"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57272,7 +57877,7 @@ This normal form has a supercritical bifurcation at &apos;a=0&apos; with &apos;a
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/SupHopf/state_variables/y"/>
         <tvbo:model_type>generic</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5001">
+    <rdf:Description rdf:nodeID="genid5063">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SupercriticalHopf"/>
     </rdf:Description>
@@ -57447,8 +58052,8 @@ forcing it displays entrainment, quasi-periodicity or chaos depending on paramet
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/WilsonCowan">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5002"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5003"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5064"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5065"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -57514,11 +58119,11 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/WilsonCowan/state_variables/I"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5002">
+    <rdf:Description rdf:nodeID="genid5064">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
-    <rdf:Description rdf:nodeID="genid5003">
+    <rdf:Description rdf:nodeID="genid5065">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57548,7 +58153,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/ZerlautAdaptationFirstOrder">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5004"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5066"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57667,7 +58272,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/ZerlautAdaptationFirstOrder/state_variables/ou_drift"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5004">
+    <rdf:Description rdf:nodeID="genid5066">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57768,7 +58373,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/ZetterbergJansen">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5005"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5067"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/LimitCycle"/>
@@ -57815,7 +58420,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/ZetterbergJansen/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5005">
+    <rdf:Description rdf:nodeID="genid5067">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -81752,14 +82357,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E-1L0I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/HZ"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoA"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoA"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/HZ"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Hertz per nanoampere (neural gain)</rdfs:comment>
@@ -81825,14 +82430,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T3D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Siemens per square centimetre (conductance density)</rdfs:comment>
@@ -81865,14 +82470,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T3D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Siemens per square metre (conductance density, SI)</rdfs:comment>
@@ -82213,14 +82818,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L0I0M1H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Kilogram per second</rdfs:comment>
@@ -82253,13 +82858,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Kilo-ohm centimetre (axial resistivity)</rdfs:comment>
@@ -82335,14 +82940,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E-1L2I0M1H0T-4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millivolt per millisecond</rdfs:comment>
@@ -82359,14 +82964,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E-1L2I0M1H0T-4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millivolt per second</rdfs:comment>
@@ -82451,14 +83056,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L1I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millimetre per millisecond (= m/s)</rdfs:comment>
@@ -82491,14 +83096,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A1E0L-3I0M0H0T0D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-3</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-3</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Mole per cubic centimetre (mol/cm³)</rdfs:comment>
@@ -82539,12 +83144,6 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
-            </rdf:Description>
-        </qudt:hasFactorUnit>
-        <qudt:hasFactorUnit>
-            <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/A"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
@@ -82552,6 +83151,12 @@ to a task-appropriate range (e.g. omega in Hz).
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
+            </rdf:Description>
+        </qudt:hasFactorUnit>
+        <qudt:hasFactorUnit>
+            <rdf:Description>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Mole per metre per ampere per second (concentration-current coupling)</rdfs:comment>
@@ -82639,14 +83244,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E3L-4I0M-2H0T6D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoS"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoS"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Nanosiemens per millivolt</rdfs:comment>
@@ -83051,14 +83656,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroFARAD"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroFARAD"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Microfarad per square centimetre (specific capacitance)</rdfs:comment>
@@ -83133,16 +83738,16 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label>year</rdfs:label>
     </owl:NamedIndividual>
     <rdf:Description>
-        <xsd:pattern>tvbo:Theme</xsd:pattern>
-    </rdf:Description>
-    <rdf:Description>
-        <xsd:pattern>tvbo:Network</xsd:pattern>
+        <xsd:pattern>tvbo:ExperimentResultSidecar</xsd:pattern>
     </rdf:Description>
     <rdf:Description>
         <xsd:pattern>tvbo:Phenotype</xsd:pattern>
     </rdf:Description>
     <rdf:Description>
-        <xsd:pattern>tvbo:ExperimentResultSidecar</xsd:pattern>
+        <xsd:pattern>tvbo:Theme</xsd:pattern>
+    </rdf:Description>
+    <rdf:Description>
+        <xsd:pattern>tvbo:Network</xsd:pattern>
     </rdf:Description>
     
 
@@ -83753,6 +84358,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>count</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/coupling_color">
+        <rdfs:label>coupling_color (slot)</rdfs:label>
+        <skos:definition>Colour of the springs joining masses in a chain or a ring, the coupling, so it stands apart from the springs each mass has alone.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>coupling_color</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/coupling_variable">
         <rdfs:label>coupling_variable (slot)</rdfs:label>
         <skos:definition>Whether this state variable is transmitted to connected nodes through the coupling function. In TVB terms, this determines the cvar indices (state variables extracted from history and fed into the coupling function). The coupling function may override this via its incoming_states attribute.</skos:definition>
@@ -84155,6 +84766,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>label</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/label_format">
+        <rdfs:label>label_format (slot)</rdfs:label>
+        <skos:definition>Python format string for those labels, e.g. `&apos;m = {} kg&apos;`. Defaults to the value as it is.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>label_format</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/labels_dimensions">
         <rdfs:label>labels_dimensions (slot)</rdfs:label>
         <skos:definition>Mapping of dimension names to their labels (JSON-encoded dict).</skos:definition>
@@ -84248,6 +84865,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>One marker per entry of a standalone legend, for a key whose entries are scatter marks.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>markers</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/mass">
+        <rdfs:label>mass (slot)</rdfs:label>
+        <skos:definition>A coordinate holding each entry&apos;s mass (`Spring.m`); the boxes are drawn with area proportional to it. Unset draws equal boxes.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>mass</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/max_bisection_steps">
         <rdfs:label>max_bisection_steps (slot)</rdfs:label>
@@ -84354,6 +84977,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>modules</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/mono_font">
+        <rdfs:label>mono_font (slot)</rdfs:label>
+        <skos:definition>The typefaces code, identifiers and tabular numbers are set in, most-wanted first (`[Menlo, DejaVu Sans Mono]`), wherever a figure or the document drawn from this theme writes any; the backend&apos;s monospace family.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>mono_font</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/muted">
         <rdfs:label>muted (slot)</rdfs:label>
         <skos:definition>Hairlines and de-emphasised strokes: present, and not competing.</skos:definition>
@@ -84437,12 +85066,6 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Maximum Newton corrector iterations per step: NewtonPar max_iterations on BifurcationKit.jl, and both ITNW and ITMX on the AUTO-07p backends. Unset, each backend keeps its own default, BifurcationKit.jl 25 and AUTO-07p ITNW 5 and ITMX 9. A branch&apos;s nested continuation that leaves it unset takes its parent&apos;s.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>newton_max_iterations</skos:notation>
-    </rdf:Description>
-    <rdf:Description rdf:about="https://w3id.org/tvbo/node_edge_color">
-        <rdfs:label>node_edge_color (slot)</rdfs:label>
-        <skos:definition>Outline colour of the region markers.</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
-        <skos:notation>node_edge_color</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/node_mapping">
         <rdfs:label>node_mapping (slot)</rdfs:label>
@@ -84666,6 +85289,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Scheduler queue for the executor (Nextflow process.queue).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>queue</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/radial">
+        <rdfs:label>radial (slot)</rdfs:label>
+        <skos:definition>On a ring, move the masses out from the centre rather than along the ring.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>radial</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/random_seed">
         <rdfs:label>random_seed (slot)</rdfs:label>
@@ -84919,6 +85548,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>surface_atlas</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/surface_color">
+        <rdfs:label>surface_color (slot)</rdfs:label>
+        <skos:definition>Colour of the translucent cortex the network is drawn in, a palette role or any colour; unset is the theme&apos;s `base`.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>surface_color</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/symbol">
         <rdfs:label>symbol (slot)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
@@ -85105,6 +85740,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>CSS selector to wait for before capturing, so the shot is taken only once the content that matters has rendered.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>wait_selector</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/walls">
+        <rdfs:label>walls (slot)</rdfs:label>
+        <skos:definition>Hold a chain&apos;s ends by walls (the default). Off, the chain is free.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>walls</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/waves">
         <rdfs:label>waves (slot)</rdfs:label>
