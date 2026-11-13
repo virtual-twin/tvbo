@@ -541,6 +541,13 @@ class LazyArrayStore:
         """Whether the companion holds the layer *key*, which a sidecar's declaration does not promise: ``edges/<key>`` in the file's header, or for a CSV companion in its links, read with no value."""
         return key in self._cache or self.holds(f"edges/{key}")
 
+    def attributes(self, path: str) -> dict:
+        """The attributes of the group or dataset at *path* (``mesh``), from the file's header: empty for a CSV companion, which records none, and when the file holds nothing at *path*."""
+        if self._ext == ".csv":
+            return {}
+        with self._open() as store:
+            return dict(store[path].attrs) if path in store else {}
+
     def holds(self, path: str) -> bool:
         """Whether the companion holds an array at *path* (``edges/weight``, ``nodes/parent_index``), from the file's header, or for a CSV companion from its links, without reading a value.
 

@@ -803,8 +803,7 @@ def load_network(path):
             net._store = LazyArrayStore(data_path, meta_dict)
             net.data_file = data_file
 
-            # Restore mesh data from companion if present
-            _load_mesh(net, data_path)
+            _load_mesh(net)
         else:
             net._store = None
             net.data_file = data_file
@@ -815,30 +814,22 @@ def load_network(path):
     return net
 
 
-def _load_mesh(network, companion_path):
-    """Restore the ``Mesh`` record from a companion's ``/mesh/`` group attributes; its arrays stay on the store until asked for."""
-    ext = Path(companion_path).suffix.lower()
-    if ext not in (".h5", ".hdf5"):
+def _load_mesh(network):
+    """Fill the network's ``mesh`` record from its companion's ``/mesh/`` group attributes, an HDF5 or a Zarr companion's, when the sidecar declares none, as no curated surface network's does; its arrays stay on the store until asked for."""
+    if getattr(network, "mesh", None) is not None:
         return
-    import h5py
+    attrs = network._store.attributes("mesh")
+    if not attrs:
+        return
+    from tvbo.datamodel import schema as tvbo_datamodel
 
-    with h5py.File(companion_path, "r") as f:
-        if "mesh" not in f:
-            return
-        mg = f["mesh"]
-        from tvbo.datamodel import schema as tvbo_datamodel
-
-        et = mg.attrs.get("element_type", None)
-        if isinstance(et, bytes):
-            et = et.decode("utf-8")
-        nv = mg.attrs.get("number_of_vertices", None)
-        ne = mg.attrs.get("number_of_elements", None)
-        mesh_obj = tvbo_datamodel.Mesh(
-            element_type=et,
-            number_of_vertices=int(nv) if nv is not None else None,
-            number_of_elements=int(ne) if ne is not None else None,
-        )
-        object.__setattr__(network, "_mesh", mesh_obj)
+    et = attrs.get("element_type")
+    nv, ne = attrs.get("number_of_vertices"), attrs.get("number_of_elements")
+    network.mesh = tvbo_datamodel.Mesh(
+        element_type=et.decode("utf-8") if isinstance(et, bytes) else et,
+        number_of_vertices=None if nv is None else int(nv),
+        number_of_elements=None if ne is None else int(ne),
+    )
 
 
 # ── Save ──────────────────────────────────────────────────────────────
