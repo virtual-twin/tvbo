@@ -201,6 +201,8 @@ def test_a_categorical_attribute_reads_back_declared_in_every_format(tmp_path, b
     """A per-node code into a vocabulary reads back with its declaration in each format, as ``network.nodes.<name>``, and stays off the nodes themselves; an HDF5 companion holds both arrays at their paths and nothing else for them."""
     from tvbo.data.param_io import resolve_network_node
 
+    if binary_format == "zarr":
+        pytest.importorskip("zarr")
     back = _saved_and_read_back(_categorical_network(), tmp_path / binary_format, binary_format)
     template = back.node_template.parameters["network"]
     assert (template.measure, template.levels) == ("nodes/network_code", "network_names")
