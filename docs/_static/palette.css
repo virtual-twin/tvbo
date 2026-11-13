@@ -5,9 +5,11 @@
     --palette-muted: #c3cbcb;
     --palette-highlight: #c0504d;
     --palette-background: #ffffff;
+    --palette-surface: #f3f5f5;
     --palette-hue-1: #1f7d78;
     --palette-hue-2: #d9922f;
     --palette-hue-3: #4a7fbf;
     --palette-hue-4: #7a5a8e;
-    --palette-hue-5: #bf869c;
+    --palette-hue-5: #6b9a4b;
+    --palette-hue-6: #bf869c;
 }

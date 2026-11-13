@@ -4,6 +4,10 @@
 
 - `references.bib`: 295 author fields written as "Surname AB" are now "Surname, A. B.", so citation styles read surname and initials correctly (APA printed "A et al." for Spiegler A); the stray `date` of Jirsa2017 that overrode its year is removed.
 
+### Added
+- **A colour role can name one of the palette's hues: `highlight: palette.5`.** A theme that `!include`s another and moves one role onto a hue it already lists writes that colour once, in the list, and the role follows the hue if the list changes.
+- **A theme names its raised face and its monospace: `Palette.surface`, `Theme.mono_font`.** `surface` is the colour of a legend box, an inset or a card standing on the `background`, applied as `legend.facecolor` and exported with the other roles, so a document drawn from the theme (the documentation site, a slide deck) and its figures agree on what a layer looks like. `mono_font` is the typeface list code and identifiers are set in, the backend's monospace family. The shipped `tvbo:themes/default` states its surface.
+
 ## 0.9.0rc1 – unreleased
 
 ### Added

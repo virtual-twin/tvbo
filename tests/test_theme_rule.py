@@ -213,6 +213,21 @@ def test_a_boxed_frame_keeps_its_four_sides_whole():
 # --------------------------------------------------------------------------- the layers of a look
 
 
+def test_a_trimmed_spine_reaches_every_sample_drawn_inside_the_view():
+    """Ticks inside a declared window stop short of the data; the spine runs on to the data's end there, so no line hangs past the axis that measures it, and it still ends on the outer tick where the data stops before it."""
+    fig, ax = plt.subplots()
+    ax.plot([20160, 60480], [-0.205, -0.175])
+    ax.set_xlim(20160, 60480)
+    ax.set_ylim(-0.21, -0.17)
+    ax.set_xticks([30000, 40000, 50000, 60000])
+    ax.set_yticks([-0.20, -0.19, -0.18, -0.17])
+    axis_rule.trim_spine(ax, "x")
+    axis_rule.trim_spine(ax, "y")
+    assert ax.spines["bottom"].get_bounds() == pytest.approx((20160, 60480))
+    assert ax.spines["left"].get_bounds() == pytest.approx((-0.205, -0.17))
+    plt.close(fig)
+
+
 def test_a_figure_no_theme_speaks_about_follows_no_axis_rule():
     look = bsplot.theme_spec(dm.Figure(name="f"))
     assert _rule(dm.Figure(name="f")) == {}
@@ -367,10 +382,10 @@ def test_a_study_states_its_rule_once_in_a_theme_file_and_every_figure_follows_i
     theme = "iri: tvbo:themes/bsplot\nfont_size: 7\npanel_number_case: upper\npanel_number_format: '({})'\nlegend_loc: lower right\nformat: pdf\n"
     figure, drawn, axes = _render(_study(tmp_path, theme), tmp_path)
     assert axes["a"].get_xlim() == (0, 10) and axes["a"].get_xticks().tolist() == [0, 5, 10]
-    assert axes["a"].spines["left"].get_position() == ("axes", -0.02) and axes["a"].spines["left"].get_bounds() == (
-        -0.01,
-        0.01,
-    )
+    low, high = axes["a"].spines["left"].get_bounds()
+    data = axes["a"].dataLim.intervaly
+    assert axes["a"].spines["left"].get_position() == ("axes", -0.02)
+    assert (low, high) == pytest.approx((min(-0.01, data[0]), max(0.01, data[1]))), "the spine ends on the outer ticks, or on the data where it runs past them"
     assert axes["b"].get_yticks().tolist() == [0, 50, 100], "the ticks a panel declares stand over the rule"
     assert [t.get_text() for t in axes["<colorbar>"].get_yticklabels()] == ["0.0", "0.5", "1.0"]
     letters = [t.get_text() for a in ("a", "b", "c") for t in axes[a].texts]

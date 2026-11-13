@@ -951,6 +951,9 @@ classes:
       background:
         range: string
         description: "The page the figure is printed on."
+      surface:
+        range: string
+        description: "A raised face standing on the page: a legend box, an inset panel, a card. Slightly apart from `background` in either direction, so what sits on it reads as a layer and not as a hole."
       palette:
         range: string
         multivalued: true
@@ -1031,6 +1034,10 @@ classes:
       font_weight:
         range: FontWeight
         description: "Weight of body text."
+      mono_font:
+        range: string
+        multivalued: true
+        description: "The typefaces code, identifiers and tabular numbers are set in, most-wanted first (`[Menlo, DejaVu Sans Mono]`), wherever a figure or the document drawn from this theme writes any; the backend's monospace family."
       label_scale:
         range: float
         description: "Size of an axis label as a multiple of the body size. Unset draws it at the body size."

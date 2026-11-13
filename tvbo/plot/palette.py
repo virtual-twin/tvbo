@@ -18,7 +18,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-ROLES = ("ink", "base", "muted", "highlight", "background")
+ROLES = ("ink", "base", "muted", "highlight", "background", "surface")
 FIELDS = (*ROLES, "palette", "colormaps")
 GUARANTEED_COLORMAPS = ("sequential", "diverging")
 
@@ -67,6 +67,7 @@ GEOMETRY = (
     "font_family",
     "font_size",
     "font_weight",
+    "mono_font",
     "label_scale",
     "label_weight",
     "tick_label_scale",
@@ -158,6 +159,9 @@ def load(source) -> dict:
     for role, value in spec["colormaps"].items():
         _as_colormap(value, f"{where}: colormaps.{role}")
     _refuse_shadowed_names(spec, where)
+    for role in ROLES:
+        if isinstance(spec[role], str) and spec[role].startswith("palette."):  # a role naming one of the hues, as color() reads it
+            spec[role] = _hue(spec[role], spec["palette"])
     for key in (*ROLES, *(f"palette[{i}]" for i in range(len(spec["palette"])))):
         value = spec[key] if key in ROLES else spec["palette"][int(key[8:-1])]
         if not is_color_like(value):
@@ -218,6 +222,7 @@ def use(source) -> dict:
             "axes.facecolor": _current["background"],
             "figure.facecolor": _current["background"],
             "savefig.facecolor": _current["background"],
+            "legend.facecolor": _current["surface"],
         }
     )
     return dict(_current)
@@ -281,11 +286,15 @@ def cycle() -> list[str]:
     return [_current["base"], *_current["palette"]]
 
 
+def _hue(ref: str, hues: list[str]) -> str:
+    """The hue a ``palette.<index>`` reference names in *hues*, the index cycling past the end."""
+    return hues[int(ref.split(".", 1)[1]) % len(hues)]
+
+
 def color(name: str) -> str:
     """One colour by role name, or by ``palette.<index>`` for a hue."""
     if name.startswith("palette."):
-        hues = _current["palette"]
-        return hues[int(name.split(".", 1)[1]) % len(hues)]
+        return _hue(name, _current["palette"])
     if name not in ROLES:
         raise KeyError(f"{name!r} is not a colour role; expected one of {', '.join(ROLES)} or palette.<index>")
     return _current[name]
