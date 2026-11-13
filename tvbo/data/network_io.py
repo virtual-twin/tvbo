@@ -250,16 +250,14 @@ def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_fi
 
     Dumps the network via LinkML, post-processes to v0.7 form, and writes with controlled key ordering.
 
-    A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that would rebuild them from a source are dropped and a reload uses the companion. ``parcellation`` is deliberately not one of them: it also states which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, so dropping it would leave a saved network unable to reconcile any label the atlas spells differently. Keeping it is safe because ``load_network`` defers connectivity until the companion store is attached, so it no longer re-expands to the atlas node set.
+    The sidecar names *data_file*, the companion this save wrote, and the network is left naming the files it was read from, so a record of it written after the save, such as an experiment's export, reads back as one written before. A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that would rebuild them from a source are dropped and a reload uses the companion. ``parcellation`` is deliberately not one of them: it also states which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, so dropping it would leave a saved network unable to reconcile any label the atlas spells differently. Keeping it is safe because ``load_network`` defers connectivity until the companion store is attached, so it no longer re-expands to the atlas node set.
 
     *links* names the CSVs of a CSV save on the records of what they hold, and every save takes the CSV links a network read from CSVs carries off its records first (:func:`_place_links`).
     """
-    if data_file:
-        network.data_file = data_file
-
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
     meta = _purify(meta)
     if data_file:
+        meta["data_file"] = data_file
         for _directive in ("bids_dir", "graph_generator", "tractogram"):
             meta.pop(_directive, None)
     _place_links(meta, links, len(network.nodes or []))
