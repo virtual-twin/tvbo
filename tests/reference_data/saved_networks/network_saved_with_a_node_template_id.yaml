@@ -1,0 +1,37 @@
+tvbo_class: tvbo:Network
+schema_version: tvb-datamodel/0.7.0
+label: saved with a node template
+number_of_nodes: 2
+distance_unit: mm
+parameters:
+  conduction_speed:
+    label: v
+    value: 3.0
+    unit: mm_per_ms
+nodes:
+- id: 0
+  label: node_0
+  parameters:
+    g:
+      value: 0.5
+  record: true
+  size: 1
+  hemisphere: left
+- id: 1
+  label: node_1
+  parameters:
+    g:
+      value: 0.5
+  record: true
+  size: 1
+  hemisphere: left
+graph_representation: auto
+node_template:
+  id: -1
+  parameters:
+    g:
+      name: g
+      value: 0.5
+  record: true
+  size: 1
+  hemisphere: left

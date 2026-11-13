@@ -325,7 +325,7 @@ algorithms:
     simulation_period: 4.0
 execution: {{random_seed: {seed}, precision: float64}}
 """
-TUNED_SHAPE = 'heterogeneous: true, free: true, shape: "(n_nodes,)"'
+TUNED_SHAPE = 'heterogeneous: true, shape: "(n_nodes,)"'
 CONSTANT_G = f"{{value: 0.2, {TUNED_SHAPE}}}"
 SAMPLED_G = f"{{value: 0.2, {TUNED_SHAPE}, {_uniform(0.0, 1.0)}}}"
 WIRED = """
@@ -384,7 +384,7 @@ network:
     c:
       label: c
       parameters:
-        w: {{value: 1.0, {matrix}, free: true, distribution: {{name: Uniform, domain: {{lo: 0.0, hi: 2.0}}}}}}
+        w: {{value: 1.0, {matrix}, distribution: {{name: Uniform, domain: {{lo: 0.0, hi: 2.0}}}}}}
       pre_expression: {{rhs: "x_j * w"}}
       post_expression: {{rhs: "0.05 * gx"}}
       incoming_states: [x]
@@ -479,7 +479,7 @@ optimizations:
   fit:
     loss: {function: mse, arguments: {x: {value: observations.x_last.data}}}
     free_parameters:
-      - {parameter: Decay.k, heterogeneous: true, shape: "(n_nodes,)", initial_value: 0.3}
+      - {parameter: Decay.k, initial_value: 0.3}
     algorithm: adam
     learning_rate: 0.01
     max_iterations: 2
@@ -516,7 +516,7 @@ REFUSED = {
         "'w'.*reads z, which coupling 'LinearCoupling' does not declare",
     ),
     "an equation reading a parameter without a value": (
-        _edge(SCALED.replace("s: {value: 0.75}", "s: {free: true}")),
+        _edge(SCALED.replace("s: {value: 0.75}", "s: {}")),
         "'w'.*reads 's', which has no literal `value`",
     ),
     "equations reading each other": (

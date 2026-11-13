@@ -16,7 +16,7 @@ Network.from_db(rec="avgMatrix", atlas="DesikanKilliany").plot_overview(
 
 ```python
 sc = Network.from_db(
-    tpl="FSLMNI152",
+    tpl="MNI152NLin6Asym",
     cohort="HCPYA",
     rec="dTOR",
     atlas="Schaefer2018",

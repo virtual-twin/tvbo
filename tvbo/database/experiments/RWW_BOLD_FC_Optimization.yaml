@@ -107,7 +107,6 @@ network:
           label: "Global coupling"
           value: 0.5
           description: "Global scaling of long-range connections"
-          free: true
           domain:
             lo: 0.0
             hi: 1.0

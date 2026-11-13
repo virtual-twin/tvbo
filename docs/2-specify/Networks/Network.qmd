@@ -192,7 +192,7 @@ with h5py.File(tmpdir / "visual.h5", "r") as f:
     f.visititems(show)
 ```
 
-Each edge group (`edges/weights`, `edges/lengths`) stores:
+Each edge group (`edges/weight`, `edges/length`) stores:
 
 - **`format`** attr: `"dense"`, `"csr"`, or `"coo"`
 - **`shape`** attr: matrix dimensions $[N, N]$
@@ -215,13 +215,57 @@ Storage format is chosen automatically from matrix properties:
 |---------|-----------|----------|
 | **HDF5** | `.h5` | Default; best compression and random access |
 | **Zarr** | `.zarr/` | Cloud-native storage (S3, GCS) |
-| **CSV** | `.csv` | Legacy, single matrix only |
+| **CSV** | `.csv` | Plain text: one file per array, named on the sidecar record of what it holds |
 
 ```python
 net.save("out.yaml", binary_format="zarr")    # Zarr companion
-net.save("out.yaml", binary_format="csv")     # CSV, first matrix only
+net.save("out.yaml", binary_format="csv")     # one CSV per array
 net.save("out.yaml", sidecar_format="json")   # JSON sidecar + HDF5
 ```
+
+A CSV save names each file on the record of what it holds, with what the file does not record: a layer's CSV is its edge's `data_file` (with its `dtype` and sparse `format`; a sparse layer is one `row column value` line per stored entry), an edge parameter's is its `source`, a mesh array's is a field of `mesh`, and any other array's is the `source` of the parameter that declares it by `measure` (with its `dtype` and `shape`). Any other save drops these links, since its companion holds every array under its path.
+
+Every format stores a text array (`<U`) as text and reads it back as text: HDF5 as UTF-8 strings, Zarr and CSV as they hold text. An array a format cannot store is refused before anything is written, naming the network, the array, its dtype and the formats that hold it:
+
+| Array | HDF5 | Zarr | CSV |
+|---|---|---|---|
+| text (`<U`) | UTF-8 strings | text | text |
+| `object` | refused | refused | refused |
+| `datetime64`, `timedelta64` | refused | held | refused |
+| long double | held | refused | held |
+| structured or void | held | held | refused |
+
+An object array holds Python objects, which no format stores; give text as a text array (`np.asarray(values, dtype=str)`) and numbers at a numeric dtype.
+
+### Declared node arrays
+
+A `node_template` sets what every node shares, and a node's own entry in `nodes` overrides it slot by slot. The slots that say which node it is, `id`, `label`, `position` and `region`, come from the network's data, so a template that sets one is refused, naming it. The one exception is `id: -1`, which tvbo wrote on every template it saved until templates had their own class: a network read with it drops that value.
+
+A node array is declared as a parameter whose `measure` is its path in the companion. On `node_template` the array runs over the nodes, node `i` taking entry `i`, and is read as `network.nodes.<name>` without being copied onto each node. On the network it is any other array, such as a vocabulary. `levels` makes a per-node array a categorical attribute, whose codes index the vocabulary it names:
+
+```yaml
+parameters:
+  functional_network_labels: {measure: nodes/functional_network_labels}
+node_template:
+  parameters:
+    functional_network: {measure: nodes/parent_index, levels: functional_network_labels}
+```
+
+The curated Schaefer2018 networks declare each parcel's functional network this way, and a network named by its atlas alone (`parcellation: {atlas: {name: DesikanKilliany}}`) also declares each region's `hemisphere` from the atlas's terminology. Saved, either network reads back with its categories when the atlas cannot be read.
+
+A vocabulary whose entries sit within those of a coarser one declares it with `parent`. It names the network parameter that holds one code per entry, a code into the vocabulary that parameter's `levels` names, or `-1` for an entry with no parent. Here the insula is placed in no lobe:
+
+```yaml
+parameters:
+  lobes: {value: [frontal, occipital]}
+  region_lobe: {value: [0, 0, 1, -1], levels: lobes}
+  regions: {value: [precentral, superiorfrontal, cuneus, insula], parent: region_lobe}
+node_template:
+  parameters:
+    region: {measure: nodes/region, levels: regions}
+```
+
+Any of the three can instead be an array its `measure` names. A `parent` naming no parameter, or one without `levels`, is refused when the network is resolved. So is a count of codes other than the vocabulary's, a code that is no entry of the coarser vocabulary, and a code that is no finite number, such as NaN or text, named with the entry it is given to. A hierarchy whose arrays are set after the network is built is checked when it is saved.
 
 
 ## 5. Built-in Connectomes
@@ -256,6 +300,10 @@ tpl-<space>[_cohort-<source>]_rec-<pipeline>_atlas-<atlas>[_seg-<variant>][_scal
 | `scale-` | Number of parcels | `1000` |
 | `desc-` | Descriptor | `SC` (structural connectivity) |
 | `_relmat` | BEP017 suffix | Relationship matrix |
+
+A network named by its atlas (`parcellation`) reads the curated network of that atlas and tractogram whose file name carries each entity its `bids` states, exactly: `scale: 100` is never `scale-1000`. When none carries them, the network is refused, naming its entities and what the database holds nearest: the curated networks of its atlas and tractogram, by their IRIs, else the tractograms its atlas has curated networks of, else the curated atlases closest to its name. An entity its `bids` leaves out matches any value or none, so when several curated networks carry the entities it states, the network is refused, naming each by its IRI and the entities that tell them apart with their values: Schaefer2018 states its `segmentation` and its `scale`, and `Lobar` its `desc`. An `iri` names a curated network whatever else the network declares, and one that names none is refused in the same way, naming the curated networks closest to it; one beside a `data_file`, `edge_matrix_files` or `bids_dir` is refused as well, naming both sources. A network that lists its own nodes looks nothing up for its `parcellation` and `bids`: they describe it and load nothing.
+
+A `number_of_nodes` is a size. Beside a curated network, or any other source, it is the number of the source's nodes the network keeps. At the source's own count the network is the source. Below it, the network keeps a random subset of that many nodes, drawn once, when it is built, from the `execution.random_seed` of the experiment building it (from 0 for a network built on its own), and kept as the `node_selection` that names the drawn nodes, so a save lists their labels and reloads with the same nodes. A `--set` of the count or of the experiment's `execution.random_seed` draws the subset again, as the recipe stating them draws it. Above it, the network is refused, naming both counts, and so is a count beside a `node_selection` that keeps another number. Whenever a count or a `node_selection` keeps some of a source's nodes, a warning names the network and both counts (`DesikanKilliany (dTOR): keeps 5 of its 87 nodes.`); reading back a save that already holds them gives none.
 
 Access the BIDS filename programmatically:
 
@@ -316,13 +364,13 @@ network:
 
 #### Nodes by label
 
-A `nodes` mapping keyed by region label attaches values to the nodes the source provides: above, one region gets its own `J` and the other regions are untouched. The same declaration can be written as a list whose entries carry a `label` and no `id`. A label the source does not carry is an error that lists the labels it does carry. A `nodes` list whose entries carry an `id` is something else: it lists the graph itself, as in section 1.
+A `nodes` mapping keyed by region label attaches values to the nodes the source provides: above, one region gets its own `J` and the other regions are untouched. The same declaration can be written as a list whose entries carry a `label` and no `id`. A label the source does not carry is an error that lists the labels it does carry. A `nodes` list whose entries carry an `id` is something else: it lists the graph itself, as in section 1, and the network is its own, so a `parcellation` beside it loads nothing. Beside a source that delivers nodes (an `iri`, a `data_file`, a `bids_dir`) such a list has to be the source's nodes, the same labels in the same order, or the ones its `node_selection` keeps, as a save writes them; any other list is refused, naming both.
 
 #### Edges by kind
 
 | The entry has | It is | Beside a source |
 |---|---|---|
-| no `source`/`target`, and a `used:` or a `producer:` | a layer the network supplies | It replaces the source's layer of that name under any spelling (`weights` is `weight`). The source provides the nodes and every other layer. |
+| no `source`/`target`, and a `used:` or a `producer:` | a layer the network supplies | It replaces the source's layer of that name under any spelling (`tractLength` is `length`). The source provides the nodes and every other layer. |
 | no `source`/`target`, and no origin | a layer entry | It keeps every slot it states (`unit`, `description`, `coupling`, a flag) and takes the others, and the matrix, from the source's entry of that layer. |
 | a `source_network` or a `target_network` | a route to another network | It is kept as written. It is no connectivity of this network, so the source loads beside it. |
 | a `source` and a `target` in this network | a listed edge | The network is refused. A graph is either read from a source or listed edge by edge. |
@@ -367,13 +415,13 @@ TVBO uses **hierarchical network composition** to represent both scales in one c
 ```
 Parent Network (dk_sc.yaml + dk_sc.h5)
 ├── 87 DK region nodes
-├── edges/weights/data    (87 × 87)   dense
-└── edges/lengths/data    (87 × 87)   dense
+├── edges/weight/data     (87 × 87)   dense
+└── edges/length/data     (87 × 87)   dense
 
 Child Network (surface_rh.yaml + surface_rh.h5)
 ├── parent_network: dk_sc.yaml
 ├── 2 562 vertex nodes  (fsaverage 3k, RH)
-├── edges/weights/       CSR sparse  (2 562 × 2 562, fill ~10 %)
+├── edges/weight/        CSR sparse  (2 562 × 2 562, fill ~10 %)
 │   ├── data      (nnz,)
 │   ├── indices   (nnz,)
 │   └── indptr    (2 563,)
@@ -690,7 +738,7 @@ Attach the subnetwork weight matrix and save. `Network.save()` writes the YAML s
 # Embed the 10×10 subnetwork into the full 12×12 node space: nodes 0–1 are mean-field, nodes 2–11 are the spiking subnetwork
 W_full = np.zeros((12, 12))
 W_full[2:, 2:] = W_sub
-net.set_matrix("weights", W_full)
+net.set_matrix("weight", W_full)
 
 # Save → creates .yaml sidecar + .h5 companion
 net.save(tmpdir / "multiscale_cortex.yaml")
@@ -733,7 +781,7 @@ with h5py.File(tmpdir / "multiscale_cortex.h5", "r") as f:
     f.visititems(show)
 ```
 
-The template edge `label: weights` tells `save()` to write the matrix at `edges/weights/data` in HDF5. On load, the same label routes the lazy reader back to the right dataset. No manual `h5py` code needed, because the Network API handles the full sidecar and companion lifecycle.
+The template edge `label: weight` tells `save()` to write the matrix at `edges/weight/data` in HDF5. On load, the same label routes the lazy reader back to the right dataset. No manual `h5py` code needed, because the Network API handles the full sidecar and companion lifecycle.
 
 #### Interface Variables
 
@@ -958,6 +1006,8 @@ The HDF5 companion stores data and **dimension scales** (HDF5 §12.2) that label
 | `edges/gain/_dim_col_labels` | $(68,)$ | Region labels (dim-1 scale) |
 | `nodes/coordinates` | $(61, 3)$ | Sensor positions (MNI mm) |
 
+The scales label a dense layer. A sparse layer stores its entries, not its axes, so the sidecar's `dimension_labels` alone name its columns, and a Zarr or CSV companion has no dimension scales: each reads the column labels from the sidecar.
+
 
 ## Reference
 
@@ -1027,12 +1077,12 @@ nodes:
       z: 0
 
 edges:
-  - label: weights         # Template edge (matrix name)
+  - label: weight          # Template edge (matrix name)
     format: dense           # "dense", "csr", or "coo"
     weighted: true
     valid_diagonal: false
     non_negative: true
-  - label: lengths
+  - label: length
     unit: mm
     format: dense
 

@@ -265,7 +265,7 @@ print("✓ Mesh data survives HDF5 round-trip")
 
 ### Optional: MNE Projection Layer in the Network Section
 
-The MNE exporter creates a sensor-to-region projection network in tvbo format (`sensors_eeg_standard1005_fsaverage_aparc_projection.yaml`).
+The MNE exporter creates a sensor-to-region projection network in tvbo format (`tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.yaml`).
 This can be handled in the same multi-layer network workflow as other network resources.
 
 ```{python}
@@ -274,7 +274,7 @@ from tvbo import database_path
 mne_yaml = (
     database_path
     / "networks"
-    / "sensors_eeg_standard1005_fsaverage_aparc_projection.yaml"
+    / "tpl-fsaverage_acq-EEGstandard1005_atlas-DesikanKilliany_desc-projection_sensors.yaml"
 )
 mne_meta = mne_yaml.with_name(f"{mne_yaml.stem}_plotmeta.npz")
 

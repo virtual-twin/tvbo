@@ -94,7 +94,7 @@ FC_DESCRIPTION = (
 
 def load_atlas_entities(seg="7Networks", scale=100):
     """Return (labels, centers_xyz) from the tvbo data atlas YAML."""
-    atlas_file = ATLAS_DIR / f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml"
+    atlas_file = ATLAS_DIR / f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_dseg.yaml"
     with open(atlas_file) as f:
         d = yaml.safe_load(f)
     entities = d["terminology"]["entities"]
@@ -166,7 +166,7 @@ def create_network(seg="7Networks", scale=100):
     parent_index, net_labels = build_parent_index(labels)
 
     # --- BIDS filename base ---
-    stem = f"tpl-FSLMNI152_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-{seg}_scale-{scale}_desc-SCFC_relmat"
+    stem = f"tpl-MNI152NLin6Asym_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-{seg}_scale-{scale}_desc-SCFC_relmat"
     h5_name = stem + ".h5"
     yaml_name = stem + ".yaml"
 
@@ -261,12 +261,14 @@ def create_network(seg="7Networks", scale=100):
         ],
         "node_mapping": "/nodes/parent_index",
         "bids": {
-            "template": "FSLMNI152",
+            "template": "MNI152NLin6Asym",
             "cohort": "HCPYA",
             "reconstruction": "Hansen2022",
+            "atlas": "Schaefer2018",
             "segmentation": seg,
             "scale": str(scale),
-            "atlas": "Schaefer2018",
+            "desc": "SCFC",
+            "suffix": "relmat",
         },
         "parameters": {
             "conduction_speed": {"label": "v", "value": 3.0, "unit": "mm/ms"},
@@ -274,7 +276,7 @@ def create_network(seg="7Networks", scale=100):
         "parcellation": {
             "atlas": {
                 "name": "Schaefer2018",
-                "coordinateSpace": "FSLMNI152",
+                "coordinateSpace": "MNI152NLin6Asym",
             },
         },
         "tractogram": {

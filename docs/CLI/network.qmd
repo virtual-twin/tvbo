@@ -17,7 +17,7 @@ If MRtrix is missing, the command fails fast with these same links.
 
 ::: {.callout-important}
 ## Same space, not registered here
-The tractogram and the parcellation image **must already be co-registered in the same space** (e.g. both in `FSLMNI152`). `tvbo network build` does not register them — it only assigns streamline endpoints to parcellation labels. Record the shared space with `--space` so it lands in the output filename and metadata.
+The tractogram and the parcellation image **must already be co-registered in the same space** (e.g. both in `MNI152NLin6Asym`). `tvbo network build` does not register them — it only assigns streamline endpoints to parcellation labels. Record the shared space with `--space` so it lands in the output filename and metadata.
 :::
 
 ## Synopsis
@@ -43,7 +43,7 @@ tvbo network build TRACTOGRAM PARCELLATION
 | `PARCELLATION` | _(required)_ | Integer-labelled parcellation image (e.g. `dseg.nii.gz`), same space as the tractogram. |
 | `--output, -o` | _(BIDS-derived name in CWD)_ | Sidecar path (`.yaml`); the `.h5` companion is written next to it. |
 | `--atlas` | _(none)_ | Parcellation/atlas name — metadata and `atlas-` filename entity. |
-| `--space` | _(none)_ | Shared coordinate space (e.g. `FSLMNI152`) — the `tpl-` entity. |
+| `--space` | _(none)_ | Shared coordinate space (e.g. `MNI152NLin6Asym`) — the `tpl-` entity. |
 | `--cohort` | _(none)_ | Cohort/dataset — the `cohort-` entity (e.g. `HCPYA`). |
 | `--reconstruction, --rec` | _(none)_ | Tractography pipeline (e.g. `dTOR`) — the `rec-` entity + `tractogram` metadata. |
 | `--seg` | _(none)_ | Segmentation — the `seg-` entity (e.g. `17Networks`). |
@@ -76,9 +76,9 @@ tvbo network build dTOR.tck atlas_dseg.nii.gz --dry-run
 
 # Minimal build → BIDS-named output in the current directory
 tvbo network build dTOR.tck Schaefer1000_dseg.nii.gz \
-    --space FSLMNI152 --atlas Schaefer2018 --rec dTOR \
+    --space MNI152NLin6Asym --atlas Schaefer2018 --rec dTOR \
     --seg 17Networks --scale 1000 --cohort HCPYA
-#   → tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.{yaml,h5}
+#   → tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-1000_desc-SC_relmat.{yaml,h5}
 
 # Explicit output path + node labels + keep the streamline assignments
 tvbo network build dTOR.tck DK_dseg.nii.gz \

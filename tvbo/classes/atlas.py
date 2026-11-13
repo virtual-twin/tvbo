@@ -22,7 +22,6 @@ except ImportError:
         return x  # No-op if tqdm not available
 
 
-from tvbo.adapters import bids as bids_utils
 from tvbo.data.tvbo_data import ATLAS_DIR
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology.atlas import freesurfer
@@ -54,9 +53,6 @@ aseg_gm_regions = [
     "right-ventraldc",
     "brain-stem",
 ]
-
-available_atlases = bids_utils.get_unique_entity_values(atlas_data, "atlas")
-
 
 Atlas = tvbo_datamodel.BrainAtlas
 """The generated class itself. What an atlas does lives in :mod:`tvbo.behaviour.atlas`; ``Atlas.of(name)`` is the constructor that also reads the atlas's own files, which plain construction deliberately does not."""
@@ -101,15 +97,13 @@ def create_atlas_metadata(fname_atlas, labels="freesurfer"):
 def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
     """Relabel a parcellation with contiguous rank IDs and write the ranked volume and metadata.
 
-    Remaps each original label to a consecutive integer (1, 2, 3, ...), records the mapping as `ParcellationEntity` metadata (keeping the original lookup label), then saves the ranked NIfTI volume alongside its `.yaml` metadata using a BIDS-style path with the given `desc`.
+    Remaps each original label to a consecutive integer (1, 2, 3, ...), records the mapping as `ParcellationEntity` metadata (keeping the original lookup label), then saves the ranked NIfTI volume alongside its `.yaml` metadata as the database names an atlas, `tpl-<space>_atlas-<atlas>_desc-<desc>_dseg`, the template being the `space-` of *fname_atlas*.
 
     Args:
         fname_atlas: Path to the source parcellation NIfTI file.
-        labels: Labelling scheme; `"freesurfer"` maps indices to region names via
-            the FreeSurfer lookup, otherwise `labels` is indexed by label id.
+        labels: Labelling scheme; `"freesurfer"` maps indices to region names via the FreeSurfer lookup, otherwise `labels` is indexed by label id.
         desc: BIDS `desc` entity used when building the output file path.
-        gm_only: When using FreeSurfer labels, keep only cortical (`ctx`) and
-            grey-matter subcortical regions, skipping all others.
+        gm_only: When using FreeSurfer labels, keep only cortical (`ctx`) and grey-matter subcortical regions, skipping all others.
 
     Returns:
         The ranked parcellation as a NIfTI image.
@@ -150,7 +144,7 @@ def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
     entities["desc"] = desc
     franked = atlas_data.build_path(
         entities,
-        path_patterns=["space-{space}_atlas-{atlas}_desc-{desc}_{suffix}{extension}"],
+        path_patterns=["tpl-{space}_atlas-{atlas}_desc-{desc}_{suffix}{extension}"],
         validate=False,
     )
     nib.save(img, franked)

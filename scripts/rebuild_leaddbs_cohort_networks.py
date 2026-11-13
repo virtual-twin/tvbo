@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Recount the 17 rec-MghUscHcp32 and rec-PPMI85 networks from Lead-DBS's original group connectomes.
+"""Recount the rec-MghUscHcp32 and rec-PPMI85 networks from Lead-DBS's original group connectomes.
 
 The networks were counted from ``.tck`` conversions of Lead-DBS's ``data.mat`` that had grouped each streamline's points with an unstable sort, so the points of most streamlines were out of order and one end lay inside the white matter: counted from them, 30% of MGH-USC 32's and 61% of PPMI 85's streamlines end outside every parcel, against 12% and 20% from the originals. The originals are Lead-DBS's ``group2017`` (MGH-USC HCP 32, Horn 2017) and ``group2017_ppmi`` (PPMI 85, Ewert 2017) releases, converted point-order-preserving by hcp-connectome-studies' ``analyses/sc/scripts/leaddbs_to_tck.py``.
 
@@ -29,23 +29,19 @@ ARCHIVE = Path.home() / "projects" / "TVB-O" / "_archive"
 TEMPLATEFLOW = Path(os.environ.get("TEMPLATEFLOW_HOME", Path.home() / "Library" / "Caches" / "templateflow"))
 HCPYTHON = Path.home() / "projects" / "ImageProcessing" / "hcpython"
 VOLUMES = {
-    "tpl-FSLMNI152_{c}_atlas-Schaefer2018_scale-1000": ARCHIVE
-    / "tvbo-data/tvbo_data/atlas/tpl-FSLMNI152_atlas-Schaefer1000-desc-17Networks_res-2_dseg.nii.gz",
-    "tpl-FSLMNI152_{c}_atlas-Schaefer2018_seg-17Networks_scale-1000": ARCHIVE
+    "tpl-MNI152NLin6Asym_{c}_atlas-Schaefer2018_seg-17Networks_scale-1000": ARCHIVE
     / "tvbo-data/tvbo_data/atlas/tpl-FSLMNI152_atlas-Schaefer1000-desc-17Networks_res-2_dseg.nii.gz",
     "tpl-MNI152NLin2009bAsym_{c}_atlas-HCPMMP1": HCPYTHON
     / "resources/atlases/tpl-MNI152NLin2009bAsym_atlas-HCPMMP1_res-05_desc-dTOR_dseg.nii.gz",
-    "tpl-MNI152NLin2009bAsym_{c}_atlas-HCPMMP1_seg-ordered": ARCHIVE
-    / "tvbo-data/tvbo_data/atlas/tpl-MNI152NLin2009b_atlas-hcpmmp1_desc-ordered_dseg.nii.gz",
     "tpl-MNI152NLin2009cAsym_{c}_atlas-DesikanKilliany": ARCHIVE
     / "tvbo-data/tvbo_data/atlas/tpl-MNI152Nlin2009c_atlas-DesikanKilliany_desc-ranked_dseg.nii.gz",
     "tpl-MNI152NLin2009cAsym_{c}_atlas-Destrieux": ARCHIVE
     / "tvbo-data/tvbo_data/atlas/tpl-MNI152Nlin2009c_atlas-Destrieux_desc-ranked_dseg.nii.gz",
     "tpl-MNI152NLin2009cAsym_{c}_atlas-HOCPA": TEMPLATEFLOW
     / "tpl-MNI152NLin2009cAsym/tpl-MNI152NLin2009cAsym_res-02_atlas-HOCPA_desc-th0_dseg.nii.gz",
-    "tpl-MNI152NLin2009cAsym_{c}_atlas-Yeo17": ARCHIVE
+    "tpl-MNI152NLin6Asym_{c}_atlas-Yeo17": ARCHIVE
     / "tvbo_old/tvbo/data/tvbo_data/atlas/space-MNI152_atlas-Yeo17_res-1_dseg.nii.gz",
-    "tpl-MNI152NLin2009cAsym_{c}_atlas-virtualdbs": ARCHIVE
+    "tpl-MNI152NLin2009bAsym_{c}_atlas-vDBS1": ARCHIVE
     / "tvbo-data/tvbo_data/atlas/tpl-MNI152NLin2009c_atlas-virtualdbs_res-07_dseg.nii.gz",
 }
 

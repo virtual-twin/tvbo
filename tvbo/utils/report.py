@@ -23,6 +23,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from tvbo.codegen.dims import shape_terms
 from tvbo.data import db
 from tvbo.utils import as_list, keyed_items, normalize_params
 from tvbo.utils.yaml_loader import looks_like_path
@@ -973,7 +974,7 @@ def flag_text(obj, flags=None):
         val = slot(obj, attr)
         if val is None or val == "":
             continue
-        if attr == "shape" and not any(ch.isdigit() for ch in str(val)):
+        if attr == "shape" and not any(isinstance(term, int) for term in shape_terms(val) or ()):
             continue
         if attr == "source" and not isinstance(val, str):
             # `source` may be a structured object (iri / path / producer); show a concise pointer, never its raw repr.
@@ -983,7 +984,7 @@ def flag_text(obj, flags=None):
 
 
 _STATE_VAR_FLAGS = [("coupling_variable", "coupling"), ("stimulation_variable", "stimulation"), ("record", "recorded")]
-_PARAM_FLAGS = [("free", "free"), ("heterogeneous", "heterogeneous")]
+_PARAM_FLAGS = [("heterogeneous", "heterogeneous")]
 
 
 def equation_latex(eq, derivative_notation="dot", symbol_names=None, mul_symbol=None):

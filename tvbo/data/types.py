@@ -21,7 +21,7 @@ from matplotlib.animation import FuncAnimation
 import tvbo.jax.xarray_pytrees  # noqa: F401 – registers xr types as JAX pytrees
 from tvbo.classes.network import Network
 from tvbo.data.experiment_result_io import RESULT_SECTIONS, write_container
-from tvbo.utils import Bunch, as_list, format_pytree_as_string, keyed_items, network_couplings
+from tvbo.utils import Bunch, as_list, format_pytree_as_string, keyed_items
 from tvbo.utils.pytree import Pytree
 
 logger = logging.getLogger(__name__)
@@ -1995,27 +1995,8 @@ class ObservationResult(Bunch):
         return getattr(self, "ts", None)
 
 
-def _free_param_names(source) -> set:
-    """Names of the model's free (tunable) parameters — dynamics + coupling.
-
-    These are the parameters an algorithm tunes (e.g. wLRE / wFFI / J_i for EIB); their fitted values are the operating point a ``from_experiment`` warm-start reloads as a prior location (persisted as ``estimate__<param>`` in :meth:`ExperimentResult.save`).
-    State variables are never parameters, so filtering to these can never collide with the settled ``<sv>_final`` state observations. Empty set when *source* is absent.
-    """
-    if source is None:
-        return set()
-    # A lone `coupling` on the source (an experiment's default-coupling view) is one more owner.
-    couplings = [*network_couplings(getattr(source, "network", None)).values(), *as_list(getattr(source, "coupling", None))]
-    owners = [getattr(source, "dynamics", None), *couplings]
-    return {
-        p.name
-        for owner in owners
-        for p in as_list(getattr(owner, "parameters", None))
-        if getattr(p, "free", False) and getattr(p, "name", None)
-    }
-
-
 def _algo_tuned_params(source) -> dict:
-    """Map each algorithm name to the set of free parameters it FITS.
+    """Map each algorithm name to the set of parameters it FITS.
 
     A parameter counts as fit by an algorithm when an ``update_rule`` targets it — the algorithm's own rules or, recursively, those of an algorithm it ``includes``. Lets ``estimate__<param>`` be sourced from the algorithm that actually tunes a parameter rather than one that merely carries it at its initial value (e.g. a FIC pre-pass that holds ``wLRE``/``wFFI`` fixed must not shadow the EIB pass that fits them). Empty dict when *source* exposes no introspectable algorithms; each present algorithm maps to a (possibly empty) set.
     """
@@ -2523,17 +2504,15 @@ class ExperimentResult:
                 if da is not None:
                     data_vars[f"algorithm__{_san(algo_name)}__{field}"] = da
 
-        # Persist each tuned FREE parameter's fitted value as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; free params only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params).
-        free_names = _free_param_names(self.source) if self.algorithms else set()
-        if free_names:  # nothing tunable → skip the flatten entirely
-            # Source each estimate from the algorithm that FITS the param (last/most-converged wins), not one that merely carries its init value.
-            tuned_by = _algo_tuned_params(self.source)
+        # Persist each parameter an algorithm's update rules tune as ``estimate__<param>`` so a from_experiment warm-start can reload it as a prior location (point prior). Kept on LABELLED node axes (``node`` for vectors, ``node_i``+``node_j`` for per-edge matrices) — the same convention FC matrices use — so the consumer reconciles by label with the existing `.sel` path, no bespoke reindex. Container-layer only (values already live in AlgorithmResult.state) → no codegen change; parameters only, so it can't shadow a ``<sv>_final`` key; sourced from the algorithm that FITS each param (last-writer among fitting passes, see _algo_tuned_params), and an algorithm without introspectable rules persists nothing.
+        tuned_by = _algo_tuned_params(self.source) if self.algorithms else {}
+        if any(tuned_by.values()):  # nothing tuned → skip the flatten entirely
             for algo_name, algo in self.algorithms.items():
-                fits = tuned_by.get(algo_name, free_names)
+                fits = tuned_by.get(algo_name, set())
                 for dotted, arr in OptimizationResult._flatten_params(getattr(algo, "state", None)).items():
                     param = dotted.rsplit(".", 1)[-1]
                     key = f"estimate__{_san(param)}"
-                    if param not in free_names or param not in fits:
+                    if param not in fits:
                         continue
                     a = np.asarray(getattr(arr, "values", arr))
                     if a.dtype == object or a.size == 0:
@@ -4470,8 +4449,9 @@ class SimulationState(Pytree):
             if isinstance(x, (jax.Array, np.ndarray)):
                 if np.issubdtype(x.dtype, np.integer):
                     return jnp.array(x, dtype=int_dtype)
-                else:
+                if np.issubdtype(x.dtype, np.inexact):
                     return jnp.array(x, dtype=target_dtype)
+                return x
             elif isinstance(x, float):
                 return jnp.array(x, dtype=target_dtype)
             elif isinstance(x, int):

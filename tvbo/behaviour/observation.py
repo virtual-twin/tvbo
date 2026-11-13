@@ -3,7 +3,7 @@
 #
 # Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
+# Licensed under the EUPL-1.2
 #
 """What an ``Observation`` record does: load by file or database name, render and build its backend monitor, and draw itself."""
 

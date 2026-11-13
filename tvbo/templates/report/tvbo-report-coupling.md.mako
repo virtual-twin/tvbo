@@ -74,8 +74,6 @@ pre_is_identity = str(pre_rhs or "").strip() in (_ALIASES | set(_states))
 coupling_meta = []
 for attr, label in (
     ("coupling_function", "function"),
-    ("aggregation", "aggregation"),
-    ("inner_coupling", "inner"),
     ("outsym", "output symbol"),
     ("observed", "observed"),
 ):

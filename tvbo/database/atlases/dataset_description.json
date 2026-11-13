@@ -1,20 +1,11 @@
 {
-    "Name": "TVB-O Atlas Parcellation Dataset",
-    "BIDSVersion": "1.6.0",
+    "Name": "TVB-O curated atlases",
+    "BIDSVersion": "1.11.1",
+    "DatasetType": "derivative",
     "GeneratedBy": [
         {
-            "Name": "TVB-O Pipeline",
-            "Version": "1.0.0",
-            "CodeURL": "https://github.com/your_repo/tvbo-pipeline"
+            "Name": "tvbo",
+            "CodeURL": "https://github.com/virtual-twin/tvbo"
         }
-    ],
-    "SourceDatasets": [
-        {
-            "URL": "https://example.com/source-dataset",
-            "DOI": "10.1234/example.doi"
-        }
-    ],
-    "DatasetType": "derivative",
-    "GeneratedDate": "2024-09-06",
-    "License": "CC-BY 4.0"
+    ]
 }

@@ -58,6 +58,7 @@ edges:
   non_negative: true
   directed: false
   allow_self_connections: true
+primary_weight: sc
 graph_representation: auto
 number_of_nodes: 9
 data_file: SmileyNetwork.h5

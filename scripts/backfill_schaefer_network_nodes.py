@@ -37,7 +37,7 @@ def parse_entities(atlas_yaml: Path) -> list[dict]:
 
 
 def atlas_yaml_path(atlas_dir: Path, seg: str, scale: str) -> Path:
-    return atlas_dir / (f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml")
+    return atlas_dir / (f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_dseg.yaml")
 
 
 def update_network_yaml(network_yaml: Path, atlas_dir: Path, overwrite: bool) -> bool:
@@ -83,7 +83,9 @@ def update_network_yaml(network_yaml: Path, atlas_dir: Path, overwrite: bool) ->
 
 def main() -> None:
     args = parse_args()
-    pattern = f"tpl-FSLMNI152_cohort-HCPYA_rec-{args.tractogram}_atlas-Schaefer2018_seg-*Networks_scale-*_desc-SC_relmat.yaml"
+    pattern = (
+        f"tpl-MNI152NLin6Asym_cohort-HCPYA_rec-{args.tractogram}_atlas-Schaefer2018_seg-*Networks_scale-*_desc-SC_relmat.yaml"
+    )
     files = sorted(args.network_dir.glob(pattern))
 
     updated = 0

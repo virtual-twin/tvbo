@@ -10,6 +10,7 @@ import logging
 import os
 import re
 from collections import Counter
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +37,7 @@ from tvbo.adapters.tvb import from_tvb_simulator as _from_tvb_simulator
 from tvbo.behaviour._runtime import Copyable
 from tvbo.classes.coupling import Coupling
 from tvbo.classes.dynamics import Dynamics
-from tvbo.classes.network import Network, _backfill_name_from_iri
+from tvbo.classes.network import Network, _backfill_name_from_iri, drawing_from
 from tvbo.classes.noise import Integrator
 from tvbo.codegen import templater
 from tvbo.data import cohort as _cohort
@@ -47,7 +48,7 @@ from tvbo.datamodel.dialect import expand_iri
 from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.run.graph import GraphRunner as _Network
-from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, normalize_params, traverse_metadata
+from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, traverse_metadata
 from tvbo.utils.source import current_source_file
 
 sessionid = 1
@@ -89,6 +90,11 @@ def _sync_network_node_count(net):
     elif (net.number_of_nodes or 0) > 1 and not net.nodes:
         # number_of_nodes set but no nodes list — create default nodes
         net.nodes = [tvbo_datamodel.Node(id=i, label=f"node_{i}") for i in range(net.number_of_nodes)]
+
+
+def _stated_seed(execution) -> int | None:
+    """The ``random_seed`` an experiment's ``execution`` states, written as a mapping or built as a record; ``None`` when it states none."""
+    return execution.get("random_seed") if isinstance(execution, dict) else getattr(execution, "random_seed", None)
 
 
 def _hoist_coupling_parameters(parameters) -> None:
@@ -296,7 +302,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     parc["atlas"] = {"name": record_name(parc["iri"], "BrainAtlas")}
                 _backfill_name_from_iri(parc.get("atlas"), "BrainAtlas")
             _backfill_name_from_iri(net_kw.get("tractogram"))
-            kwargs["network"] = Network(**net_kw)
+            with drawing_from(_stated_seed(kwargs.get("execution"))):
+                kwargs["network"] = Network(**net_kw)
 
         super().__init__(**kwargs)
 
@@ -391,7 +398,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         # Materialise the network from its declarative spec. All branching lives in Network._resolve; this hook only supplies the YAML source directory for relative-path resolution.
         if self.network is not None and not getattr(self.network, "_resolved", False):
             source_dir = Path(self._source_file).parent if self._source_file else None
-            self.network._resolve(source_dir=source_dir)
+            with drawing_from(_stated_seed(getattr(self, "execution", None))):
+                self.network._resolve(source_dir=source_dir)
 
         if not getattr(self, "integration", None):
             self.integration = Integrator()
@@ -460,7 +468,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if net is not None and not getattr(net, "_resolved", False):
             source_file = getattr(obj, "_source_file", None)
             source_dir = Path(source_file).parent if source_file else None
-            net._resolve(source_dir=source_dir)
+            with drawing_from(_stated_seed(getattr(obj, "execution", None))):
+                net._resolve(source_dir=source_dir)
 
         # Validate declarative network-observation sources against the network's declared observational_measures (names only, no data load).
         obj._validate_network_observations()
@@ -899,7 +908,10 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
             from tvbo.utils import to_yaml as _to_yaml
 
-            text = _strip_private_yaml_keys(_to_yaml(self, None))
+            network = getattr(self, "network", None)
+            folder = _Path(filepath).parent if filepath else None
+            with network._naming_files_from(folder) if isinstance(network, Network) else nullcontext():
+                text = _strip_private_yaml_keys(_to_yaml(self, None))
             if filepath:
                 _Path(filepath).write_text(text, encoding="utf-8")
                 return filepath
@@ -1004,8 +1016,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 "coupling_inputs",
             ]
         )
-        # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
-        self._expand_coupling_parameter_shapes(parameters)
         # Wrap array-valued (per-mode) parameters as ndarrays so the JAX backend receives jnp arrays. Bare Python lists would survive convert_dtype's tree_map (which descends into the list and only converts the scalar elements, leaving a list[Array]) and then break `scalar * param` arithmetic in the generated dfun. Mirrors render_jax_default (tvboptim).
         self._arrayify_parameter_values(parameters)
         for name, values in self._node_parameter_arrays().items():
@@ -1036,40 +1046,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         from tvbo.adapters.base import node_parameter_arrays
 
         return node_parameter_arrays(self.network, self.dynamics)
-
-    def _expand_coupling_parameter_shapes(self, parameters: Bunch) -> None:
-        """Expand coupling parameters that have shape annotations like (N, N) or (N,)."""
-        if not hasattr(parameters, "coupling") or self.network is None:
-            return
-
-        N = self.network.number_of_nodes
-        coupling_params = parameters.coupling
-
-        # Every coupling the network declares, not just the first: each states its own shapes.
-        declared = {
-            name: param
-            for coup in network_couplings(self.network).values()
-            for name, param in normalize_params(getattr(coup, "parameters", None)).items()
-        }
-        for param_name, param_obj in declared.items():
-            if param_name not in coupling_params:
-                continue
-
-            shape_str = getattr(param_obj, "shape", None)
-            if not shape_str:
-                continue
-
-            current_value = coupling_params[param_name]
-
-            # Parse shape string and expand
-            if shape_str == "(N, N)" or shape_str == "(N,N)":
-                # Expand scalar to NxN matrix
-                if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
-                    coupling_params[param_name] = np.full((N, N), float(current_value))
-            elif shape_str == "(N,)" or shape_str == "(N)":
-                # Expand scalar to N-vector
-                if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
-                    coupling_params[param_name] = np.full((N,), float(current_value))
 
     def _arrayify_parameter_values(self, parameters: Bunch) -> None:
         """Convert list/tuple-valued parameters in the collection to ``np.array``.
@@ -1296,6 +1272,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         A *local* ``used:`` — one carrying neither ``experiment`` nor ``iri`` — names one of this experiment's own outputs and is resolved by the in-run machinery instead, so it is skipped here rather than reaching ``locate_container``, which raises on a reference with no WHERE.
         """
+        from tvbo.codegen.dims import dynamics_sizes, resolve_shape, shape_terms
         from tvbo.data import dataref as _dref
 
         ini = getattr(self, "initial_state", None)
@@ -1331,6 +1308,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             fallback = int(_sid) if _sid is not None else None
 
         n_nodes = len(self.network.nodes) if self.network.nodes else None
+        sizes = dynamics_sizes(self.dynamics) if getattr(self, "dynamics", None) is not None else {}
         point = str(getattr(ini, "source_point", "") or "endpoint") if is_from_exp else "endpoint"
         # 'branch' has no single point for a parameter value; settle to the endpoint.
         settle = -1 if point in ("", "endpoint", "branch") else int(point)
@@ -1348,19 +1326,18 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
             A declared shape that is not checked is not a declaration. An algorithm writes a tuned weight twice -- as the observation the tuning measured, which keeps the monitor's leading axis, and as ``estimate__<param>``, which is the operating point on a labelled node axis -- so binding the first where the second was meant hands the model a ``(1, n)`` where it declared ``(n,)``. Unchecked, that inflates the model's mode axis and fails several layers down inside the solver's output assembly, in a message naming neither the parameter nor the experiment it came from.
 
-            Size-one axes are dropped only when doing so lands exactly on the declared shape, which is unambiguous and lossless. Anything else raises.
+            The declared shape is sized by the one shape reader (:func:`tvbo.codegen.dims.resolve_shape`), with the network's node count and the dynamics' sizes; without a node count a shape naming ``n_nodes`` is not checked. Size-one axes are dropped only when doing so lands exactly on the declared shape, which is unambiguous and lossless. Anything else raises.
             """
-            if not shape_decl:
+            if not shape_decl or (n_nodes is None and "n_nodes" in (shape_terms(shape_decl) or ())):
                 return arr
             want = str(shape_decl).strip()
-            expected = (n_nodes,) if want.replace(" ", "") in ("(n_nodes,)", "(n_nodes)") and n_nodes is not None else None
-            if expected is None or arr.shape == expected:
+            expected = resolve_shape(want, owner=f"Parameter {pname!r}", sizes=sizes, n_nodes=n_nodes)
+            if arr.shape == expected:
                 return arr
-            squeezed = arr.reshape(tuple(d for d in arr.shape if d != 1)) if 1 in arr.shape else arr
-            if squeezed.shape == expected:
-                return squeezed
+            if [d for d in arr.shape if d != 1] == [d for d in expected if d != 1]:
+                return arr.reshape(expected)
             raise ValueError(
-                f"Parameter {pname!r} declares shape {want} ({expected[0]} nodes) but its `used:` reference "
+                f"Parameter {pname!r} declares shape {want}, {expected}, but its `used:` reference "
                 f"{_dref.describe(spec) if hasattr(_dref, 'describe') else spec} resolves to an array of shape {arr.shape}. "
                 f"An algorithm records a tuned parameter twice: as the observation it measured, which keeps a leading "
                 f"monitor axis, and as `estimate__<param>`, which is the operating point on a labelled node axis. "
@@ -1631,7 +1608,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         # Checked here as well as at render, for the run paths that never render through the export registry (python, pyrates, gillespie).
         from tvbo import export as _export
+        from tvbo.multiscale import lower
 
+        lower(self)
         _export.refuse_unlowered_parameter_starts(self, format)
 
         if format.lower() == "tvb":
@@ -2435,7 +2414,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def _bids_query_dict(query) -> tuple[dict, str | None]:
         """Split a ``BidsEntities`` query into (key-value entities, suffix).
 
-        Maps the schema's attribute names to the short entity keys that :func:`tvbo.classes.network._parse_bids_entities` emits. ``suffix`` is returned separately because it is the trailing filename component, not a ``key-value`` entity.
+        Maps the schema's attribute names to the short entity keys that :func:`tvbo.data.registry.stem_entities` emits. ``suffix`` is returned separately because it is the trailing filename component, not a ``key-value`` entity.
         """
         return _cohort.query_entities(query)
 
@@ -2618,31 +2597,30 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def dataset_reconcile_indices(self) -> dict:
         """Model-side gather index for each ``by_label`` dataset target (keyed).
 
-        For every observation sourced from ``dataset.subject.<measure>`` with ``reconcile: by_label``, returns the positions of the shared node labels within the model network's node order — derived from the labels, never from position. The shared label set is identical across the cohort, so it is resolved once from the first cohort subject (reading only its node labels, not its matrix). Codegen uses this to gather the simulated observable onto the same shared labels as the reconciled empirical target before comparing them. Returns ``{}`` (no gather) when nothing is dataset-sourced or the data cannot be resolved.
+        For every observation sourced from ``dataset.subject.<measure>`` with ``reconcile: by_label``, returns the positions of the shared node labels within the model network's node order — derived from the labels, never from position. The shared label set is identical across the cohort, so it is resolved once from the first cohort subject (reading only its node labels, not its matrix). Codegen uses this to gather the simulated observable onto the same shared labels as the reconciled empirical target before comparing them. Returns ``{}`` (no gather) when nothing is dataset-sourced or the first subject's file is not there; every other error, a model network whose atlas the registry refuses among them, raises.
         """
         targets = self.dataset_observation_targets
         subjects = self.dataset_subject_ids() if targets else []
         if not subjects:
             return {}
-        try:
-            root = self._dataset_bids_root()
-            model_labels = self._resolve_model_node_labels()
-            out: dict = {}
-            for name in targets:
-                obs = self.observations[name]
-                if self._reconcile_mode(obs) != "by_label":
-                    continue
-                path = self._find_subject_file(root, subjects[0], getattr(obs, "query", None))
-                shared = self._shared_labels(model_labels, Network.load(str(path)))
-                out[name] = self.dataset_reconcile_index(shared, model_labels).tolist()
-        except Exception:
-            return {}
+        root = self._dataset_bids_root()
+        model_labels = self._resolve_model_node_labels()
+        out: dict = {}
+        for name in targets:
+            obs = self.observations[name]
+            if self._reconcile_mode(obs) != "by_label":
+                continue
+            try:
+                target = Network.load(str(self._find_subject_file(root, subjects[0], getattr(obs, "query", None))))
+            except FileNotFoundError:
+                return {}
+            out[name] = self.dataset_reconcile_index(self._shared_labels(model_labels, target), model_labels).tolist()
         return out
 
     def dataset_subject_ids(self) -> list:
         """Enumerate the cohort for the per-subject workflow fan-out: the dataset's subjects, narrowed to those its network can be built for.
 
-        An explicit ``dataset.subjects`` list wins (a curated subset). Otherwise the subjects are discovered by querying ``dataset.bids_root`` with the first dataset-sourced observation's ``query`` — the same filter that resolves each shard's target, so discovery and resolution never diverge. An experiment that reads a cohort keeps only the members of every such cohort (:meth:`subject_selection`). Returns subject IDs without the ``sub-`` prefix; empty when the experiment has no dataset-sourced observation.
+        An explicit list wins (a curated subset): ``dataset.subjects``, or the file ``dataset.subjects_file`` names. Otherwise the subjects are discovered by querying ``dataset.bids_root`` with the first dataset-sourced observation's ``query`` — the same filter that resolves each shard's target, so discovery and resolution never diverge. An experiment that reads a cohort keeps only the members of every such cohort (:meth:`subject_selection`). Returns subject IDs without the ``sub-`` prefix; empty when the experiment has no dataset-sourced observation.
         """
         return list(self.subject_selection()["subjects"])
 
@@ -2653,8 +2631,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         """
         listed = self._dataset_subjects()
         cohort_ids = self.per_subject_cohorts() if listed else []
-        datasets = self._reference_datasets() if cohort_ids else []
-        members = {c: tuple(_cohort.cohort_members(*_cohort.find_cohort(datasets, c))) for c in cohort_ids}
+        context = self._reference_context() if cohort_ids else {}
+        datasets = context.get("datasets", [])
+        members = {
+            c: tuple(_cohort.cohort_members(*_cohort.find_cohort(datasets, c), context.get("source_dir"))) for c in cohort_ids
+        }
         reached_from = (tuple(listed), tuple(members.items()))
         cached = getattr(self, "_subject_selection", None)
         if cached is not None and cached[0] == reached_from:
@@ -2680,9 +2661,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         ds = getattr(self, "dataset", None)
         if ds is None:
             return []
-        subs = getattr(ds, "subjects", None)
-        if subs:
-            return list(_cohort.subject_entries(subs))
+        listed = _cohort.dataset_subjects(ds, self._reference_context()["source_dir"])
+        if listed:
+            return list(listed)
         targets = self.dataset_observation_targets
         root = getattr(ds, "bids_root", None)
         if not targets or not root:
@@ -2703,9 +2684,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def _sidecar_companions(sidecar: Path) -> list:
         """Data files a network sidecar references, resolved next to the sidecar.
 
-        A per-subject FC file is a YAML sidecar plus its payload (``data_file``, an HDF5 matrix); some networks instead reference ``nodes``/``edges`` tables or an ``edge_matrix_files`` map. Return every companion the sidecar points at so a bundle copies the sidecar together with the bytes it needs — nothing more.
+        A per-subject FC file is a YAML sidecar plus its payload (``data_file``, an HDF5 matrix); some networks instead reference ``nodes``/``edges`` tables or an ``edge_matrix_files`` map, and a network saved with CSV companions names a CSV per array on the records of what they hold (:func:`~tvbo.data.matrix_io.csv_links`). Return every companion the sidecar points at, once, so a bundle copies the sidecar together with the bytes it needs — nothing more.
         """
         import yaml
+
+        from tvbo.data.matrix_io import csv_links
 
         try:
             meta = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
@@ -2723,7 +2706,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             refs += [v for v in emf.values() if isinstance(v, str)]
         elif isinstance(emf, list):
             refs += [v for v in emf if isinstance(v, str)]
-        return [sidecar.parent / r for r in refs]
+        refs += [link["file"] for link in csv_links(meta).values()]
+        return [sidecar.parent / r for r in dict.fromkeys(refs)]
 
     def dataset_bundle_files(self, entity_overrides: dict | None = None) -> dict:
         """Per subject, the source file(s) a self-contained kit must carry.
@@ -2782,7 +2766,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             dataset, _ = _cohort.find_cohort(context["datasets"], ref.cohort)
             root = _cohort.dataset_root(dataset, context["source_dir"])
             entities = _cohort.query_entities(getattr(ref, "query", None))
-            for member in _cohort.members_read(ref, context["datasets"], subject)[0]:
+            for member in _cohort.members_read(ref, context["datasets"], subject, context["source_dir"])[0]:
                 path = _cohort.subject_file(root, member, *entities)
                 held = files.setdefault(member, [])
                 if path not in held:
@@ -2792,19 +2776,25 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def bundled_cohorts(self) -> list:
         """The cohorts the experiment's references name, as the experiment's own dataset declares them in a kit that bundles their members' files.
 
-        A kit carries no study, so each cohort moves into the dataset the frozen experiment keeps, holding only the members the kit's runs read (:func:`tvbo.data.cohort.members_read`, over the fan-out's subjects or the one run that has none), since only their files travel, in the order they are first read. Its description records how many members the study's cohort has. Empty for an experiment that reads no cohort.
+        A kit carries no study, so each cohort moves into the dataset the frozen experiment keeps, holding only the members the kit's runs read (:func:`tvbo.data.cohort.members_read`, over the fan-out's subjects or the one run that has none), since only their files travel, in the order they are first read. Its description records how the study's cohort admits its members, when it does not type them (:func:`tvbo.data.cohort.admission`), and how many it has. The members are typed on the returned record whichever way the study states them; a kit writes those the study keeps in a file or admits by a rule to a file of its own (:func:`tvbo.data.cohort.lists_from_file`). Empty for an experiment that reads no cohort.
         """
-        datasets = self._reference_datasets()
+        context = self._reference_context()
+        datasets, source_dir = context["datasets"], context["source_dir"]
         read: dict = {}
         for subject in self.dataset_subject_ids() or [None]:
             for ref in self.declared_references():
                 if getattr(ref, "cohort", None):
-                    read.setdefault(str(ref.cohort), {}).update(dict.fromkeys(_cohort.members_read(ref, datasets, subject)[0]))
+                    read.setdefault(str(ref.cohort), {}).update(
+                        dict.fromkeys(_cohort.members_read(ref, datasets, subject, source_dir)[0])
+                    )
         cohorts = []
         for cohort_id, members in read.items():
             dataset, declared = _cohort.find_cohort(datasets, cohort_id)
-            n_members = len(_cohort.cohort_members(dataset, declared))
+            n_members = len(_cohort.cohort_members(dataset, declared, source_dir))
             note = f"Bundled into this kit: the {len(members)} of its {n_members} members the experiment reads."
+            admitted = _cohort.admission(dataset, declared)
+            if admitted:
+                note = f"Admitted in the study as {admitted}. {note}"
             description = getattr(declared, "description", None)
             cohorts.append(
                 tvbo_datamodel.Cohort(

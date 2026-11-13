@@ -102,9 +102,7 @@ def parse_tractogram_specs(specs: list[str]) -> list[tuple[str, Path]]:
 
 
 def atlas_path(atlas_dir: Path, scale: int, networks: int, resolution: int) -> Path:
-    fname = (
-        f"space-FSLMNI152_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{resolution}_desc-original_dseg.nii.gz"
-    )
+    fname = f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{resolution}_dseg.nii.gz"
     path = atlas_dir / fname
     if not path.exists():
         raise FileNotFoundError(f"Atlas file not found: {path}. Run scripts/prepare_schaefer_atlases.py first.")
@@ -113,7 +111,7 @@ def atlas_path(atlas_dir: Path, scale: int, networks: int, resolution: int) -> P
 
 def load_atlas_entities(atlas_dir: Path, scale: int, networks: int, resolution: int) -> list[dict]:
     """Load Schaefer SANDS atlas entities sorted by lookupLabel (1-based)."""
-    fname = f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{resolution}_desc-ordered_dseg.yaml"
+    fname = f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{networks}Networks_scale-{scale}_res-{resolution}_dseg.yaml"
     path = atlas_dir / fname
     if not path.exists():
         return []
@@ -180,16 +178,19 @@ def build_network(
     network.parcellation = {
         "atlas": {
             "name": "Schaefer2018",
-            "coordinateSpace": "FSLMNI152",
+            "coordinateSpace": "MNI152NLin6Asym",
         }
     }
     network.tractogram = {"name": tractogram_name}
     network.bids = {
-        "template": "FSLMNI152",
+        "template": "MNI152NLin6Asym",
         "cohort": COHORT_MAP.get(tractogram_name, tractogram_name),
         "reconstruction": tractogram_name,
+        "atlas": "Schaefer2018",
         "segmentation": f"{networks}Networks",
         "scale": str(scale),
+        "desc": "SC",
+        "suffix": "relmat",
     }
     return network
 

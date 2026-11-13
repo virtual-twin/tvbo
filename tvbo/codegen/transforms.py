@@ -187,30 +187,25 @@ def runtime_env(resolve, symbols: Sequence[str], jnp, jsp=None) -> dict[str, obj
     return env
 
 
-def emit_env(symbols: Sequence[str], resolve, target: str | None = None) -> tuple[list[str], list[str]]:
+def emit_env(symbols: Sequence[str], resolve, targets: Sequence[str] = ()) -> tuple[list[str], list[str]]:
     """Source lines binding the edge attributes *symbols* names, for an emitted script.
 
     Args:
         symbols: The names to bind, from :func:`edge_symbols`.
-        resolve: Callable mapping an edge-attribute name to the expression the emitted
-            code calls it, or None for a name that is not an edge attribute.
-        target: The transform's own target. That attribute binds to the value flowing
-            through the chain, so a second transform sees the first one's output; every
-            other attribute binds once to the network's stored matrix.
+        resolve: Callable mapping an edge-attribute name to the expression the emitted code calls it, or None for a name that is not an edge attribute.
+        targets: The names the transform's own target goes by on the network, lower-cased (``Network._layer_names``), as the runtime matches them. That attribute binds to the value flowing through the chain, so a second transform sees the first one's output; every other attribute binds once to the network's stored matrix.
 
     Returns:
-        A ``(chained_lines, constant_lines)`` pair. ``chained_lines`` are re-emitted for
-        each transform in a chain; ``constant_lines`` are bound once.
+        A ``(chained_lines, constant_lines)`` pair. ``chained_lines`` are re-emitted for each transform in a chain; ``constant_lines`` are bound once.
     """
     from tvbo.utils import edge_label
 
-    target_label = edge_label(target) or target
     chained: list[str] = []
     constant: list[str] = []
     for name in dict.fromkeys(symbols):
         source = resolve(name)
         if source is None:
             continue
-        label = edge_label(name) or name
-        (chained if label == target_label else constant).append(f"{name} = {source}")
+        label = str(edge_label(name) or name).lower()
+        (chained if label in targets else constant).append(f"{name} = {source}")
     return chained, constant

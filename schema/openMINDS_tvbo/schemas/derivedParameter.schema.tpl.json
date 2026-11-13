@@ -74,9 +74,6 @@
     "used": {
       "type": "string"
     },
-    "free": {
-      "type": "boolean"
-    },
     "shape": {
       "type": "string"
     },

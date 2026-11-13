@@ -36,7 +36,7 @@ def build(
     space: str | None = typer.Option(
         None,
         "--space",
-        help="Coordinate space both inputs share (e.g. FSLMNI152). Recorded as the "
+        help="Coordinate space both inputs share (e.g. MNI152NLin6Asym). Recorded as the "
         "template entity; the build assumes the inputs are already co-registered.",
     ),
     cohort: str | None = typer.Option(None, "--cohort", help="Cohort/dataset entity (e.g. HCPYA)."),

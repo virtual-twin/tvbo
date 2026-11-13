@@ -5,6 +5,23 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+provenance:
+  references:
+  - https://doi.org/10.1016/j.pneurobio.2011.09.005
+  - https://doi.org/10.1016/j.neuroimage.2017.05.015
+  how_to_acknowledge:
+  - Data used in the preparation of this article were obtained from the Parkinson's
+    Progression Markers Initiative (PPMI) database (www.ppmi-info.org/data). For up-to-date
+    information on the study, visit www.ppmi-info.org.
+  - PPMI – a public-private partnership – is funded by The Michael J. Fox Foundation
+    for Parkinson's Research and funding partners, including AbbVie, Alamar Biosciences,
+    Aligning Science Across Parkinson's (ASAP), Arrowhead Pharma, Arvinas, AskBio,
+    BIAL, BioArctic, Biohaven, BlueRock Therapeutics, Bristol Myers Squibb, Calico
+    Labs, Capsida Biotherapeutics, Critical Path Institute, DaCapo Brainscience, Denali,
+    Edmond J. Safra Foundation, Eli Lilly, Gain Therapeutics, GE Healthcare, Genentech,
+    GSK, Insitro, Johnson & Johnson Innovative Medicine, Lundbeck, Merck, Neumora,
+    Neuron23, Novartis, Olink, Regeneron, Roche, Sanofi, Tenvie, UCB, Vanqua Bio,
+    Voyager Therapeutics, The Weston Family Foundation.
 time_unit: ms
 nodes:
 - id: 1
@@ -3816,7 +3833,7 @@ number_of_nodes: 379
 parcellation:
   atlas:
     name: HCPMMP1
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: MNI152NLin2009bAsym
 tractogram:
   name: PPMI85
 data_file: tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5
@@ -3825,4 +3842,7 @@ bids:
   template: MNI152NLin2009bAsym
   cohort: PPMI85
   reconstruction: PPMI85
+  atlas: HCPMMP1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

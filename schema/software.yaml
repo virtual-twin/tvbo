@@ -8,6 +8,7 @@ description: >-
     controlled vocabularies for simulation scale, modeling paradigm, tool
     role, and interoperability.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
     linkml: https://w3id.org/linkml/
     tvbo_sw: https://w3id.org/tvbo/sw/

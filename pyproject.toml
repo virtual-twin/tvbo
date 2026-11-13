@@ -1,7 +1,7 @@
 # Copyright © Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [build-system]
-# Build-time only: `hatch_build.py` regenerates the datamodel with the newest LinkML; importing the generated classes needs only `linkml-runtime`.
-requires = ["hatchling", "linkml>=1.12.1"]
+# Build-time only: hatchling 1.27 writes the PEP 639 licence fields, and `hatch_build.py` regenerates the datamodel with the newest LinkML; importing the generated classes needs only `linkml-runtime`.
+requires = ["hatchling>=1.27", "linkml>=1.12.1"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,7 +9,8 @@ name = "tvbo"
 dynamic = ["version"]
 description = "The Virtual Brain Ontology"
 readme = "README.md"
-license = { text = "EUPL-1.2" }
+license = "BSD-3-Clause AND CC-BY-4.0 AND CC-BY-NC-SA-4.0 AND CC-BY-SA-4.0 AND CC0-1.0 AND EUPL-1.2 AND GPL-3.0-only AND GPL-3.0-or-later AND LicenseRef-FreeSurfer AND LicenseRef-HCP-MGH-USC-DUA AND LicenseRef-HCP-WU-Minn-Open-Access AND LicenseRef-MNI-ICBM152 AND LicenseRef-PPMI-DUA AND LicenseRef-TVBO-Unresolved AND MIT AND MPL-2.0"
+license-files = ["LICENSES/BSD-3-Clause.txt", "LICENSES/CC-BY-4.0.txt", "LICENSES/CC-BY-NC-SA-4.0.txt", "LICENSES/CC-BY-SA-4.0.txt", "LICENSES/CC0-1.0.txt", "LICENSES/EUPL-1.2.txt", "LICENSES/GPL-3.0-only.txt", "LICENSES/GPL-3.0-or-later.txt", "LICENSES/LicenseRef-FreeSurfer.txt", "LICENSES/LicenseRef-HCP-MGH-USC-DUA.txt", "LICENSES/LicenseRef-HCP-WU-Minn-Open-Access.txt", "LICENSES/LicenseRef-MNI-ICBM152.txt", "LICENSES/LicenseRef-PPMI-DUA.txt", "LICENSES/LicenseRef-TVBO-Unresolved.txt", "LICENSES/MIT.txt", "LICENSES/MPL-2.0.txt"]
 authors = [{ name = "Leon Martin", email = "leon.martin@bih-charite.de" }]
 requires-python = ">=3.11"
 dependencies = [
@@ -138,11 +139,14 @@ tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 # The ORCHESTRATOR for `tvbo workflow submit`, needed wherever submit runs; a study's own runtime deps travel via `environment.requirements`.
 workflow = ["snakemake>=8.0.0", "snakemake-executor-plugin-slurm>=0.11.0"]
 
+# The Zarr network companion (`binary_format="zarr"`), written for Zarr 3.
+zarr = ["zarr>=3"]
+
 # Minor pinned so a local run and the CI ruff-action agree on the rule set.
 lint = ["ruff>=0.16.1,<0.17"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,lint]"]
+all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,zarr,lint]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"
@@ -158,7 +162,7 @@ packages = ["tvbo"]
 
 [tool.hatch.build.targets.sdist]
 # schema/** and hatch_build.py ship so a wheel built *from the sdist* can regenerate the untracked datamodel.
-include = ["tvbo/**", "schema/**", "hatch_build.py", "README.md", "pyproject.toml", "LICENSE"]
+include = ["tvbo/**", "schema/**", "hatch_build.py", "README.md", "pyproject.toml", "LICENSE", "LICENSES/**", "REUSE.toml"]
 
 # Generates tvbo/datamodel/{schema,pydantic}.py from the LinkML schema before every build. See hatch_build.py.
 [tool.hatch.build.hooks.custom]
@@ -185,15 +189,15 @@ exclude = [
 ]
 
 [tool.hatch.build.force-include]
-"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_desc-surf_relmat.h5"
-"tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5"
+"tvbo/database/networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_den-164k_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_den-164k_desc-surf_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-Lobar8_desc-SCFC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar8_desc-SCFC_relmat.h5"
-"tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5"
+"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-HCPYA_rec-dTOR_atlas-HCPMMP1_desc-SC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5"
 "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009bAsym_cohort-PPMI85_rec-PPMI85_atlas-HCPMMP1_desc-SC_relmat.h5"
-"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-L_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-L_desc-surf_relmat.h5"
-"tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-R_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_atlas-Lobar8_hemi-R_desc-surf_relmat.h5"
+"tvbo/database/networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_hemi-L_atlas-Lobar8_den-164k_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_hemi-L_atlas-Lobar8_den-164k_desc-surf_relmat.h5"
+"tvbo/database/networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_hemi-R_atlas-Lobar8_den-164k_desc-surf_relmat.h5" = "tvbo/database/networks/tpl-fsaverage_cohort-HCPYA_rec-avgMatrix_hemi-R_atlas-Lobar8_den-164k_desc-surf_relmat.h5"
 
 [tool.hatch.version]
 path = "tvbo/__init__.py"

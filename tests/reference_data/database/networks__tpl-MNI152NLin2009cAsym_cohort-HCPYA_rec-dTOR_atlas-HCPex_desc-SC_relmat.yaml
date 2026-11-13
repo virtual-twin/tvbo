@@ -1740,4 +1740,7 @@ bids:
   template: MNI152NLin2009cAsym
   cohort: HCPYA
   reconstruction: dTOR
+  atlas: HCPex
+  desc: SC
+  suffix: relmat
 distance_unit: mm

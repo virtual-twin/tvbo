@@ -69,7 +69,7 @@ jobs:
             - name: Docs — page style
               run: python docs/scripts/check_pages.py --quiet $(find docs -name '*.qmd' -o -name '*.md' | grep -vE '/(_site|_freeze|_build|[.]quarto|_archive|[.]jupyter_cache|_output|api|datamodel)/')
 
-            # The steps below all need the package importable: the CLI check resolves real commands, render coverage reads YAML, and mypy needs the datamodel that `-e .` regenerates through the hatch build hook.
+            # uv runs the REUSE check, and the steps after it all need the package importable: the CLI check resolves real commands, render coverage reads YAML, and mypy needs the datamodel that `-e .` regenerates through the hatch build hook.
             - uses: astral-sh/setup-uv@v8.1.0
               with:
                   python-version: "3.12"
@@ -78,6 +78,9 @@ jobs:
                   cache-dependency-glob: |
                       pyproject.toml
                       .github/workflows/ci.yml
+            - name: REUSE — every file states its copyright and licence
+              run: uv run --isolated --no-project --python 3.12 --with "reuse==6.2.0" reuse lint
+
             - name: Install (editable → generates datamodel)
               run: uv pip install -e . && uv pip install mypy
 

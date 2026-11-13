@@ -101,7 +101,6 @@ network:
         G:
           value: 8.0
           description: "Global coupling strength"
-          free: true
         cmin: {value: 0.0}
         cmax: {value: 0.005}
         midpoint: {value: 6.0}

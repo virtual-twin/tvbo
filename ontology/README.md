@@ -23,7 +23,7 @@ modules (OWL statements LinkML cannot express).
 | `tvb-o-clinical.ttl` | generated from a PubMed + full-text survey (2026) | Clinical-applications addon: published TVB studies → clinical domains (ICD-11, MeSH) → the neural-mass model each uses. |
 | `tvb-o-clinical-nmm.ttl` | hand-authored | `tvbc:NeuralMassModel ⊑ tvbo:Dynamics` plus clinical-NMM links. |
 | `tvbo.owl` | generated — `make gen-merged` | Merge of every module above. The complete ontology; also copied to `tvbo/data/ontology/tvbo.owl`, which the runtime loads. |
-| `*.ru` | hand-authored | SPARQL update queries applied after the merge (`fix-punning.ru`, `clinical-postmerge.ru`). |
+| `*.ru` | hand-authored | SPARQL update queries applied after the merge (`fix-punning.ru`, `clinical-postmerge.ru`, and `is-defined-by.ru`, which gives every TVB-O term `rdfs:isDefinedBy <https://w3id.org/tvbo/tvbo.owl>`). |
 
 ## Workflow
 

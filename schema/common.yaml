@@ -5,11 +5,13 @@ description: >-
     Shared slots reused across all TVBO sub-schemas. Ensures a single
     canonical definition for cross-cutting attributes such as `name`.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
     linkml: https://w3id.org/linkml/
     tvbo: https://w3id.org/tvbo/
     schema: http://schema.org/
     prov: http://www.w3.org/ns/prov#
+    dcterms: http://purl.org/dc/terms/
 
 default_prefix: tvbo
 
@@ -29,6 +31,10 @@ slots:
         range: string
         identifier: true
         description: "Globally unique identifier for the entity."
+    id:
+        slot_uri: dcterms:identifier
+        range: integer
+        description: "Surrogate integer key."
 
     part:
         range: ReportPart
@@ -126,11 +132,7 @@ classes:
             output:
                 range: string
                 description: >-
-                    WHICH array to take from the container at ``experiment`` / ``iri``:
-                    a recorded state variable, an ``observation__<name>``, an
-                    ``estimate__<param>`` (a tuned free parameter a fit persisted), or
-                    an external variable. Matched exactly or by the ``<producer>__<name>``
-                    suffix.
+                    WHICH array to take from the container at ``experiment`` / ``iri``: a recorded state variable, an ``observation__<name>``, an ``estimate__<param>`` (the value an algorithm's update rules tuned), an ``optimization__<name>__fitted__<path>`` (the value an optimization fitted), or an external variable. Matched exactly or by the ``<producer>__<name>`` suffix.
             sel:
                 range: Argument
                 multivalued: true

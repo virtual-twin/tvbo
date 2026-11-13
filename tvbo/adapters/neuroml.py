@@ -2788,7 +2788,7 @@ def _build_network_context(experiment):
             elif edge_dyn_name:
                 try:
                     resolved_edge_dyn = Dynamics.from_db(edge_dyn_name)
-                except Exception:
+                except FileNotFoundError:
                     pass
 
         # Name the synapse after the dynamics it comes from, so identical edges share one component and the emitted id is meaningful; fall back to the edge index only when the edge names no dynamics at all.

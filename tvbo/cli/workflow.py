@@ -299,8 +299,11 @@ def _freeze_spec_yaml(
     ``--set``). When given, the frozen spec's ``workflow`` block is rewritten to it, so the spec records exactly what ran and re-emits identically without the flags.
 
     *dataset_bids_root* rewrites the frozen ``dataset.bids_root`` to the kit's bundled tree (a path relative to *spec_dir*, see :func:`_bundle_dataset`) instead of the author's machine-specific path, and the frozen dataset then lists exactly the subjects the experiment fans over, since that tree may also hold other experiments' subjects. An experiment with no dataset of its own, which reads a cohort one of its study's datasets declares, is frozen with one that holds that tree and the cohorts (:func:`_kit_dataset_id`).
+
+    A list the study keeps out of its recipe stays out of the frozen one. Subjects read from ``dataset.subjects_file``, whether or not the kit bundles the dataset's files, and the members of a bundled cohort read from ``members_file`` or admitted by a ``rule`` are written to files beside the frozen spec (:func:`_write_listing`) and the frozen dataset names those files, so the kit carries each list as data and its specification states no identifier the study's does not.
     """
     from tvbo.classes.network import Network
+    from tvbo.data.cohort import dataset_subjects, find_cohort, lists_from_file
     from tvbo.datamodel.schema import Dataset
     from tvbo.utils import keyed_items
 
@@ -316,20 +319,38 @@ def _freeze_spec_yaml(
     original_ds_root = getattr(ds, "bids_root", None) if ds is not None else None
     original_cohorts = getattr(ds, "cohorts", None) if ds is not None else None
     original_subjects = getattr(ds, "subjects", None) if ds is not None else None
+    original_subjects_file = getattr(ds, "subjects_file", None) if ds is not None else None
     rebundle = dataset_bids_root is not None and ds is not None
-    # Read while the dataset still names its own root, and before anything below needs restoring.
+    # Read while the dataset still names its own root and files, and before anything below needs restoring.
     bundled = experiment.bundled_cohorts() if rebundle and hasattr(experiment, "bundled_cohorts") else []
     fan_out = [str(s) for s in experiment.dataset_subject_ids()] if rebundle else []
+    listed = dataset_subjects(ds, experiment._reference_context()["source_dir"]) if rebundle or original_subjects_file else {}
+    in_files = {
+        str(c.cohort_id) for c in bundled if lists_from_file(find_cohort(experiment._reference_datasets(), c.cohort_id)[1])
+    }
     restore_ds: list[tuple[object, str]] = []
+    written: dict = {}
+    subjects = listed
     try:
         if rebundle:
             if own_ds is None:
                 experiment.dataset = ds
             ds.bids_root = dataset_bids_root
-            ds.subjects = _fan_out_subjects(original_subjects, fan_out)
+            subjects = _fan_out_subjects(listed, fan_out)
+            ds.subjects = subjects
+            for cohort in bundled:
+                if str(cohort.cohort_id) in in_files:
+                    cohort.members_file = _write_listing(
+                        spec_dir, "cohort", cohort.cohort_id, [str(m) for m in cohort.members], written
+                    )
+                    cohort.members = []
             if bundled:
                 ids = {str(c.cohort_id) for c in bundled}
                 ds.cohorts = [c for _, c in keyed_items(original_cohorts, "cohorts") if str(c.cohort_id) not in ids] + bundled
+        if original_subjects_file:
+            entries = [{"subject_id": sid, **_to_plain(entry)} for sid, entry in subjects.items()]
+            ds.subjects = {}
+            ds.subjects_file = _write_listing(spec_dir, "dataset", ds.dataset_id, entries, written)
         if workflow_spec:
             effective = _wf.workflow_config_from_spec(workflow_spec)
             if effective is not None:
@@ -357,10 +378,12 @@ def _freeze_spec_yaml(
             _ds.path = _orig
         if workflow_spec:
             experiment.workflow = original_wf
+        if ds is not None:
+            ds.subjects = original_subjects
+            ds.subjects_file = original_subjects_file
         if rebundle:
             ds.bids_root = original_ds_root
             ds.cohorts = original_cohorts
-            ds.subjects = original_subjects
             if own_ds is None:
                 experiment.dataset = None
 
@@ -376,6 +399,41 @@ def _kit_dataset_id(experiment) -> str:
 
         return str(_slot(find_cohort(experiment._reference_datasets(), cohorts[0])[0], "dataset_id") or "dataset")
     return "dataset"
+
+
+def _file_safe(name) -> str:
+    """*name* as a file-name component: every character that is not a letter, a digit, ``.``, ``-`` or ``_`` becomes ``_``."""
+    return "".join(c if (c.isalnum() or c in ".-_") else "_" for c in str(name))
+
+
+def _to_plain(entry) -> dict:
+    """A subject entry as the mapping a list file states for it, without its identifier; a bare identifier states nothing more."""
+    from tvbo.utils import to_dict
+
+    return {} if isinstance(entry, str) else {k: v for k, v in to_dict(entry).items() if k != "subject_id"}
+
+
+def _write_listing(spec_dir: Path, kind: str, ident, entries: list, written: dict) -> str:
+    """Write the list of subjects of the *kind* (``dataset`` or ``cohort``) named *ident* beside the frozen spec in *spec_dir* and return the file's name, which the frozen spec records.
+
+    A dataset's subjects go to ``dataset-<id>_subjects.yaml`` and a cohort's members to ``cohort-<id>_members.txt``, the identifier made file-safe (:func:`_file_safe`): one identifier per line for a list of identifiers, a YAML list for entries that state more. *written* maps each name this kit has written to the record it holds, so two records whose identifiers map to one name are refused rather than one list overwriting the other. The log line gives the count.
+    """
+    import yaml
+
+    name = f"{kind}-{_file_safe(ident)}_{'subjects.yaml' if kind == 'dataset' else 'members.txt'}"
+    if name in written and written[name] != str(ident):
+        raise ValueError(
+            f"{kind}s {written[name]!r} and {str(ident)!r} would both be written to {name} in the kit; rename one of them."
+        )
+    written[name] = str(ident)
+    path = spec_dir / name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if all(isinstance(entry, str) for entry in entries):
+        path.write_text("".join(f"{entry}\n" for entry in entries), encoding="utf-8")
+    else:
+        path.write_text(yaml.safe_dump(entries, sort_keys=False), encoding="utf-8")
+    _common.info(f"wrote {path.name} beside the frozen spec ({len(entries)} subjects)")
+    return path.name
 
 
 def _fan_out_subjects(listed, fan_out: list[str]) -> dict:
@@ -537,7 +595,7 @@ def _bundle_dataset(
     if not manifest:
         return None
     dataset_id = _kit_dataset_id(experiment)
-    dest_dir = kit_dir / "data" / "".join(c if (c.isalnum() or c in ".-_") else "_" for c in dataset_id)
+    dest_dir = kit_dir / "data" / _file_safe(dataset_id)
     written = set() if written is None else written
     n_files = n_bytes = n_held = n_refreshed = 0
     for subject, files in manifest.items():

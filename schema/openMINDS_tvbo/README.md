@@ -72,7 +72,6 @@ Brain network and connectivity:
 - `edge` - Directed/undirected edge with coupling
 - `parcellation` - Brain atlas parcellation reference
 - `tractogram` - Tractography data source
-- `regionMapping` - Vertex-to-region mapping
 
 ### Simulation (6 schemas)
 Simulation configuration and execution:
