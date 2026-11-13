@@ -11,7 +11,7 @@ Most of what surrounds a page here is derived rather than typed. The phase badge
 
 `_toc.yml` is the single sidebar. Its top level is a flat list of chapter headings — GET STARTED, SIMULATION EXPERIMENTS WITH TVB-O, EXAMPLES & USE-CASES, AGENTIC CODING, INTEROPERABILITY, REFERENCE, DEVELOPER — each a text-only row with no `href:`, and the pages of a chapter are the rows that follow it.
 
-SIMULATION EXPERIMENTS WITH TVB-O is the exception, and the reason the spine reads as one chapter rather than as a continuation of the one above it: the five numbered phases beneath it are `section:` entries, so each nests its own pages and collapses with the rest of the sidebar at `collapse-level: 1`. Quarto expands whichever section holds the current page. The spine's heading is declared in `_static/phases.yml` under `spine:`, which is how `scripts/build_phase_map.py` knows that row introduces the phases rather than owning pages of its own.
+SIMULATION EXPERIMENTS WITH TVB-O is the exception, and the reason the spine reads as one chapter rather than as a continuation of the one above it: the six numbered phases beneath it are `section:` entries, so each nests its own pages and collapses with the rest of the sidebar at `collapse-level: 1`. Quarto expands whichever section holds the current page. The spine's heading is declared in `_static/phases.yml` under `spine:`, which is how `scripts/build_phase_map.py` knows that row introduces the phases rather than owning pages of its own.
 
 Three regions of the file are script-owned and marked as such:
 
@@ -30,7 +30,7 @@ Every hand-written page lives under the part that owns it, so `ls` and the sideb
 | Directory | Part |
 |---|---|
 | `index.qmd`, `installation.md`, `GettingStarted.qmd`, `reference.qmd` | GET STARTED, and the reference landing page |
-| `1-explore/` … `5-share/` | the five numbered phases, each with the part's overview page as its `index.qmd` |
+| `1-explore/` … `6-share/` | the six numbered phases, each with the part's overview page as its `index.qmd` |
 | `examples/`, `Replication/` | EXAMPLES & USE-CASES |
 | `agents/`, `Interoperability/`, `CLI/`, `Developer/` | AGENTIC CODING, INTEROPERABILITY, REFERENCE, DEVELOPER |
 | `api/`, `datamodel/` | REFERENCE, generated |
@@ -43,7 +43,7 @@ Moving a page means moving three things together: the page, its `_freeze/<path>/
 
 ## The phase badge
 
-`_static/phases.yml` declares the five numbered phases and the six unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here. A colour is named, never written: `palette.N` for a categorical hue or a role such as `base`, resolved through the palette TVB-O ships.
+`_static/phases.yml` declares the six numbered phases and the six unnumbered chapters, each with a name, an icon and a colour. It is the only place any of those are written down, so swapping an icon set is one edit here. A colour is named, never written: `palette.N` for a categorical hue or a role such as `base`, resolved through the palette TVB-O ships.
 
 `scripts/build_phase_map.py` walks `_toc.yml` against that file and writes two generated artifacts, both gitignored:
 

@@ -1,0 +1,23 @@
+---
+title: "Report the study"
+description: "Step 5 of the TVB-O spine: assemble the specification, its results and its figures into the document that goes to review, and go back to the specification when review asks."
+aliases:
+  - /phases/report.html
+---
+
+A run that stays in a results directory has not been understood yet. The fifth step turns the study into a document: the methods text that [③ Generate](../3-generate/index.qmd) writes from the specification, the result and analyses that [④ Run](../4-run/index.qmd) produced, and the figures the study declares, assembled into one report that a reviewer, a collaborator or your future self can read end to end.
+
+Because every part of that document is declared in the study, the report is rendered, not written: a figure is a `tvbo:Figure` drawn from the result it names, a parameter table is read from the specification, and a methods paragraph states what the specification states. When review asks for a change, the change goes into the specification, and the report is rendered again. That loop, report back to specify, is the inner cycle of the spine; a study is shared only once it has held.
+
+::: {.cards}
+| Page | What it covers | Cover |
+|---|---|---|
+| [Figures](../2-specify/Figures/index.qmd) | Declaring the figures a study renders, so the report draws them from the result. | fa-solid fa-chart-line |
+| [Analyses](../2-specify/Analyses.qmd) | The analyses a study runs on its results, whose outputs the report cites. | fa-solid fa-magnifying-glass-chart |
+| [Code generation and export](../3-generate/CodeGeneration.qmd) | The methods text and the code written from one specification. | fa-solid fa-file-code |
+| [The experiment result](../4-run/Results.qmd) | What a run writes, and how the report reads it back. | fa-solid fa-folder-open |
+:::
+
+## Next
+
+A report that has held up to review is published: [⑥ Share](../6-share/index.qmd).

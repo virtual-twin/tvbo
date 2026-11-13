@@ -1,6 +1,6 @@
 # The documentation spine, declared once. `part` must match the PART header in `_toc.yml`, and `dirs` the directories that part's pages live in — `scripts/build_phase_map.py` reports any page filed outside them. A `color` names a slot in the palette TVB-O ships (`tvbo/database/themes/default.yaml`) — `palette.N` for a categorical hue, counting from zero, or a role such as `base` — never a hex, so the docs and the figures beside them cannot drift apart. See docs/Developer/DocsMachinery.qmd.
 
-# The five numbered phases share one sidebar heading, so the spine reads as a single chapter beside the unnumbered ones rather than as a continuation of the one above it.
+# The six numbered phases share one sidebar heading, so the spine reads as a single chapter beside the unnumbered ones rather than as a continuation of the one above it.
 spine:
   part: "SIMULATION EXPERIMENTS WITH TVB-O"
 
@@ -9,7 +9,8 @@ phases:
   - {number: 2, key: specify,  name: Specify,  part: "② SPECIFY",   icon: "fa-solid fa-pen-ruler",   color: palette.1, dirs: [2-specify, Interoperability]}
   - {number: 3, key: generate, name: Generate, part: "③ GENERATE",  icon: "fa-solid fa-gears",       color: palette.2, dirs: [3-generate, Interoperability]}
   - {number: 4, key: run,      name: Run,      part: "④ RUN",       icon: "fa-solid fa-play",        color: palette.3, dirs: [4-run]}
-  - {number: 5, key: share,    name: Share,    part: "⑤ SHARE",     icon: "fa-solid fa-share-nodes", color: palette.4, dirs: [5-share, Interoperability]}
+  - {number: 5, key: report,   name: Report,   part: "⑤ REPORT",    icon: "fa-solid fa-file-lines",  color: palette.4, dirs: [5-report]}
+  - {number: 6, key: share,    name: Share,    part: "⑥ SHARE",     icon: "fa-solid fa-share-nodes", color: palette.5, dirs: [6-share, Interoperability]}
 
 # Chapters are the unnumbered half of the sidebar: places you go when you need them rather than steps you walk. They carry an icon and no numeral, which is what keeps the numbered spine visually distinct.
 chapters:

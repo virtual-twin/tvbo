@@ -141,11 +141,13 @@ website:
                     href: 4-run/Backends.qmd
                   - text: "The experiment result"
                     href: 4-run/Results.qmd
-              - section: "⑤ SHARE"
-                href: 5-share/index.qmd
+              - section: "⑤ REPORT"
+                href: 5-report/index.qmd
+              - section: "⑥ SHARE"
+                href: 6-share/index.qmd
                 contents:
                   - text: "Share and publish your work"
-                    href: 5-share/Sharing.qmd
+                    href: 6-share/Sharing.qmd
                   - text: "Results in BIDS"
                     href: Interoperability/BIDS/BIDS_comp_modelling.md
                   - text: "openMINDS"

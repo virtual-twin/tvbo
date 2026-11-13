@@ -76,13 +76,14 @@ native: true
 </section>
 
 <section class="pipeline">
-  <p class="section-eyebrow">The five steps this documentation follows</p>
+  <p class="section-eyebrow">The six steps this documentation follows</p>
   <ol class="steps">
     <li class="step" style="--phase:var(--phase-1)"><a class="step__link" href="1-explore/index.html"><span class="step__n">1</span><h3>Explore</h3><p>Find curated models, networks and published studies in the knowledge base.</p></a></li>
     <li class="step" style="--phase:var(--phase-2)"><a class="step__link" href="2-specify/index.html"><span class="step__n">2</span><h3>Specify</h3><p>Declare the experiment — dynamics, network, observations, figures.</p></a></li>
     <li class="step" style="--phase:var(--phase-3)"><a class="step__link" href="3-generate/index.html"><span class="step__n">3</span><h3>Generate</h3><p>Compile it to backend-native code, plots and a study directory.</p></a></li>
     <li class="step" style="--phase:var(--phase-4)"><a class="step__link" href="4-run/index.html"><span class="step__n">4</span><h3>Run</h3><p>Execute on a laptop or a cluster, and read the result back.</p></a></li>
-    <li class="step" style="--phase:var(--phase-5)"><a class="step__link" href="5-share/index.html"><span class="step__n">5</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></a></li>
+    <li class="step" style="--phase:var(--phase-5)"><a class="step__link" href="5-report/index.html"><span class="step__n">5</span><h3>Report</h3><p>Assemble the specification, its results and its figures into the document that goes to review.</p></a></li>
+    <li class="step" style="--phase:var(--phase-6)"><a class="step__link" href="6-share/index.html"><span class="step__n">6</span><h3>Share</h3><p>Publish to the platform, and export results as BIDS.</p></a></li>
   </ol>
   <div class="pipeline__targets">
     <span class="step__n step__n--sm" aria-hidden="true">3</span>

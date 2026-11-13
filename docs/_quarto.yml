@@ -11,7 +11,8 @@ project:
     - 2-specify/**/*.qmd
     - 3-generate/**/*.qmd
     - 4-run/*.qmd
-    - 5-share/*.qmd
+    - 5-report/*.qmd
+    - 6-share/*.qmd
     - api/**/*.qmd
     - datamodel/*.qmd
     - datamodel/**/*.qmd
