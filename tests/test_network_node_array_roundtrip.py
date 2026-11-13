@@ -71,3 +71,14 @@ def test_absent_node_array_does_not_resolve_silently(tmp_path, attr):
     assert resolve_network_node(Network.load(str(src)), attr) is None, (
         f"{attr!r} names no node array here, so it must not resolve to anything"
     )
+
+
+@pytest.mark.parametrize("binary_format", ["h5", "zarr", "csv"])
+def test_a_node_array_set_in_memory_is_saved_and_reloads_equal(tmp_path, binary_format):
+    """A per-node array held with ``set_array("nodes/<name>")``, which no companion carried, is saved as one read from a companion is, and reloads equal."""
+    net = Network(number_of_nodes=2)
+    net.set_array("edges/weight", np.array([[0.0, 1.0], [1.0, 0.0]]))
+    net.set_array("nodes/scale_lo", np.array([-0.117, 0.001]))
+    out = tmp_path / "network.yaml"
+    net.save(str(out), binary_format=binary_format)
+    np.testing.assert_array_equal(Network.load(str(out)).array("nodes/scale_lo"), [-0.117, 0.001])

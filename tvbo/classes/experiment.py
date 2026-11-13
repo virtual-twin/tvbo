@@ -2706,9 +2706,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def _sidecar_companions(sidecar: Path) -> list:
         """Data files a network sidecar references, resolved next to the sidecar.
 
-        A per-subject FC file is a YAML sidecar plus its payload (``data_file``, an HDF5 matrix); some networks instead reference ``nodes``/``edges`` tables or an ``edge_matrix_files`` map. Return every companion the sidecar points at so a bundle copies the sidecar together with the bytes it needs — nothing more.
+        A per-subject FC file is a YAML sidecar plus its payload (``data_file``, an HDF5 matrix); some networks instead reference ``nodes``/``edges`` tables or an ``edge_matrix_files`` map, and a network saved with CSV companions names a CSV per array on the records of what they hold (:func:`~tvbo.data.matrix_io.csv_links`). Return every companion the sidecar points at, once, so a bundle copies the sidecar together with the bytes it needs — nothing more.
         """
         import yaml
+
+        from tvbo.data.matrix_io import csv_links
 
         try:
             meta = yaml.safe_load(sidecar.read_text(encoding="utf-8")) or {}
@@ -2726,7 +2728,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             refs += [v for v in emf.values() if isinstance(v, str)]
         elif isinstance(emf, list):
             refs += [v for v in emf if isinstance(v, str)]
-        return [sidecar.parent / r for r in refs]
+        refs += [link["file"] for link in csv_links(meta).values()]
+        return [sidecar.parent / r for r in dict.fromkeys(refs)]
 
     def dataset_bundle_files(self, entity_overrides: dict | None = None) -> dict:
         """Per subject, the source file(s) a self-contained kit must carry.

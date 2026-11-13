@@ -4406,8 +4406,9 @@ class SimulationState(Pytree):
             if isinstance(x, (jax.Array, np.ndarray)):
                 if np.issubdtype(x.dtype, np.integer):
                     return jnp.array(x, dtype=int_dtype)
-                else:
+                if np.issubdtype(x.dtype, np.inexact):
                     return jnp.array(x, dtype=target_dtype)
+                return x
             elif isinstance(x, float):
                 return jnp.array(x, dtype=target_dtype)
             elif isinstance(x, int):

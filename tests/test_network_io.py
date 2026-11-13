@@ -291,7 +291,8 @@ edges:
             save_network(net, out, binary_format="csv")
 
             assert out.exists(), "YAML sidecar not written"
-            assert out.with_suffix(".csv").exists(), "CSV companion not written"
+            for name in ("weight", "length"):
+                assert (out.parent / f"test_net_meas-{name}.csv").exists(), f"CSV companion of {name} not written"
 
 
 # ── converters tests ──────────────────────────────────────────────────

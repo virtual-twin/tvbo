@@ -5,6 +5,12 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+  functional_network_labels:
+    name: functional_network_labels
+    description: The names of the functional networks the parcels belong to, one entry
+      for each network in each hemisphere, as the parcel labels spell them (LH_VisCent
+      in 17Networks_LH_VisCent_ExStr_1).
+    measure: nodes/functional_network_labels
 time_unit: ms
 nodes:
 - id: 0
@@ -6423,6 +6429,16 @@ edges:
   directed: false
   allow_self_connections: true
 graph_representation: auto
+node_template:
+  id: -1
+  parameters:
+    functional_network:
+      name: functional_network
+      description: The functional network the parcel belongs to, as a code into functional_network_labels.
+      measure: nodes/parent_index
+      levels: functional_network_labels
+  record: true
+  size: 1
 number_of_nodes: 800
 parcellation:
   atlas:

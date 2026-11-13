@@ -160,9 +160,9 @@ def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
 
 
 def _resolve_node_attribute(net: Any, name: str) -> np.ndarray | None:
-    """Named per-node array from the nodes' ``parameters``, else from ``nodes/<name>`` in the companion store.
+    """Named per-node array from the nodes' ``parameters``, else from the array a ``node_template`` parameter of that name declares by its ``measure``, else from ``nodes/<name>`` in the companion store.
 
-    Node parameters win, so a spec can override what the file carries. A parameter that is not a per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node vector and returns None rather than a silently zero-filled or ragged array.
+    Node parameters win, so a spec can override what the file carries. A parameter that is not a per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node vector and returns None rather than a silently zero-filled or ragged array. A categorical attribute comes back as its codes, which its ``levels`` vocabulary names.
     """
     nodes = getattr(net, "nodes", None) or []
     vals = []
@@ -177,6 +177,11 @@ def _resolve_node_attribute(net: Any, name: str) -> np.ndarray | None:
             break
     if vals:
         return np.asarray(vals, dtype=float)
+    template = getattr(net, "node_template", None)
+    declared = (getattr(template, "parameters", None) or {}).get(name) if template is not None else None
+    if getattr(declared, "measure", None) and hasattr(net, "array"):
+        value = net.array(str(declared.measure).lstrip("/"))
+        return None if value is None else np.asarray(value, dtype=float)
     store = getattr(net, "_store", None)
     if store is None:
         return None

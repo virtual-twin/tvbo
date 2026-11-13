@@ -215,13 +215,29 @@ Storage format is chosen automatically from matrix properties:
 |---------|-----------|----------|
 | **HDF5** | `.h5` | Default; best compression and random access |
 | **Zarr** | `.zarr/` | Cloud-native storage (S3, GCS) |
-| **CSV** | `.csv` | Legacy, single matrix only |
+| **CSV** | `.csv` | Plain text: one file per array, named on the sidecar record of what it holds |
 
 ```python
 net.save("out.yaml", binary_format="zarr")    # Zarr companion
-net.save("out.yaml", binary_format="csv")     # CSV, first matrix only
+net.save("out.yaml", binary_format="csv")     # one CSV per array
 net.save("out.yaml", sidecar_format="json")   # JSON sidecar + HDF5
 ```
+
+A CSV save names each file on the record of what it holds, with what the file does not record: a layer's CSV is its edge's `data_file` (with its `dtype` and sparse `format`; a sparse layer is one `row column value` line per stored entry), an edge parameter's is its `source`, a mesh array's is a field of `mesh`, and any other array's is the `source` of the parameter that declares it by `measure` (with its `dtype` and `shape`). Any other save drops these links, since its companion holds every array under its path.
+
+### Declared node arrays
+
+A node array is declared as a parameter whose `measure` is its path in the companion. On `node_template` the array runs over the nodes, node `i` taking entry `i`, and is read as `network.nodes.<name>` without being copied onto each node. On the network it is any other array, such as a vocabulary. `levels` makes a per-node array a categorical attribute, whose codes index the vocabulary it names:
+
+```yaml
+parameters:
+  functional_network_labels: {measure: nodes/functional_network_labels}
+node_template:
+  parameters:
+    functional_network: {measure: nodes/parent_index, levels: functional_network_labels}
+```
+
+The curated Schaefer2018 networks declare each parcel's functional network this way, and a network named by its atlas alone (`parcellation: {atlas: {name: DesikanKilliany}}`) also declares each region's `hemisphere` from the atlas's terminology. Saved, either network reads back with its categories when the atlas cannot be read.
 
 
 ## 5. Built-in Connectomes

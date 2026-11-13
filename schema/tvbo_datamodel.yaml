@@ -1375,7 +1375,7 @@ classes:
             data_file:
                 range: string
                 description: >-
-                    Path to companion data file. Supported extensions: .h5 (HDF5), .zarr/ (Zarr), .csv (legacy single-matrix). Null if no companion data needed.
+                    Path to companion data file: .h5 (HDF5) or .zarr/ (Zarr), which hold every array under its path, or .csv. A network saved with CSV companions has one CSV per array, each named on the record of what it holds (``Edge.data_file``, the ``source`` of a parameter, the fields of ``mesh``), and names the first of them here. A .csv here that no record names is a companion written when a CSV held one matrix: it holds the first template edge's matrix, or the weights when none is declared, and every other declared layer reads as missing. Null if no companion data needed.
             descriptor:
                 range: string
                 description: >-
@@ -1710,6 +1710,11 @@ classes:
                 required: false
                 description: >-
                     Data type the matrix is stored as in the companion file (template edges only), e.g. 'float32'. Absent — the default — stores it as computed, so a read returns what was written. Set it only to narrow deliberately: halving a measured connectome's file is a fair trade against its own measurement error, silently halving a computed operator is not.
+            data_file:
+                range: string
+                required: false
+                description: >-
+                    The file holding this layer's matrix alone, relative to the sidecar (template edges only): the CSV ``save(binary_format="csv")`` writes for it, read at the edge's ``dtype`` and in its sparse ``format``, a sparse matrix as one ``row column value`` line per stored entry. Unset beside an HDF5 or Zarr companion, which holds every layer under ``edges/<label>``, and an HDF5 or Zarr file here is refused.
             weighted:
                 range: boolean
                 ifabsent: boolean(true)
@@ -2231,12 +2236,12 @@ classes:
                 range: uriorcurie
                 required: false
                 description: >-
-                    WHERE this parameter's value comes from — a curated entity's IRI, or a path (resolved against the declaring spec's directory when relative, as `Network.bids_dir` / `Network.data_file` are). The referent is typically a Network with per-node parameters (dscalar pattern) or a binary store (HDF5, Zarr, TSV). Combine with `measure:` to pick one array out of a source that holds several. A sourced value is never inlined into generated code: it is resolved lazily and the backend reads it from storage, so an array of any size costs nothing in the spec or the emitted module. Mutually exclusive with `value:` (a YAML literal, which IS materialised) and with `producer:` (bytes that are computed rather than read). Distinct from the global `iri:` slot, which is reserved for ontology grounding.
+                    WHERE this parameter's value comes from — a curated entity's IRI, or a path (resolved against the declaring spec's directory when relative, as `Network.bids_dir` / `Network.data_file` are). The referent is typically a Network with per-node parameters (dscalar pattern), a binary store (HDF5, Zarr, TSV), or the CSV holding the array alone that a CSV save writes for a parameter whose ``measure`` names its path in the companion. Combine with `measure:` to pick one array out of a source that holds several. A sourced value is never inlined into generated code: it is resolved lazily and the backend reads it from storage, so an array of any size costs nothing in the spec or the emitted module. Mutually exclusive with `value:` (a YAML literal, which IS materialised) and with `producer:` (bytes that are computed rather than read). Distinct from the global `iri:` slot, which is reserved for ontology grounding.
             measure:
                 range: string
                 required: false
                 description: >-
-                    WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array.
+                    WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array. Without a `source`, or beside the CSV a CSV save writes for it, it is the array's path in the network's own companion (``nodes/parent_index``), and on a ``node_template`` parameter that array runs over the nodes: node ``i`` takes its entry ``i``.
             source_arguments:
                 multivalued: true
                 range: Argument
@@ -2254,6 +2259,18 @@ classes:
                 range: boolean
             shape:
                 range: string
+                description: >-
+                    The shape of the parameter's array, as ``(n_nodes,)`` or ``(100, 3)``. A CSV save writes it for each array it links, since a file of rows does not say whether one column is a 1-D array.
+            dtype:
+                range: string
+                required: false
+                description: >-
+                    The NumPy dtype the parameter's array is held at (``float32``, ``int32``, ``|S15``) where it is read from a file, through ``source`` and ``measure``. A CSV does not record it, so a CSV save writes it for each array it links, and the array reads back at it; absent means float64. Distinct from ``datatype``, a schema range name.
+            levels:
+                range: string
+                required: false
+                description: >-
+                    The network parameter holding the vocabulary this parameter's values are codes into: value ``k`` is that vocabulary's entry ``k``, which is its ``value`` or the array its ``measure`` names. Declares a categorical attribute, such as each node's functional network on a ``node_template`` parameter, whose array runs over the nodes, beside the network parameter listing the networks' names. A name no network parameter carries is refused when the network is resolved.
             explored_values:
                 multivalued: true
                 range: float
@@ -4519,7 +4536,7 @@ classes:
                 range: Coordinate
             elements:
                 description: >-
-                    Topology indices: either a file reference, or (when inlined on a Network) a dotted path inside the parent Network's h5 companion to the (M, 3) int triangle face array. Default convention: ``mesh/faces``.
+                    Topology indices: either a file reference, or (when inlined on a Network) a dotted path inside the parent Network's h5 companion to the (M, 3) int triangle face array. Default convention: ``mesh/faces``. A network saved with CSV companions names the CSV holding them here.
                 range: string
             coordinate_space:
                 range: CommonCoordinateSpace
@@ -4542,7 +4559,7 @@ classes:
                     Brain parcellation this mesh's parcel_map indexes into. Inlined to match Network.parcellation's existing pattern. When the mesh is inlined on a Network that already declares ``parcellation``, this slot is optional and defaults to the parent's value.
             normals:
                 description: >-
-                    Optional path inside the parent Network's h5 (or an external file) to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``.
+                    Optional path inside the parent Network's h5 (or an external file) to per-vertex normals (N, 3) float. Default convention: ``mesh/normals``. A network saved with CSV companions names the CSV holding them here.
                 range: string
             curvature:
                 description: >-
@@ -4550,7 +4567,7 @@ classes:
                 range: string
             vertices_field:
                 description: >-
-                    When the mesh is inlined on a Network, the dotted path inside the parent's h5 to vertex coordinates. Default: ``nodes/coordinates``.
+                    When the mesh is inlined on a Network, the dotted path inside the parent's h5 to vertex coordinates, or a file holding them. Default: ``nodes/coordinates``. A network saved with CSV companions names the CSV holding them here.
                 range: string
             parcel_map_field:
                 description: >-
