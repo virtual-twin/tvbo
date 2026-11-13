@@ -67,7 +67,7 @@ SENSOR_PATTERNS = [
 
 
 def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
-    """Attach HDF5 dimension scales to a matrix dataset.
+    """Attach HDF5 dimension scales to a dense matrix dataset, and nothing to a Zarr array, which has no dimension scales.
 
     dim-0 (rows) is labelled from the parent Network's node labels.
     dim-1 (columns) is labelled from the edge's ``dimension_labels``.
@@ -75,8 +75,8 @@ def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
     """
     import h5py
 
-    if not isinstance(dataset.id.id, int):
-        return  # skip for zarr
+    if not isinstance(dataset, h5py.Dataset):
+        return
     grp = dataset.parent
 
     # Row labels from network nodes
@@ -128,9 +128,9 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
                     grp.attrs[attr] = str(val)
         write_matrix(grp, matrix, fmt=str(fmt), dtype=dtype)
 
-        # HDF5 dimension scales for labelled axes (§12.2)
+        # HDF5 dimension scales for a dense layer's labelled axes (§12.2); a sparse layer's data holds its stored entries, not its axes
         dim_labels = m.get("dimension_labels")
-        if dim_labels and "data" in grp:
+        if dim_labels and str(fmt) == "dense":
             _write_dimension_labels(grp["data"], meta, dim_labels)
 
         for pname, pmatrix in edge_params.get(name, {}).items():

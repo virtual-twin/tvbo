@@ -1004,6 +1004,8 @@ The HDF5 companion stores data and **dimension scales** (HDF5 §12.2) that label
 | `edges/gain/_dim_col_labels` | $(68,)$ | Region labels (dim-1 scale) |
 | `nodes/coordinates` | $(61, 3)$ | Sensor positions (MNI mm) |
 
+The scales label a dense layer. A sparse layer stores its entries, not its axes, so the sidecar's `dimension_labels` alone name its columns, and a Zarr or CSV companion has no dimension scales: each reads the column labels from the sidecar.
+
 
 ## Reference
 

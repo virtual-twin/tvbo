@@ -3580,13 +3580,15 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         return out
 
     @property
-    def labels(self) -> dict[str, str]:
-        """Brain region labels from atlas.
+    def labels(self) -> dict[str, int]:
+        """Each node's label (:attr:`node_labels`) with its id, read from the network's own record, so no atlas file is needed.
+
+        A network whose record numbers its nodes by its atlas's lookup labels, as the curated Desikan-Killiany, Destrieux and Yeo17 networks do, gives each region's lookup label.
 
         Returns:
         -------
-        dict of str to str
-            Mapping from region names to lookup labels
+        dict of str to int
+            Mapping from node labels to node ids
 
         Examples:
         --------
@@ -3596,10 +3598,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         print(f"Number of labeled regions: {len(labels)}")
         ```
         """
-        atlas = self.get_atlas()
-        if atlas.terminology:
-            return {e.name: e.lookupLabel for k, e in atlas.terminology.entities.items()}
-        return {}
+        return {label: node.id for label, node in zip(self.node_labels, self.nodes or [], strict=True)}
 
     @property
     def graph(self) -> nx.MultiDiGraph:
@@ -4302,11 +4301,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if N_regions is None or W is None:
             return G
 
-        labels = self.labels if hasattr(self, "labels") and self.labels else None
-        label_list = list(labels.values()) if isinstance(labels, dict) else labels
+        label_list = self.node_labels
 
         for i in range(N_regions):
-            lab = label_list[i] if label_list and i < len(label_list) else f"node_{i}"
+            lab = label_list[i] if i < len(label_list) else f"node_{i}"
             G.add_node(i, label=lab)
 
         # Receiver-row W: emit j -> i so edges point in signal direction (see docstring).

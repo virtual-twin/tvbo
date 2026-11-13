@@ -528,25 +528,6 @@ def test_an_atlas_network_declares_its_categories_in_one_line(atlas):
         assert (sides["left-thalamus"], sides["right-thalamus"], sides["brain-stem"]) == ("left", "right", "both")
 
 
-class _NoAtlasFiles:
-    """An atlas layout that holds no file."""
-
-    def get(self, **_):
-        return []
-
-
-@pytest.fixture
-def hidden_atlases(tmp_path, monkeypatch):
-    """No atlas file and no curated network can be found: the atlas layout holds no file and the network database is an empty directory."""
-    from tvbo.classes import atlas as atlas_module
-    from tvbo.classes import network as network_module
-
-    (tmp_path / "no-networks").mkdir()
-    monkeypatch.setattr(network_module, "NETWORK_DIR", tmp_path / "no-networks")
-    monkeypatch.setattr(atlas_module, "atlas_data", _NoAtlasFiles())
-    monkeypatch.setattr(atlas_module, "available_atlases", [])
-
-
 def _short_run(network):
     """The first ten steps of a Generic2dOscillator on *network*, on tvboptim."""
     experiment = SimulationExperiment(

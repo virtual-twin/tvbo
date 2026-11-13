@@ -173,3 +173,22 @@ def unwrapped():
     Generated Python is black-formatted, so a long statement is split across lines at a column black chooses. Asserting on the statement's text rather than on its layout keeps a codegen test about what the emitter produces, not about how it was wrapped. A fixture rather than an importable helper because ``tests/`` is not a package.
     """
     return lambda code: "".join(code.split())
+
+
+class _NoAtlasFiles:
+    """An atlas layout that holds no file."""
+
+    def get(self, **_):
+        return []
+
+
+@pytest.fixture
+def hidden_atlases(tmp_path, monkeypatch):
+    """No atlas file and no curated network can be found: the atlas layout holds no file and the network database is an empty directory."""
+    from tvbo.classes import atlas as atlas_module
+    from tvbo.classes import network as network_module
+
+    (tmp_path / "no-networks").mkdir()
+    monkeypatch.setattr(network_module, "NETWORK_DIR", tmp_path / "no-networks")
+    monkeypatch.setattr(atlas_module, "atlas_data", _NoAtlasFiles())
+    monkeypatch.setattr(atlas_module, "available_atlases", [])
