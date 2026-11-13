@@ -8031,7 +8031,6 @@ edges:
   allow_self_connections: true
 graph_representation: auto
 node_template:
-  id: -1
   parameters:
     functional_network:
       name: functional_network

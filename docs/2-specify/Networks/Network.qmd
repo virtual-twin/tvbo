@@ -239,6 +239,8 @@ An object array holds Python objects, which no format stores; give text as a tex
 
 ### Declared node arrays
 
+A `node_template` sets what every node shares, and a node's own entry in `nodes` overrides it slot by slot. The slots that say which node it is, `id`, `label`, `position` and `region`, come from the network's data, so a template that sets one is refused, naming it. The one exception is `id: -1`, which tvbo wrote on every template it saved until templates had their own class: a network read with it drops that value.
+
 A node array is declared as a parameter whose `measure` is its path in the companion. On `node_template` the array runs over the nodes, node `i` taking entry `i`, and is read as `network.nodes.<name>` without being copied onto each node. On the network it is any other array, such as a vocabulary. `levels` makes a per-node array a categorical attribute, whose codes index the vocabulary it names:
 
 ```yaml

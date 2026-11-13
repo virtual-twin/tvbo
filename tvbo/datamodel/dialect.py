@@ -385,7 +385,33 @@ def _fold_dynamics(data: dict) -> None:
 
 
 UNASSIGNED_NODE_ID = -1
-"""The ``id`` a node carries until a network assigns it one: a ``node_template``, or a node declared by ``label`` alone."""
+"""The ``id`` a node declared by ``label`` alone carries until the network that materialises it assigns one."""
+
+
+def _per_node_slots() -> list[str]:
+    """The slots ``Node`` adds to ``NodeTemplate`` (``id``, ``label``, ``position``, ``region``), which the network's data gives each node."""
+    import dataclasses
+
+    from tvbo.datamodel import schema
+
+    shared = {field.name for field in dataclasses.fields(schema.NodeTemplate)}
+    return [field.name for field in dataclasses.fields(schema.Node) if field.name not in shared]
+
+
+def _refuse_per_node_slots(data: dict) -> None:
+    """Refuse a ``node_template`` that sets a per-node slot (:func:`_per_node_slots`): the network's data gives each node its own, so the template's value would be ignored."""
+    own = [name for name in _per_node_slots() if data.get(name) is not None]
+    if own:
+        raise ValueError(
+            f"`node_template` sets {', '.join(f'`{name}`' for name in own)}; the network's data gives each node its own, and a template sets only what every node shares, so declare a node's own value on that node."
+        )
+
+
+def _fold_node_template(data: dict) -> None:
+    """Read a ``node_template`` mapping: drop the ``id: -1`` (:data:`UNASSIGNED_NODE_ID`) on the template of a network an older tvbo saved, and only that value, so such a network still reads, then refuse a per-node slot (:func:`_refuse_per_node_slots`)."""
+    if data.get("id") == UNASSIGNED_NODE_ID:
+        del data["id"]
+    _refuse_per_node_slots(data)
 
 
 def _fold_label_keyed_node(data: dict) -> None:
@@ -395,6 +421,14 @@ def _fold_label_keyed_node(data: dict) -> None:
     """
     if data.get("id") is None and data.get("label"):
         data["id"] = UNASSIGNED_NODE_ID
+
+
+def _fold_network(data: dict) -> None:
+    """Refuse a ``node_template`` given as a built ``Node`` by the per-node slots it sets, where pydantic names only the wrong class, then read a ``nodes`` mapping by :func:`fold_node_mapping`."""
+    template = data.get("node_template")
+    if template is not None and not isinstance(template, dict):
+        _refuse_per_node_slots({name: getattr(template, name, None) for name in _per_node_slots()})
+    fold_node_mapping(data)
 
 
 def fold_node_mapping(data: dict) -> None:
@@ -420,7 +454,8 @@ SEMANTIC_FOLDS = {
     "StateVariable": _fold_state_variable_domain,
     "Dynamics": _fold_dynamics,
     "Node": _fold_label_keyed_node,
-    "Network": fold_node_mapping,
+    "NodeTemplate": _fold_node_template,
+    "Network": _fold_network,
 }
 """Per-class dialect a table of renames cannot express, keyed like the other tables.
 

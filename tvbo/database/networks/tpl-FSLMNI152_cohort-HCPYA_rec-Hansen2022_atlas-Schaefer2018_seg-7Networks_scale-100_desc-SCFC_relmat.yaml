@@ -46,7 +46,6 @@ parameters:
     description: The names of the functional networks the parcels belong to, one entry for each network in each hemisphere, as the parcel labels spell them (LH_Vis in 7Networks_LH_Vis_1).
     measure: nodes/functional_network_labels
 node_template:
-  id: -1
   parameters:
     functional_network:
       description: The functional network the parcel belongs to, as a code into functional_network_labels.

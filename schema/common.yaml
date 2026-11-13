@@ -10,6 +10,7 @@ prefixes:
     tvbo: https://w3id.org/tvbo/
     schema: http://schema.org/
     prov: http://www.w3.org/ns/prov#
+    dcterms: http://purl.org/dc/terms/
 
 default_prefix: tvbo
 
@@ -29,6 +30,10 @@ slots:
         range: string
         identifier: true
         description: "Globally unique identifier for the entity."
+    id:
+        slot_uri: dcterms:identifier
+        range: integer
+        description: "Surrogate integer key."
 
     part:
         range: ReportPart

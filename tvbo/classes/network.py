@@ -226,7 +226,7 @@ def _resident_form(data):
 def _prepare_for_datamodel(spec: dict, at: tuple = ()) -> tuple[dict, dict[tuple, dict]]:
     """A copy of the network *spec* the datamodel can build, and the inline edge couplings taken out of it, keyed by the path of their edge.
 
-    The datamodel builds every ``node_template`` as a whole ``Node``, and a node's ``subnetwork`` with that subnetwork's own template and edges, before the tvbo ``Network`` of any level sees them. So each template, at every depth, gets the placeholder ``id`` -1 (each level stashes its template without it), and each inline coupling definition (a mapping on an edge's ``coupling``, which the datamodel holds only as a reference by name) is taken off its edge and returned under a path such as ``("node_template", "subnetwork", "edges", 0)``, for :func:`_reattach_inline_couplings` to put back once the datamodel has built the network. *at* is the path of *spec* itself. Only the mappings on the way are copied, so the caller's spec is never changed.
+    The datamodel builds every ``node_template`` as a whole ``NodeTemplate``, and a node's ``subnetwork`` with that subnetwork's own template and edges, before the tvbo ``Network`` of any level sees them. So each inline coupling definition (a mapping on an edge's ``coupling``, which the datamodel holds only as a reference by name), at every depth, is taken off its edge and returned under a path such as ``("node_template", "subnetwork", "edges", 0)``, for :func:`_reattach_inline_couplings` to put back once the datamodel has built the network. *at* is the path of *spec* itself. Only the mappings on the way are copied, so the caller's spec is never changed.
     """
     spec, detached = dict(spec), {}
 
@@ -247,10 +247,8 @@ def _prepare_for_datamodel(spec: dict, at: tuple = ()) -> tuple[dict, dict[tuple
         spec["edges"] = [without_coupling(edge, (*at, "edges", i)) for i, edge in enumerate(spec["edges"])]
     if isinstance(spec.get("edge_template"), dict):
         spec["edge_template"] = without_coupling(spec["edge_template"], (*at, "edge_template"))
-    template = spec.get("node_template")
-    if isinstance(template, dict):
-        template = prepared_node(template, (*at, "node_template"))
-        spec["node_template"] = {**template, "id": -1} if template.get("id") is None else template
+    if isinstance(spec.get("node_template"), dict):
+        spec["node_template"] = prepared_node(spec["node_template"], (*at, "node_template"))
     nodes = spec.get("nodes")
     if isinstance(nodes, dict):
         spec["nodes"] = {key: prepared_node(node, (*at, "nodes", i)) for i, (key, node) in enumerate(nodes.items())}
@@ -299,11 +297,12 @@ def _is_unset(value) -> bool:
 def _merge_partial_node(node, spec: dict, *, override: bool) -> None:
     """Merge the partial node *spec* into the materialised *node*.
 
-    The spec is constructed as a ``Node`` first, so every value is the typed object the datamodel builds, never its raw mapping, and each call builds its own, so no two nodes share one. A ``subnetwork`` is the exception: it stays a copy of its mapping, which :meth:`Network._resolve_subnetworks` builds into a tvbo ``Network``. Keyed collections (``parameters``, ``state``, ``events``) merge key by key and other fields as a whole. Where the node already holds a value, *override* decides: a node declared by label replaces it, a template yields to it.
+    The spec is constructed first, so every value is the typed object the datamodel builds, never its raw mapping, and each call builds its own, so no two nodes share one. A ``subnetwork`` is the exception: it stays a copy of its mapping, which :meth:`Network._resolve_subnetworks` builds into a tvbo ``Network``. Keyed collections (``parameters``, ``state``, ``events``) merge key by key and other fields as a whole. *override* says which spec it is: a node declared by label is constructed as a ``Node`` and replaces a value the node holds, and a template is constructed as a ``NodeTemplate``, which refuses a per-node slot, and yields to it.
     """
     import copy
 
-    partial = tvbo_datamodel.Node(**{k: v for k, v in spec.items() if k not in ("id", "subnetwork")}, id=node.id)
+    fields = {k: v for k, v in spec.items() if k != "subnetwork"}
+    partial = tvbo_datamodel.Node(**{**fields, "id": node.id}) if override else tvbo_datamodel.NodeTemplate(**fields)
     for field in (k for k in spec if k not in ("id", "label")):
         current = getattr(node, field, None)
         value = spec[field] if field == "subnetwork" else getattr(partial, field)
@@ -867,12 +866,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         _nt_spec = None
         if isinstance(_nt, dict):
             _nt_spec = _copy.deepcopy(_nt)
-            _nt_spec.pop("id", None)
         elif _dataclasses.is_dataclass(_nt):
             _nt_spec = {
-                f.name: _copy.deepcopy(value)
-                for f in _dataclasses.fields(_nt)
-                if f.name != "id" and not _is_unset(value := getattr(_nt, f.name))
+                f.name: _copy.deepcopy(value) for f in _dataclasses.fields(_nt) if not _is_unset(value := getattr(_nt, f.name))
             }
         _et = kwargs.get("edge_template")
         _et_spec = _copy.deepcopy(_et) if isinstance(_et, dict) else None
@@ -1851,7 +1847,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _template_parameters(self) -> dict:
         """The parameters of this network's ``node_template``, which is made when the network has none."""
         if self.node_template is None:
-            self.node_template = tvbo_datamodel.Node(id=-1)
+            self.node_template = tvbo_datamodel.NodeTemplate()
         if self.node_template.parameters is None:
             self.node_template.parameters = {}
         return self.node_template.parameters
@@ -2008,7 +2004,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _expand_node_template(self) -> None:
         """Apply ``node_template`` to every materialized node.
 
-        The template is a partial ``Node``, merged into each node by :func:`_merge_partial_node` with the node's own values winning: a keyed collection (``parameters``, ``state``, ``events``) receives each template key the node does not declare, and any other field (``subnetwork``, ``dynamics`` …) is filled only where the node leaves it unset, so heterogeneous variants can override individual regions. A parameter that names its array by ``measure`` is not merged: its array runs over the nodes, node ``i`` taking entry ``i``, and is read as ``network.nodes.<name>``, not copied onto each node. A no-op when no template was authored.
+        The template is a ``NodeTemplate``, merged into each node by :func:`_merge_partial_node` with the node's own values winning: a keyed collection (``parameters``, ``state``, ``events``) receives each template key the node does not declare, and any other field (``subnetwork``, ``dynamics`` …) is filled only where the node leaves it unset, so heterogeneous variants can override individual regions. A parameter that names its array by ``measure`` is not merged: its array runs over the nodes, node ``i`` taking entry ``i``, and is read as ``network.nodes.<name>``, not copied onto each node. A no-op when no template was authored.
         """
         spec = getattr(self, "_node_template_spec", None)
         if not spec or not self.nodes:

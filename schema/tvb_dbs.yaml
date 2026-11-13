@@ -17,12 +17,6 @@ imports:
   - linkml:types
   - tvbo_study
 
-slots:
-  id:
-    description: Surrogate integer key.
-    range: integer
-    slot_uri: dcterms:identifier
-
 classes:
   DBSDataset:
     is_a: Dataset

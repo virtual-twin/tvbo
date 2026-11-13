@@ -233,7 +233,7 @@ def test_a_node_template_applies_through_the_datamodel_route_too():
     """A template's node parameters reach every node whether the network is built from a mapping or from its datamodel record."""
     from tvbo.datamodel import schema
 
-    spec = {"number_of_nodes": 2, "node_template": {"id": 0, "parameters": {"g": {"value": 0.5}}}}
+    spec = {"number_of_nodes": 2, "node_template": {"parameters": {"g": {"value": 0.5}}}}
     for net in (Network(**spec), Network.from_datamodel(schema.Network(**spec))):
         nodes = net.nodes.values() if isinstance(net.nodes, dict) else net.nodes
         assert [sorted((getattr(n, "parameters", None) or {}).keys()) for n in nodes] == [["g"], ["g"]]

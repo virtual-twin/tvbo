@@ -157,6 +157,47 @@ slots:
         range: boolean
         description: >-
             Whether to include this element in simulation output files. Applicable to state variables (default true), derived variables (default false), and network nodes (default true). On an observation it forces (true) or suppresses (false) persistence in the result; left unset, a terminal observation (one not consumed by another observation or a loss) is recorded and an intermediate one is not. Set false to suppress recording.
+    size:
+        range: integer
+        ifabsent: integer(1)
+        description: >-
+            Number of identical cells this node represents as a population. The default (1) is a single unit; size>1 makes the node a population of N cells sharing this node's dynamics, addressed by index 0..N-1 when a connectivity rule on an incident Edge is expanded. Maps to a NeuroML <population size="N">. Backend-independent: it states the population's cardinality, not a storage layout.
+    dynamics:
+        range: Dynamics
+        required: false
+        description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics."
+        inlined: false
+    position:
+        range: Coordinate
+        description: "Spatial coordinates (x, y, z) of the node"
+        inlined: true
+    region:
+        range: string
+        description: "Brain region or anatomical label"
+    hemisphere:
+        range: Hemisphere
+        description: >-
+            The hemisphere this node lies in, the SANDS `Hemisphere` value `left` or `right`. Absent for a midline node or one whose side is not curated. A consumer that needs sides fails on an absent value rather than inferring one from the label.
+    homologue:
+        range: string
+        description: >-
+            Label of this node's counterpart in the other hemisphere, so that a mirrored drive or readout is a declared permutation rather than a positional guess. Absent when the node has no homologue.
+    state:
+        multivalued: true
+        range: StateValue
+        inlined: true
+        description: "Per-node initial state variable values, keyed by state variable name."
+    events:
+        multivalued: true
+        range: Event
+        inlined: true
+        description: "Events attached to this node (e.g., threshold-based state changes)."
+    subnetwork:
+        range: Network
+        required: false
+        inlined: true
+        description: >-
+            Optional finer-scale Network that "lives inside" this Node (network-of-networks / multi-scale primitive). The subnetwork's nodes map (one-to-many) to this single parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork's `edges` list, using `source_network` / `target_network` with the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry its own `graph_generator` (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or `mesh` (continuous surface field) — one unified slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region. Recursive: a subnetwork's Nodes can themselves carry subnetworks.
 
 enums:
     AlgorithmCompositionMode:
@@ -1322,11 +1363,11 @@ classes:
                 inlined: true
                 description: "Dictionary of dynamics models keyed by name. Nodes reference these by name. For heterogeneous networks with per-node dynamics."
             node_template:
-                range: Node
+                range: NodeTemplate
                 required: false
                 inlined: true
                 description: >-
-                    Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). Reserved per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are ignored if set on the template. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions.
+                    Default Node attributes applied to every Node in this Network. Explicit entries in `nodes:` override the template field-by-field (shallow replace, same semantics as `dict.update`). The per-Node slots (id, label, position, region) come from the data backbone (Network.iri-loaded parcellation or procedural generator) and are no template slots, so a template that sets one is refused, naming it. Lets a homogeneous Network declare its per-Node configuration once without enumerating regions.
             edge_template:
                 range: Edge
                 required: false
@@ -1579,6 +1620,26 @@ classes:
                 description: >-
                     Optional dotted-path subkey into the referenced entity (e.g. ``weight_alpha`` for a Network's named edge matrix, ``mesh.faces`` for the face array, or ``nodes.ef_alpha`` for a per-node scalar field). Resolved by attribute walk at load time.
 
+    NodeTemplate:
+        class_uri: tvbo:NodeTemplate
+        description: >-
+            The node slots a network's `node_template` sets on every node it does not set them on itself: what a node is and how it runs, and nothing that says which node it is. It shares these slots with `Node` and lacks the per-node slots `id`, `label`, `position` and `region`, which the network's data gives each node; a template that sets one is refused, naming it.
+        slots:
+            - alternateName
+            - description
+            - parameters
+            - record
+            - size
+            - dynamics
+            - hemisphere
+            - homologue
+            - state
+            - events
+            - subnetwork
+        slot_usage:
+            record:
+                ifabsent: "true"
+
     Node:
         class_uri: tvbo:Node
         description: "A node in a network with its own dynamics and properties"
@@ -1588,56 +1649,22 @@ classes:
             - description
             - parameters
             - record
+            - id
+            - size
+            - dynamics
+            - position
+            - region
+            - hemisphere
+            - homologue
+            - state
+            - events
+            - subnetwork
         slot_usage:
             record:
                 ifabsent: "true"
-        attributes:
             id:
-                range: integer
                 required: true
-                slot_uri: dcterms:identifier
                 description: "Unique node identifier"
-            size:
-                range: integer
-                ifabsent: integer(1)
-                description: >-
-                    Number of identical cells this node represents as a population. The default (1) is a single unit; size>1 makes the node a population of N cells sharing this node's dynamics, addressed by index 0..N-1 when a connectivity rule on an incident Edge is expanded. Maps to a NeuroML <population size="N">. Backend-independent: it states the population's cardinality, not a storage layout.
-            dynamics:
-                range: Dynamics
-                required: false
-                description: "Dynamics model governing this node's behavior. Can be a reference (by name) or inline definition. If not provided, uses experiment's dynamics."
-                inlined: false
-            position:
-                range: Coordinate
-                description: "Spatial coordinates (x, y, z) of the node"
-                inlined: true
-            region:
-                range: string
-                description: "Brain region or anatomical label"
-            hemisphere:
-                range: Hemisphere
-                description: >-
-                    The hemisphere this node lies in, the SANDS `Hemisphere` value `left` or `right`. Absent for a midline node or one whose side is not curated. A consumer that needs sides fails on an absent value rather than inferring one from the label.
-            homologue:
-                range: string
-                description: >-
-                    Label of this node's counterpart in the other hemisphere, so that a mirrored drive or readout is a declared permutation rather than a positional guess. Absent when the node has no homologue.
-            state:
-                multivalued: true
-                range: StateValue
-                inlined: true
-                description: "Per-node initial state variable values, keyed by state variable name."
-            events:
-                multivalued: true
-                range: Event
-                inlined: true
-                description: "Events attached to this node (e.g., threshold-based state changes)."
-            subnetwork:
-                range: Network
-                required: false
-                inlined: true
-                description: >-
-                    Optional finer-scale Network that "lives inside" this Node (network-of-networks / multi-scale primitive). The subnetwork's nodes map (one-to-many) to this single parent Node. Cross-scale signal flow is declared as ordinary Edges in the subnetwork's `edges` list, using `source_network` / `target_network` with the `parent` sentinel to traverse up the hierarchy. The subnetwork may carry its own `graph_generator` (discrete sub-network — reservoir, spiking population, jaxley compartments) and/or `mesh` (continuous surface field) — one unified slot for reservoirs-per-region, spiking-populations-per-region, cells-per-region, and surface-mesh-patches-per-region. Recursive: a subnetwork's Nodes can themselves carry subnetworks.
 
     NodeSelection:
         class_uri: tvbo:NodeSelection
