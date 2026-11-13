@@ -145,6 +145,27 @@ def _is_weight_name(name) -> bool:
     return low in _WEIGHT_TARGETS or low in _WEIGHT_MEASURES
 
 
+def _companion_name(store) -> str:
+    """The file name of the companion *store* reads, for an error to name."""
+    return getattr(getattr(store, "_path", None), "name", "its companion")
+
+
+def _unheld_weight(name, store) -> KeyError:
+    """The error for a weight the sidecar declares as *name* and the companion *store* does not hold, which `matrix` raises rather than serve zeros and `save` rather than write a network without it."""
+    return KeyError(f"The sidecar declares the layer {name!r}, and {_companion_name(store)} does not hold it.")
+
+
+def _read_held(store, name):
+    """The layer *name* from the companion *store*, which holds it.
+
+    A layer the companion holds and cannot read, such as a group without its ``data``, raises ``OSError`` naming the layer and the companion, chained to the reader's error. h5py raises a ``KeyError`` for it, which a caller that takes a ``KeyError`` for an absent layer would read as one.
+    """
+    try:
+        return store[name]
+    except KeyError as exc:
+        raise OSError(f"{_companion_name(store)} holds the layer {name!r}, and it cannot be read: {exc}") from exc
+
+
 class LazyMaterializationWarning(UserWarning):
     """A `Network` entered a JAX transformation with arrays its companion offers still unread.
 
@@ -4772,7 +4793,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def array(self, path: str):
         """The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.
 
-        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:func:`_declares_layer`), is not this network's and is not read from the companion.
+        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:func:`_declares_layer`), is not this network's and is not read from the companion. A layer the companion holds and cannot read raises (:func:`_read_held`).
         """
         key = _array_key(path)
         if (name := _edge_name(key)) is not None:
@@ -4784,12 +4805,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if store is None or _declares_layer(self.edges, name):
             return None
         try:
-            if key.startswith("edges/") and key.count("/") == 1:
-                value = store[key[len("edges/") :]]
-            else:
+            if name is None:
                 value = store.read_dataset(key)
+            elif name not in store:
+                return None
         except (KeyError, OSError, AttributeError):
             return None
+        if name is not None:
+            value = _read_held(store, name)  # outside the try, so a layer the companion holds and cannot read raises
         resident[key] = value
         return value
 
@@ -5010,19 +5033,17 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             return None
 
         mat = None
+        unheld = False
         found = _spelled(self.edge_arrays())
         if found is not None:
             mat = arrays[_array_key(found)]
         elif store is not None:
             found = _spelled(getattr(store, "names", None) or getattr(store, "arrays", {}).keys())
             if found is not None:
-                # A sidecar may declare a template edge the companion does not carry, and a name the store lists is not a promise it can serve one.
-                try:
-                    mat = store[found]
-                except (KeyError, OSError):
-                    mat = None
-                else:
-                    arrays[_array_key(found)] = mat
+                # A declared layer the companion does not hold reads as it would in memory, and only a weight that would be served as zeros raises below; a layer it holds is read, and an error reading it is raised.
+                unheld = found not in store
+                if not unheld:
+                    mat = arrays[_array_key(found)] = _read_held(store, found)
         if mat is None:
             if _is_weight_name(name):
                 mat = self._weights_from_edges()
@@ -5032,6 +5053,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # No edges is zero weights, not absent ones: a single-node model and an uncoupled ensemble are both legitimate, and every consumer builds an (n, n) array from this.
         _unconnected = False
         if mat is None and _is_weight_name(name):
+            if unheld:
+                raise _unheld_weight(found, store)
             n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
             if n > 0:
                 mat, _unconnected = np.zeros((n, n), dtype=np.float64), True

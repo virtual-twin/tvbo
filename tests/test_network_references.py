@@ -206,9 +206,9 @@ def test_a_spec_fragment_is_read_as_the_study_that_includes_it_reads_it(root, tm
     np.testing.assert_array_equal(network_io.load_declared_network(fragment).matrix("weight", format="dense"), _raw("01")[0])
     np.testing.assert_array_equal(dataref.resolve_dataref(DataRef(iri=str(fragment), output="weight")).values, _raw("01")[0])
     with pytest.raises(
-        KeyError, match="spec/sourcedata/group.yaml"
-    ):  # read where it stands, the path means a file beside the fragment
-        network_io.load_network(fragment).matrix("weight", format="dense")
+        FileNotFoundError, match="spec/sourcedata/group.yaml"
+    ):  # read where it stands, the path means a sidecar beside the fragment, and none is there
+        network_io.load_network(fragment)
 
 
 def test_the_cohort_scale_of_a_ruled_connectome_is_one_number_from_one_expression(root, results, ruled, tmp_path):

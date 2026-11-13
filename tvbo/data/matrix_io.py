@@ -276,7 +276,7 @@ class LazyArrayStore:
         return template_edges(self._meta.get("edges", []) or [])
 
     def _open_handle(self):
-        """A fresh read handle on the store — an HDF5 file or a Zarr group — or ``None`` for a CSV, which has none to hold."""
+        """A fresh read handle on the store — an HDF5 file or a Zarr group — or ``None`` for a CSV, which has none to hold. Any other file raises ``OSError``, as an HDF5 file that cannot be opened does, so no reader takes it for a store that lacks the array asked for."""
         if self._ext in (".h5", ".hdf5"):
             import h5py
 
@@ -285,7 +285,11 @@ class LazyArrayStore:
             import zarr
 
             return zarr.open(str(self._path), mode="r")
-        return None
+        if self._ext == ".csv":
+            return None
+        raise OSError(
+            f"{self._path} is not an array store: a companion is an HDF5 file (.h5, .hdf5), a Zarr group (.zarr) or a CSV matrix (.csv)."
+        )
 
     @contextmanager
     def _open(self):
@@ -356,7 +360,17 @@ class LazyArrayStore:
         raise KeyError(key)
 
     def __contains__(self, key: str) -> bool:
-        return key in self._cache or key in self.names
+        """Whether the companion holds the layer *key*, which a sidecar's declaration does not promise: ``edges/<key>`` in the file's header, read with no value. A CSV has no header, so it holds the layers it answers for."""
+        if key in self._cache:
+            return True
+        if self._ext == ".csv":
+            try:
+                self[key]
+            except KeyError:
+                return False
+            return True
+        with self._open() as store:
+            return f"edges/{key}" in store
 
     def __getitem__(self, key: str):
         """One edge matrix, in its stored format, read on first access and kept."""

@@ -507,6 +507,8 @@ def load_network(path):
     - **sidecar + companion** — a ``.yaml``/``.json`` metadata file whose ``data_file`` names the binary beside it;
     - **single self-describing file** — a ``.h5``/``.zarr`` carrying its own sidecar in the ``metadata`` root attribute (see :data:`EMBEDDED_METADATA_ATTR`). The file is its own array store, so one path is the whole Network.
 
+    A sidecar whose ``data_file`` names another network's sidecar (:data:`~tvbo.data.dataref.NETWORK_SIDECARS`), as the dump of a curated network does, is no companion: that network is read as a ``data_file`` network reads it (``Network._resolve_from_data_file``), so the two readers of the slot agree. A sidecar that names itself is refused.
+
     Arrays are NOT loaded into memory. A LazyArrayStore is attached that loads arrays on first access (e.g., net.matrix("weight")).
 
     Parameters
@@ -520,6 +522,7 @@ def load_network(path):
         Fully constructed tvbo.Network with lazy array references.
     """
     from tvbo.classes.network import Network
+    from tvbo.data.dataref import NETWORK_SIDECARS
     from tvbo.utils.source import loading_from
 
     path = Path(path)
@@ -548,8 +551,12 @@ def load_network(path):
         if descriptor:
             net.descriptor = descriptor
 
-        # Attach lazy array store (no arrays loaded yet).
-        if data_file:
+        names_sidecar = bool(data_file) and Path(str(data_file)).suffix.lower() in NETWORK_SIDECARS
+        if names_sidecar and (path.parent / data_file).resolve() == path.resolve():
+            raise ValueError(
+                f"{path.name} names itself as its `data_file`; a sidecar names the companion that holds its arrays."
+            )
+        if data_file and not names_sidecar:
             data_path = path.parent / data_file
             net._store = LazyArrayStore(data_path, meta_dict)
             net.data_file = data_file
@@ -558,8 +565,9 @@ def load_network(path):
             _load_mesh(net, data_path)
         else:
             net._store = None
+            net.data_file = data_file
 
-        # `_store` now makes the network materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; a sidecar carrying only a `parcellation:` still resolves its normative connectome here as before.
+        # With a store attached the network is materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; without one, a `data_file` naming another sidecar and a bare `parcellation:` resolve here.
         net._resolve(source_dir=str(path.parent))
 
     return net
@@ -616,10 +624,19 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone. A layer declared with `used:` is never read from the companion, under any spelling of its name: once frozen the companion holds no matrix for it, and its value is the one its binding read, if any.
+    from tvbo.classes.network import _is_weight_name, _read_held, _unheld_weight
+
+    # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone. A layer declared with `used:` is never read from the companion, under any spelling of its name: once frozen the companion holds no matrix for it, and its value is the one its binding read, if any. A layer the companion holds is read, and an error reading it is raised (`_read_held`); a declared layer it does not hold is carried as in memory, declared and with no matrix, except a weight with nothing in memory either, which is refused below as `matrix()` refuses it.
     store = getattr(network, "_store", None)
+    arrays, unheld = {}, []
     with store if hasattr(store, "__enter__") else nullcontext():
-        arrays = {name: store.arrays[name] for name in store.arrays if not network.sources_layer(name)} if store else {}
+        for name in store.arrays if store else ():
+            if network.sources_layer(name):
+                continue
+            if name in store:
+                arrays[name] = _read_held(store, name)
+            else:
+                unheld.append(name)
         edge_params = network.edge_parameter_arrays() if hasattr(network, "edge_parameter_arrays") else {}
         carried = _carry_through(network)
     arrays.update(network.edge_arrays() if hasattr(network, "edge_arrays") else {})
@@ -643,6 +660,11 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
             l_name = next((nm for nm in names if nm.lower() in _LENGTH_MEASURES), None)
             if l_name and l_name != "length":
                 arrays[l_name] = arrays.pop("length")
+
+    if unheld:
+        missing = next((name for name in unheld if _is_weight_name(name) and name not in arrays), None)
+        if missing is not None:
+            raise _unheld_weight(missing, store)
 
     unread = network.unread_sourced_layers() if hasattr(network, "unread_sourced_layers") else []
     for name in unread:
