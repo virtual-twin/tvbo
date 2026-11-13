@@ -23,7 +23,7 @@ jax.config.update("jax_enable_x64", True)
 
 from tvbo.classes.observation import Observation as CuratedObservation
 from tvbo.data.types import Bunch
-from tvbo.datamodel.schema import (
+from tvbo.datamodel import (
     DerivedParameter,
     DerivedVariable,
     Dynamics,

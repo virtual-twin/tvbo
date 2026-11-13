@@ -365,8 +365,55 @@ _BUILTINS = [
 ]
 
 
+def _import_tvb_zip(path):
+    from tvbo.adapters.tvb import from_tvb_zip
+
+    return from_tvb_zip(path)
+
+
+def _import_tvb_h5(path):
+    from tvbo.adapters.tvb import from_tvb_h5
+
+    return from_tvb_h5(path)
+
+
+def _import_bids(path, **kwargs):
+    from tvbo.classes.network import Network
+
+    return Network.from_bids(path, **kwargs)
+
+
+_IMPORTERS: list[ExportFormat] = [
+    ExportFormat(
+        "tvb-zip",
+        "TVB connectivity archive",
+        ".zip",
+        "application/zip",
+        importer=_import_tvb_zip,
+        description="TVB's connectivity zip: weights.txt, tract_lengths.txt and centres.txt, read into a Network.",
+    ),
+    ExportFormat(
+        "tvb-h5",
+        "TVB connectivity HDF5",
+        ".h5",
+        "application/x-hdf5",
+        importer=_import_tvb_h5,
+        description="TVB's connectivity HDF5 file (weights, tract_lengths, centres, region_labels), read into a Network.",
+    ),
+    ExportFormat(
+        "bids-bep017",
+        "BIDS BEP017 connectivity directory",
+        "",
+        "inode/directory",
+        importer=_import_bids,
+        aliases=("bep017",),
+        description="A BIDS derivatives directory of BEP017 relationship matrices, read into a Network.",
+    ),
+]
+
+
 def _register_builtins() -> None:
-    for fmt in _BUILTINS:
+    for fmt in (*_BUILTINS, *_IMPORTERS):
         register(fmt, overwrite=True)
 
 

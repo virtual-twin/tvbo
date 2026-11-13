@@ -3,17 +3,15 @@
 
 """Load bundled example `SimulationStudy` definitions from the ontology data directory.
 
-At import time this module scans the `db` data directory for YAML files, loads each into a [`SimulationStudy`](../datamodel/schema.qmd) instance, and exposes them keyed by their `key` field through the module-level `SimulationStudies` mapping.
+At import time this module scans the `db` data directory for YAML files, loads each into a [`SimulationStudy`](../datamodel/pydantic.qmd) instance, and exposes them keyed by their `key` field through the module-level `SimulationStudies` mapping.
 """
 
 import glob
 import os
 
-from linkml_runtime.loaders import yaml_loader
-
-from tvbo.datamodel.schema import SimulationStudy
+from tvbo.datamodel import SimulationStudy
 from tvbo.ontology import constants
-from tvbo.utils import Bunch
+from tvbo.utils import Bunch, yaml_loader
 
 DATA_DIR = os.path.join(constants.DATA_DIR, "db")
 

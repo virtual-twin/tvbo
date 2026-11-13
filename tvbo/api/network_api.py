@@ -8,11 +8,13 @@ Endpoints:
 See §12.8 of the tvbo HDF5 format proposal v0.7.
 """
 
+import json
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, Response
-from linkml_runtime.dumpers import json_dumper, yaml_dumper
 
 from tvbo.data.registry import carries, database_dir
+from tvbo.utils import to_dict, to_yaml
 
 router = APIRouter(prefix="/api/v1/networks", tags=["networks"])
 
@@ -85,16 +87,16 @@ def list_networks(
 
 @router.get("/{network_id}/sidecar")
 def get_sidecar(network_id: str, format: str = Query("yaml")):
-    """Download LinkML-valid sidecar (YAML or JSON)."""
+    """Download the network sidecar (YAML or JSON)."""
     net = _get_networks().get(network_id)
     if not net:
         raise HTTPException(404, f"Network '{network_id}' not found")
 
     if format == "json":
-        content = json_dumper.dumps(net, inject_type=False)
+        content = json.dumps(to_dict(net), indent=2)
         return Response(content, media_type="application/json")
     else:
-        content = yaml_dumper.dumps(net)
+        content = to_yaml(net)
         return Response(content, media_type="application/x-yaml")
 
 

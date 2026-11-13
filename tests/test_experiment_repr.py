@@ -1,6 +1,6 @@
 """An experiment prints as a plain `str`, which a pytest-xdist failure report can carry.
 
-pytest renders a failing test's arguments with ``repr``, and pytest-xdist sends the report to the controller through execnet, which serializes builtin types only. The label is LinkML's `extended_str`, and returned as it is the worker dies with ``DumpError`` and the run reports the tests before it as the whole outcome.
+pytest renders a failing test's arguments with ``repr``, and pytest-xdist sends the report to the controller through execnet, which serializes builtin types only; a worker that returned anything else would die with ``DumpError`` and the run would report the tests before it as the whole outcome.
 """
 
 from __future__ import annotations

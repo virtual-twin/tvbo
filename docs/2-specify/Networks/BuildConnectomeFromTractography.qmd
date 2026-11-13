@@ -146,11 +146,13 @@ def run_tck2connectome(tractogram, atlas, weights_csv, lengths_csv):
     ], check=True)
 ```
 
-Load the resulting CSV matrices:
+Load the resulting CSV matrices through tvbo's one array reader, declaring their orientation (streamline counts are symmetric, so either declaration reads the same matrix):
 
 ```python
-weights = np.loadtxt("weights.csv", delimiter=",")
-lengths = np.loadtxt("lengths.csv", delimiter=",")
+from tvbo.data.array_formats import read_array
+
+weights = read_array("weights.csv", dims=("target", "source")).values
+lengths = read_array("lengths.csv", dims=("target", "source")).values
 ```
 
 ## Step 3: Create a TVBO Network

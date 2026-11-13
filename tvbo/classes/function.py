@@ -23,12 +23,12 @@ From YAML string:
 
 From datamodel object:
 
-    from tvbo.datamodel import schema as tvbo_datamodel
+    from tvbo import datamodel as tvbo_datamodel
     dm_func = tvbo_datamodel.Function(name='sigmoid', ...)
     func = Function.from_datamodel(dm_func)
 """
 
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 
 Function = tvbo_datamodel.Function
 LossFunction = tvbo_datamodel.LossFunction

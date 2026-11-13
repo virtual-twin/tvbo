@@ -1,76 +1,58 @@
-"""The TVBO YAML dialect — one implementation, both construction paths.
+"""The TVBO YAML dialect, folded into every record before it is validated.
 
-TVBO authors write a dialect the schema does not describe on its own: a slot may be
-written under a declared alias (``dt`` for ``step_size``), an object with one obvious
-field may be written as a bare scalar (``omega: 0.0628`` for ``omega: {value: 0.0628}``),
-and an entity may be named by ``iri`` instead of spelled out. None of the three is
-something LinkML's loaders apply — ``aliases:`` is documentation to them, and
-``simple_dict_value`` is specified but unimplemented.
+TVBO authors write a dialect the schema does not describe on its own: a slot may be written under a declared alias (``dt`` for ``step_size``), an object with one obvious field may be written as a bare scalar (``omega: 0.0628`` for ``omega: {value: 0.0628}``), a keyed collection names each member by its key, and an entity may be named by ``iri`` instead of spelled out. None of these is something LinkML's generators apply — ``aliases:`` is documentation to them, and ``simple_dict_value`` is specified but unimplemented.
 
-Both are therefore applied here, from tables read off the schema at build time
-(:mod:`tvbo.datamodel.dialect_tables`). The generated dataclasses install
-:func:`install_on_dataclasses`, which folds the dialect in ``__init__``; the Pydantic
-models call :func:`normalize` from a ``mode="before"`` validator. Sharing this module is
-what keeps them from drifting: the dialect used to live twice, and the copy the Pydantic
-path carried had the aliases but not the scalar shortcuts, so a model written the way the
-README shows validated on one path and was rejected on the other.
+They are therefore applied here, from tables read off the schema at build time (:mod:`tvbo.datamodel.dialect_tables`): the generated models call :func:`normalize` from a ``mode="before"`` validator, so every construction path — a loaded document, ``cls(**data)``, a nested member — folds the same dialect.
 
-Every function here takes and returns plain data for ONE level of nesting. Recursion
-belongs to the caller — Pydantic already descends into members, and the dataclass
-``__init__`` wrapper is reached once per constructed object.
+Every function here takes and returns plain data for ONE level of nesting. Recursion belongs to the caller: Pydantic descends into members, and the validator is reached once per constructed object.
 """
 
 from __future__ import annotations
 
+import os
 import warnings
 from functools import cache
 
-from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, SLOT_ALIASES, SLOT_DEFAULTS
+from tvbo.datamodel.dialect_tables import (
+    KEYED_COLLECTIONS,
+    LIST_SLOTS,
+    SCALAR_SHORTCUTS,
+    SLOT_ALIASES,
+    SLOT_DEFAULTS,
+    UNIT_SLOTS,
+)
 
 __all__ = [
     "identifier_field",
     "KEYED_COLLECTIONS",
+    "LIST_SLOTS",
     "RETIRED_SLOTS",
     "SCALAR_SHORTCUTS",
     "SEMANTIC_FOLDS",
     "SLOT_ALIASES",
+    "UNIT_SLOTS",
     "curated_entry",
     "expand_iri",
     "fold_aliases",
     "fold_node_mapping",
+    "fold_slot",
     "is_literal",
     "key_members",
     "lift_scalar",
     "lift_shortcuts",
     "normalize",
-    "install_on_dataclasses",
+    "paths_as_text",
     "refuse_dotted_parent",
     "refuse_retired",
-    "peer_module",
 ]
 
 _SCALARS = (str, int, float, bool)
 
 
-def peer_module(instance):
-    """The generated module *instance*'s class comes from.
-
-    A record is filled with members — an ``Equation``, a ``Parameter`` — and those have to be of the same generated form as the record itself: the strict Pydantic models validate on assignment and reject a LinkML dataclass where they want their own peer. Behaviour that builds members reads the peer off the instance rather than importing one form, which is what lets one implementation serve both. It is read off the first generated base rather than the instance's own class, so a runtime subclass defined elsewhere — the package's own wrapper pattern — builds its members in the form it extends.
-    """
-    import importlib
-
-    for base in type(instance).__mro__:
-        if base.__module__.startswith("tvbo.datamodel."):
-            return importlib.import_module(base.__module__)
-    return importlib.import_module(type(instance).__module__)
-
-
 def is_literal(value) -> bool:
     """A bare value the shortcut may lift: a scalar, or a (nested) list of scalars.
 
-    An array literal counts — a coordinate list to select, a coefficient matrix — because
-    the slot it lifts into holds arrays as well as scalars. A list of MAPPINGS does not:
-    that is the list spelling of a keyed collection, whose members lift individually.
+    An array literal counts — a coordinate list to select, a coefficient matrix — because the slot it lifts into holds arrays as well as scalars. A list of MAPPINGS does not: that is the list spelling of a keyed collection, whose members lift individually.
     """
     if isinstance(value, _SCALARS):
         return True
@@ -82,11 +64,7 @@ def is_literal(value) -> bool:
 def lift_scalar(value, target, multivalued, keyed=False):
     """``0.0628`` -> ``{'value': 0.0628}``, leaving an already-written mapping alone.
 
-    On a multivalued slot the members are lifted, not the collection: ``{omega: 0.0628}``
-    is a keyed collection of one Parameter, not a Parameter. A ``keyed`` collection's LIST
-    spelling (``arguments: [v]``) is a list of member identifiers, not values, so its bare
-    scalars are left for the loader to key on; only a non-keyed list
-    (``additional_equations: ["x = -x"]`` -> ``[{rhs: "x = -x"}]``) lifts its elements.
+    On a multivalued slot the members are lifted, not the collection: ``{omega: 0.0628}`` is a keyed collection of one Parameter, not a Parameter. A ``keyed`` collection's LIST spelling (``arguments: [v]``) is a list of member identifiers, not values, so its bare scalars are left for the loader to key on; only a non-keyed list (``additional_equations: ["x = -x"]`` -> ``[{rhs: "x = -x"}]``) lifts its elements.
     """
     if not multivalued:
         return {target: value} if is_literal(value) else value
@@ -110,10 +88,7 @@ def lift_shortcuts(cls_name: str, data: dict) -> dict:
 def fold_aliases(cls_name: str, data: dict) -> dict:
     """Rename *cls_name*'s declared aliases to their canonical slots, in place.
 
-    Class-scoped on purpose: an alias is only an alias where its class declares it.
-    ``target_variable`` is an ``Edge`` alias for ``target_var`` but the canonical slot on
-    a stimulus ``Event``, so a table keyed by slot name alone would rename it in the one
-    place it must not be.
+    Class-scoped on purpose: an alias is only an alias where its class declares it. ``target_variable`` is an ``Edge`` alias for ``target_var`` but the canonical slot on a stimulus ``Event``, so a table keyed by slot name alone would rename it in the one place it must not be.
     """
     for alias, canonical in SLOT_ALIASES.get(cls_name, {}).items():
         if alias not in data:
@@ -214,9 +189,9 @@ def _invoked_class(cls_name: str) -> str:
 
     An invocation is not filed in the database itself, so its ``iri`` cannot address a record of its own class; it addresses the function it invokes. A ``FunctionCall`` is an invocation, and so is every class that is one, a study-level ``Analysis`` among them.
     """
-    from tvbo.datamodel import schema
+    from tvbo.datamodel import pydantic
 
-    cls, call = getattr(schema, cls_name, None), getattr(schema, "FunctionCall", None)
+    cls, call = getattr(pydantic, cls_name, None), getattr(pydantic, "FunctionCall", None)
     return "Function" if isinstance(cls, type) and isinstance(call, type) and issubclass(cls, call) else cls_name
 
 
@@ -250,14 +225,12 @@ def _has_slot(cls_name: str, slot: str) -> bool:
 
     Unknown classes answer True, so a name this module cannot resolve is left exactly as the recipe wrote it.
     """
-    import dataclasses
+    from tvbo.datamodel import pydantic
 
-    from tvbo.datamodel import schema
-
-    cls = getattr(schema, cls_name, None)
-    if cls is None or not dataclasses.is_dataclass(cls):
+    cls = getattr(pydantic, cls_name, None)
+    if cls is None or not hasattr(cls, "model_fields"):
         return True
-    return any(field.name == slot for field in dataclasses.fields(cls))
+    return slot in cls.model_fields
 
 
 @cache
@@ -281,21 +254,11 @@ def identifier_field(model_cls) -> str | None:
 def key_members(cls_name: str, data: dict) -> dict:
     """Give a keyed collection the mapping spelling, each member named by its key.
 
-    ``parameters: {TR: {value: 720.0}}`` means a Parameter *called* ``TR``, so writing the
-    name a second time inside the member is the redundancy this project's records are
-    written without. The generated dataclasses fill it from the key in ``__post_init__``;
-    the generated Pydantic models leave it missing and reject the member as incomplete, so
-    a record that loaded on one form failed on the other.
+    ``parameters: {TR: {value: 720.0}}`` means a Parameter *called* ``TR``, so writing the name a second time inside the member is the redundancy this project's records are written without; the generated models would otherwise reject the member as incomplete.
 
-    The same collection may equally be written as a LIST — of bare identifiers
-    (``arguments: [v]``) or of whole members — which the dataclasses key and the Pydantic
-    models reject outright as not a mapping. Both spellings arrive as the mapping here, so
-    which one a record uses stops being a question of which form is loading it. A list
-    whose members state no identifier is left alone: there is nothing to key it by, and
-    that is a record to reject rather than to guess at.
+    The same collection may equally be written as a LIST — of bare identifiers (``arguments: [v]``), of whole members, or of records already built — which the generated models would reject as not a mapping. Both spellings arrive as the mapping here, so a record may use either. A list whose members state no identifier is left alone: there is nothing to key it by, and that is a record to reject rather than to guess at.
 
-    Members are rebuilt rather than mutated: the mapping may be a cached curated entry,
-    shared by every object that names it.
+    Members are rebuilt rather than mutated: the mapping may be a cached curated entry, shared by every object that names it.
     """
     for slot, identifier in KEYED_COLLECTIONS.get(cls_name, {}).items():
         members = data.get(slot)
@@ -318,6 +281,8 @@ def _as_mapping(members: list, identifier: str) -> list | dict:
             keyed[member] = {identifier: member}
         elif isinstance(member, dict) and isinstance(member.get(identifier), str):
             keyed[member[identifier]] = member
+        elif not isinstance(member, dict) and isinstance(getattr(member, identifier, None), str):
+            keyed[getattr(member, identifier)] = member
         else:
             return members
     return keyed
@@ -326,10 +291,7 @@ def _as_mapping(members: list, identifier: str) -> list | dict:
 def _fold_state_variable_domain(data: dict) -> None:
     """``range``/``boundaries`` mean more than ``domain`` spelled differently.
 
-    ``boundaries`` is a hard clamp and ``range`` is descriptive, so folding either one by
-    a plain rename would silently promote a description into an enforced bound. The fold
-    that keeps them apart lives with the loader; this is where the Python construction
-    path reaches it.
+    ``boundaries`` is a hard clamp and ``range`` is descriptive, so folding either one by a plain rename would silently promote a description into an enforced bound. The fold that keeps them apart lives with the loader; this is where the Python construction path reaches it.
     """
     from tvbo.utils.yaml_loader import _fold_one_state_variable_domain
 
@@ -337,12 +299,7 @@ def _fold_state_variable_domain(data: dict) -> None:
 
 
 def _reject_output_as_definitions(data: dict) -> None:
-    """``output`` lists names. Definitions there are accepted and quietly ruined.
-
-    The slot is a list of strings, so a mapping of variable definitions is coerced to
-    ``["JsonObj(x=JsonObj(equation=...))"]`` — a model that constructs, renders and runs
-    while naming an output that does not exist.
-    """
+    """``output`` lists names: a mapping of variable definitions there is refused by name, rather than as the list slot's one bare member."""
     output = data.get("output")
     if not isinstance(output, dict):
         return
@@ -366,11 +323,7 @@ def _reject_output_as_definitions(data: dict) -> None:
 def _reject_unknown_output(data: dict) -> None:
     """An ``output`` entry names a channel of this model, so a name it does not declare is a typo.
 
-    Checked here because it is the one place that is deterministic, local and cheap: two
-    key lookups against collections already in hand. Parsing every equation is what used to
-    answer it, from inside a constructor that no longer does any work — so between that
-    constructor emptying and this fold the check was simply absent, and a model naming a
-    channel that does not exist built without complaint.
+    Checked here because it is the one place that is deterministic, local and cheap: two key lookups against collections already in hand. Parsing every equation is what used to answer it, from inside a constructor that no longer does any work — so between that constructor emptying and this fold the check was simply absent, and a model naming a channel that does not exist built without complaint.
     """
     declared = set(data.get("derived_variables") or ()) | set(data.get("state_variables") or ())
     for name in data.get("output") or ():
@@ -390,12 +343,9 @@ UNASSIGNED_NODE_ID = -1
 
 def _per_node_slots() -> list[str]:
     """The slots ``Node`` adds to ``NodeTemplate`` (``id``, ``label``, ``position``, ``region``), which the network's data gives each node."""
-    import dataclasses
+    from tvbo.datamodel import pydantic
 
-    from tvbo.datamodel import schema
-
-    shared = {field.name for field in dataclasses.fields(schema.NodeTemplate)}
-    return [field.name for field in dataclasses.fields(schema.Node) if field.name not in shared]
+    return [name for name in pydantic.Node.model_fields if name not in pydantic.NodeTemplate.model_fields]
 
 
 def _refuse_per_node_slots(data: dict) -> None:
@@ -415,11 +365,11 @@ def _fold_node_template(data: dict) -> None:
 
 
 def _fold_label_keyed_node(data: dict) -> None:
-    """Give a node declared by ``label`` alone the unassigned id, so it constructs.
+    """Give a node that states no ``id`` the unassigned id, so it constructs.
 
-    Such a node attaches values to the node of that label in a network whose data materialises its nodes, and only that data knows the index. :meth:`tvbo.classes.network.Network._apply_declared_nodes` replaces the sentinel with it, and raises when no node carries the label.
+    Such a node is one declared by ``label`` alone, which attaches values to the node of that label in a network whose data materialises its nodes, or a ``node_template``, which every node is built from; only the network knows the index. :meth:`tvbo.classes.network.Network._apply_declared_nodes` replaces the sentinel with it, and raises when no node carries the label.
     """
-    if data.get("id") is None and data.get("label"):
+    if data.get("id") is None:
         data["id"] = UNASSIGNED_NODE_ID
 
 
@@ -470,8 +420,7 @@ SEMANTIC_FOLDS = {
 }
 """Per-class dialect a table of renames cannot express, keyed like the other tables.
 
-Applied after the members are keyed, so a fold sees each collection under the names its
-own class will, whichever spelling the record was written in.
+Applied after the members are keyed, so a fold sees each collection under the names its own class will, whichever spelling the record was written in.
 """
 
 
@@ -497,14 +446,73 @@ def refuse_retired(cls_name: str, data: dict) -> None:
             raise ValueError(f"{cls_name}.{slot} was retired in tvbo 0.9.0: {instead}.")
 
 
+def canonicalize_units(cls_name: str, data: dict) -> dict:
+    """Give each unit slot of *cls_name* in *data* the canonical spelling of a curated unit, in place.
+
+    ``mV/ms`` and ``mV_per_ms`` are one unit, and the published record spells it one way. An uncurated unit stays as written: the open slot records it, `normalize_unit` answers ``None`` for it, and a dimensional check involving it reports ``underdetermined`` rather than guessing.
+    """
+    from tvbo.utils.units import normalize_unit
+
+    for slot in UNIT_SLOTS.get(cls_name, ()):
+        unit = data.get(slot)
+        if isinstance(unit, str):
+            data[slot] = normalize_unit(unit) or unit
+    return data
+
+
+def paths_as_text(data: dict) -> dict:
+    """Give each path in *data*, a slot's value or a member of a list slot, as its text, in place: a record holds the text a recipe writes for a path, never a path object."""
+    for slot, value in data.items():
+        if _is_path(value):
+            data[slot] = os.fspath(value)
+        elif isinstance(value, (list, tuple)) and any(_is_path(v) for v in value):
+            data[slot] = [os.fspath(v) if _is_path(v) else v for v in value]
+    return data
+
+
+def _is_path(value) -> bool:
+    """Whether *value* is a path; a scalar is answered without the slower ``os.PathLike`` check, which a long numeric list would pay per member."""
+    return not isinstance(value, _SCALARS) and isinstance(value, os.PathLike)
+
+
+def wrap_lists(cls_name: str, data: dict) -> dict:
+    """Give each list-valued slot of *cls_name* whose one member is written bare the list spelling, in place.
+
+    ``output: x`` is ``output: [x]``, and a ``nodes`` mapping that spells one node's own fields is that one node. A value that is neither a scalar, a mapping nor a record is left as written, so an array stays an array and is refused as itself.
+    """
+    for slot in LIST_SLOTS.get(cls_name, ()):
+        value = data.get(slot)
+        if value is None or isinstance(value, (list, tuple)):
+            continue
+        if isinstance(value, (*_SCALARS, dict)) or hasattr(value, "model_fields"):
+            data[slot] = [value]
+    return data
+
+
+def fold_slot(cls_name: str, slot: str, value):
+    """*value*, assigned to *cls_name*'s *slot* after construction, in the spelling construction would have given it: its unit canonical, its shortcut lifted, its members keyed, its terse distribution completed and its one bare member wrapped.
+
+    Pydantic validates an assignment against the value assigned, not against the mapping the class's ``mode="before"`` validator returns, so what :func:`normalize` folds there never reaches the slot. The folds that read the one slot apply here. Those that need the whole record or the construction around it stay with :func:`normalize`: ``iri`` expansion, the defaults that fill after it, and the semantic folds, among them reading ``nodes`` as a mapping, whose label-keyed nodes only the network's construction gives ids.
+    """
+    from tvbo.utils.yaml_loader import _lift_one_distribution
+
+    data = paths_as_text({slot: value})
+    canonicalize_units(cls_name, data)
+    lift_shortcuts(cls_name, data)
+    key_members(cls_name, data)
+    _lift_one_distribution(data)
+    wrap_lists(cls_name, data)
+    return data[slot]
+
+
 def normalize(cls_name: str, data: dict) -> dict:
     """Fold *cls_name*'s dialect into *data*, in place: aliases, ``iri``, defaults, shortcuts, keys.
 
-    Aliases fold and scalar shortcuts lift first, on the recipe here and on the curated record in :func:`curated_entry`, so the two meet at the same depth when merged: a recipe's ``parameters: {a: 2.0}`` overrides the curated ``a``'s value and keeps its definition and domain, where merging the bare scalar replaced the whole parameter. Folding precedes lifting so the shortcut pass sees every value under the name it looks for. Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of ``equation`` — a bare string where the generated ``__post_init__`` wanted a mapping, and it raised. Keying comes last, once every member is a mapping that can carry a name.
+    Aliases fold and scalar shortcuts lift first, on the recipe here and on the curated record in :func:`curated_entry`, so the two meet at the same depth when merged: a recipe's ``parameters: {a: 2.0}`` overrides the curated ``a``'s value and keeps its definition and domain, where merging the bare scalar replaced the whole parameter. Folding precedes lifting so the shortcut pass sees every value under the name it looks for. Lifting first left ``BoundaryCondition(value="0")`` — the older spelling of ``equation`` — a bare string where the model wanted a mapping, and it raised. Keying comes last, once every member is a mapping that can carry a name.
 
-    Schema-declared defaults (``SLOT_DEFAULTS``, for slots whose class range ``ifabsent`` cannot serve) fill after the ``iri`` expansion, so a curated record's own value is never overridden by the default, and before construction, so both generated forms record the default the schema states.
+    Schema-declared defaults (``SLOT_DEFAULTS``, for slots whose class range ``ifabsent`` cannot serve) fill after the ``iri`` expansion, so a curated record's own value is never overridden by the default, and before construction, so the record carries the default the schema states.
 
-    The semantic folds come last, after keying, so a fold reads each collection under the names the class will — a record spelling one as a list is not a different case to it. The terse ``distribution`` lift follows the domain fold, since a clamp folded out of ``boundaries`` can leave one behind for it to complete.
+    The semantic folds come after keying, so a fold reads each collection under the names the class will — a record spelling one as a list is not a different case to it. The terse ``distribution`` lift follows the domain fold, since a clamp folded out of ``boundaries`` can leave one behind for it to complete. The bare member of a list slot is wrapped last, once a mapping of members has been read as the list it abbreviates, so what is left as a mapping is the one member it spells.
 
     The document envelope goes first. ``tvbo_class`` states which class a *file* holds, which is a fact about the file rather than the object: the schema declares it (the ``Document`` mixin) so plain LinkML can validate the file, and every constructor route drops it so no object carries it.
     """
@@ -514,7 +522,9 @@ def normalize(cls_name: str, data: dict) -> dict:
         data.pop(envelope_key, None)
 
     refuse_retired(cls_name, data)
+    paths_as_text(data)
     fold_aliases(cls_name, data)
+    canonicalize_units(cls_name, data)
     lift_shortcuts(cls_name, data)
     expand_iri(cls_name, data)
     for slot, default in SLOT_DEFAULTS.get(cls_name, {}).items():
@@ -527,29 +537,5 @@ def normalize(cls_name: str, data: dict) -> dict:
     if semantic is not None:
         semantic(data)
     _lift_one_distribution(data)
+    wrap_lists(cls_name, data)
     return data
-
-
-def install_on_dataclasses(namespace: dict) -> None:
-    """Wrap each generated dataclass's ``__init__`` so it accepts the dialect.
-
-    ``__init__`` is the one place where a keyword is known to name a slot of this class,
-    so an alias resolves without guessing whether a mapping is an instance or a keyed
-    collection, and a free-form key (a parameter literally named ``dt``) is never mistaken
-    for one. Every construction path — the LinkML loaders, ``cls(**data)``, nested and
-    inlined members, subclasses — goes through it.
-    """
-
-    def wrap(cls):
-        original = cls.__init__
-
-        def __init__(self, *args, **kwargs):
-            normalize(cls.__name__, kwargs)
-            original(self, *args, **kwargs)
-
-        cls.__init__ = __init__
-
-    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS) | set(RETIRED_SLOTS):
-        cls = namespace.get(name)
-        if cls is not None:
-            wrap(cls)

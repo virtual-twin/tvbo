@@ -292,7 +292,6 @@ def to_tvboptim(
 
     # Linear history interpolation makes d(state)/d(delay) informative, so speed is optimisable.
     if interpolate_delays:
-        # Not `JsonObj`: every LinkML entity subclasses it, so a lone Coupling would read as its own field list.
         _is_collection = isinstance(coupling, (dict, list, tuple))
         _coups = [c for _, c in keyed_items(coupling, "coupling")] if _is_collection else [coupling]
         for _c in _coups:

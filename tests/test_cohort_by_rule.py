@@ -12,9 +12,7 @@ import yaml
 
 from tvbo.analysis.statistics import GROUPINGS
 from tvbo.data.cohort import cohort_members, find_cohort
-from tvbo.datamodel import pydantic as pydantic_model
-from tvbo.datamodel import schema
-from tvbo.datamodel.schema import Dataset
+from tvbo.datamodel import CohortGrouping, Dataset
 
 SUBJECTS = [f"s{i:02d}" for i in range(12)]
 SCORE = np.array([5.0, 1.0, 9.0, 2.0, 30.0, 3.0, 8.0, 4.0, 7.0, 6.0, 10.0, 60.0])
@@ -55,11 +53,10 @@ def _by_rank(scores, subjects, n_groups):
 
 
 def test_the_schema_offers_the_groupings_the_statistics_implement():
-    """One vocabulary: a grouping a rule may name is one ``group_index`` computes, in both generated forms."""
-    assert sorted(pydantic_model.CohortGrouping.__members__) == sorted(GROUPINGS)
-    assert all(str(schema.CohortGrouping(name)) == name for name in GROUPINGS)
+    """One vocabulary: a grouping a rule may name is one ``group_index`` computes."""
+    assert sorted(CohortGrouping.__members__) == sorted(GROUPINGS)
     with pytest.raises(ValueError, match="by_rank"):
-        schema.CohortGrouping("by_rank")
+        CohortGrouping("by_rank")
 
 
 def test_equal_count_gives_groups_of_equal_size_in_the_candidates_order(tmp_path):
@@ -205,10 +202,15 @@ def test_equal_scores_have_no_range_to_cut(tmp_path):
     assert [len(_one(tmp_path, _rule(k, 3))) for k in (1, 2, 3)] == [4, 4, 4]
 
 
-@pytest.mark.parametrize("group", [0, 4])
-def test_a_group_outside_the_split_is_refused(tmp_path, group):
+@pytest.mark.parametrize(
+    ("group", "refusal"),
+    [(0, r"rule\.group\n  Input should be greater than or equal to 1"), (4, "asks for group 4 of 3; groups are counted from 1")],
+    ids=["below", "above"],
+)
+def test_a_group_outside_the_split_is_refused(tmp_path, group, refusal):
+    """Group 0 is below the schema's minimum, so the record is refused as it is read; a group past the split is refused when the members are drawn."""
     _table(tmp_path)
-    with pytest.raises(ValueError, match=rf"asks for group {group} of 3; groups are counted from 1"):
+    with pytest.raises(ValueError, match=refusal):
         _one(tmp_path, _rule(group))
 
 

@@ -163,7 +163,7 @@ def test_the_loader_that_skips_init_checks_too():
 
     Every `from_file` / `from_string` load takes that path. Without its own call the suite stays green while the entry point users actually use accepts the name.
     """
-    from tvbo.datamodel import schema as tvbo_schema
+    from tvbo import datamodel as tvbo_schema
 
     dm = tvbo_schema.SimulationExperiment(id=1, label="loader probe")
     dm.observations = {"recorded ts": tvbo_schema.Observation(name="recorded ts", source=["V"])}

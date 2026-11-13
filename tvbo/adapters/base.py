@@ -570,8 +570,10 @@ class BaseAdapter:
         """
         if listed_edges and len(listed_edges) <= threshold:
             return None
+        from tvbo.data.array_formats import sender_row
+
         W = dense_matrix(getattr(self.experiment, "network", None), "weight")
-        return W.T if W is not None and W.size > 1 else None
+        return sender_row(W) if W is not None and W.size > 1 else None
 
     # ── Integration ──────────────────────────────────────────────────────
 
@@ -592,7 +594,7 @@ class BaseAdapter:
 
         The one source of integration defaults: a backend integrates exactly the window the recipe would serialise to, and an explicit ``None`` reads like a slot left out rather than failing on ``float(None)``.
         """
-        from tvbo.datamodel.schema import Integrator
+        from tvbo.datamodel import Integrator
 
         value = getattr(integration, slot, None)
         return getattr(Integrator(), slot) if value is None else value
@@ -1086,7 +1088,7 @@ class ContinuationAdapter(BaseAdapter):
     @staticmethod
     def initial_state(continuation):
         """The `InitialState` *continuation* declares, else the schema's default one, which integrates for its default duration."""
-        from tvbo.datamodel.schema import InitialState
+        from tvbo.datamodel import InitialState
 
         return getattr(continuation, "initial_state", None) or InitialState()
 

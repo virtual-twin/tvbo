@@ -230,6 +230,7 @@ dynamics:
       initial_value: 0.0
   number_of_modes: 1
   model_type: generic
+  system_type: continuous
   autonomous: true
   cse: false
   compile: false
@@ -370,13 +371,6 @@ events:
 inferences:
   scenario_A:
     name: scenario_A
-    likelihood:
-      source:
-      - observed_ts
-      name: Normal
-      predicted:
-      - recorded_ts
-      sigma: 0.2
     label: A — no hypothesis (wide priors)
     priors:
       stimulus.amplitude:
@@ -403,6 +397,13 @@ inferences:
               name: std
               value: 0.1
           axis: space
+    likelihood:
+      name: Normal
+      source:
+      - observed_ts
+      predicted:
+      - recorded_ts
+      sigma: 0.2
     sampler: nuts
     num_samples: 2000
     num_warmup: 500
@@ -410,13 +411,6 @@ inferences:
     seed: 0
   scenario_B:
     name: scenario_B
-    likelihood:
-      source:
-      - observed_ts
-      name: Normal
-      predicted:
-      - recorded_ts
-      sigma: 0.2
     label: 'B — H1: higher excitability (tight amplitude prior)'
     priors:
       stimulus.amplitude:
@@ -443,6 +437,13 @@ inferences:
               name: std
               value: 0.1
           axis: space
+    likelihood:
+      name: Normal
+      source:
+      - observed_ts
+      predicted:
+      - recorded_ts
+      sigma: 0.2
     sampler: nuts
     num_samples: 2000
     num_warmup: 500
@@ -450,13 +451,6 @@ inferences:
     seed: 1
   scenario_C:
     name: scenario_C
-    likelihood:
-      source:
-      - observed_ts
-      name: Normal
-      predicted:
-      - recorded_ts
-      sigma: 0.2
     label: 'C — H2: stronger stimulus (tight excitability prior)'
     priors:
       stimulus.amplitude:
@@ -483,6 +477,13 @@ inferences:
               name: std
               value: 0.05
           axis: space
+    likelihood:
+      name: Normal
+      source:
+      - observed_ts
+      predicted:
+      - recorded_ts
+      sigma: 0.2
     sampler: nuts
     num_samples: 2000
     num_warmup: 500

@@ -12,7 +12,7 @@ import copy
 
 import pytest
 
-from tvbo.datamodel.schema import Noise
+from tvbo.datamodel import Noise
 
 pytest.importorskip("tvboptim")
 

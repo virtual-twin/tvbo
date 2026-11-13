@@ -31,9 +31,7 @@ def _referenced_names(expression):
 
 
 def _declared(element, collection: str):
-    """*element*'s named collection, empty when it holds nothing.
-
-    LinkML's dataclasses default an unfilled collection to an empty one and Pydantic's models default it to `None`, so a layer written against either alone raises on the other for a model that simply declares nothing yet. Stating that difference once here is what lets this layer read a model — or one of its elements — from either generator, rather than as an `or {}` at each of the two dozen reads below.
+    """*element*'s named collection, an empty mapping when it holds nothing or *element* has no such slot.
 
     An empty mapping stands in for an empty list as well: every list slot read here is either iterated or tested for membership, and both answer the same on either.
     """

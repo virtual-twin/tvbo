@@ -22,7 +22,7 @@ from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any
 
-from tvbo.datamodel.schema import StudyDirectory, StudyFile, StudyLayout
+from tvbo.datamodel import StudyDirectory, StudyFile, StudyLayout
 from tvbo.utils import yaml_loader
 
 RECORD_PATH = Path(__file__).resolve().parent.parent / "rules" / "study_layout.yaml"

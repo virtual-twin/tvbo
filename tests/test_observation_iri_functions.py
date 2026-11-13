@@ -48,10 +48,7 @@ def test_no_sink_is_safe():
 
 
 def test_experiment_with_no_functions_merges_and_renders(tmp_path):
-    """An experiment with no `functions:` block that references a curated model still renders — the model's helpers merge as a plain dict, not a JsonObj.
-
-    The merge must not go through the LinkML functions setter (which re-wraps a dict assignment into a JsonObj whose values are raw dicts, breaking `dict(experiment.functions)` in codegen). Guards that regression end to end.
-    """
+    """An experiment with no `functions:` block that references a curated model still renders: the model's helpers merge as a plain dict of typed members, which `dict(experiment.functions)` in codegen reads. Guards that regression end to end."""
     from tvbo.classes.experiment import SimulationExperiment
 
     spec = tmp_path / "no_funcs.yaml"
@@ -71,5 +68,5 @@ def test_experiment_with_no_functions_merges_and_renders(tmp_path):
     code = e.render_code(format="tvboptim")
     import ast
 
-    ast.parse(code)  # must not raise (the JsonObj form broke dict(experiment.functions))
+    ast.parse(code)
     assert "def strided_hrf" in code and "tensordot" in code

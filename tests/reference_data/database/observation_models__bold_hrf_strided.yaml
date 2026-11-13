@@ -112,7 +112,8 @@ pipeline:
     kernel:
       name: kernel
       value: hrf_kernel
-- equation:
+- name: volterra_transform
+  equation:
     parameters:
       k_1:
         name: k_1
@@ -124,6 +125,5 @@ pipeline:
         description: Resting blood volume fraction
     rhs: (X - 1.0) * k_1 * V_0
     latex: false
-  name: volterra_transform
   input: bold_convolve
   output: Bold

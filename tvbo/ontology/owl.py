@@ -58,7 +58,7 @@ def _require_fuzzy():
         )
 
 
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.ontology import query as _query_mod
 
 # %%
@@ -1706,7 +1706,7 @@ def import_model(
 
     model_data = None
     if isinstance(model_metadata, str) and isfile(model_metadata):
-        from linkml_runtime.loaders import yaml_loader
+        from tvbo.utils import yaml_loader
 
         experiment_metadata = yaml_loader.load(model_metadata, tvbo_datamodel.SimulationExperiment)
         model_data = experiment_metadata.model
@@ -1726,29 +1726,12 @@ def import_model(
     acr = create_acronym(model_name)
     model_suffix = f"_{acr}"
 
-    def _to_native(val):
-        """Convert linkml extended types to native Python types for owlready2."""
-        if val is None:
-            return None
-        if type(val).__name__ == "extended_str":
-            return str(val)
-        if type(val).__name__ == "extended_int":
-            return int(val)
-        if type(val).__name__ == "extended_float":
-            return float(val)
-        if isinstance(val, (list, tuple)):
-            return type(val)(_to_native(v) for v in val)
-        if isinstance(val, dict):
-            return {_to_native(k): _to_native(v) for k, v in val.items()}
-        return val
-
     def _create_subclass(name, base_class, properties, parent_class):
         with onto:
             new_class = type(name, (parent_class, base_class), {})
             for prop_name, prop_value in properties.items():
                 if prop_value is not None:
-                    native_value = _to_native(prop_value)
-                    getattr(new_class, prop_name).append(native_value)
+                    getattr(new_class, prop_name).append(prop_value)
             return new_class
 
     # Create the main model class in the ontology

@@ -29,7 +29,7 @@ from pathlib import Path
 
 DEFAULT_ROOTS = ("tvbo", "tests", "scripts", "benchmarks", "docs/scripts", "schema", "hatch_build.py")
 SKIP_PARTS = ("__pycache__", ".venv", "_archive", "site-packages")
-GENERATED = ("tvbo/datamodel/schema.py", "tvbo/datamodel/pydantic.py", "tvbo/datamodel/dialect_tables.py")
+GENERATED = ("tvbo/datamodel/pydantic.py", "tvbo/datamodel/dialect_tables.py")
 GENERATED_DIRS = ("tvbo/datamodel/", "docs/datamodel/", "tests/reference_data/", "tvbo/templates/modules/", ".claude/skills/")
 """Trees a generator writes. Their comments come from whatever they were generated from,
 so a person cannot fix them here. ``tvbo/templates/modules/`` is mako's compiled cache and

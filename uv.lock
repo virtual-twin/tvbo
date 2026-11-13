@@ -2077,15 +2077,6 @@ wheels = [
 ]
 
 [[package]]
-name = "hbreader"
-version = "0.9.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/54/66/3a649ce125e03d1d43727a8b833cd211f0b9fe54a7e5be326f50d6f1d951/hbreader-0.9.1.tar.gz", hash = "sha256:d2c132f8ba6276d794c66224c3297cec25c8079d0a4cf019c061611e0a3b94fa", size = 19016, upload-time = "2021-02-25T19:22:32.799Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/24/61844afbf38acf419e01ca2639f7bd079584523d34471acbc4152ee991c5/hbreader-0.9.1-py3-none-any.whl", hash = "sha256:9a6e76c9d1afc1b977374a5dc430a1ebb0ea0488205546d4678d6e31cc5f6801", size = 7595, upload-time = "2021-02-25T19:22:31.944Z" },
-]
-
-[[package]]
 name = "httpcore"
 version = "1.0.9"
 source = { registry = "https://pypi.org/simple" }
@@ -2225,15 +2216,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/cf/8c/f834fbf984f691b4f7ff60f50b514cc3de5cc08abfc3295564dd89c5e2e7/importlib_resources-6.5.2.tar.gz", hash = "sha256:185f87adef5bcc288449d98fb4fba07cea78bc036455dd44c5fc4a2fe78fed2c", size = 44693, upload-time = "2025-01-03T18:51:56.698Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a4/ed/1f1afb2e9e7f38a545d628f864d562a5ae64fe6f7a10e28ffb9b185b4e89/importlib_resources-6.5.2-py3-none-any.whl", hash = "sha256:789cfdc3ed28c78b67a06acb8126751ced69a3d5f79c095a98298cd8a760ccec", size = 37461, upload-time = "2025-01-03T18:51:54.306Z" },
-]
-
-[[package]]
-name = "iniconfig"
-version = "2.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc35312d08ba8bf51fdd999c576889fc2c24cb97f4f10/iniconfig-2.3.0.tar.gz", hash = "sha256:c76315c77db068650d49c5b56314774a7804df16fee4402c1f19d6d15d8c4730", size = 20503, upload-time = "2025-10-18T21:55:43.219Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
 ]
 
 [[package]]
@@ -2558,37 +2540,12 @@ wheels = [
 ]
 
 [[package]]
-name = "json-flattener"
-version = "0.1.9"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "pyyaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/6d/77/b00e46d904818826275661a690532d3a3a43a4ded0264b2d7fcdb5c0feea/json_flattener-0.1.9.tar.gz", hash = "sha256:84cf8523045ffb124301a602602201665fcb003a171ece87e6f46ed02f7f0c15", size = 11479, upload-time = "2022-02-26T01:36:04.545Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/cc/7fbd75d3362e939eb98bcf9bd22f3f7df8c237a85148899ed3d38e5614e5/json_flattener-0.1.9-py3-none-any.whl", hash = "sha256:6b027746f08bf37a75270f30c6690c7149d5f704d8af1740c346a3a1236bc941", size = 10799, upload-time = "2022-02-26T01:36:03.06Z" },
-]
-
-[[package]]
 name = "json5"
 version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/77/e8/a3f261a66e4663f22700bc8a17c08cb83e91fbf086726e7a228398968981/json5-0.13.0.tar.gz", hash = "sha256:b1edf8d487721c0bf64d83c28e91280781f6e21f4a797d3261c7c828d4c165bf", size = 52441, upload-time = "2026-01-01T19:42:14.99Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/9e/038522f50ceb7e74f1f991bf1b699f24b0c2bbe7c390dd36ad69f4582258/json5-0.13.0-py3-none-any.whl", hash = "sha256:9a08e1dd65f6a4d4c6fa82d216cf2477349ec2346a38fd70cc11d2557499fbcc", size = 36163, upload-time = "2026-01-01T19:42:13.962Z" },
-]
-
-[[package]]
-name = "jsonasobj2"
-version = "1.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "hbreader" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/67/3a/feb245b755f7a47a0df4f30be645e8485d15ff13d0c95e018e4505a8811f/jsonasobj2-1.0.4.tar.gz", hash = "sha256:f50b1668ef478004aa487b2d2d094c304e5cb6b79337809f4a1f2975cc7fbb4e", size = 95522, upload-time = "2021-06-02T17:43:28.39Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/90/0d93963711f811efe528e3cead2f2bfb78c196df74d8a24fe8d655288e50/jsonasobj2-1.0.4-py3-none-any.whl", hash = "sha256:12e86f86324d54fcf60632db94ea74488d5314e3da554c994fe1e2c6f29acb79", size = 6324, upload-time = "2021-06-02T17:43:27.126Z" },
 ]
 
 [[package]]
@@ -3192,31 +3149,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/35/d6/4e28416a6fe58dd6bc7565b1ffa330f4d0ba7d74212642b1b734c511299e/lineax-0.1.0.tar.gz", hash = "sha256:5f1a8f060142af2cdbf7d66b99e8d3071c3aa734b677df6339df4b4c4c0554d2", size = 50209, upload-time = "2026-01-27T21:17:26.652Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/80/0c/2ed47112fc1958a0a81c9b015d4e1861953a1ec3a17b081c0180a25ce82c/lineax-0.1.0-py3-none-any.whl", hash = "sha256:f00911c6b07d427c4835db46856970c8348bc82a035b51f4386ad09382af957a", size = 74600, upload-time = "2026-01-27T21:17:25.33Z" },
-]
-
-[[package]]
-name = "linkml-runtime"
-version = "1.12.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "curies" },
-    { name = "deprecated" },
-    { name = "hbreader" },
-    { name = "json-flattener" },
-    { name = "jsonasobj2" },
-    { name = "jsonschema" },
-    { name = "prefixcommons" },
-    { name = "prefixmaps" },
-    { name = "pydantic" },
-    { name = "pyoxigraph" },
-    { name = "pyyaml" },
-    { name = "rdflib" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/66/0a/e24f036d3b896bcc76d6d219da4c61b01575707536cb53c7fc4b953e894d/linkml_runtime-1.12.1.tar.gz", hash = "sha256:6e46e94712ac6ab97baab9a0a1689c72e0035d8e3546c57abbf809760226ff9b", size = 607301, upload-time = "2026-10-13T14:02:47.782Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/f8/9436cf65da07cef4d24580d70d2a15f6dd35061eec373bb18bbdbd70f0be/linkml_runtime-1.12.1-py3-none-any.whl", hash = "sha256:6d3af40d94a795cc1026d7710880a3bac09b108e8f04da2b31c949b40f472e37", size = 707466, upload-time = "2026-10-13T14:02:44.603Z" },
 ]
 
 [[package]]
@@ -4876,15 +4808,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pluggy"
-version = "1.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f9/e2/3e91f31a7d2b083fe6ef3fa267035b518369d9511ffab804f839851d2779/pluggy-1.6.0.tar.gz", hash = "sha256:7dcc130b76258d33b90f61b658791dede3486c3e6bfb003ee5c9bfb396dd22f3", size = 69412, upload-time = "2025-05-15T12:30:07.975Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/20/4d324d65cc6d9205fabedc306948156824eb9f0ee1633355a8f7ec5c66bf/pluggy-1.6.0-py3-none-any.whl", hash = "sha256:e920276dd6813095e9377c0bc5566d94c932c33b27a3e3945d8389c374dd4746", size = 20538, upload-time = "2025-05-15T12:30:06.134Z" },
-]
-
-[[package]]
 name = "plum-dispatch"
 version = "2.7.1"
 source = { registry = "https://pypi.org/simple" }
@@ -4945,34 +4868,6 @@ wheels = [
 [package.optional-dependencies]
 dill = [
     { name = "dill" },
-]
-
-[[package]]
-name = "prefixcommons"
-version = "0.1.12"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "pytest-logging" },
-    { name = "pyyaml" },
-    { name = "requests" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/b5/c5b63a4bf5dedb36567181fdb98dbcc7aaa025faebabaaffa2f5eb4b8feb/prefixcommons-0.1.12.tar.gz", hash = "sha256:22c4e2d37b63487b3ab48f0495b70f14564cb346a15220f23919eb0c1851f69f", size = 24063, upload-time = "2022-07-19T00:06:12.478Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/31/e8/715b09df3dab02b07809d812042dc47a46236b5603d9d3a2572dbd1d8a97/prefixcommons-0.1.12-py3-none-any.whl", hash = "sha256:16dbc0a1f775e003c724f19a694fcfa3174608f5c8b0e893d494cf8098ac7f8b", size = 29482, upload-time = "2022-07-19T00:06:08.709Z" },
-]
-
-[[package]]
-name = "prefixmaps"
-version = "0.2.6"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "curies" },
-    { name = "pyyaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/4d/cf/f588bcdfd2c841839b9d59ce219a46695da56aa2805faff937bbafb9ee2b/prefixmaps-0.2.6.tar.gz", hash = "sha256:7421e1244eea610217fa1ba96c9aebd64e8162a930dc0626207cd8bf62ecf4b9", size = 709899, upload-time = "2024-10-17T16:30:57.738Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/89/b2/2b2153173f2819e3d7d1949918612981bc6bd895b75ffa392d63d115f327/prefixmaps-0.2.6-py3-none-any.whl", hash = "sha256:f6cef28a7320fc6337cf411be212948ce570333a0ce958940ef684c7fb192a62", size = 754732, upload-time = "2024-10-17T16:30:55.731Z" },
 ]
 
 [[package]]
@@ -5533,46 +5428,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pyoxigraph"
-version = "0.5.12"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7e/00/d1d29089963a4863faf34d0659a5797c23503f1000b35202f15856a016b2/pyoxigraph-0.5.12.tar.gz", hash = "sha256:e1932585267dadeebc11ad97985a916e2cf66df81abb1e335495ed0ce2d5f0ed", size = 5300947, upload-time = "2026-10-18T20:01:58.925Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/ae/75160e5640100adda56ce53b834ff8c917da56d521fab6003b176868bab4/pyoxigraph-0.5.12-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:459c856ac2a1824d5a77fc5d07ae9867da09bb303ebafc019499e7d313a6671d", size = 7698462, upload-time = "2026-10-18T20:00:53.552Z" },
-    { url = "https://files.pythonhosted.org/packages/b7/76/65f7c66b770ed27037c6ad25f67a6ffa035c3673994b2fad33d655b019ae/pyoxigraph-0.5.12-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:d986e58ff4fc00b346acf79e11a1ce3eb4b5e3741226379d4c1260a0dd6f910e", size = 8232669, upload-time = "2026-10-18T20:00:55.665Z" },
-    { url = "https://files.pythonhosted.org/packages/46/53/49a3764effc0562f3f2b4e05343b288c89a38acea22bc86f777f229348dd/pyoxigraph-0.5.12-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:7817619a09d044f2a34507fe834075b3485a61fe81c1fe56cfe44e7152fcffab", size = 7698871, upload-time = "2026-10-18T20:00:57.399Z" },
-    { url = "https://files.pythonhosted.org/packages/e0/da/0bc18ed4774a0bb5353c091a0b4c254ba37bd971b30d7d4ca5c8b4fed754/pyoxigraph-0.5.12-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:28edbc08004080c17872d9b49a9be8a31e1678c2a9ca1c00afdb2f7aaf5c70ad", size = 8231660, upload-time = "2026-10-18T20:00:59.58Z" },
-    { url = "https://files.pythonhosted.org/packages/35/ce/10abfc263330577320188ca0cfaed4cd429f6d13d637698f8ca18858731c/pyoxigraph-0.5.12-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:4764a0cd745f1a3d310432a637b3ab4bc7eaaa24e294ec37b0e2a4e04d7d0ea5", size = 7700530, upload-time = "2026-10-18T20:01:01.299Z" },
-    { url = "https://files.pythonhosted.org/packages/c8/68/262312b07ee1089bf929eeeb22f89967d9503b080c670ea665482111f462/pyoxigraph-0.5.12-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:3c00ebb1289505cf79ee0336bae2df84f873be33f769d8f48e3d063cc4eeb60b", size = 8233189, upload-time = "2026-10-18T20:01:03.275Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/78/3e43c27d981f2ec549b9700e4d60d001f5ab4631806f1fa485556fa2c93f/pyoxigraph-0.5.12-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:fcb9991d19f8f6566ef800c6016b566d60f7a38d4076bab7e0fbd3add32af627", size = 7699716, upload-time = "2026-10-18T20:01:05.048Z" },
-    { url = "https://files.pythonhosted.org/packages/6d/a1/edd0398096eda0522f4f49b5de50f40a7f9278dbef28aa7ba290e7454ce4/pyoxigraph-0.5.12-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:b59c72eae73d4e66c6a687a510133a54ebce3e3ebbdb7c69dfa7e4de36504427", size = 8232847, upload-time = "2026-10-18T20:01:07.208Z" },
-    { url = "https://files.pythonhosted.org/packages/07/97/32ed238d27872a724676f84b590c2ab64d64726c0f8105fc2a89f10ca268/pyoxigraph-0.5.12-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:0077b688f6fc9cf3db4f3eee7acb5153734e958bee2be4ad7345121332c2bdfe", size = 7694160, upload-time = "2026-10-18T20:01:08.986Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/15/6dd1844c2f09b963303203a8f531c7cfc48cfa548beff5c19293814cf4be/pyoxigraph-0.5.12-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:ad18580dc0e4ee4afb38e10f1e80f536a0a92194455b7f8c964f11fd0c64a8c9", size = 8226954, upload-time = "2026-10-18T20:01:10.982Z" },
-    { url = "https://files.pythonhosted.org/packages/3a/33/6b9ccc2b9c91e8f5e59913be756483da61e98c598ed2c70267b473719562/pyoxigraph-0.5.12-cp315-abi3.abi3t-macosx_10_14_x86_64.whl", hash = "sha256:63bbb2c36f72aafa28424d6048336a6a6799236dcb80f48d3c8f00e3b7c07bfa", size = 6375614, upload-time = "2026-10-18T20:01:12.729Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/7a/650f2305517f193095bc5fb9069ed38044d26516c18502ad60e8c871b9dd/pyoxigraph-0.5.12-cp315-abi3.abi3t-macosx_11_0_arm64.whl", hash = "sha256:2f190eb24aae604dcf2739cb434c0ce87c1eafcb220de86675b1d59c73b739ca", size = 5864298, upload-time = "2026-10-18T20:01:14.439Z" },
-    { url = "https://files.pythonhosted.org/packages/f8/6a/1e318f595e5569cc0e9b5f3560f01a137a598ed1ae287a1320913bb1bb8c/pyoxigraph-0.5.12-cp315-abi3.abi3t-manylinux_2_28_aarch64.whl", hash = "sha256:fa44ed2c1b0b73a42398605534a22807762959ded229c04c7994d35777f715a7", size = 7732898, upload-time = "2026-10-18T20:01:16.503Z" },
-    { url = "https://files.pythonhosted.org/packages/20/30/ef64fb7a02f5ffdfb4eb214a87995bdbbb8c4857ac6a7c454f7877d30297/pyoxigraph-0.5.12-cp315-abi3.abi3t-manylinux_2_28_x86_64.whl", hash = "sha256:060491a16a76b4dd617ceff85a25827a84183407f95308be0d5874f0df513ff2", size = 8266606, upload-time = "2026-10-18T20:01:18.42Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/43/b6ce713cac64dfe33a4beeb8e1f30f61a109a1e9c374de5aca5f5febadcb/pyoxigraph-0.5.12-cp315-abi3.abi3t-musllinux_1_2_aarch64.whl", hash = "sha256:5ac5d9fbfe61a3cd7551b421ce54bbd5bfd2aacf23883491594830981b76a5b9", size = 8924250, upload-time = "2026-10-18T20:01:20.374Z" },
-    { url = "https://files.pythonhosted.org/packages/4c/a1/3a29665bc035be550876890457931d6fde8940880a53dc3e7348d68cfdae/pyoxigraph-0.5.12-cp315-abi3.abi3t-musllinux_1_2_x86_64.whl", hash = "sha256:87459392fa087a14c2372826cb137f93ddfde4e7e566502619ebcf30c190ecf3", size = 9490513, upload-time = "2026-10-18T20:01:22.588Z" },
-    { url = "https://files.pythonhosted.org/packages/9f/85/b06ab1e215a120924605e2f3aed723f81d568aaacd5e435cf8403b49f3ae/pyoxigraph-0.5.12-cp315-abi3.abi3t-win_amd64.whl", hash = "sha256:e8cd3698abb52e0be45db9f74827e65d5b4268b990e58a87b61c2b671c83279f", size = 5495177, upload-time = "2026-10-18T20:01:24.808Z" },
-    { url = "https://files.pythonhosted.org/packages/63/03/b8c4cd224569f3ff53ec946928394f14116ef5e849cfaad6c46b562f3c77/pyoxigraph-0.5.12-cp315-abi3.abi3t-win_arm64.whl", hash = "sha256:0bc1816d12c63c5500eab5825d2d376ed55d86b66b5bffb3967daf51738bd4aa", size = 5144209, upload-time = "2026-10-18T20:01:26.758Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/21/f115cd9d4151f60fd2e96fadfd7103bae08d46493f6a016fb403d8483066/pyoxigraph-0.5.12-cp315-cp315-manylinux_2_28_aarch64.whl", hash = "sha256:ae8c01d2789d3e42810b8965ea18024689b9a76c54c007d00c7819ea6471bd8f", size = 7699015, upload-time = "2026-10-18T20:01:28.752Z" },
-    { url = "https://files.pythonhosted.org/packages/eb/ac/e09a14d2f8046481a8a926f4b6a610749d95b3fc0f585d4aabbd03cdfa29/pyoxigraph-0.5.12-cp315-cp315-manylinux_2_28_x86_64.whl", hash = "sha256:2169f6d692b79f0ef2ab3a4f1c217a5a350a7b365d61db8b862296ef5c0ef04c", size = 8232403, upload-time = "2026-10-18T20:01:30.979Z" },
-    { url = "https://files.pythonhosted.org/packages/04/3d/00674b72b2b2163eece7ebf3ed7f1740bf4275c5503c1342fafb029ca71e/pyoxigraph-0.5.12-cp315-cp315t-manylinux_2_28_aarch64.whl", hash = "sha256:11f069241d0be167a473c44f6d3184cd7560af771edb83c0d7f7c19d8c2acb94", size = 7695279, upload-time = "2026-10-18T20:01:32.993Z" },
-    { url = "https://files.pythonhosted.org/packages/6d/c0/194e4ace63625c153a1fa880887b2d250978f9a0581df19e0f98406b3ed2/pyoxigraph-0.5.12-cp315-cp315t-manylinux_2_28_x86_64.whl", hash = "sha256:8e105308a4c76ce0f98e014833f8b4181b82ada18b02900d687e57af954f8fbd", size = 8227289, upload-time = "2026-10-18T20:01:34.962Z" },
-    { url = "https://files.pythonhosted.org/packages/67/ee/dc406eecec6ff6ae6b0f122a294784799a0f2e4d69c22ce460126fac3fb9/pyoxigraph-0.5.12-cp39-abi3-macosx_10_14_x86_64.whl", hash = "sha256:1a0c8931365df07fd77d5f6f7997bf0716ed5a7148d40aee2a6513101ecb6609", size = 6343151, upload-time = "2026-10-18T20:01:37.112Z" },
-    { url = "https://files.pythonhosted.org/packages/d9/29/674774cc216bd671329ec1b5b60cded69c2566b40cef43eefe48de622099/pyoxigraph-0.5.12-cp39-abi3-macosx_11_0_arm64.whl", hash = "sha256:b828b0e2a00c9d14725181d65677074a25f5f87e53eaf6bd89cfc772bbcf94b5", size = 5837673, upload-time = "2026-10-18T20:01:39.126Z" },
-    { url = "https://files.pythonhosted.org/packages/a0/24/9210f9d4b359347e8b4e1e484e11122646cabe8b3d64db65b4c13d9c372b/pyoxigraph-0.5.12-cp39-abi3-manylinux_2_28_aarch64.whl", hash = "sha256:9ed87da388d6cbe3ae41b4f5071c5890957d434afab872b104349a322f985e48", size = 7701997, upload-time = "2026-10-18T20:01:41.116Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/03/259a7296568de62f144937364d7b3e3baccfbe82ec726f13c245da2f8f7a/pyoxigraph-0.5.12-cp39-abi3-manylinux_2_28_x86_64.whl", hash = "sha256:6f19c69a212771ad5368f51061731eec847cd8aa7f3075de9beee728e5c82826", size = 8234885, upload-time = "2026-10-18T20:01:43.607Z" },
-    { url = "https://files.pythonhosted.org/packages/9a/b3/39eb47fff5442b9e762bae09eb7c2c496809f2b0090bdc5cb569e8f572b5/pyoxigraph-0.5.12-cp39-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:2d968d0d45f1f38c02a4417b3eebba3e830b2556732a67f2a528832daca10805", size = 8889557, upload-time = "2026-10-18T20:01:45.888Z" },
-    { url = "https://files.pythonhosted.org/packages/a6/63/f9dd746e4095bc0704caa8ceae48b448cc3c44abdb76ebbca14cd7019166/pyoxigraph-0.5.12-cp39-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:d89ef734fa4a51055bd234f1812c344fbaed7bb97d51516730cba5a517a6bac5", size = 9458815, upload-time = "2026-10-18T20:01:48.616Z" },
-    { url = "https://files.pythonhosted.org/packages/7a/bf/8d9356c985516eb3c0fef581729875d01c9201a93d87c629c83d85988290/pyoxigraph-0.5.12-cp39-abi3-win_amd64.whl", hash = "sha256:41a146a5b1346c5289d06fc9c789ee045092a797a6d68b687e2afaa1714cfd2a", size = 5470372, upload-time = "2026-10-18T20:01:51.165Z" },
-    { url = "https://files.pythonhosted.org/packages/fa/2a/69dbd598932b509b25d6152fe4b2722c955ecc744e61e36e76e7de61fdd3/pyoxigraph-0.5.12-cp39-abi3-win_arm64.whl", hash = "sha256:fe34a10e262f93b4642f6e888aaa15aefd7b430c7c312ace511ccd01b1350a53", size = 5124124, upload-time = "2026-10-18T20:01:52.986Z" },
-    { url = "https://files.pythonhosted.org/packages/4d/1f/1c0c60fe2853e9d8a35dc5058d37d7e407913973cbec2d355bca38246886/pyoxigraph-0.5.12-pp311-pypy311_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:9bad78abe9ecd11eec930bf5626736db605e3352313d1f341a60e668c7081bc4", size = 7706736, upload-time = "2026-10-18T20:01:54.838Z" },
-    { url = "https://files.pythonhosted.org/packages/45/ca/b2a949a950439178ad336f8728ca084450213383470451d1b1544d0b44d4/pyoxigraph-0.5.12-pp311-pypy311_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:241c9011e4b3d35c92c4c4bb5ab8c371a26940015551327e41b66cec724836c7", size = 8243753, upload-time = "2026-10-18T20:01:56.86Z" },
-]
-
-[[package]]
 name = "pypandoc"
 version = "1.16.2"
 source = { registry = "https://pypi.org/simple" }
@@ -5639,31 +5494,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/ac/0d/b107972e085ec13c7
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2b/3a/8dfc7e10341d6331dc2ccc09afb8d25501565112798adbd90cf35528c9ab/pystow-0.7.28-py3-none-any.whl", hash = "sha256:aa73dec0f6dea8bfc844f3abd3d985d6d3594291ebd234d9ec05b16884b13336", size = 57950, upload-time = "2026-02-19T13:23:33.182Z" },
 ]
-
-[[package]]
-name = "pytest"
-version = "9.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
-    { name = "iniconfig" },
-    { name = "packaging" },
-    { name = "pluggy" },
-    { name = "pygments" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/db/7ef3487e0fb0049ddb5ce41d3a49c235bf9ad299b6a25d5780a89f19230f/pytest-9.0.2.tar.gz", hash = "sha256:75186651a92bd89611d1d9fc20f0b4345fd827c41ccd5c299a868a05d70edf11", size = 1568901, upload-time = "2025-12-06T21:30:51.014Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/ab/b3226f0bd7cdcf710fbede2b3548584366da3b19b5021e74f5bde2a8fa3f/pytest-9.0.2-py3-none-any.whl", hash = "sha256:711ffd45bf766d5264d487b917733b453d917afd2b0ad65223959f59089f875b", size = 374801, upload-time = "2025-12-06T21:30:49.154Z" },
-]
-
-[[package]]
-name = "pytest-logging"
-version = "2015.11.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytest" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/dc/1e/fb11174c9eaebcec27d36e9e994b90ffa168bc3226925900b9dbbf16c9da/pytest-logging-2015.11.4.tar.gz", hash = "sha256:cec5c85ecf18aab7b2ead5498a31b9f758680ef5a902b9054ab3f2bdbb77c896", size = 3916, upload-time = "2015-11-04T12:15:54.122Z" }
 
 [[package]]
 name = "python-dateutil"
@@ -7449,7 +7279,6 @@ dependencies = [
     { name = "jax", version = "0.4.38", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'" },
     { name = "jax", version = "0.7.2", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine != 'x86_64' or sys_platform != 'darwin'" },
     { name = "jsonschema" },
-    { name = "linkml-runtime" },
     { name = "mako" },
     { name = "networkx" },
     { name = "numpy" },
@@ -7457,6 +7286,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pybids" },
     { name = "pydot" },
+    { name = "rdflib" },
     { name = "scipy" },
     { name = "sympy" },
     { name = "typer" },
@@ -7635,7 +7465,6 @@ requires-dist = [
     { name = "jupyter", marker = "extra == 'docs'" },
     { name = "librosa", marker = "extra == 'all'", specifier = ">=0.10.2" },
     { name = "librosa", marker = "extra == 'audio'", specifier = ">=0.10.2" },
-    { name = "linkml-runtime", specifier = ">=1.12.1" },
     { name = "llvmlite", marker = "platform_machine == 'x86_64' and sys_platform == 'darwin' and extra == 'all'", specifier = "<0.44" },
     { name = "llvmlite", marker = "platform_machine == 'x86_64' and sys_platform == 'darwin' and extra == 'audio'", specifier = "<0.44" },
     { name = "llvmlite", marker = "platform_machine == 'x86_64' and sys_platform == 'darwin' and extra == 'tvb'", specifier = "<0.44" },
@@ -7700,6 +7529,7 @@ requires-dist = [
     { name = "quarto", marker = "extra == 'docs'" },
     { name = "quartodoc", marker = "extra == 'all'", specifier = ">=0.11.1" },
     { name = "quartodoc", marker = "extra == 'docs'", specifier = ">=0.11.1" },
+    { name = "rdflib", specifier = ">=7.0" },
     { name = "ruff", marker = "extra == 'all'", specifier = ">=0.16.1,<0.17" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.16.1,<0.17" },
     { name = "scikit-fem", marker = "extra == 'all'", specifier = ">=8.0.0" },

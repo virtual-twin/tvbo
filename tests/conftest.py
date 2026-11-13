@@ -178,7 +178,7 @@ def unwrapped():
 @pytest.fixture
 def hidden_atlases(tmp_path, monkeypatch):
     """No atlas file and no curated network can be found: the registry reads a database whose ``atlases`` and ``networks`` folders are empty and whose other folders are the packaged ones."""
-    from tvbo.classes import network as network_module
+    from tvbo.behaviour import network as network_module
     from tvbo.data import registry
 
     database = tmp_path / "database"

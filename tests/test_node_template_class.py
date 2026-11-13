@@ -1,20 +1,18 @@
 """A network's ``node_template`` is a ``NodeTemplate``: the slots every node shares, and none that says which node it is. ``Node`` has the same slots and adds the per-node slots ``id``, ``label``, ``position`` and ``region``, without being a ``NodeTemplate``, so it keeps its field order and no validator takes a node for a template.
 
-A template that sets a per-node slot is refused, naming it, however the network is built: from a mapping, from a file, from a built node, or as either generated form's record. A curated template carries no ``id``, and the ``id: -1`` an older tvbo wrote on every template it saved, and only that value, is dropped when a template is read, so the networks it saved still read.
+A template that sets a per-node slot is refused, naming it, however the network is built: from a mapping, from a file, from a built node, or as a record. A curated template carries no ``id``, and the ``id: -1`` an older tvbo wrote on every template it saved, and only that value, is dropped when a template is read, so the networks it saved still read.
 """
 
 from __future__ import annotations
 
-import dataclasses
 from pathlib import Path
 
 import pytest
 import yaml
 
 from tvbo import Network
+from tvbo import datamodel as dm
 from tvbo.classes.network import NETWORK_DIR
-from tvbo.datamodel import pydantic as pm
-from tvbo.datamodel import schema as dm
 
 SCHAEFER = "tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"
 SAVED_BEFORE = Path(__file__).parent / "reference_data" / "saved_networks" / "network_saved_with_a_node_template_id.yaml"
@@ -39,12 +37,9 @@ NODE_FIELDS = [
 
 
 def test_a_node_has_the_template_slots_and_the_per_node_slots_without_being_a_template():
-    shared = [field.name for field in dataclasses.fields(dm.NodeTemplate)]
-    assert shared == list(pm.NodeTemplate.model_fields) == [name for name in NODE_FIELDS if name not in PER_NODE]
-    assert not issubclass(dm.Node, dm.NodeTemplate) and not issubclass(pm.Node, pm.NodeTemplate)
-    assert list(pm.Node.model_fields) == NODE_FIELDS
-    required_first = ["id", *(name for name in NODE_FIELDS if name != "id")]  # a dataclass puts its required field first
-    assert [field.name for field in dataclasses.fields(dm.Node)] == required_first
+    assert list(dm.NodeTemplate.model_fields) == [name for name in NODE_FIELDS if name not in PER_NODE]
+    assert not issubclass(dm.Node, dm.NodeTemplate)
+    assert list(dm.Node.model_fields) == NODE_FIELDS
 
 
 @pytest.mark.parametrize("slot", sorted(PER_NODE))
@@ -52,10 +47,9 @@ def test_a_node_has_the_template_slots_and_the_per_node_slots_without_being_a_te
     "build",
     [
         lambda template: Network(number_of_nodes=2, node_template=template),
-        lambda template: dm.Network(node_template=template),
-        lambda template: pm.Network(node_template=template),
+        lambda template: Network(node_template=template),
     ],
-    ids=["tvbo", "dataclass", "pydantic"],
+    ids=["counted", "uncounted"],
 )
 def test_a_template_that_sets_a_per_node_slot_is_refused_naming_it(build, slot):
     with pytest.raises(ValueError, match=rf"`node_template` sets `{slot}`; the network's data gives each node its own"):
@@ -73,10 +67,9 @@ def test_a_template_read_from_a_file_that_sets_a_per_node_slot_is_refused(tmp_pa
     [
         lambda: Network(number_of_nodes=2, node_template=dm.Node(id=-1, parameters={"g": {"value": 0.5}})),
         lambda: Network(node_template=dm.Node(id=-1, parameters={"g": {"value": 0.5}})),
-        lambda: dm.Network(node_template=dm.Node(id=-1)),
-        lambda: pm.Network(node_template=pm.Node(id=-1)),
+        lambda: Network(node_template=dm.Node(id=-1)),
     ],
-    ids=["tvbo", "tvbo-no-nodes", "dataclass", "pydantic"],
+    ids=["counted", "uncounted", "bare"],
 )
 def test_a_node_given_as_the_template_is_refused(build):
     with pytest.raises(ValueError, match=r"`node_template` sets `id`"):

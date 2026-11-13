@@ -1,7 +1,7 @@
 ---
 id: https://w3id.org/tvbo
 name: tvb-datamodel
-version: "0.9.0rc1"
+version: "0.9.0"
 description: Metadata schema for simulation studies using The Virtual Brain neuroinformatics platform or other dynamic network models of large-scale brain activity.
 title: The Virtual Brain Ontology
 license: https://creativecommons.org/licenses/by/4.0/
@@ -1097,6 +1097,8 @@ classes:
                 description: "Checksum function name, e.g. ``SHA-256``."
             value:
                 range: string
+                annotations:
+                    simple_dict_value: true
                 required: true
                 description: "The checksum as computed by ``algorithm``."
 
@@ -1239,7 +1241,9 @@ classes:
                 description: >-
                     Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Unit annotation (e.g. 'count', 'ms', 'z-score')."
             measure_type:
                 range: string
@@ -1265,7 +1269,9 @@ classes:
                 range: string
                 description: "Numpy dtype string, recording what the companion actually holds."
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Optional unit annotation (e.g. 'nA')."
             description:
                 range: string
@@ -1278,6 +1284,15 @@ classes:
             template:
                 range: string
                 description: "BIDS tpl- entity, a TemplateFlow identifier (e.g., MNI152NLin6Asym, MNI152NLin2009cAsym, fsLR)"
+            subject:
+                range: string
+                description: "BIDS sub- entity, the subject a subject-level connectome is reconstructed for (e.g., 01)"
+            session:
+                range: string
+                description: "BIDS ses- entity, the session of a subject-level connectome (e.g., 1)"
+            space:
+                range: string
+                description: "BIDS space- entity, the template a subject-level connectome's coordinates are in (e.g., MNI152NLin2009cAsym)"
             cohort:
                 range: string
                 description: "BIDS cohort- entity (e.g., HCPYA, PPMI85)"
@@ -1458,6 +1473,10 @@ classes:
             edge_matrix_files:
                 range: File
                 multivalued: true
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The one weight matrix this network reads: a File with a path relative to the recipe, its `dims` and its `delimiter`; a bare path is read as a File with that path. A File declaring no dims must hold a symmetric matrix; a directed one declares them.
 
             graph_generator:
                 range: GraphGenerator
@@ -1594,9 +1613,14 @@ classes:
 
     File:
         class_uri: tvbo:File
+        description: A file a record points to by path, with what a reader needs that the path does not state.
         slots:
             - name
             - description
+        slot_usage:
+            name:
+                identifier: false
+                required: false
         attributes:
             type:
                 range: string
@@ -1604,6 +1628,14 @@ classes:
                 range: string
             extension:
                 range: string
+            dims:
+                range: string
+                multivalued: true
+                description: >-
+                    Axis names of the array the file holds, outermost first, declared and never inferred from the shape. An edge matrix is ``[target, source]`` when a row is the receiving node and ``[source, target]`` when a row is the sending node; either is transposed by name onto tvbo's receiver-row convention. A square matrix with no dims declared is accepted only when it is symmetric, where the orientation cannot matter.
+            delimiter:
+                range: string
+                description: "The column delimiter of a text file when it is not the one its suffix means: `,` for .csv, a tab for .tsv, any whitespace for .txt."
 
     Reference:
         class_uri: tvbo:Reference
@@ -1699,6 +1731,10 @@ classes:
         slots:
             - name
             - value
+        slot_usage:
+            value:
+                annotations:
+                    simple_dict_value: true
 
     Edge:
         class_uri: tvbo:Edge
@@ -1733,7 +1769,9 @@ classes:
                 range: float
                 description: "Edge length / tract distance (explicit edges, mm)"
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Unit for matrix values (template edges only)"
             format:
                 range: SparseFormat
@@ -1772,9 +1810,11 @@ classes:
                 description: "Input variable on target node to connect to (e.g., 'c_in'). If not specified, uses first coupling input from target dynamics. The alias `target_variable` is accepted."
             coupling:
                 range: Coupling
-                required: false
-                description: "Coupling function for this edge, named by reference into 'network.coupling' or defined inline. If not provided, the edge takes the network's coupling."
-                inlined: false
+                inlined: true
+                any_of:
+                    - range: string
+                    - range: Coupling
+                description: "Coupling function for this edge: the key of one declared under 'network.coupling', or a Coupling defined inline. If not provided, the edge takes the network's coupling."
             directed:
                 range: boolean
                 ifabsent: "false"
@@ -2380,7 +2420,9 @@ classes:
                 description: >-
                     A labelled array sourced from another experiment's result, a dataset, or a curated entity — the cross-container form of a value (WHERE + WHICH + SLICE, PROV ``prov:used``). Mutually exclusive with ``value``; an in-study ``experiment`` reference also registers the workflow dependency so the source runs first. Resolved lazily, never inlined into generated code.
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
 
     Function:
         class_uri: tvbo:Function
@@ -2969,11 +3011,7 @@ classes:
                 range: string
                 required: true
                 key: true
-                # `key: true` drives dict-keying in the generated Python/JSON-Schema
-                # loaders. The pydantic loader keys off a `name`/`id` identifier by
-                # convention, so it also needs this explicit marker to inject the
-                # collection key into `parameter` (LinkML consumes `key`/`identifier`
-                # and omits them from the emitted metadata). See utils/pydantic_loader.
+                # LinkML drops `key` from the emitted metadata, so `collection_key` tells `dialect.identifier_field` that this slot holds the collection key.
                 annotations:
                     collection_key: true
                 description: >-
@@ -3003,7 +3041,9 @@ classes:
                 description: >-
                     Callable that generates this axis's swept values, as an alternative to domain / explored_values. Use when the points cannot be written as a static list because each is an array or depends on other results — e.g. per-count control-gain vectors g whose entries are chosen from a runtime-computed solitary-node ordering. The callable returns the stacked sweep values (leading axis = sweep points); its `arguments` may reference other observations by name. The value-supplying analogue of graph_generator.builder, keeping computed sweeps declarative rather than requiring a Python driver.
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 description: "Optional axis unit (defaults to the referenced Parameter's unit)."
             reduce:
                 range: AxisReduction
@@ -3399,6 +3439,8 @@ classes:
         attributes:
             value:
                 range: string
+                annotations:
+                    simple_dict_value: true
                 required: true
                 description: "Option value."
 
@@ -4449,7 +4491,9 @@ classes:
                 ifabsent: "ms"
                 description: "Unit of the sampling period (e.g., 'ms', 's')."
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
                 slot_uri: qudt:unit
                 description: "Physical unit of the time series values."
             labels_ordering:
@@ -4513,7 +4557,9 @@ classes:
             dataLocation:
                 range: string
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
         slots:
             - label
             - description
@@ -4597,7 +4643,9 @@ classes:
                 description: "Scalar, vector, or tensor."
                 range: string
             unit:
-                range: string
+                any_of:
+                    - range: UnitEnum
+                    - range: string
             mesh:
                 range: Mesh
             values:

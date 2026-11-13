@@ -399,8 +399,6 @@ jobs:
                           tests/test_units.py
                           tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
-                          tests/test_pydantic_loader.py
-                          tests/test_linkml_compatibility.py
                           tests/test_experiment_api.py
                           tests/test_cli.py
                           tests/test_cli_workflow.py
@@ -450,8 +448,6 @@ jobs:
                           --ignore=tests/test_units.py
                           --ignore=tests/test_database_golden_dump.py
                           --ignore=tests/test_yaml_loader.py
-                          --ignore=tests/test_pydantic_loader.py
-                          --ignore=tests/test_linkml_compatibility.py
                           --ignore=tests/test_experiment_api.py
                           --ignore=tests/test_cli.py
                           --ignore=tests/test_cli_workflow.py

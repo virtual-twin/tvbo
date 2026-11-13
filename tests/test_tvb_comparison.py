@@ -16,14 +16,13 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from linkml_runtime.loaders import yaml_loader
 from mako.lookup import TemplateLookup
 from mako.template import Template
 from tvb.datatypes import connectivity, equations
 from tvb.simulator import coupling, integrators, models, monitors, simulator
 
 from tvbo.data.types import TimeSeries
-from tvbo.datamodel.schema import Observation
+from tvbo.datamodel import Observation
 
 
 def setup_tvb_simulator():
@@ -87,6 +86,7 @@ def load_schema_model():
     print("Loading schema-driven model...")
 
     from tvbo import database_path
+    from tvbo.utils import yaml_loader
 
     observation = yaml_loader.load(
         str(database_path / "observation_models" / "bold_tvb.yaml"),

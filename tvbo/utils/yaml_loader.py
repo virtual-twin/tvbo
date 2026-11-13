@@ -1,9 +1,8 @@
 """YAML loader wrapper used by every ``Network.from_file`` / ``SimulationExperiment.from_file`` / ``SimulationStudy.from_file`` entry point in TVBO.
 
-Extends :class:`linkml_runtime.utils.yamlutils.DupCheckYamlLoader` (the default LinkML loader, which already disallows duplicate keys) with two generally-useful YAML idioms:
+A ``yaml.SafeLoader`` that refuses a duplicate key and adds two generally-useful YAML idioms:
 
-* **Merge keys** (``<<: *anchor``) — standard YAML 1.1 semantics. Lets
-  an inline override reuse another block with one slot changed:
+* **Merge keys** (``<<: *anchor``) — standard YAML 1.1 semantics. Lets an inline override reuse another block with one slot changed:
 
   .. code-block:: yaml
 
@@ -15,10 +14,7 @@ Extends :class:`linkml_runtime.utils.yamlutils.DupCheckYamlLoader` (the default 
         <<: *kuramoto_10hz
         parameters: {omega: 0.1257}
 
-* **`!include`** — substitute the value at a directive's position with
-  the contents of another YAML file. Paths are resolved relative to the directory of the file containing the directive; absolute paths are
-  accepted as-is. Anchors in the included document are scoped to that document only (each include uses a fresh loader instance), so
-  fragments are readable in isolation.
+* **`!include`** — substitute the value at a directive's position with the contents of another YAML file. Paths are resolved relative to the directory of the file containing the directive; absolute paths are accepted as-is. Anchors in the included document are scoped to that document only (each include uses a fresh loader instance), so fragments are readable in isolation.
 
   .. code-block:: yaml
 
@@ -26,9 +22,7 @@ Extends :class:`linkml_runtime.utils.yamlutils.DupCheckYamlLoader` (the default 
         - !include _experiments/exp1.yaml
         - !include _experiments/exp2.yaml
 
-  The two idioms **compose**: an ``!include`` may appear as the value of a merge key, so a fragment file can be merged into a mapping alongside the
-  mapping's own entries and alongside other anchors. Without this a shared fragment could only ever *replace* a whole slot, which forces every
-  consumer of a partial fragment (a haemodynamic cascade shared by two models) to copy it instead:
+  The two idioms **compose**: an ``!include`` may appear as the value of a merge key, so a fragment file can be merged into a mapping alongside the mapping's own entries and alongside other anchors. Without this a shared fragment could only ever *replace* a whole slot, which forces every consumer of a partial fragment (a haemodynamic cascade shared by two models) to copy it instead:
 
   .. code-block:: yaml
 
@@ -39,7 +33,7 @@ Extends :class:`linkml_runtime.utils.yamlutils.DupCheckYamlLoader` (the default 
       parameters:
         <<: [*model_params, !include _balloon_parameters.yaml]
 
-Both idioms are pure data-format machinery; they don't introduce any TVBO-specific semantics into user YAMLs. The wrapper is transparent — any LinkML class can still load through ``yaml_loader.load`` and get back the same datamodel instance it would have produced before.
+Both idioms are pure data-format machinery; they don't introduce any TVBO-specific semantics into user YAMLs. Any generated class loads through ``yaml_loader.load``.
 """
 
 from __future__ import annotations
@@ -52,8 +46,6 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from linkml_runtime.loaders import yaml_loader as _linkml_yaml_loader
-from linkml_runtime.utils.yamlutils import DupCheckYamlLoader
 
 from tvbo.utils import deep_merge
 
@@ -82,9 +74,9 @@ def declared_class(source) -> str | None:
 
 
 def _flatten_map_constructor(loader: yaml.Loader, node: yaml.MappingNode, deep: bool = False) -> dict:
-    """``DupCheckYamlLoader`` map constructor augmented with merge-key support.
+    """The mapping constructor: a duplicate key is refused, and a ``<<:`` merge key is honoured.
 
-    Standard YAML merge semantics: an explicit entry overrides any value pulled in by a ``<<:`` merge. We preserve the original LinkML duplicate-key safety check for *explicit* duplicates (the same key written twice by the author), but suppress it for keys whose collision came from a merge expansion — those are silently overridden by the explicit entry.
+    Standard YAML merge semantics: an explicit entry overrides any value pulled in by a ``<<:`` merge. The duplicate-key check applies to *explicit* duplicates (the same key written twice by the author) and not to keys whose collision came from a merge expansion — those are silently overridden by the explicit entry.
     """
     if not isinstance(node, yaml.MappingNode):
         from yaml.constructor import ConstructorError
@@ -243,26 +235,17 @@ def _make_include_constructor(base_dir: Path):
     return _include
 
 
-def _make_loader_class(base_dir: Path) -> type[DupCheckYamlLoader]:
+def _make_loader_class(base_dir: Path) -> type[yaml.SafeLoader]:
     """Build a fresh loader subclass bound to ``base_dir``.
 
-    A new class per base directory is the simplest way to thread the directory context through PyYAML's class-level constructor registry without leaking state across concurrent loads. The constructors are installed in ``__init__`` (after ``super().__init__``) so they override the instance-level registrations that :class:`DupCheckYamlLoader` performs in its own ``__init__``.
+    A new class per base directory is the simplest way to thread the directory context through PyYAML's class-level constructor registry without leaking state across concurrent loads.
     """
-    include_ctor = _make_include_constructor(base_dir)
 
-    class _TVBOLoader(DupCheckYamlLoader):
+    class _TVBOLoader(yaml.SafeLoader):
         _tvbo_base_dir = base_dir
 
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            super().__init__(*args, **kwargs)
-            # Re-register the mapping constructor with merge-key support, overriding the duplicate-only one DupCheckYamlLoader installed.
-            self.add_constructor(
-                yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-                _flatten_map_constructor,
-            )
-            # Install the !include constructor for this base_dir.
-            self.add_constructor(_INCLUDE_TAG, include_ctor)
-
+    _TVBOLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _flatten_map_constructor)
+    _TVBOLoader.add_constructor(_INCLUDE_TAG, _make_include_constructor(base_dir))
     return _TVBOLoader
 
 
@@ -593,7 +576,7 @@ def _expand_pipeline_references(data: Any) -> Any:
 def _normalize_loaded(data: Any) -> Any:
     """Apply the dict-level TVBO conveniences shared by every load path.
 
-    Slot aliases are folded at construction by the generated datamodel (see ``hatch_build._alias_support``), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, splits a ``value`` written as one quantity (``3.25 mV``) into the number and unit slots, loads a study's curated-experiment IRI references from the database, and splices the curated observation a pipeline step names by ``iri``. Both the string path (``load``/``loads`` → LinkML) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
+    Slot aliases are folded at construction by the generated datamodel (:mod:`tvbo.datamodel.dialect`), so this handles only what a class cannot: the edge-template ``source_variable``/``target_variable`` snapshot, the legacy state-variable ``boundaries``/``range`` into ``domain`` (+ ``enforce: clamp`` for boundaries), lifts the terse ``distribution: {lo, hi}`` shortcut into ``distribution: {domain: {lo, hi}}``, splits a ``value`` written as one quantity (``3.25 mV``) into the number and unit slots, loads a study's curated-experiment IRI references from the database, and splices the curated observation a pipeline step names by ``iri``. Both the string path (``load``/``loads``) and the dict path (``load_as_dict`` → ``Dynamics.from_file``/``from_db``) route through here so the two cannot diverge. Order matters: the boundaries fold can create a terse ``distribution`` that the following lift then completes, and the experiments are expanded first so the folds reach inside them.
     """
     import copy
 
@@ -637,27 +620,30 @@ def _parse(source: Any, base_dir: Path) -> Any:
 def construct(data: Any, target_class: type, **kwargs: Any) -> Any:
     """Build *target_class* from a document :func:`load_as_dict` already parsed and normalised.
 
-    The file envelope (:data:`ENVELOPE_KEYS`) is dropped, since it belongs to no class, and the mapping goes straight to LinkML's constructor-class machinery, which dispatches on the target the way ``linkml_runtime.loaders.yaml_loader.load`` does. Nothing is parsed again, so every mapping reaches the class in the order its author declared it.
+    The file envelope (:data:`ENVELOPE_KEYS`) is dropped, since it belongs to no class, and the mapping is validated as written: the record reads as the document states it until a loader settles it. Nothing is parsed again, so every mapping reaches the class in the order its author declared it.
     """
-    return _linkml_yaml_loader.load(strip_envelope(data), target_class, **kwargs)
+    from tvbo.utils.source import as_written
+
+    with as_written():
+        return target_class.model_validate(strip_envelope(data))
 
 
 def load(source: Any, target_class: type, **kwargs: Any) -> Any:
-    """Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.load``.
+    """*target_class* built from *source*: a path, a YAML string or an open stream.
 
-    Accepts the same arguments as the LinkML loader. Expands TVBO YAML extensions (``<<:`` merge keys, ``!include``) before delegating to LinkML's constructor-class machinery. Relative ``!include`` paths are resolved against the directory of ``source`` when ``source`` is a path; otherwise against the current working directory.
+    Expands the TVBO YAML extensions (``<<:`` merge keys, ``!include``) before validating. Relative ``!include`` paths are resolved against the directory of ``source`` when ``source`` is a path; otherwise against the current working directory.
     """
     return construct(_parse(source, _base_dir_for(source)), target_class, **kwargs)
 
 
 def loads(source: str, target_class: type, **kwargs: Any) -> Any:
-    """Drop-in replacement for ``linkml_runtime.loaders.yaml_loader.loads``; ``base_dir`` anchors relative ``!include`` paths, the current working directory when omitted."""
+    """*target_class* built from the YAML text *source*; ``base_dir`` anchors relative ``!include`` paths, the current working directory when omitted."""
     base_dir = Path(kwargs.pop("base_dir", Path.cwd())).resolve()
     return construct(_parse(source, base_dir), target_class, **kwargs)
 
 
 def load_as_dict(source: Any, **kwargs: Any) -> dict:
-    """Drop-in replacement for ``yaml_loader.load_as_dict``.
+    """*source* parsed and normalised, not yet built.
 
     Returns a plain Python ``dict`` (or ``list`` of dicts) after applying the TVBO YAML extensions, normalised exactly as :func:`load` normalises before constructing, so the two cannot diverge. The file envelope survives, for a caller that dispatches on it. Useful for callers that need to inspect or mutate the parsed structure before handing it to :func:`construct`.
     """

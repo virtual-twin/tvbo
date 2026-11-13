@@ -74,15 +74,10 @@ dynamics:
 network:
     label: "AAL-90 directed brain network"
     description: >
-        Directed, weighted structural connectivity from diffusion tensor imaging over the 90 cortical regions of the Automated Anatomical Labeling (AAL) atlas (Tzourio-Mazoyer et al., 2002). The weights are the NetworkDynamics.jl tutorial's Norm_G_DTI.txt, written row = source as Graphs.jl reads it, so the weight transform transposes it into the target-by-source matrix a Network holds.
+        Directed, weighted structural connectivity from diffusion tensor imaging over the 90 cortical regions of the Automated Anatomical Labeling (AAL) atlas (Tzourio-Mazoyer et al., 2002). The weights are the NetworkDynamics.jl tutorial's Norm_G_DTI.txt, written row = source as Graphs.jl reads it, which its declared dims state, so it is transposed by name into the target-by-source matrix a Network holds.
     number_of_nodes: 90
     edge_matrix_files:
-        - ../Norm_G_DTI.txt
-    transforms:
-        - name: weight
-          callable:
-              module: jax.numpy
-              name: transpose
+        - {path: ../Norm_G_DTI.txt, dims: [source, target], delimiter: ","}
     parcellation:
         label: "AAL-90"
         atlas:

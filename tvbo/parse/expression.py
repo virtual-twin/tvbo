@@ -39,7 +39,7 @@ _implicit_mul_app_no_split = (
 )
 from sympy.parsing.latex import parse_latex
 
-from tvbo.datamodel.schema import Equation
+from tvbo.datamodel import Equation
 
 _MATHEMATICAL_CONSTANTS = frozenset({"pi", "E", "I", "oo", "zoo", "nan", "true", "false"})
 """The bare names that mean a number rather than a model quantity."""

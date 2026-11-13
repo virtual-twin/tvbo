@@ -13,10 +13,10 @@ period: 2000.0
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:
-- equation:
+- name: temporal_average_interim
+  equation:
     rhs: window_mean(X, window)
     latex: false
-  name: temporal_average_interim
   output: interim_averaged
   apply_on_dimension: time
   arguments:
@@ -24,7 +24,8 @@ pipeline:
       name: window
       description: Interim averaging window in integration steps. Resolved from the
         integration dt (= stock_dt / dt), not a raw-grid literal.
-- acronym: HRF
+- name: hemodynamic_response
+  acronym: HRF
   equation:
     parameters:
       tau_s:
@@ -38,7 +39,6 @@ pipeline:
     rhs: 1/3 * exp(-0.5*(t / tau_s)) * sin(sqrt(1/tau_f - 1/(4*tau_s**2)) * t) / sqrt(1/tau_f
       - 1/(4*tau_s**2))
     latex: false
-  name: hemodynamic_response
   output: hrf_kernel
   arguments:
     duration:
@@ -68,10 +68,10 @@ pipeline:
     mode:
       name: mode
       value: same
-- equation:
+- name: subsample_to_period
+  equation:
     rhs: subsample(X, start, step)
     latex: false
-  name: subsample_to_period
   input: convolve
   output: subsampled
   apply_on_dimension: time
@@ -84,7 +84,8 @@ pipeline:
       name: step
       description: Interim samples per output sample. Resolved from the integration
         dt (= (period / dt) / interim_istep), not a raw-grid literal.
-- equation:
+- name: volterra_transform
+  equation:
     parameters:
       k_1:
         name: k_1
@@ -94,15 +95,14 @@ pipeline:
         value: 0.02
     rhs: (X - 1.0) * k_1 * V_0
     latex: false
-  name: volterra_transform
   input: subsample_to_period
   output: bold_source
-- equation:
+- name: region_average
+  equation:
     rhs: spatial_mean @ X
     latex: false
   description: Spatially average the source-level BOLD within each brain region using
     the parcellation mapping.
-  name: region_average
   input: volterra_transform
   output: Bold
   apply_on_dimension: node

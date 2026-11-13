@@ -191,21 +191,16 @@ def as_list(obj) -> list:
 
     TVBO keyed collections (``parameters``, ``space``, …) are dicts keyed by each member's identifier, but may also appear as plain lists. Returns the member values in either case (``None`` -> ``[]``).
 
-    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A bare ``JsonObj`` — the shape an assigned collection slot takes — is iterable over its *keys* for the same reason, and is read through :mod:`jsonasobj2` instead; the test is on the exact type, since every LinkML entity subclasses ``JsonObj`` and a lone one is a scalar here.
+    A scalar becomes a one-element list. Strings especially: they are iterable, so ``list("/data")`` would silently yield one entry *per character* — which is how a single ``--set container_binds=/data/cephfs-1`` turned into a bind of ``/,d,a,t,a,…``. No caller ever wants a string split into characters. A record is one member, not its field list, though a Pydantic model iterates its fields.
     """
-    from jsonasobj2 import JsonObj
-    from jsonasobj2 import values as _json_values
+    from pydantic import BaseModel
 
     if obj is None:
         return []
-    if isinstance(obj, (str, bytes)):
+    if isinstance(obj, (str, bytes, BaseModel)):
         return [obj]
-    if type(obj) is JsonObj:
-        return list(_json_values(obj))
     if hasattr(obj, "values"):
         return list(obj.values())
-    if isinstance(obj, JsonObj):  # a LinkML entity: one member, not its field list
-        return [obj]
     try:
         return list(obj)
     except TypeError:  # a genuine scalar (int, float, …)
@@ -213,19 +208,12 @@ def as_list(obj) -> list:
 
 
 def keyed_items(collection, kind: str = "collection") -> list:
-    """A keyed collection's ``(key, member)`` pairs, whichever shape holds it.
+    """A keyed collection's ``(key, member)`` pairs, whichever spelling holds it.
 
-    The generated dataclasses wrap a keyed collection in a ``JsonObj`` when it is assigned, and a ``JsonObj`` has no ``.items``; the Pydantic models keep a plain dict. The schema also allows the list spelling, whose members carry their own ``name``. Anything else raises: a reader that answers "nothing here" for a shape it did not recognise reports an empty collection as an empty *result*, which is how an unchecked ``from_datamodel`` load went unchecked.
-
-    The ``JsonObj`` test is on the exact type, because every LinkML entity subclasses it: a lone ``Coupling`` read as a collection would answer with its own 22 field names, which is a shape mismatch reported as data rather than as an error.
+    A keyed collection is a mapping; the schema also allows the list spelling, whose members carry their own ``name``. Anything else raises: a reader that answers "nothing here" for a shape it did not recognise reports an empty collection as an empty *result*, which is how an unchecked ``from_datamodel`` load went unchecked.
     """
-    from jsonasobj2 import JsonObj
-    from jsonasobj2 import items as _json_items
-
     if collection is None:
         return []
-    if type(collection) is JsonObj:
-        return list(_json_items(collection))
     if hasattr(collection, "items"):
         return list(collection.items())
     if isinstance(collection, (list, tuple)):
@@ -236,13 +224,8 @@ def keyed_items(collection, kind: str = "collection") -> list:
 def normalize_params(params) -> dict:
     """Normalize a ``parameters`` collection to a flat ``{name: param}`` dict.
 
-    Accepts the keyed mapping ``{weight: Parameter(...)}`` (LinkML ``JsonObj`` or plain dict), the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
-
-    A bare ``JsonObj`` — what an assigned collection slot holds — has no ``.items``, and iterating it yields its *keys*; it is read through :mod:`jsonasobj2` instead. The test is on the exact type, because every LinkML entity subclasses ``JsonObj`` and a single ``Parameter`` read that way would answer with its own field names.
+    Accepts the keyed mapping ``{weight: Parameter(...)}``, the list-of-mappings ``[{weight: {value: 1.0}}, ...]`` that raw YAML may produce, and a list of ``Parameter`` objects. Applies to edge, node and dynamics parameter collections alike.
     """
-    from jsonasobj2 import JsonObj
-    from jsonasobj2 import items as _json_items
-
     if not params:
         return {}
     if isinstance(params, (list, tuple)):
@@ -253,8 +236,6 @@ def normalize_params(params) -> dict:
             elif getattr(item, "name", None) is not None:
                 out[str(item.name)] = item
         return out
-    if type(params) is JsonObj:
-        return {str(k): v for k, v in _json_items(params)}
     try:
         return {str(k): v for k, v in params.items()}
     except AttributeError:
@@ -303,7 +284,7 @@ def parameters_acted_on(experiment, dynamics) -> dict[str, str]:
 def network_couplings(network) -> dict:
     """*network*'s couplings, keyed by the role each fills.
 
-    A coupling acts over a connectivity, so this slot is the only place one is declared and every backend reads it through here. Assigning a mapping to a keyed multivalued slot leaves a ``JsonObj`` on the generated dataclass — no ``.values()``, no ``.items()`` — so a reader that reaches for either sees a coupling on one form of the record and an ``AttributeError`` on the other.
+    A coupling acts over a connectivity, so this slot is the only place one is declared and every backend reads it through here, in either spelling of the collection.
     """
     return {str(key): coupling for key, coupling in keyed_items(getattr(network, "coupling", None), "coupling")}
 
@@ -781,23 +762,15 @@ def record_dict(model) -> dict:
 
 
 def to_dict(obj) -> dict:
-    """A datamodel object as the mapping its record states, in either generated form.
+    """A datamodel object as the mapping its record states: the data `to_yaml` writes, before it is text.
 
-    The data `to_yaml` writes, before it is text: a Pydantic model through `record_dict`, a dataclass through the same pass LinkML's dumper applies before it serialises. One entry point, so a caller that needs the record as data — to add a file envelope, to write a companion beside it — does not serialise to YAML and parse it back.
+    One entry point, so a caller that needs the record as data — to add a file envelope, to write a companion beside it — does not serialise to YAML and parse it back.
     """
-    from pydantic import BaseModel
-
-    if isinstance(obj, BaseModel):
-        return record_dict(obj)
-    from linkml_runtime.utils.formatutils import remove_empty_items
-
-    return remove_empty_items(obj, hide_protected_keys=True)
+    return record_dict(obj)
 
 
 def to_yaml(obj, filepath: str | None = None) -> str:
-    """Dump a datamodel object to canonical TVBO YAML, in either generated form.
-
-    A dataclass goes through LinkML's dumper; a Pydantic model is dumped from `to_dict`, which is what states the record as data for both forms. One entry point, so the published record has one definition however the object in hand was built, and a caller never has to know which generator produced it.
+    """Dump a datamodel object to canonical TVBO YAML, the record `to_dict` states.
 
     Args:
         obj (object): Datamodel object to serialize.
@@ -806,46 +779,15 @@ def to_yaml(obj, filepath: str | None = None) -> str:
     Returns:
         str: File path when written to disk, otherwise the YAML string.
     """
-    from pydantic import BaseModel
+    import pathlib
 
-    if isinstance(obj, BaseModel):
-        import pathlib
+    import yaml as _yaml
 
-        import yaml as _yaml
-
-        produced = _yaml.safe_dump(to_dict(obj), sort_keys=False, allow_unicode=True)
-        if filepath:
-            pathlib.Path(filepath).write_text(produced, encoding="utf-8")
-            return filepath
-        return produced
-
-    try:
-        from linkml_runtime.dumpers import yaml_dumper
-    except Exception as e:
-        raise RuntimeError("linkml_runtime is required for YAML dumping") from e
-
+    produced = _yaml.safe_dump(to_dict(obj), sort_keys=False, allow_unicode=True)
     if filepath:
-        yaml_dumper.dump(obj, filepath)
+        pathlib.Path(filepath).write_text(produced, encoding="utf-8")
         return filepath
-    return yaml_dumper.dumps(obj)
-
-
-def from_yaml(filepath: str, cls) -> object:
-    """Load a LinkML datamodel object from a YAML file.
-
-    Parameters:
-        filepath (str): Path to the YAML file.
-        cls (type): The datamodel class to instantiate.
-
-    Returns:
-        object: An instance of the datamodel class populated with data from the YAML file.
-    """
-    try:
-        from linkml_runtime.loaders import yaml_loader
-    except Exception as e:
-        raise RuntimeError("linkml_runtime is required for YAML loading") from e
-    md = yaml_loader.load(filepath, target_class=cls)
-    return md
+    return produced
 
 
 def add_to_parameters_collection(key, value, path, parameters):
@@ -886,7 +828,7 @@ def traverse_metadata(
 ):
     """Recursively traverses the attributes of a metadata object, calling a callback on each Parameter."""
     if target_instance is None:
-        from tvbo.datamodel import schema as tvbo_datamodel
+        from tvbo import datamodel as tvbo_datamodel
 
         target_instance = tvbo_datamodel.Parameter
     if callback is None:

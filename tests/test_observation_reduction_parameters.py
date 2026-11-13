@@ -7,7 +7,7 @@ they enter the symbolic vocabulary, survive into the rendered triple, and cannot
 import pytest
 from mako.template import Template
 
-from tvbo.datamodel.schema import (
+from tvbo.datamodel import (
     DerivedVariable,
     Dynamics,
     Equation,

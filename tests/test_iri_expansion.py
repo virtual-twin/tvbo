@@ -9,17 +9,13 @@ from __future__ import annotations
 
 import pytest
 
-from tvbo.datamodel import pydantic as pyd
-from tvbo.datamodel import schema
-
-GENERATED_FORMS = pytest.mark.parametrize("model", (schema, pyd), ids=("dataclass", "pydantic"))
+from tvbo import datamodel as dm
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_reference_adopts_the_curated_record(model):
+def test_a_reference_adopts_the_curated_record():
     """An entity named solely by ``iri`` arrives carrying what that entry declares."""
-    coupling = model.Coupling(iri="tvbo:FastLinearCoupling")
+    coupling = dm.Coupling(iri="tvbo:FastLinearCoupling")
 
     assert coupling.name == "FastLinearCoupling"
     assert coupling.pre_expression is not None
@@ -27,35 +23,32 @@ def test_a_reference_adopts_the_curated_record(model):
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_curated_delayed_is_applied(model):
+def test_a_curated_delayed_is_applied():
     """The reason this belongs before validation, and not in a post-init hook.
 
     ``delayed`` carries a schema default of ``True``. After construction, an explicit ``true`` and an absent key are the same value, so the guard that would have applied the entry could never fire and no curated ``delayed:`` was ever honoured.
     ``FastLinearCoupling`` describes itself as instantaneous and declares ``delayed: false``;
     TVBO ran it delayed anyway.
     """
-    assert model.Coupling(iri="tvbo:FastLinearCoupling").delayed is False
-    assert model.Coupling(iri="tvbo:Linear").delayed is True
+    assert dm.Coupling(iri="tvbo:FastLinearCoupling").delayed is False
+    assert dm.Coupling(iri="tvbo:Linear").delayed is True
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_the_recipe_wins_over_the_entry(model):
+def test_the_recipe_wins_over_the_entry():
     """The entry is the base; anything the recipe states supervenes, leaf by leaf."""
-    coupling = model.Coupling(iri="tvbo:FastLinearCoupling", delayed=True)
+    coupling = dm.Coupling(iri="tvbo:FastLinearCoupling", delayed=True)
     assert coupling.delayed is True
 
-    refined = model.Coupling(iri="tvbo:Linear", parameters={"a": {"value": 99.0}})
+    refined = dm.Coupling(iri="tvbo:Linear", parameters={"a": {"value": 99.0}})
     assert refined.parameters["a"].value == 99.0
     assert len(refined.parameters) > 1, "siblings from the entry were dropped"
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_stated_name_overrides_and_still_expands(model):
+def test_a_stated_name_overrides_and_still_expands():
     """A ``name`` beside the ``iri`` is one more override, never a reason to skip the entry."""
-    coupling = model.Coupling(iri="tvbo:FastLinearCoupling", name="MyOwnCoupling")
+    coupling = dm.Coupling(iri="tvbo:FastLinearCoupling", name="MyOwnCoupling")
 
     assert coupling.name == "MyOwnCoupling"
     assert coupling.delayed is False, "the entry the iri points at was not applied"
@@ -63,13 +56,12 @@ def test_a_stated_name_overrides_and_still_expands(model):
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_an_iri_naming_nothing_is_left_alone(model):
+def test_an_iri_naming_nothing_is_left_alone():
     """It may name an entity that exists only in the ontology, which this pass cannot reach.
 
     Distinguishing that from a typo is `tvbo validate`'s job, and `enrich()`'s — which raises, because there the caller asked.
     """
-    coupling = model.Coupling(iri="tvbo:NoSuchCouplingAnywhere")
+    coupling = dm.Coupling(iri="tvbo:NoSuchCouplingAnywhere")
     assert coupling.iri == "tvbo:NoSuchCouplingAnywhere"
     assert coupling.name == "NoSuchCouplingAnywhere", "the record takes the iri's local name"
 
@@ -86,11 +78,10 @@ def test_the_curated_record_still_loads_as_itself():
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_scoped_iri_expands_and_names_the_record_it_addresses(model):
+def test_a_scoped_iri_expands_and_names_the_record_it_addresses():
     """``tvbo:observation_models/bold_tvb`` addresses ``bold_tvb`` among the observations, not a record called ``observation_models/bold_tvb``."""
     scoped, unscoped = (
-        model.Observation(iri=iri, source=["S_e"]) for iri in ("tvbo:observation_models/bold_tvb", "tvbo:BOLD_TVB")
+        dm.Observation(iri=iri, source=["S_e"]) for iri in ("tvbo:observation_models/bold_tvb", "tvbo:BOLD_TVB")
     )
 
     assert scoped.name == unscoped.name == "BOLD_TVB"

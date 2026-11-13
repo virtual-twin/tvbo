@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use tvbo, please cite the software and the preprint below."
 title: "The Virtual Brain Ontology (tvbo)"
 abstract: "TVB-O (The Virtual Brain Ontology) is a Python package for understanding and generating large-scale brain network models, integrating data, simulation components and ontological knowledge representations."
-version: "0.9.0rc1"
-date-released: 2026-11-09
+version: "0.9.0"
+date-released: 2026-11-13
 license: EUPL-1.2
 repository-code: "https://github.com/virtual-twin/tvbo"
 url: "https://github.com/virtual-twin/tvbo"

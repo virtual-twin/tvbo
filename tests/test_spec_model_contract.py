@@ -70,18 +70,13 @@ def test_a_plain_mixin_supplies_behaviour_to_a_generated_model():
     assert spec.model_dump() == Dynamics(name="x").model_dump()
 
 
-def test_behaviour_reaches_both_generated_forms():
-    """A helper is on the object whichever generator produced it.
+def test_behaviour_reaches_the_generated_class():
+    """A helper is on the object however it was built, since the mixin is a base of the generated class — which is what the retyping and ``setattr`` patching used to paper over."""
+    from tvbo.datamodel import Event
 
-    LinkML's loader still builds dataclasses while Pydantic validation builds models, so a mixin attached to only one of them would leave half the object graph without its helpers — which is what the retyping and ``setattr`` patching used to paper over.
-    """
-    from tvbo.datamodel import pydantic as pyd
-    from tvbo.datamodel import schema
-
-    for cls in (schema.Event, pyd.Event):
-        event = cls(name="s", event_type="stimulus")
-        assert callable(event.plot), cls
-        assert callable(event._signal), cls
+    event = Event(name="s", event_type="stimulus")
+    assert callable(event.plot)
+    assert callable(event._signal)
 
 
 def test_a_mixin_is_discovered_by_its_own_name():

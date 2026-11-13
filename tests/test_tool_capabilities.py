@@ -99,6 +99,6 @@ def test_physical_dimension_is_gone():
 
     Nothing declared a slot of that range — it was reachable only by importing it — so the names now live on the one tool that actually uses them.
     """
-    from tvbo.datamodel import schema
+    from tvbo import datamodel
 
-    assert not hasattr(schema, "PhysicalDimension")
+    assert not hasattr(datamodel, "PhysicalDimension")

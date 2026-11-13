@@ -62,7 +62,7 @@ def _warmup_to_steady_state(model, cont) -> np.ndarray:
     """
     from scipy.integrate import solve_ivp
 
-    from tvbo.datamodel.schema import InitialState, Integrator
+    from tvbo.datamodel import InitialState, Integrator
     from tvbo.run.compgraph import integration_step
     from tvbo.utils import integration_method
 

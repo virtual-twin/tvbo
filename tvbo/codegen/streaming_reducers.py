@@ -105,7 +105,7 @@ def _load_reducer_recipes() -> None:
 
     Loaded as a schema ``Reducer`` rather than a raw dict, so a typo in a recipe is a validation error where every other database file reports one, not a ``KeyError`` at import time.
     """
-    from tvbo.datamodel.schema import Reducer
+    from tvbo.datamodel import Reducer
     from tvbo.utils import yaml_loader
 
     for yf in sorted(_REDUCERS_DIR.glob("*.yaml")):

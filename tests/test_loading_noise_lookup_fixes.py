@@ -86,7 +86,7 @@ def test_from_dict_leaves_the_callers_mapping_untouched():
 
 
 def test_a_noise_derives_either_spelling_by_one_rule():
-    from tvbo.datamodel.schema import Noise
+    from tvbo.datamodel import Noise
 
     nsig_only = Noise(parameters={"nsig": {"value": 0.5}})
     assert nsig_only.sigma == pytest.approx(1.0)
@@ -256,25 +256,21 @@ def test_an_unlabelled_template_edge_survives_a_bep017_export(tmp_path):
 # --------------------------------------------------------------------------- database lookups need a category
 
 
-@pytest.mark.parametrize("form", ["schema", "pydantic"])
 @pytest.mark.parametrize("name", ["Stimulus", "Phenotype"])
-def test_a_class_the_database_files_nothing_of_offers_no_lookup(form, name):
-    import importlib
+def test_a_class_the_database_files_nothing_of_offers_no_lookup(name):
+    from tvbo import datamodel
 
-    cls = getattr(importlib.import_module(f"tvbo.datamodel.{form}"), name)
+    cls = getattr(datamodel, name)
 
     assert not hasattr(cls, "from_db")
     assert not hasattr(cls, "list_db")
     assert all(hasattr(cls, m) for m in ("from_file", "from_string", "to_yaml"))
 
 
-@pytest.mark.parametrize("form", ["schema", "pydantic"])
-def test_a_catalogued_class_keeps_its_lookup(form):
-    import importlib
+def test_a_catalogued_class_keeps_its_lookup():
+    from tvbo.datamodel import Dynamics
 
-    cls = importlib.import_module(f"tvbo.datamodel.{form}").Dynamics
-
-    assert "JansenRit" in cls.list_db()
+    assert "JansenRit" in Dynamics.list_db()
 
 
 def test_a_figure_reads_a_container_named_by_its_file(tmp_path, monkeypatch):

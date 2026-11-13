@@ -215,7 +215,7 @@ def test_the_julia_solve_call_names_a_differentialequations_solver(declared, sol
 
 def _schema_window():
     """The window the schema's `Integrator` defaults (`ifabsent`) describe."""
-    from tvbo.datamodel.schema import Integrator
+    from tvbo.datamodel import Integrator
 
     schema = Integrator()
     return schema.step_size, schema.duration, schema.transient_time, BaseAdapter.canonical_integration_method(schema.method)

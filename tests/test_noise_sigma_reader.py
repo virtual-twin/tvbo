@@ -10,7 +10,7 @@ from tvbo.utils import noise_sigma
 
 
 def _noise(**kw):
-    from tvbo.datamodel.schema import Noise
+    from tvbo.datamodel import Noise
 
     return Noise(**kw)
 
@@ -49,7 +49,9 @@ def test_nsig_is_a_dispersion_everywhere():
 
 def test_intensity_is_no_longer_a_slot():
     """`intensity` was removed at 1.0; the schema rejects it rather than silently reading it as σ."""
-    with pytest.raises(TypeError, match="intensity"):
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="intensity"):
         _noise(intensity={"name": "s", "value": 0.4})
 
 

@@ -15,8 +15,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from jsonasobj2 import as_dict
-
 from tvbo.behaviour._runtime import Catalogued
 
 
@@ -169,28 +167,15 @@ class SimulationStudyBehaviour(Catalogued):
         from tvbo.utils import register_recipe_code_paths, yaml_loader
 
         raw = yaml_loader.load_as_dict(filepath) or {}
-        # a copy, so the record shares nothing with the raw dicts kept beside it
-        study = cls(**copy.deepcopy(yaml_loader.strip_envelope(raw)))
+        # a copy, so the record shares nothing with the raw dicts kept beside it; built as a document is, so its experiments stay records until one is materialised
+        study = yaml_loader.construct(copy.deepcopy(raw), cls)
         study._source_file = str(Path(filepath).resolve())
         register_recipe_code_paths(study._source_file, getattr(study, "code_source", None))
         raw_experiments = {e.get("id"): e for e in (raw.get("experiments") or []) if isinstance(e, dict)}
-        # a plain dict, past the JsonObj setattr that would wrap it
         object.__setattr__(study, "_raw_experiments", raw_experiments)
         _wire_nested(study, raw)
         hand_down_theme(study)
         return study
-
-    @classmethod
-    def from_datamodel(cls, datamodel):
-        """Wrap a generated datamodel instance as a `SimulationStudy`.
-
-        Args:
-            datamodel: A datamodel-level study whose fields are copied into the user-facing class.
-
-        Returns:
-            A `SimulationStudy` with the same field values as `datamodel`.
-        """
-        return cls(**as_dict(datamodel))
 
     def cite(self):
         """Return the formatted citation for this study.
@@ -361,9 +346,9 @@ class SimulationStudyBehaviour(Catalogued):
                     if isinstance(raw, dict):
                         exp = experiment.SimulationExperiment.from_dict(raw)
                     else:
-                        from linkml_runtime.dumpers import yaml_dumper
+                        from tvbo.utils import to_yaml
 
-                        exp = experiment.SimulationExperiment.from_string(yaml_dumper.dumps(exp_dm))
+                        exp = experiment.SimulationExperiment.from_string(to_yaml(exp_dm))
                     if source_file:
                         exp._source_file = source_file
                     # Where a `cohort` reference of the experiment's network is declared.

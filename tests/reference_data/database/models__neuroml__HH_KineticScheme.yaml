@@ -75,6 +75,7 @@ components:
                 value: 10
                 description: nml:10mV
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
@@ -95,9 +96,11 @@ components:
                 value: -18
                 description: nml:-18mV
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
+        system_type: continuous
         autonomous: true
         cse: false
         compile: false
@@ -127,6 +130,7 @@ components:
                 value: -20
                 description: nml:-20mV
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
@@ -147,12 +151,15 @@ components:
                 value: 10
                 description: nml:10mV
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
+        system_type: continuous
         autonomous: true
         cse: false
         compile: false
+    system_type: continuous
     autonomous: true
     cse: false
     compile: false
@@ -186,6 +193,7 @@ components:
             name: c1
             iri: neuroml:closedState
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
@@ -193,6 +201,7 @@ components:
             name: o1
             iri: neuroml:openState
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
@@ -227,16 +236,20 @@ components:
                 value: 0.3
                 description: nml:0.3ms
             number_of_modes: 1
+            system_type: continuous
             autonomous: true
             cse: false
             compile: false
+        system_type: continuous
         autonomous: true
         cse: false
         compile: false
+    system_type: continuous
     autonomous: true
     cse: false
     compile: false
 model_type: spiking
+system_type: continuous
 autonomous: true
 cse: false
 compile: false

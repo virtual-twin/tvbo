@@ -583,7 +583,12 @@ def _on_reference_inputs(name, ref, states=(), parameters=None, adjacency=False)
         spec["dynamics"]["parameters"][p].pop("distribution", None)
     network = spec["network"]
     if "edge_matrix_files" in network:
-        network["edge_matrix_files"] = [os.path.join(EXAMPLES_DIR, path) for path in network["edge_matrix_files"]]
+        network["edge_matrix_files"] = [
+            os.path.join(EXAMPLES_DIR, entry)
+            if isinstance(entry, str)
+            else {**entry, "path": os.path.join(EXAMPLES_DIR, entry["path"])}
+            for entry in network["edge_matrix_files"]
+        ]
     if adjacency:
         network.pop("graph_generator")
     n = int(network["number_of_nodes"])

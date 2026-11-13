@@ -343,38 +343,27 @@ _RECIPE = {
 
 
 @pytest.mark.backend_core
-def test_the_layer_is_on_a_dynamics_from_either_generator():
-    """A model gets the same equations whichever generator built it.
+def test_the_layer_is_on_a_dynamics_however_it_was_built():
+    """A model gets the same equations whether it was constructed or validated from a mapping.
 
-    The layer is attached to the generated classes, not to a runtime subclass, so a model an edge resolved or Pydantic validated answers as the runtime one does. Consumers used to ask which kind they held and parse the metadata themselves when it was the plain one — three copies of that dispatch, and a second parse of the same equation against a namespace assembled differently.
+    The layer is attached to the generated class, not to a runtime subclass, so a model an edge resolved or a loader validated answers as a hand-built one does. Consumers used to ask which kind they held and parse the metadata themselves when it was the plain one — three copies of that dispatch, and a second parse of the same equation against a namespace assembled differently.
     """
-    from tvbo.datamodel import pydantic as pyd
-    from tvbo.datamodel import schema
-    from tvbo.utils import pydantic_loader
-
     runtime = Dynamics(**_RECIPE)
-    built = (schema.Dynamics(**_RECIPE), pydantic_loader.validate(dict(_RECIPE), pyd.Dynamics))
-    forms = [model._symbolic_form() for model in built]
+    validated = Dynamics.model_validate(dict(_RECIPE))
 
-    for form in forms:
-        for group, equations in runtime._symbolic_form().items():
-            assert {k: str(v) for k, v in form[group].items()} == {k: str(v) for k, v in equations.items()}, group
+    for group, equations in runtime._symbolic_form().items():
+        assert {k: str(v) for k, v in validated._symbolic_form()[group].items()} == {
+            k: str(v) for k, v in equations.items()
+        }, group
 
 
 @pytest.mark.backend_core
 def test_an_unfilled_model_answers_rather_than_raising():
-    """The two generators disagree on what an unfilled collection is, and the layer does not.
-
-    LinkML's dataclass defaults one to an empty collection and Pydantic's model to `None`, so a layer written against either alone raises `AttributeError` on the other for a model that simply declares nothing yet.
-    """
-    from tvbo.datamodel import pydantic as pyd
-    from tvbo.datamodel import schema
-
-    for cls in (schema.Dynamics, pyd.Dynamics):
-        bare = cls(name="empty")
-        assert sorted(bare.get_symbolic_elements()) == ["e", "t"], cls
-        assert all(group == {} for group in bare._symbolic_form().values()), cls
-        assert bare.symbol_map() == {} and bare.keyed_parameters == {}, cls
+    """A model that declares nothing yet still answers, with empty collections."""
+    bare = Dynamics(name="empty")
+    assert sorted(bare.get_symbolic_elements()) == ["e", "t"]
+    assert all(group == {} for group in bare._symbolic_form().values())
+    assert bare.symbol_map() == {} and bare.keyed_parameters == {}
 
 
 @pytest.mark.backend_core
@@ -384,23 +373,16 @@ def test_a_copy_gets_its_own_layer(model: Dynamics):
     Carried over, the clone's edits would neither invalidate the cache nor reach the scope:
     it would be answering questions about the original.
 
-    Every copy protocol is checked, not only the runtime model's own `__copy__`: the layer lives on the generated classes now, and `copy.copy` on one of those — or Pydantic's `model_copy` — carries the attribute across with no hook to exclude it.
+    Every copy protocol is checked: `copy.copy` and Pydantic's `model_copy` both carry the attribute across with no hook to exclude it.
     """
     import copy
-
-    from tvbo.datamodel import pydantic as pyd
-    from tvbo.datamodel import schema
-    from tvbo.utils import pydantic_loader
 
     model.get_equations()
     clones = [copy.copy(model)]
 
-    for cls in (schema.Dynamics, pyd.Dynamics):
-        original = (
-            cls(**copy.deepcopy(_RECIPE)) if cls is schema.Dynamics else pydantic_loader.validate(copy.deepcopy(_RECIPE), cls)
-        )
-        original._symbolic_form()
-        clones.append(original.model_copy() if hasattr(original, "model_copy") else copy.copy(original))
+    original = Dynamics.model_validate(copy.deepcopy(_RECIPE))
+    original._symbolic_form()
+    clones.append(original.model_copy())
 
     for clone in clones:
         assert clone.symbolic_system.model is clone, type(clone)

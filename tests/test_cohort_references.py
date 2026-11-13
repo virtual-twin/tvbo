@@ -20,9 +20,9 @@ pytest.importorskip("jax")
 
 from tvbo import Network  # noqa: E402
 from tvbo.data import analysis_io, cohort, dataref  # noqa: E402
-from tvbo.data.matrix_io import read_edge  # noqa: E402
+from tvbo.data.matrix_io import read_matrix  # noqa: E402
 from tvbo.data.study_manifest import _analysis_fingerprint  # noqa: E402
-from tvbo.datamodel.schema import Analysis, DataRef, Dataset  # noqa: E402
+from tvbo.datamodel import Analysis, DataRef, Dataset  # noqa: E402
 
 LABELS = ["A", "B", "C", "D"]
 QUERY = {"atlas": "Toy", "desc": "SC", "suffix": "relmat"}
@@ -605,7 +605,7 @@ def test_a_bundled_kit_carries_the_cohort_each_members_connectome_and_the_aggreg
     frozen = yaml.safe_load((spec_dir / "experiment.yaml").read_text())
     assert frozen["dataset"]["bids_root"] == "../data/toy_fc"
     assert list(frozen["dataset"]["subjects"]) == ["04", "01"]
-    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["04", "01"])]
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"].values()] == [("four", ["04", "01"])]
 
     rerun = SimulationExperiment.from_file(str(spec_dir / "experiment.yaml"))
     assert rerun.dataset_subject_ids() == ["04", "01"]
@@ -617,7 +617,7 @@ def test_a_bundled_kit_carries_the_cohort_each_members_connectome_and_the_aggreg
     rerun.freeze_yaml(str(tmp_path / "provenance"), network_stem="sub-01_network")
     with h5py.File(tmp_path / "provenance/sub-01_network.h5") as companion:
         for layer in ("weight", "length"):
-            stored, _ = read_edge(companion, layer)
+            stored = read_matrix(companion[f"edges/{layer}"])
             np.testing.assert_array_equal(
                 np.asarray(stored.todense() if hasattr(stored, "todense") else stored), rerun.network.array(layer)
             )
@@ -735,7 +735,7 @@ def test_a_kit_carries_the_cohort_and_each_members_file_a_reference_reads(root, 
     (spec_dir / "experiment.yaml").write_text(kit._freeze_spec_yaml(experiment, spec_dir, dataset_bids_root=bundle))
     assert sorted(p.name for p in (out / "data/toy_fc").iterdir()) == ["sub-01", "sub-04"]
     frozen = yaml.safe_load((spec_dir / "experiment.yaml").read_text())
-    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["04", "01"])]
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"].values()] == [("four", ["04", "01"])]
 
     rerun = SimulationExperiment.from_file(str(spec_dir / "experiment.yaml"))
     rerun._active_subject = "01"
@@ -832,7 +832,7 @@ def test_a_kit_carries_a_pinned_members_file_once_and_every_subject_reads_it(roo
     bundle, frozen, path = _frozen_kit(experiment, tmp_path / "kit")
     assert sorted(p.name for p in (tmp_path / "kit/data/toy_fc").iterdir()) == ["sub-01"]
     assert list(frozen["dataset"]["subjects"]) == LISTED
-    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", ["01"])]
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"].values()] == [("four", ["01"])]
 
     rerun = SimulationExperiment.from_file(str(path))
     assert rerun.dataset_subject_ids() == LISTED
@@ -859,7 +859,7 @@ def test_a_group_kit_carries_every_member_a_whole_cohort_read_takes(root, tmp_pa
     assert bundle == "../data/toy_sc" and experiment.dataset is None
     assert sorted(p.name for p in (tmp_path / "kit/data/toy_sc").iterdir()) == [f"sub-{m}" for m in MEMBERS]
     assert frozen["dataset"]["bids_root"] == "../data/toy_sc" and not frozen["dataset"].get("subjects")
-    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"]] == [("four", MEMBERS)]
+    assert [(c["cohort_id"], c["members"]) for c in frozen["dataset"]["cohorts"].values()] == [("four", MEMBERS)]
 
     rerun = SimulationExperiment.from_file(str(path))
     assert rerun.dataset_subject_ids() == []
@@ -1020,9 +1020,9 @@ def test_held_lengths_masked_through_a_reference_keep_their_delay_flags_until_bo
 
 def test_a_network_built_from_a_datamodel_record_keeps_its_enumerations_and_its_own_copy(root, results):
     """A record's enumerations, its `reconcile: by_label` among them, reach the Network as enumerations, and the Network reads through its own copy of each reference."""
-    from tvbo.datamodel import schema
+    from tvbo import datamodel
 
-    record = schema.Network(**_network_spec())
+    record = datamodel.Network(**_network_spec())
     net = Network.from_datamodel(record)
     assert isinstance(net, Network) and net.per_subject_cohorts() == ["four"]
     assert dataref.reconcile_mode(net.edges[0].used) == "by_label" and net.edges[0] is not record.edges[0]
@@ -1032,12 +1032,11 @@ def test_a_network_built_from_a_datamodel_record_keeps_its_enumerations_and_its_
 
 def test_configure_reads_a_network_held_as_a_datamodel_record(root, tmp_path, recwarn):
     """A network that reached the experiment as a plain datamodel record is read like any other: with no lengths its delays are switched off, and nothing is skipped behind a warning."""
-    from tvbo import SimulationStudy
-    from tvbo.datamodel import schema
+    from tvbo import SimulationStudy, datamodel
 
     path = _study_file(root, tmp_path, edges=[{"label": "weight"}], transforms=[])
     experiment = SimulationStudy.from_file(str(path)).get_experiment(1)
-    experiment.network = schema.Network(nodes=[{"id": i, "label": lbl} for i, lbl in enumerate(LABELS)])
+    experiment.network = datamodel.Network(nodes=[{"id": i, "label": lbl} for i, lbl in enumerate(LABELS)])
     experiment.configure()
     assert not [w for w in recwarn if "Could not configure delays" in str(w.message)]
     assert not experiment.integration.delayed

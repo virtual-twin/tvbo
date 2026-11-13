@@ -264,8 +264,8 @@ def test_the_result_grammar_documents_every_entity_it_uses():
 
 def test_every_spec_suffix_names_a_class_the_datamodel_has():
     """A suffix vocabulary is only checkable while each suffix maps to a class that exists."""
+    from tvbo import datamodel as datamodel
     from tvbo.adapters.bids import SPEC_SUFFIXES
-    from tvbo.datamodel import schema as datamodel
 
     for suffix, cls in SPEC_SUFFIXES.items():
         assert hasattr(datamodel, cls), f"suffix `_{suffix}` names {cls}, which the datamodel does not define"

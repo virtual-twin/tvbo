@@ -92,13 +92,13 @@ def test_millimolar_is_mole_per_cubic_metre():
 
 
 def test_every_class_declaring_the_open_slot_canonicalizes_it():
-    """Which classes get canonicalized is read off the generated annotations.
+    """Which classes get canonicalized is read off the schema into the generated dialect table.
 
-    So a class that gains the slot later is covered without anyone remembering, and — the reason this is asserted — a change in the shape of those annotations fails here instead of silently switching canonicalization off everywhere.
+    So a class that gains the slot later is covered without anyone remembering, and — the reason this is asserted — a change in how that table is derived fails here instead of silently switching canonicalization off everywhere.
     """
-    from tvbo.datamodel import _open_unit_slot_classes
+    from tvbo.datamodel.dialect_tables import UNIT_SLOTS
 
-    covered = {cls.__name__ for cls in _open_unit_slot_classes()}
+    covered = set(UNIT_SLOTS)
 
     assert {"Parameter", "StateVariable", "DerivedParameter", "Observation", "Edge"} <= covered
     assert "ToolUnit" not in covered

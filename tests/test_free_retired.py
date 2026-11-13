@@ -8,14 +8,13 @@ from __future__ import annotations
 import pytest
 import yaml
 
-import tvbo.datamodel.schema as dataclass_model
-from tvbo import SimulationExperiment
+from tvbo import SimulationExperiment, datamodel
 from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 from tvbo.adapters.numcont import NumContAdapter
 from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter
 from tvbo.classes.optimization import fitted_parameters
 from tvbo.data import dataref, provenance
-from tvbo.utils import keyed_items, parameters_acted_on, pydantic_loader, report
+from tvbo.utils import keyed_items, parameters_acted_on, report
 
 SPEC = """
 id: 1
@@ -183,9 +182,9 @@ FREE_DERIVED = SPEC.replace(
 def test_free_is_refused_on_every_load_path(tmp_path, cls, spec):
     message = rf"{cls}\.free was retired in tvbo 0\.9\.0: name the parameter where it is acted on"
     with pytest.raises(ValueError, match=message):
-        getattr(dataclass_model, cls)(name="k", free=True)
+        getattr(datamodel, cls)(name="k", free=True)
     with pytest.raises(ValueError, match=message):
-        pydantic_loader.validate({"name": "k", "free": True}, cls)
+        getattr(datamodel, cls).model_validate({"name": "k", "free": True})
     with pytest.raises(ValueError, match=message):
         _experiment(spec=spec)
     path = tmp_path / "exp.yaml"

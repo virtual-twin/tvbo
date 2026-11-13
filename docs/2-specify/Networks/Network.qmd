@@ -237,6 +237,8 @@ Every format stores a text array (`<U`) as text and reads it back as text: HDF5 
 
 An object array holds Python objects, which no format stores; give text as a text array (`np.asarray(values, dtype=str)`) and numbers at a numeric dtype.
 
+A network reads matrices from more formats than it writes: `edge_matrix_files` and a `data_file` accept HDF5, Zarr, NumPy (`.npy`, `.npz`), MATLAB (`.mat`) and delimited text (`.csv` by comma, `.tsv` by tab, `.txt` by whitespace). Every matrix a Network holds is receiver-row, `W[i, j]` being the weight of the edge `j → i`. A file written the other way round declares it: `edge_matrix_files: [{path: W.csv, dims: [source, target]}]` is transposed by name as it is read, and a bare path is accepted only when the matrix is symmetric, where the orientation cannot matter.
+
 ### Declared node arrays
 
 A `node_template` sets what every node shares, and a node's own entry in `nodes` overrides it slot by slot. The slots that say which node it is, `id`, `label`, `position` and `region`, come from the network's data, so a template that sets one is refused, naming it. The one exception is `id: -1`, which tvbo wrote on every template it saved until templates had their own class: a network read with it drops that value.

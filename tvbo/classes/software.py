@@ -7,7 +7,7 @@
 #
 """The public import location for ``SimulationTool``.
 
-The class is the generated one; what it does lives in :mod:`tvbo.behaviour.software`, attached to both generated forms, so a tool entry answers the same questions whether it came from LinkML's loader or from Pydantic validation.
+The class is the generated one; what it does lives in :mod:`tvbo.behaviour.software`, attached to the generated class, so a tool entry answers the same questions however it was built.
 
 Usage
 -----
@@ -21,6 +21,6 @@ Usage
 
 from __future__ import annotations
 
-from tvbo.datamodel import schema as tvbo_datamodel
+from tvbo import datamodel as tvbo_datamodel
 
 SimulationTool = tvbo_datamodel.SimulationTool

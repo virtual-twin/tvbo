@@ -1,6 +1,6 @@
 # Copyright © Charité Universitätsmedizin Berlin. This software is licensed under the terms of the European Union Public Licence (EUPL) version 1.2 or later.
 [build-system]
-# Build-time only: hatchling 1.27 writes the PEP 639 licence fields, and `hatch_build.py` regenerates the datamodel with the newest LinkML; importing the generated classes needs only `linkml-runtime`.
+# Build-time only: hatchling 1.27 writes the PEP 639 licence fields, and `hatch_build.py` regenerates the datamodel with the newest LinkML; importing the generated classes needs only `pydantic`.
 requires = ["hatchling>=1.27", "linkml>=1.12.1"]
 build-backend = "hatchling.build"
 
@@ -19,10 +19,10 @@ dependencies = [
     "numpy>=2.0.0",
     "pandas>=2.2.3",
     "xarray>=2025.0",
-    # Needed to *use* the generated datamodel; the heavy `linkml` generator is build-time only (see [build-system].requires).
-    "linkml-runtime>=1.12.1",
     # Backs `tvbo validate schema` against the shipped JSON Schema; declared explicitly because we import it directly.
     "jsonschema>=4.0.0",
+    # Reads the bifurcation taxonomy out of tvbo.owl (`tvbo.analysis.bifurcation`); declared because we import it directly.
+    "rdflib>=7.0",
     "h5py>=3.12.1",
     "h5netcdf>=1.3",
 
@@ -164,14 +164,13 @@ packages = ["tvbo"]
 # schema/** and hatch_build.py ship so a wheel built *from the sdist* can regenerate the untracked datamodel.
 include = ["tvbo/**", "schema/**", "hatch_build.py", "README.md", "pyproject.toml", "LICENSE", "LICENSES/**", "REUSE.toml"]
 
-# Generates tvbo/datamodel/{schema,pydantic}.py from the LinkML schema before every build. See hatch_build.py.
+# Generates tvbo/datamodel/pydantic.py from the LinkML schema before every build. See hatch_build.py.
 [tool.hatch.build.hooks.custom]
 
 [tool.hatch.build]
 include = ["tvbo/**"]
 # The generated datamodel is gitignored, so VCS-based file selection would drop it; `artifacts` force-includes the hook's output.
 artifacts = [
-    "tvbo/datamodel/schema.py",
     "tvbo/datamodel/pydantic.py",
     "tvbo/datamodel/dialect_tables.py",
     "tvbo/datamodel/_stamp.py",
@@ -225,7 +224,6 @@ extend-exclude = [
     "docs/.quarto",
     "docs/_site",
     "docs/**/.vdoc.*.py",
-    "tvbo/datamodel/schema.py",
     "tvbo/datamodel/pydantic.py",
     "tvbo/datamodel/dialect_tables.py",
 ]
@@ -235,7 +233,6 @@ extend-exclude = [
 select = ["E", "F", "W", "I", "UP", "B", "D"]
 # Only the build-time artefacts are generated; the rest of the dir is hand-written.
 exclude = [
-    "tvbo/datamodel/schema.py",
     "tvbo/datamodel/pydantic.py",
     "tvbo/datamodel/dialect_tables.py",
 ]
@@ -282,7 +279,6 @@ python_version = "3.12"
 ignore_missing_imports = true
 follow_imports = "silent"
 exclude = [
-    "tvbo/datamodel/schema.py",
     "tvbo/datamodel/pydantic.py",
     "tvbo/datamodel/dialect_tables.py",
     "tests/",

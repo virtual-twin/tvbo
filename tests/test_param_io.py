@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from tvbo.data import param_io
-from tvbo.datamodel.schema import Callable, FunctionCall, Parameter
+from tvbo.datamodel import Callable, FunctionCall, Parameter
 
 pytest.importorskip("h5py")
 
@@ -188,7 +188,7 @@ def _echo_positions(positions=None, hemi="lh"):
 
 def _network(n=3):
     from tvbo.classes.network import Network
-    from tvbo.datamodel.schema import Coordinate, Node
+    from tvbo.datamodel import Coordinate, Node
 
     nodes = [Node(id=i, label=f"n{i}", position=Coordinate(x=float(i), y=1.0, z=2.0)) for i in range(n)]
     return Network(label="net", nodes=nodes)

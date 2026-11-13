@@ -20,11 +20,6 @@ class StimulusBehaviour(YamlDocument):
     """Loading, symbolic reading, rendering and plotting for an exogenous stimulus."""
 
     @classmethod
-    def from_datamodel(cls, instance):
-        """Copy a datamodel `Stimulus`'s fields into a new one."""
-        return cls(**instance._as_dict)
-
-    @classmethod
     def from_ontology(cls, ontoclass):
         """Construct a `Stimulus` from an ontology class or its label.
 
@@ -49,7 +44,7 @@ class StimulusBehaviour(YamlDocument):
             if len(ontoclasses) > 1:
                 logger.warning("Multiple stimulus classes found: %s", ontoclasses)
             ontoclass = ontoclasses[0]
-        return cls(**class2metadata(ontoclass)._as_dict)
+        return cls.from_datamodel(class2metadata(ontoclass))
 
     @property
     def metadata(self):

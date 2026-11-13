@@ -257,7 +257,7 @@ class ModelingToolkitAdapter(BaseAdapter):
 
     def _apply_lowered(self, lowered):
         """Apply lowered equations onto a deepcopy of the original Dynamics."""
-        from tvbo.datamodel.schema import (
+        from tvbo.datamodel import (
             Equation,
             StateVariable,
             StateVariableName,
