@@ -30,6 +30,7 @@ dcterms:license     a owl:AnnotationProperty .
 dcterms:creator     a owl:AnnotationProperty .
 dcterms:title       a owl:AnnotationProperty .
 dcterms:description a owl:AnnotationProperty .
+dcterms:identifier  a owl:AnnotationProperty .
 
 #
 # ─────────────────────────────────────────────────────────────────
@@ -44,8 +45,7 @@ dcterms:description a owl:AnnotationProperty .
 
 tvbo:CouplingInput a skos:Concept ;
     skos:prefLabel "CouplingInput"@en ;
-    rdfs:comment "Aggregate input arriving at a node from connected nodes; modelled as the postsynaptic potential induced by long-range projections."@en ;
-    rdfs:seeAlso tvbo:PostsynapticPotential .
+    rdfs:comment "Aggregate input arriving at a node from connected nodes; modelled as the postsynaptic potential induced by long-range projections."@en .
 
 tvbo:Excitation a skos:Concept ;
     rdfs:label "Excitation"@en ;
@@ -80,6 +80,21 @@ tvbo:TimeScaling a skos:Concept ;
     rdfs:label "TimeScaling"@en ;
     skos:prefLabel "TimeScaling"@en ;
     rdfs:comment "Time-constant or rate parameter that sets the temporal scale of a dynamical variable. No faithful upstream GO mapping (GO_0050789 was rejected as overly generic)."@en .
+
+# Concepts that model parameters are grounded to.
+tvbo:ExcitabilityThresholdVariance a skos:Concept ;
+    rdfs:label "Excitability Threshold Variance"@en ;
+    skos:prefLabel "Excitability Threshold Variance"@en ;
+    rdfs:comment "Variance of the excitatory firing threshold, which sets the steepness of the excitatory population's sigmoid."@en ;
+    skos:broader tvbo:Excitation ;
+    dcterms:identifier "000269" .
+
+tvbo:InhibitoryThresholdVariance a skos:Concept ;
+    rdfs:label "Inhibitory Threshold Variance"@en ;
+    skos:prefLabel "Inhibitory Threshold Variance"@en ;
+    rdfs:comment "Variance of the inhibitory threshold, which sets the steepness of the inhibitory population's sigmoid."@en ;
+    skos:broader tvbo:Inhibition ;
+    dcterms:identifier "000583" .
 
 #
 # ─────────────────────────────────────────────────────────────────

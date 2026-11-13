@@ -4124,7 +4124,6 @@ classes:
 
     SimulationExperiment:
         tree_root: true
-        class_uri: tvbo:Simulation
         slots:
             - provenance
             - model

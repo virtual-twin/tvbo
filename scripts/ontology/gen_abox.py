@@ -96,13 +96,14 @@ def _resolve_study(citekey: str) -> str | None:
 def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     """Link `iri` to every CURIE in `data["grounding"]` under two complementary vocabularies.
 
-    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling.
+    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling. A CURIE whose prefix is not in `PREFIX_MAP` raises `ValueError`, so a mistyped prefix cannot drop a grounding unseen.
     """
     for cur in data.get("grounding") or []:
         u = expand_curie(str(cur))
-        if u is not None:
-            g.add((iri, TVBO.surrogate_of, u))
-            g.add((iri, OBOINOWL.hasDbXref, u))
+        if u is None:
+            raise ValueError(f"{iri}: grounding {cur!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+        g.add((iri, TVBO.surrogate_of, u))
+        g.add((iri, OBOINOWL.hasDbXref, u))
 
 
 def _add_equation(g: Graph, iri: URIRef, data: dict) -> None:

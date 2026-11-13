@@ -8,7 +8,8 @@ LinkML's `gen-owl` emits a usable OWL file but stops short of the publication-re
 * `owl:versionInfo` mirroring `pav:version`;
 * `dcterms:created` / `dcterms:modified` / `dcterms:creator` / `dcterms:contributor` / `dcterms:description`;
 * an `rdfs:label` on every TVB-O class and property, its name qualified as `_qualify_labels` describes;
-* no triple for a LinkML annotation tag.
+* no triple for a LinkML annotation tag;
+* a slot's `equals_string` as the one-value data range it means.
 
 We do this as a post-process rather than fighting LinkML's emitter so that future LinkML upgrades remain drop-in.
 
@@ -23,7 +24,9 @@ import sys
 
 import yaml
 from canonical_ttl import write_canonical
-from rdflib import Graph, Literal, Namespace, URIRef
+from linkml_runtime.utils.schemaview import SchemaView
+from rdflib import BNode, Graph, Literal, Namespace, URIRef
+from rdflib.collection import Collection
 from rdflib.namespace import DCTERMS, OWL, RDF, RDFS, SKOS, XSD
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
@@ -51,6 +54,37 @@ def _retype_float_facets(g: Graph) -> None:
                         if retyped != value:
                             g.remove((facet_node, facet, value))
                             g.add((facet_node, facet, retyped))
+
+
+def _equals_string_as_one_of(g: Graph, view: SchemaView) -> None:
+    """Write each slot's `equals_string` as the one-value data range it means.
+
+    `gen-owl` writes `equals_string: "tvbo:Network"` as an `xsd:pattern` facet, which reads the value as a regular expression, not as the literal string. ROBOT's `query` round trip drops that anonymous restriction's `rdfs:Datatype` type, so OWLAPI reads the filler as a class it cannot parse and mints `owlapi/error#ErrorN` for it. `owl:oneOf ("tvbo:Network")` states the value exactly and survives the round trip.
+
+    Args:
+        g: The parsed T-box, mutated in place.
+        view: The LinkML schema with its imports, read for every class's `slot_usage`.
+    """
+    values = {
+        (URIRef(view.get_uri(slot, expand=True)), usage.equals_string)
+        for cls in view.all_classes().values()
+        for slot, usage in (cls.slot_usage or {}).items()
+        if usage.equals_string
+    }
+    for restriction, prop in list(g.subject_objects(OWL.onProperty)):
+        filler = g.value(restriction, OWL.allValuesFrom)
+        facets = g.value(filler, OWL.withRestrictions) if filler is not None else None
+        patterns = [str(o) for item in g.items(facets) for o in g.objects(item, XSD.pattern)] if facets is not None else []
+        if len(patterns) != 1 or (prop, patterns[0]) not in values:
+            continue
+        for item in list(g.items(facets)):
+            g.remove((item, None, None))
+        Collection(g, facets).clear()
+        g.remove((filler, OWL.withRestrictions, None))
+        g.remove((filler, OWL.onDatatype, None))
+        one_of = BNode()
+        Collection(g, one_of, [Literal(patterns[0])])
+        g.add((filler, OWL.oneOf, one_of))
 
 
 def _split_scope(local: str) -> tuple[str | None, str]:
@@ -225,6 +259,7 @@ def main() -> int:
     g.bind("pav", PAV)
     g.bind("owl", OWL)
     _retype_float_facets(g)
+    _equals_string_as_one_of(g, SchemaView(str(args.schema)))
     _drop_annotation_tags(g)
     _qualify_labels(g)
     _augment(g, schema)
