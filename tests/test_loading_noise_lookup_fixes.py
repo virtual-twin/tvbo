@@ -248,7 +248,7 @@ def test_an_unlabelled_template_edge_survives_a_bep017_export(tmp_path):
 
     to_bep017(net, tmp_path)
 
-    tsv = list(tmp_path.glob("*_meas-weight_relmat.dense.tsv"))
+    tsv = list(tmp_path.glob("*meas-weight_relmat.dense.tsv"))
     assert len(tsv) == 1, sorted(p.name for p in tmp_path.iterdir())
     np.testing.assert_allclose(np.loadtxt(tsv[0], delimiter="\t"), weights)
 

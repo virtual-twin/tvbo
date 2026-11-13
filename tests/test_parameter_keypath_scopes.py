@@ -27,7 +27,7 @@ _CI_KEY = {"LinCoupling": "ci_lin"}.get
         ("network.conduction_speed", "graph.speed"),
         ("network.edges.weight", "graph.weights"),
         ("network.edges.length", "graph.lengths"),
-        ("network.weights", "graph.weights"),
+        ("network.weight", "graph.weights"),
         ("initial_conditions.theta", "dynamics._ic_theta"),
         ("execution.random_seed", "dynamics._noise_seed"),
     ],

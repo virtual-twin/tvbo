@@ -210,7 +210,6 @@ def build_ttl(component_types, domain_names) -> Graph:
         cls = NML[name]
         g.add((cls, RDF.type, OWL.Class))
         g.add((cls, RDFS.label, Literal(name, lang="en")))
-        g.add((cls, RDFS.isDefinedBy, NML_ONT))
         g.add((cls, SKOS.exactMatch, NEUROML2[name]))
         if ct.extends and ct.extends in domain_names:
             g.add((cls, RDFS.subClassOf, NML[ct.extends]))

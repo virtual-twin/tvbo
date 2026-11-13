@@ -15,6 +15,7 @@ A sampler takes its PRNG state as the **first** argument, because JAX is functio
 Symbolic summation uses SymPy's own `Sum`, which needs explicit index variables: `Sum(x[i]*y[i], (i, 0, n-1))`. Index variables are detected from the `Sum` and `Product` limits, and the code printers handle the translation.
 """
 
+import ast
 import re
 
 from sympy import Function, IndexedBase, Piecewise, Product, Sum, Symbol, parse_expr, sqrt, true
@@ -221,6 +222,16 @@ def _piecewise_from_conditionals(equation: Equation, local_dict):
     return Piecewise(*branches, (default, true))
 
 
+class _MatmulCalls(ast.NodeTransformer):
+    """Writes every ``a @ b`` as ``matmul(a, b)``, the array product the vocabulary names, since a SymPy symbol has no ``@``."""
+
+    def visit_BinOp(self, node):
+        self.generic_visit(node)
+        if isinstance(node.op, ast.MatMult):
+            return ast.Call(func=ast.Name("matmul", ast.Load()), args=[node.left, node.right], keywords=[])
+        return node
+
+
 def parse_eq(
     equation: Equation,
     parameters=None,
@@ -334,6 +345,9 @@ def parse_eq(
     if isinstance(equation, Equation) and getattr(equation, "latex", False):
         # parse_latex doesn't accept local_dict; it returns a SymPy Expr directly
         return parse_latex(expression, backend="lark")
+
+    if "@" in expression:
+        expression = ast.unparse(_MatmulCalls().visit(ast.parse(expression, mode="eval")))
 
     for name in _quantity_names(expression):
         local_dict.setdefault(name, Symbol(name))

@@ -94,7 +94,6 @@ dynamics:
       value: 1.0
       description: Tuned by FIC algorithm, can be heterogeneous
       heterogeneous: true
-      free: true
       shape: (n_nodes,)
     I_o:
       name: I_o
@@ -277,7 +276,6 @@ network:
             log_scale: false
           description: Weight matrix for excitatory long-range coupling
           heterogeneous: true
-          free: true
           shape: (n_nodes, n_nodes)
         wFFI:
           name: wFFI
@@ -289,7 +287,6 @@ network:
             log_scale: false
           description: Weight matrix for feedforward inhibition
           heterogeneous: true
-          free: true
           shape: (n_nodes, n_nodes)
       description: 'Dual-weight coupling producing two outputs from excitatory activity:
         long-range excitation (wLRE) and feedforward inhibition (wFFI). Separate weight
@@ -872,14 +869,8 @@ optimizations:
       '
     free_parameters:
     - parameter: ReducedWongWangEIB.J_i
-      heterogeneous: true
-      shape: (n_nodes,)
     - parameter: ReducedWongWangEIB.wLRE
-      heterogeneous: true
-      shape: (n_nodes, n_nodes)
     - parameter: ReducedWongWangEIB.wFFI
-      heterogeneous: true
-      shape: (n_nodes, n_nodes)
     algorithm: adamaxw
     learning_rate: 0.033
     max_iterations: 66

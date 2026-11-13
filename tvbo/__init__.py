@@ -52,7 +52,7 @@ __contact__ = "petra.ritter@charite.de"
 __status__ = "stable"
 
 __copyright__ = "Copyright (c) 2026, Brain Simulation Section, Charité Universitätsmedizin Berlin"
-__license__ = "EUPL-1.2-or-later"
+__license__ = "EUPL-1.2"
 
 
 def clean_temp():

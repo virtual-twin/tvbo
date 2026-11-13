@@ -3,7 +3,7 @@
 #
 # Author: Leon Martin
 # Copyright © 2024 Charité Universitätsmedizin Berlin.
-# Licensed under the EUPL-1.2-or-later
+# Licensed under the EUPL-1.2
 #
 """TVB-Optim Template Utilities.
 
@@ -269,9 +269,10 @@ def _start_shape(start: Any) -> tuple[int, str | None]:
 
     Raises where the emitted start function, which knows only ``n_nodes``, cannot size the declaration: a shape other than one value per node or, on a coupling parameter, one per connection, and a coupling parameter drawn without a shape.
     """
+    from tvbo.codegen.dims import shape_code, shape_terms
+
     declared = getattr(start.parameter, "shape", None)
-    inner = str(declared or "").strip().strip("()").replace(" ", "")
-    shape = "(" + inner + ("," if "," not in inner else "") + ")" if inner else None
+    shape = shape_code(declared) if shape_terms(declared) else None
     if shape is None and start.kind == StartKind.EQUATION:
         return 0, None
     if shape is None and start.owner_kind == "dynamics":
@@ -778,12 +779,9 @@ def _shape_ndim(shape_str) -> int:
     Counts the comma-separated dimensions inside the parentheses so a graph-shaped (2-D, per-edge) parameter can be told apart from a per-node (1-D) or scalar one.
     Returns 0 for an absent/empty shape.
     """
-    if not shape_str:
-        return 0
-    inner = str(shape_str).strip().strip("()").strip()
-    if not inner:
-        return 0
-    return len([p for p in inner.split(",") if p.strip()])
+    from tvbo.codegen.dims import shape_terms
+
+    return len(shape_terms(shape_str) or ())
 
 
 def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
@@ -1211,6 +1209,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
     else:
         raw = network.matrix("weight", apply_transforms=False) if hasattr(network, "matrix") else None
         n_nodes = None if raw is None else raw.shape[0]
+    weight_names = network._layer_names("weight")
     transforms: list[tuple[str, list[str]]] = []
     const_env: list[str] = []
     const_seen: set[str] = set()
@@ -1232,9 +1231,10 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
             if name in sourced:
                 return f"_network_datum({name!r})"
             label = edge_label(name) or name
-            source = _KIT_EDGE_ARRAYS.get(label)
+            kit_label = "weight" if str(label).lower() in weight_names else label
+            source = _KIT_EDGE_ARRAYS.get(kit_label)
             if source is not None:
-                labels_used.add(label)
+                labels_used.add(kit_label)
                 return source
             if name in node_vectors:
                 vec = np.asarray(node_vectors[name]).ravel()
@@ -1290,7 +1290,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         mask_lines = [f"{symbol} = {render_expression(mask, format='jax')}" for symbol, mask in masks.items()]
         if any("jsp." in line for line in [expr, *mask_lines]):
             _add_const("jsp", "import jax.scipy as jsp")
-        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), target="weight")
+        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), targets=weight_names)
         for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
         transforms.append((expr, chained + mask_lines))
@@ -3926,8 +3926,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
 
     Handles: str, dotted notation, stringified dict, dict, and Parameter objects.
 
-    Returns dict with: name, heterogeneous, shape, coupling_key, dynamics_key,
-                       lower_bound, upper_bound
+    Returns dict with: name, heterogeneous (None where the entry writes none), shape, coupling_key, dynamics_key, lower_bound, upper_bound
     """
     all_couplings = all_couplings or {}
     result = None
@@ -3945,7 +3944,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
             param_name = ref
         result = {
             "name": param_name,
-            "heterogeneous": bool(getattr(fp, "heterogeneous", False)),
+            "heterogeneous": getattr(fp, "heterogeneous", None),
             "shape": str(fp.shape) if getattr(fp, "shape", None) else None,
             "coupling_key": source_key if is_coupling else None,
             "dynamics_key": source_key if not is_coupling and source_key else None,
@@ -3988,7 +3987,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
                         source_key = prefix
                     result = {
                         "name": param_name,
-                        "heterogeneous": bool(parsed.get("heterogeneous", False)),
+                        "heterogeneous": parsed.get("heterogeneous"),
                         "shape": parsed.get("shape"),
                         "coupling_key": source_key if is_coupling else None,
                         "dynamics_key": source_key if not is_coupling and source_key else None,
@@ -4004,7 +4003,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
                 source_key = prefix
                 result = {
                     "name": param_name,
-                    "heterogeneous": False,
+                    "heterogeneous": None,
                     "shape": None,
                     "coupling_key": source_key if is_coupling else None,
                     "dynamics_key": source_key if not is_coupling else None,
@@ -4012,7 +4011,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
             else:
                 result = {
                     "name": fp,
-                    "heterogeneous": False,
+                    "heterogeneous": None,
                     "shape": None,
                     "coupling_key": None,
                     "dynamics_key": None,
@@ -4026,7 +4025,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
             source_key = prefix
         result = {
             "name": param_name,
-            "heterogeneous": bool(fp.get("heterogeneous", False)),
+            "heterogeneous": fp.get("heterogeneous"),
             "shape": str(fp["shape"]) if fp.get("shape") else None,
             "coupling_key": source_key if is_coupling else None,
             "dynamics_key": source_key if not is_coupling and source_key else None,
@@ -4414,7 +4413,7 @@ def network_leaf_is_matrix(leaf: Any) -> bool:
 def network_axis_leaf(ref: Any) -> str | None:
     """Graph leaf swept by a ``network.``-scoped exploration axis, else None.
 
-    Accepts the canonical ``network.edges.<label>`` form and the ``network.weight(s)``/``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
+    Accepts the canonical ``network.edges.<label>`` form and the ``network.weight`` and ``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
         ValueError: the reference is ``network.``-scoped but names an attribute

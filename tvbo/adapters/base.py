@@ -885,6 +885,9 @@ class ContinuationAdapter(BaseAdapter):
     The bifurcation backends do not render a whole experiment: they take a `(dynamics, continuation)` pair, once per continuation the experiment declares. This class resolves each pair, runs every one the experiment declares, and renders a pair through `TEMPLATE`, so a backend states only what it does with one resolved pair: `run_one`, and the context `_prepare_context` gives its template or a `render_continuation` of its own.
     """
 
+    HOLDS_PARAMETERS = False
+    """Whether the backend continues a system in which a continuation's ``held_parameters`` are unknowns held to their targets."""
+
     def continuations(self) -> dict:
         """Every continuation the experiment declares; empty when it declares none."""
         return getattr(self.experiment, "continuations", None) or {}
@@ -932,7 +935,7 @@ class ContinuationAdapter(BaseAdapter):
         """Refuse a *continuation* of *model* that no continuation backend runs, or runs only by guessing what it asks for, naming it by *name*, else by its own.
 
         Raises:
-            ValueError: If the continuation, or the nested continuation of one of its branches, frees a parameter *model* does not declare; if it starts by an ``initial_state.method`` other than the `START_METHODS`, ``from_branch`` among them; if it frees no parameter, or more than one, since a two-parameter continuation is a branch of a one-parameter one (`is_codim2`); if a parameter it or a branch continues in has a bound neither it nor *model* declares (`parameter_bounds`); if a branch starts from no point a backend can read (`source_point`); if a branch and its nested continuation disagree on `bothside`; or if *model* has more than one mode, an axis no continuation backend lowers into the continued system.
+            ValueError: If the continuation holds a parameter on a backend that holds none (`HOLDS_PARAMETERS`); if it, or the nested continuation of one of its branches, frees a parameter *model* does not declare; if it starts by an ``initial_state.method`` other than the `START_METHODS`, ``from_branch`` among them; if it frees no parameter, or more than one, since a two-parameter continuation is a branch of a one-parameter one (`is_codim2`); if a parameter it or a branch continues in has a bound neither it nor *model* declares (`parameter_bounds`); if a branch starts from no point a backend can read (`source_point`); if a branch and its nested continuation disagree on `bothside`; or if *model* has more than one mode, an axis no continuation backend lowers into the continued system.
         """
         from tvbo.utils import as_list
 
@@ -944,6 +947,11 @@ class ContinuationAdapter(BaseAdapter):
         if continuation is None:
             return
         label = name or getattr(continuation, "name", None) or "?"
+        held = [str(h.parameter) for h in as_list(getattr(continuation, "held_parameters", None))]
+        if held and not cls.HOLDS_PARAMETERS:
+            raise ValueError(
+                f"continuation {label!r} holds {', '.join(map(repr, held))} to a target, and {cls.__name__} continues no held parameter; continue it on bifurcationkit"
+            )
         freed = as_list(getattr(continuation, "free_parameters", None))
         nested = [
             fp

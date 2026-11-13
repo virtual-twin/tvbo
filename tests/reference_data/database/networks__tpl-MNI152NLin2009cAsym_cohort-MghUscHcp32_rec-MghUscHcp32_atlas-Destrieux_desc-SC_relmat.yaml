@@ -1705,4 +1705,7 @@ bids:
   template: MNI152NLin2009cAsym
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
+  atlas: Destrieux
+  desc: SC
+  suffix: relmat
 distance_unit: mm

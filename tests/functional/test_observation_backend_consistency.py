@@ -7,7 +7,7 @@ These guard two defects:
    *literal* pre-baked ``subsample`` stepsize (720/stock_dt = 180) to the raw
    ``dt=0.1`` grid instead of ``TR/dt``, yielding ``n_steps / 180`` BOLD samples (e.g. 112 for a 2000ms run) while tvboptim/tvb correctly yielded 2. tvboptim resolves the period as ``TR/dt`` and is the reference (see ``tvbo/templates/tvboptim/observations.py``).
 
-2. **TVB rejects a standard weights network.** ``exp.run("tvb")`` on a connectivity-only ``Network`` (weights / tract_lengths / labels / centres — e.g. ``atlas="Lobar8", rec="avgMatrix"``) raised ``ValueError("Atlas ... is not available in the dataset")`` because the TVB adapter tried to resolve a parcellation-volume ``.nii`` it never needs for a ``tvb.Connectivity``.
+2. **TVB rejects a standard weights network.** ``exp.run("tvb")`` on a connectivity-only ``Network`` (weights / tract_lengths / labels / centres — e.g. ``atlas="Lobar8", rec="avgMatrix", desc="SCFC"``) raised ``ValueError("Atlas ... is not available in the dataset")`` because the TVB adapter tried to resolve a parcellation-volume ``.nii`` it never needs for a ``tvb.Connectivity``.
 
 Conventions match ``tests/functional/test_simulation_backends_*.py`` and ``simulation_backends_shared.py``.
 """
@@ -171,10 +171,10 @@ class TestTVBNetworkAcceptance:
     """run("tvb") must accept a plain weights Network (no parcellation volume)."""
 
     def _weights_network(self):
-        matches = Network.list_db(atlas="Lobar8", rec="avgMatrix")
+        matches = Network.list_db(atlas="Lobar8", rec="avgMatrix", desc="SCFC")
         if not matches:
             pytest.skip("Lobar8/avgMatrix network not in database")
-        network = Network.from_db(atlas="Lobar8", rec="avgMatrix")
+        network = Network.from_db(atlas="Lobar8", rec="avgMatrix", desc="SCFC")
         network.coupling["Linear"] = Coupling.from_db("Linear")
         return network
 

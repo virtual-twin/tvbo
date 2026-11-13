@@ -2,7 +2,7 @@
 
 The scope is declarative: an axis names a network attribute (`network.edges.weight`, `network.conduction_speed`) and codegen resolves it to the live backend-graph leaf, so every cell sees its own value without a Network or graph rebuild.
 
-The canonical form is `network.edges.<label>`; `network.weight(s)`/`network.length(s)` are shortcuts. Both go through `edge_label`, the same resolver observations use, so an axis and an observation can never disagree about which matrix a reference means.
+The canonical form is `network.edges.<label>`; `network.weight` and `network.length(s)` are shortcuts. Both go through `edge_label`, the same resolver observations use, so an axis and an observation can never disagree about which matrix a reference means.
 """
 
 import pytest
@@ -18,9 +18,8 @@ from .tvboptim_capabilities import needs_axis_wrap
         # Canonical `network.edges.<label>` form.
         ("network.edges.weight", "weights"),
         ("network.edges.length", "lengths"),
-        # Shortcuts resolve to the same leaf as the canonical form — singular and plural alike, so a recipe cannot half-work on spelling.
+        # Shortcuts resolve to the same leaf as the canonical form.
         ("network.weight", "weights"),
-        ("network.weights", "weights"),
         ("network.length", "lengths"),
         ("network.lengths", "lengths"),
         # The network's own scalars.
@@ -73,9 +72,11 @@ def test_unsweepable_edge_attribute_raises():
         network_axis_leaf("network.edges.fc")
 
 
-def test_unknown_network_attribute_raises():
+@pytest.mark.parametrize("ref", ["network.bogus", "network.weights"])
+def test_unknown_network_attribute_raises(ref):
+    """`network.weights` is not the weights: their only name is `weight` (register WT1)."""
     with pytest.raises(ValueError, match="unknown network attribute"):
-        network_axis_leaf("network.bogus")
+        network_axis_leaf(ref)
 
 
 def test_error_names_the_sweepable_set():

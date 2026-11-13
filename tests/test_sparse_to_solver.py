@@ -82,7 +82,7 @@ def no_densify(monkeypatch):
 
 def test_stored_format_reads_the_header():
     assert Network.from_matrix(RING).stored_format("weight") == "csr"
-    assert Network.from_matrix(RING).stored_format("weights") == "csr", "any spelling"
+    assert Network.from_matrix(RING, primary_weight="sc").stored_format("weight") == "csr", "the declared weight edge"
     assert Network.from_matrix(RING_DENSE).stored_format("weight") == "dense"
     assert Network(number_of_nodes=3).stored_format("weight") is None
 

@@ -308,8 +308,6 @@ parameters:
       step: 0.01
       log_scale: false
     description: Excitation threshold of inhibitory population (Sanz-Leon et al
-    grounding:
-    - tvbo:InhibitoryThresholdVariance
 description: "The Wilson and Cowan model consists of two populations or masses, one\
   \ excitatory and one inhibitory, that are described by their mean firings rates\
   \ E and I respectively (Wilson and Cowan, 1972, 1973). \n\nThis model is the minimal\

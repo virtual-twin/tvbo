@@ -10,6 +10,7 @@ time_unit: ms
 data_file: acq-MEGBrainstorm276_sensors.h5
 bids:
   acquisition: MEGBrainstorm276
+  suffix: sensors
 parameters:
   conduction_speed:
     label: v

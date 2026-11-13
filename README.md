@@ -6,7 +6,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![PyPI version](https://img.shields.io/pypi/v/tvbo.svg)](https://pypi.org/project/tvbo/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/tvbo)](https://pypi.org/project/tvbo/)
-[![License](https://img.shields.io/badge/License-EUPL--1.2-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-EUPL--1.2%20%2B%20CC%20BY%204.0-blue.svg)](#license)
 [![Platform](https://img.shields.io/badge/platform-tvbo.charite.de-2b6b6b.svg)](https://tvbo.charite.de)
 
 `tvbo` is a semantic knowledge base, a metadata standard, and a Python toolbox for whole-brain network simulations. You describe a whole experiment (equations, network, coupling, integration, stimuli, observation, provenance) as one typed, ontology-grounded specification. From that single source, `tvbo` does two things:
@@ -200,7 +200,7 @@ A manuscript describing `tvbo` is in preparation. Until it appears, please cite 
 
 ## License
 
-Copyright © 2025 Charité — Universitätsmedizin Berlin. Licensed under the European Union Public Licence (EUPL) v1.2 or later. See [LICENSE](LICENSE).
+Copyright © 2025 Charité — Universitätsmedizin Berlin. The code and documentation are licensed under the European Union Public Licence (EUPL) v1.2 or later ([LICENSE](LICENSE)); the ontology, the LinkML schema and the curated records under [CC BY 4.0](LICENSES/CC-BY-4.0.txt). Third-party data files, and records that inline third-party labels, coordinates or values, carry their sources' licences as well, which [REUSE.toml](REUSE.toml) states file by file; the licence texts are in [LICENSES](LICENSES).
 
 ## Funding
 

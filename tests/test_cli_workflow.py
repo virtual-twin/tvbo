@@ -151,7 +151,7 @@ dynamics:
   label: Kuramoto
   parameters:
     omega: {{name: omega, value: 0.0628, unit: rad_per_ms}}
-    g: {{name: g, value: 0.0, free: true, heterogeneous: true, shape: "(n_nodes,)", used: {{iri: "{iri}", output: weights}}}}
+    g: {{name: g, value: 0.0, heterogeneous: true, shape: "(n_nodes,)", used: {{iri: "{iri}", output: weights}}}}
   coupling_inputs:
     c: {{name: c, description: "coupling"}}
   state_variables:

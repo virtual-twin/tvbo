@@ -71,7 +71,7 @@ def resolve_spec(spec: str) -> tuple[str, Any]:
     for cls_name in ("SimulationStudy", "SimulationExperiment", "Dynamics"):
         try:
             return _load_from_db(cls_name, spec)
-        except (FileNotFoundError, ValueError):
+        except FileNotFoundError:
             continue
     raise typer.BadParameter(f"Could not resolve {spec!r}: not a path, CURIE, or known DB entry.")
 

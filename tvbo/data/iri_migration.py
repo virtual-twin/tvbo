@@ -95,7 +95,7 @@ def _context(keys: tuple[str | None, ...], root: frozenset[str]) -> frozenset[st
 
 @cache
 def _record_iri(folder: str, name: str) -> str | None:
-    """The canonical IRI of the record the registry resolves *name* to in *folder* (by its ``name:`` or file stem in any case, or a network by its atlas), or ``None`` when it resolves none."""
+    """The canonical IRI of the record the registry resolves *name* to in *folder* (by its ``name:`` or file stem in any case, or a network by its atlas), or ``None`` when it resolves none; raises the registry's ``ValueError`` when several records answer to *name* or *name* is the stem of an archived record."""
     try:
         return iri_for(_IRI_SCOPES[folder], name)
     except FileNotFoundError:
@@ -103,35 +103,38 @@ def _record_iri(folder: str, name: str) -> str | None:
 
 
 def _canonical(value: str, keys: tuple[str | None, ...], root: frozenset[str]) -> Change | None:
-    """The change *value* takes at the slot path *keys*, or ``None`` when it is canonical already or names no curated record."""
-    scoped = _IRI_RE.match(value)
-    if scoped:
-        prefix, scope, name = scoped.group("prefix", "scope", "name")
-        folder = _LEGACY_SCOPES.get(scope, scope)
-        if folder not in _IRI_SCOPES:
+    """The change *value* takes at the slot path *keys*, or ``None`` when it is canonical already or names no curated record; a name several records of a folder answer to, or an archived record's stem, is left as written with the registry's refusal as its reason."""
+    try:
+        scoped = _IRI_RE.match(value)
+        if scoped:
+            prefix, scope, name = scoped.group("prefix", "scope", "name")
+            folder = _LEGACY_SCOPES.get(scope, scope)
+            if folder not in _IRI_SCOPES:
+                return None
+            new = (_record_iri(folder, name) if prefix == "tvbo" else None) or f"{prefix}:{folder}/{name}"
+            return Change(0, value, new) if new != value else None
+        unscoped = _UNSCOPED.match(value)
+        if not unscoped:
             return None
-        new = (_record_iri(folder, name) if prefix == "tvbo" else None) or f"{prefix}:{folder}/{name}"
-        return Change(0, value, new) if new != value else None
-    unscoped = _UNSCOPED.match(value)
-    if not unscoped:
-        return None
-    name = unscoped.group("name")
-    context = _context(keys, root)
-    if len(context) == 1 and (resolved := _record_iri(next(iter(context)), name)):
-        return Change(0, value, resolved)
-    held = frozenset(folder for folder in _IRI_SCOPES if _record_iri(folder, name))
-    if not held:
-        return None
-    candidates = held & context if context else held
-    if len(candidates) == 1 and (context or name not in _schema_terms()):
-        return Change(0, value, _record_iri(next(iter(candidates)), name))
-    if context and not candidates:
-        return Change(0, value, reason=f"its slot files {', '.join(sorted(context))}, none of which resolves {name!r}")
-    if len(candidates) > 1:
-        return Change(0, value, reason=f"{', '.join(sorted(held))} each resolve {name!r} and no slot says which")
-    return Change(
-        0, value, reason=f"{name!r} is also a schema term and no slot says it names the record in {next(iter(held))}"
-    )
+        name = unscoped.group("name")
+        context = _context(keys, root)
+        if len(context) == 1 and (resolved := _record_iri(next(iter(context)), name)):
+            return Change(0, value, resolved)
+        held = frozenset(folder for folder in _IRI_SCOPES if _record_iri(folder, name))
+        if not held:
+            return None
+        candidates = held & context if context else held
+        if len(candidates) == 1 and (context or name not in _schema_terms()):
+            return Change(0, value, _record_iri(next(iter(candidates)), name))
+        if context and not candidates:
+            return Change(0, value, reason=f"its slot files {', '.join(sorted(context))}, none of which resolves {name!r}")
+        if len(candidates) > 1:
+            return Change(0, value, reason=f"{', '.join(sorted(held))} each resolve {name!r} and no slot says which")
+        return Change(
+            0, value, reason=f"{name!r} is also a schema term and no slot says it names the record in {next(iter(held))}"
+        )
+    except ValueError as refusal:
+        return Change(0, value, reason=str(refusal))
 
 
 def _scalars(node, keys: tuple[str | None, ...] = ()):

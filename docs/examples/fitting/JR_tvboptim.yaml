@@ -147,7 +147,7 @@ figures:
               cell:
                   kind: volume
                   volume:
-                      atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
+                      atlas: tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg
                       view: sagittal
                       colormap: cividis_r
                       vmin: 6.5
@@ -164,7 +164,7 @@ figures:
               layers:
                   - used: {experiment: 1, output: integration__target_peak_frequencies}
               surface:
-                  atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg
                   template: fsaverage
                   hemi: both
                   view: dorsal
@@ -180,7 +180,7 @@ figures:
               layers:
                   - used: {experiment: 1, output: optimization__spectral_gradient_fit__observation__peak_frequencies}
               surface:
-                  atlas: tvbo:atlases/tpl-MNI152NLin2009c_atlas-DesikanKilliany_desc-ranked_dseg
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg
                   template: fsaverage
                   hemi: both
                   view: dorsal

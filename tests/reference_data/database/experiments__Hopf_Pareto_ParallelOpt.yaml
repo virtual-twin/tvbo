@@ -653,7 +653,6 @@ optimizations:
     label: Parallel gradient refinement from every Pareto seed
     free_parameters:
     - parameter: LinCoupling.G
-      heterogeneous: false
     - parameter: SupHopf.a
       heterogeneous: true
       shape: (n_nodes,)

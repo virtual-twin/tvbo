@@ -147,7 +147,6 @@ network:
             hi: 1.0
             log_scale: false
           description: Global scaling of long-range connections
-          free: true
       description: Instantaneous linear coupling (no conduction delays)
       sparse: false
       pre_expression:
@@ -383,9 +382,7 @@ optimizations:
       description: Optimize global w and G (same value for all regions)
       free_parameters:
       - parameter: ReducedWongWang.w
-        heterogeneous: false
       - parameter: FastLinearCoupling.G
-        heterogeneous: false
       algorithm: adam
       learning_rate: 0.01
       max_iterations: 300

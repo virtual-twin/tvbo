@@ -195,6 +195,22 @@ def test_a_third_edge_attribute_resolves_at_runtime_but_not_in_a_kit():
         weight_transform_codegen(net)
 
 
+def test_a_transform_written_over_the_declared_weights_reaches_the_kit():
+    """A network whose weights are another edge (`primary_weight: sc`) reads `sc` in a transform as the weights on both paths, and a later transform's `sc` as the value flowing through the chain, so the kit the runtime's transform is frozen into gives the runtime's matrix."""
+    W = np.array([[0, 2.0], [4.0, 0]])
+    transforms = [
+        {"name": "weight", "equation": {"rhs": "sc * 10"}},
+        {"name": "halved", "output": "weight", "equation": {"rhs": "sc / 2"}},
+    ]
+    net = Network(number_of_nodes=2, primary_weight="sc", transforms=transforms)
+    net.set_matrix("sc", W)
+    assert np.allclose(np.asarray(net.matrix("weight")), 5 * W)
+    emitted, const_env, _ = weight_transform_codegen(net)
+    assert const_env == []
+    assert [chained for _, chained in emitted] == [["sc = weights"], ["sc = weights"]]
+    assert np.allclose(_apply_emitted(net, W), 5 * W)
+
+
 def test_a_per_node_vector_is_guarded_by_node_count():
     """The runtime skips a mismatched vector; a kit would embed it and broadcast it wrongly.
 

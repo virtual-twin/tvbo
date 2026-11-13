@@ -54,21 +54,14 @@ def test_deprecated_accessors_warn_and_agree(net_over_a_companion):
         assert np.array_equal(np.asarray(value), STALE), name
 
 
-def test_alias_spellings_resolve_to_the_same_matrix():
-    net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
-    object.__setattr__(net, "_arrays", {})
-    object.__setattr__(net, "_store", _Store({"weights": COMPANION}))
-    assert np.array_equal(np.asarray(net.matrix("weight", format="dense")), COMPANION)
+def test_a_user_set_matrix_wins_over_the_companion_under_either_name_of_the_weights():
+    """Precedence is between SOURCES; a name is not a precedence.
 
-
-def test_a_user_set_matrix_wins_over_the_companion_under_any_spelling():
-    """Precedence is between SOURCES; a spelling is not a precedence.
-
-    Checking `_arrays[name]` then `_store[name]` one spelling at a time lets the companion file's `weight` beat a user-set `weights` — the same silent shadowing this module exists to remove, arrived at along the alias axis instead of the cache axis.
+    Checking `_arrays[name]` then `_store[name]` one name at a time lets the companion file's `weight` beat a user-set matrix under the edge `primary_weight` names — the same silent shadowing this module exists to remove, arrived at along the name axis instead of the cache axis.
     """
     user = COMPANION * 7.0
-    net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
-    object.__setattr__(net, "_arrays", {"edges/weights": user})
+    net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION), primary_weight="sc")
+    object.__setattr__(net, "_arrays", {"edges/sc": user})
     object.__setattr__(net, "_store", _Store({"weight": COMPANION}))
     assert np.array_equal(np.asarray(net.matrix("weight", format="dense")), user)
 
@@ -148,15 +141,6 @@ def test_a_sidecar_may_spell_lengths_any_known_way():
     object.__setattr__(net, "_arrays", {})
     object.__setattr__(net, "_store", _Store({"weight": COMPANION, "tractLength": LENGTHS}))
     assert np.array_equal(np.asarray(net.matrix("length", format="dense")), LENGTHS)
-
-
-def test_every_weight_spelling_carries_the_declared_transform():
-    """A lookup and its transform must agree: `matrix("sc")` used to skip weight transforms."""
-    net = Network.from_matrix(COMPANION, np.zeros_like(COMPANION))
-    net.add_transform("weight", "weight * 10")
-    canonical = np.asarray(net.matrix("weight", format="dense"))
-    assert np.array_equal(np.asarray(net.matrix("sc", format="dense")), canonical)
-    assert np.array_equal(np.asarray(net.matrix("weights", format="dense")), canonical)
 
 
 def test_a_single_node_network_is_unconnected_not_absent():

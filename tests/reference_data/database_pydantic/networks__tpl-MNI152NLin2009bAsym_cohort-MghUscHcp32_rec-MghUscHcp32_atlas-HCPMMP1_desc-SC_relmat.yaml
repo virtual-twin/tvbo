@@ -3816,7 +3816,7 @@ number_of_nodes: 379
 parcellation:
   atlas:
     name: HCPMMP1
-    coordinateSpace: MNI152NLin2009cAsym
+    coordinateSpace: MNI152NLin2009bAsym
 tractogram:
   name: MghUscHcp32
 data_file: tpl-MNI152NLin2009bAsym_cohort-MghUscHcp32_rec-MghUscHcp32_atlas-HCPMMP1_desc-SC_relmat.h5
@@ -3825,4 +3825,7 @@ bids:
   template: MNI152NLin2009bAsym
   cohort: MghUscHcp32
   reconstruction: MghUscHcp32
+  atlas: HCPMMP1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

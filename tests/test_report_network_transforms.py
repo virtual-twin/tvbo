@@ -1,6 +1,6 @@
 """A network transform appears in the experiment report the way `Network._apply_transform` runs it.
 
-A transform is declared by a `callable` or by an `equation`. The report read every transform's ``equation.rhs``, so a callable transform (the NetworkDynamics.jl FitzHugh-Nagumo page's `jax.numpy.transpose`) raised ``AttributeError: 'NoneType' object has no attribute 'rhs'`` and the page did not render. A transform that declares neither leaves the matrix as it is and gets no row.
+A transform is declared by a `callable` or by an `equation`. The report read every transform's ``equation.rhs``, so a callable transform (the NetworkDynamics.jl FitzHugh-Nagumo page's `jax.numpy.transpose`) raised ``AttributeError: 'NoneType' object has no attribute 'rhs'`` and the page did not render. A transform that declares neither leaves the matrix as it is and gets no row. A row is labelled by the matrix the transform rewrites, its ``output`` or else its ``name``.
 """
 
 from tvbo import SimulationExperiment
@@ -25,14 +25,14 @@ integration: {method: euler, step_size: 1.0, duration: 10.0}
 """
 
 
-def _rows() -> dict[str, str]:
-    report = SimulationExperiment.from_string(SPEC).generate_report()
+def _transform_lines(spec: str = SPEC) -> list[str]:
+    report = SimulationExperiment.from_string(spec).generate_report()
     text = report if isinstance(report, str) else str(report)
-    return {
-        line.split("(", 1)[1].split(")", 1)[0]: line.split("|")[2].strip()
-        for line in text.splitlines()
-        if line.startswith("| Transform (")
-    }
+    return [line for line in text.splitlines() if line.startswith("| Transform (")]
+
+
+def _rows() -> dict[str, str]:
+    return {line.split("(", 1)[1].split(")", 1)[0]: line.split("|")[2].strip() for line in _transform_lines()}
 
 
 def test_a_callable_transform_shows_the_call_it_runs():
@@ -46,3 +46,11 @@ def test_an_equation_transform_shows_its_equation():
 
 def test_a_transform_that_declares_neither_gets_no_row():
     assert "delay" not in _rows()
+
+
+def test_a_later_transform_is_labelled_by_the_matrix_it_rewrites():
+    later = SPEC.replace(
+        "    - name: delay\n", '    - name: halved\n      output: length\n      equation: {rhs: "length / 2"}\n'
+    )
+    labels = [line.split("|")[1].strip() for line in _transform_lines(later)]
+    assert labels == ["Transform (weight)", "Transform (length)", "Transform (length)"]

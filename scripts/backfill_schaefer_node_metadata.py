@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Backfill node labels and positions in Schaefer SC YAML sidecars.
 
-Reads each `database/networks/tpl-FSLMNI152_*Schaefer2018*_relmat.yaml`, looks up the corresponding SANDS atlas YAML (from `tvbo/data/tvbo_data/atlas/`), and patches every node entry with:
+Reads each `database/networks/tpl-MNI152NLin6Asym_*Schaefer2018*_relmat.yaml`, looks up the corresponding SANDS atlas YAML (from `tvbo/database/atlases/`), and patches every node entry with:
   - label: <actual region name, e.g. "17Networks_LH_Vis_1">
   - position: {x: ..., y: ..., z: ...}   (centroid in MNI RAS mm)
 
@@ -21,13 +21,13 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-NETWORKS_DIR = ROOT / "database" / "networks"
+NETWORKS_DIR = ROOT / "tvbo" / "database" / "networks"
 ATLAS_DIR = ROOT / "tvbo" / "database" / "atlases"
 
 
 def load_atlas_entities(seg: str, scale: str, resolution: str = "1") -> list[dict] | None:
     """Return atlas entities sorted by lookupLabel, or None if atlas YAML not found."""
-    fname = f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-{resolution}_desc-ordered_dseg.yaml"
+    fname = f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-{resolution}_dseg.yaml"
     path = ATLAS_DIR / fname
     if not path.exists():
         return None

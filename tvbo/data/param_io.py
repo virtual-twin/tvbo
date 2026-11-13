@@ -160,9 +160,9 @@ def resolve_network_node(net: Any, measure: str) -> np.ndarray | None:
 
 
 def _resolve_node_attribute(net: Any, name: str) -> np.ndarray | None:
-    """Named per-node array from the nodes' ``parameters``, else from ``nodes/<name>`` in the companion store.
+    """Named per-node array from the nodes' ``parameters``, else from the array a ``node_template`` parameter of that name declares by its ``measure``, else from ``nodes/<name>`` in the companion store.
 
-    Node parameters win, so a spec can override what the file carries. A parameter that is not a per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node vector and returns None rather than a silently zero-filled or ragged array.
+    Node parameters win, so a spec can override what the file carries. A parameter that is not a per-node SCALAR — set on some nodes only, or carrying a vector value — is not a per-node vector and returns None rather than a silently zero-filled or ragged array. A categorical attribute comes back as its codes, which its ``levels`` vocabulary names, and an attribute held as text as that text.
     """
     nodes = getattr(net, "nodes", None) or []
     vals = []
@@ -177,13 +177,24 @@ def _resolve_node_attribute(net: Any, name: str) -> np.ndarray | None:
             break
     if vals:
         return np.asarray(vals, dtype=float)
+    template = getattr(net, "node_template", None)
+    declared = (getattr(template, "parameters", None) or {}).get(name) if template is not None else None
+    if getattr(declared, "measure", None) and hasattr(net, "array"):
+        value = net.array(str(declared.measure).lstrip("/"))
+        return None if value is None else _node_values(value)
     store = getattr(net, "_store", None)
     if store is None:
         return None
     try:
-        return np.asarray(store.read_dataset(f"nodes/{name}"), dtype=float)
+        return _node_values(store.read_dataset(f"nodes/{name}"))
     except Exception:  # noqa: BLE001 — absent dataset or unreadable store: not a node attribute
         return None
+
+
+def _node_values(value) -> np.ndarray:
+    """A per-node array as :func:`_resolve_node_attribute` returns it: numbers as float, and text, bytes included, as it is held."""
+    value = np.asarray(value)
+    return value if value.dtype.kind in "OSU" else value.astype(float)
 
 
 def is_reference(value: Any) -> bool:

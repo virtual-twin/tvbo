@@ -125,7 +125,7 @@ def rgb_hex(red: int, green: int, blue: int) -> str:
 
 def metadata_filename(scale: int, seg: str, res: str) -> str:
     res_num = res.replace("mm", "")
-    return f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-{res_num}_desc-ordered_dseg.yaml"
+    return f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-{res_num}_dseg.yaml"
 
 
 def build_metadata(scale: int, seg: str, res: str, nifti_name: str) -> dict:
@@ -164,7 +164,7 @@ def build_metadata(scale: int, seg: str, res: str, nifti_name: str) -> dict:
         "versionIdentifier": "2018",
         "coordinateSpace": {
             "name": "MNI152",
-            "abbreviation": "FSLMNI152",
+            "abbreviation": "MNI152NLin6Asym",
             "nativeUnit": "mm",
         },
         "terminology": {

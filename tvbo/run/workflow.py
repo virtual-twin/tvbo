@@ -406,7 +406,7 @@ def extract_axes(experiment) -> list[SweepAxis]:
 def _dataset_subject_axis(experiment) -> SweepAxis | None:
     """A workflow-fanned ``subject`` axis when the experiment has a per-subject target.
 
-    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation. An experiment that reads a cohort raises instead where its fan-out would silently vanish: when the enumeration fails, when the cohorts leave none of the dataset's subjects (:func:`_subject_selection`), and when a network read per subject (:func:`per_subject_cohorts`), which has nothing to be built from without a subject, finds none.
+    Values are the cohort subject IDs (from ``experiment.dataset_subject_ids()``); each fanned cell runs ``tvbo run … --subject <sub>`` so the run resolves that subject's empirical target. Returns ``None`` when the experiment declares no dataset-sourced observation. An experiment that reads a cohort raises instead where its fan-out would silently vanish, and so does one whose dataset names its subjects in a file (``subjects_file``), since a list that cannot be read is no reason to run without one: when the enumeration fails, when the cohorts leave none of the dataset's subjects (:func:`_subject_selection`), and when a network read per subject (:func:`per_subject_cohorts`), which has nothing to be built from without a subject, finds none.
     """
     ids_fn = getattr(experiment, "dataset_subject_ids", None)
     if not callable(ids_fn):
@@ -415,14 +415,14 @@ def _dataset_subject_axis(experiment) -> SweepAxis | None:
     try:
         subjects = list(ids_fn())
     except Exception:
-        if cohorts:
+        if cohorts or getattr(getattr(experiment, "dataset", None), "subjects_file", None):
             raise
         return None
     if not subjects:
         if per_subject_cohorts(experiment) or _subject_selection(experiment):
             raise ValueError(
                 f"experiment {getattr(experiment, 'id', None)!r}: it reads cohort(s) {getattr(experiment, 'per_subject_cohorts', list)()} per subject, but its dataset "
-                "yields no subject that is a member of each. Declare `dataset.subjects` or a dataset-sourced observation, or check the cohort's members."
+                "yields no subject that is a member of each. Declare the dataset's subjects (`subjects` or `subjects_file`) or a dataset-sourced observation, or check the cohort's members."
             )
         return None
     return SweepAxis(
@@ -782,7 +782,7 @@ def plan(
             raise ValueError(
                 f"Experiment {getattr(experiment, 'id', None)!r} sets dataset.batch_mode: on_device "
                 f"but no subjects were discovered, so the single cohort job's per-subject outputs "
-                f"cannot be planned. Check dataset.bids_root / dataset.subjects."
+                f"cannot be planned. Check dataset.bids_root and dataset.subjects or dataset.subjects_file."
             )
         cohort_result_files = _cohort_result_files(experiment, cohort_subjects)
     else:

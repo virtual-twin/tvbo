@@ -8,10 +8,12 @@
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>\
 <%
 from tvbo.codegen import render_expression
+from tvbo.classes.optimization import fitted_parameters as _fitted_parameters
+from tvbo.codegen.dims import dynamics_sizes as _dynamics_sizes, shape_code as _shape_code
 from tvbo.templates.base.utils import docstring_text
 from tvbo.templates.tvboptim.utils import (
     safe_name, iter_parameter_values, as_list, get_attr, is_network_observation, obs_has_all_args,
-    get_observation_refs, parse_loss_function, parse_free_param, get_domain_bounds,
+    get_observation_refs, parse_loss_function,
     parse_exploration, normalize_n_parallel, get_param_info, get_node_param_overrides,
     materialise_lazy_params,
     normalize_coupling_aliases, resolve_coupling_input_map,
@@ -267,6 +269,8 @@ from tvbo.utils import initial_value as _initial_value
 
 # Dynamics parameter info (shared utility)
 dyn_param_names, dyn_param_defaults, dyn_param_shapes = get_param_info(model.parameters)
+dyn_sizes = _dynamics_sizes(model, experiment)
+dyn_param_names = [name for name in dyn_param_names if name not in dyn_sizes]
 dyn_param_lazy = materialise_lazy_params(model.parameters, experiment)
 # Couplings resolve their sourced/produced parameters the same way, hoisted here because the `_load_param` helper is emitted from this scope and a coupling-only lazy parameter must still get it.
 coupling_param_lazy = {k: materialise_lazy_params(getattr(c, 'parameters', None), experiment) for k, c in all_couplings.items()}
@@ -415,62 +419,11 @@ except Exception:
 # dataset.batch_size: subjects per on-device batch (None = size against the memory budget).
 _cohort_batch_size = experiment.dataset_batch_size() if _dataset_on_device else None
 
-# Extract optimizable parameters from optimization stages
-optim_param_info = {}
-
-# optimization.stages is always a list (inlined_as_list: true)
-# If no stages, fall back to optimization-level free_parameters (flat mode)
-for opt in optim_list:
-    stages = opt.stages or []
-    if not stages and opt.free_parameters:
-        stages = [opt]  # Treat opt itself as a single stage
-    for stage in stages:
-        for fp in (stage.free_parameters or []):
-            if isinstance(fp, str):
-                ref = fp
-                is_hetero = False
-            else:
-                # FreeParameter wrapper: .parameter is dotted ref
-                ref = str(getattr(fp, 'parameter', '') or getattr(fp, 'name', ''))
-                is_hetero = bool(getattr(fp, 'heterogeneous', False)) or (
-                    getattr(fp, 'shape', None) and 'n_nodes' in str(fp.shape)
-                )
-            pname = ref.rsplit('.', 1)[-1] if '.' in ref else ref
-            optim_param_info[pname] = {'heterogeneous': bool(is_hetero)}
-
-# Collect param objects with heterogeneous info
-# Separate dynamics vs coupling parameters
-optim_params = []  # Dynamics parameters
-optim_coupling_params = []  # Coupling parameters
-
-for name, param in model.parameters.items():
-    if str(name) in optim_param_info:
-        param._optim_heterogeneous = optim_param_info[str(name)]['heterogeneous']
-        optim_params.append(param)
-
-# Check coupling parameters from all_couplings
-for coupling_key, coupling_obj in all_couplings.items():
-    if coupling_obj and coupling_obj.parameters:
-        for name, param in coupling_obj.parameters.items():
-            pname = str(name)
-            if pname in optim_param_info or param.free:
-                is_hetero = optim_param_info.get(pname, {}).get('heterogeneous', False)
-                if not is_hetero:
-                    is_hetero = param.heterogeneous or param.shape
-                param._optim_heterogeneous = bool(is_hetero)
-                param._coupling_key = _to_ci_key(coupling_key)
-                optim_coupling_params.append(param)
-
-coupling_optim_params = optim_coupling_params  # Alias for backwards compatibility
 
 # =============================================================================
 # Parse ALL optimization stages into structured list
 # =============================================================================
-# Coupling keys for parse_free_param
-coupling_keys = set(all_couplings.keys())
-
-# Wrapper for parse_free_param that passes model context
-_parse_free_param = lambda fp: parse_free_param(fp, coupling_keys, model, all_couplings)
+coupling_keys = set(all_couplings.keys())  # from here on the coupling names, which the analysis and inference renderers resolve references against
 
 optimization_stages = []
 for opt in optim_list:
@@ -494,11 +447,7 @@ for opt in optim_list:
             'hyperparameters': {},
         }
 
-        # Schema: free_parameters and hyperparameters are lists (inlined_as_list: true)
-        for fp in (stage.free_parameters or []):
-            parsed = _parse_free_param(fp)
-            if parsed:
-                stage_info['free_parameters'].append(parsed)
+        stage_info['free_parameters'] = _fitted_parameters(stage, experiment, all_couplings)
 
         # Filter out non-optax hyperparameters (has_aux is determined automatically)
         for hp in (stage.hyperparameters or []):
@@ -1653,7 +1602,7 @@ def create_network(
         % elif name in dyn_param_lazy:
         '${name}': _load_param(${repr(dyn_param_lazy[name][0])}, ${repr(dyn_param_lazy[name][1])}),
         % elif name in dyn_param_shapes:
-        '${name}': jnp.full(${dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
+        '${name}': jnp.full(${_shape_code(dyn_param_shapes[name], dyn_sizes) if dyn_sizes else dyn_param_shapes[name]}, ${dyn_param_defaults.get(name, 1.0)}),
         % else:
         '${name}': ${render_jax_default(dyn_param_defaults.get(name, 1.0))},
         % endif
@@ -2805,13 +2754,6 @@ ${render_analysis_observations(analysis_observations_dict, coupling_keys, solver
 
 
 % if has_optimization:
-<%
-# Build a lookup dict for all known parameters (dynamics + coupling)
-all_dynamics_params = {str(p.name): p for p in optim_params}
-# For coupling params, store (param, coupling_key) so we know where to access them
-all_coupling_params = {str(p.name): (p, getattr(p, '_coupling_key', first_coupling_key)) for p in optim_coupling_params} if first_coupling_key else {}
-%>
-
 def unwrap_all_parameters(state):
     """Convert all Parameter objects to plain values (freeze all)."""
     import jax.tree_util as jtu
@@ -2852,12 +2794,8 @@ fp_scope_name = fp_path.rsplit('.', 1)[0]
 # Format bounds for code generation (None -> jnp.inf)
 lo_str = f'{fp_lo}' if fp_lo is not None else '-jnp.inf'
 hi_str = f'{fp_hi}' if fp_hi is not None else 'jnp.inf'
-# Declared shape as a Python tuple ("(n_nodes, n_nodes)" -> (n_nodes, n_nodes)); a heterogeneous parameter with none declared is per-node.
-if fp_shape:
-    shape_str = fp_shape.strip('()').replace(' ', '')
-    shape_code = '(' + shape_str + (',' if ',' not in shape_str else '') + ')'
-else:
-    shape_code = '(n_nodes,)'
+# Declared shape as the tuple the module writes; a heterogeneous parameter with none declared is per-node.
+shape_code = _shape_code(fp_shape) if fp_shape else '(n_nodes,)'
 fp_wrap = f"jnp.asarray({fp_init})" if fp_init is not None else f"init_state.{fp_path}"
 %>
     # ${fp_name} - ${fp_scope_name} parameter${ ' (bounded: ' + str(fp_lo) + ' to ' + str(fp_hi) + ')' if has_bounds else ''}

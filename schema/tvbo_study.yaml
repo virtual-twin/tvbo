@@ -8,6 +8,7 @@ description: >-
   Domain-specific schemas (e.g., tvb_dbs) extend these with specialized
   attributes.
 
+license: https://creativecommons.org/licenses/by/4.0/
 prefixes:
   linkml: https://w3id.org/linkml/
   tvbo_study: https://w3id.org/tvbo/study/
@@ -144,6 +145,20 @@ classes:
     slots:
       - cohort_id
     attributes:
+      members:
+        multivalued: true
+        range: string
+        description: >-
+          The subject identifiers this cohort holds, without the ``sub-`` prefix, in the order a stacked read returns them. When the enclosing dataset lists its ``subjects``, every member must be one of them. A cohort states its members in exactly one way: typed here, read from ``members_file``, or admitted by ``rule``.
+      members_file:
+        range: string
+        description: >-
+          Path of a file that lists the members, read each time the cohort is used, so a list its producer keeps (the subjects a pipeline has finished) is never copied into the recipe. A ``.yaml`` or ``.json`` file holds what ``members`` would hold; a ``.tsv`` or ``.csv`` file is a participants table (the BIDS ``participants.tsv`` layout, tab- or comma-separated), read by its ``participant_id`` column, and a row with a value but no participant is an error; any other file holds one identifier per line, blank lines and lines starting with ``#`` skipped. Members come in the file's order and a ``sub-`` prefix is dropped. A relative path is read from the directory of the experiment or network file the dataset is part of, also when the dataset comes into that file by ``!include`` from another directory, and, when the file is not there, from the root of the study that file belongs to; a missing file is an error naming the places tried. Messages about a list read from a file give counts and positions, never an identifier.
+      rule:
+        range: CohortRule
+        inlined: true
+        description: >-
+          A rule on a phenotype measure that admits the members (``CohortRule``): one group of a split of the subjects by a score. The members are computed from the phenotype table each time the cohort is used, so no list is typed or stored.
       label:
         range: string
         slot_uri: rdfs:label
@@ -152,12 +167,42 @@ classes:
         range: string
         slot_uri: dcterms:description
         description: "What admits a subject to this cohort, in words: the selection rule, the site, the diagnostic group."
-      members:
-        multivalued: true
+
+  CohortRule:
+    description: >-
+      Admits a cohort's members by a measure of a phenotype table: the candidates are cut into ``n_groups`` groups along ``measure`` and the cohort holds the group ``group``. The candidates are the members of the cohort ``of`` names, else the subjects the dataset lists, else every subject of the table. Each candidate needs one row in the table. A candidate without a row, or whose value is missing or not finite, is treated as ``missing`` says, before any group is formed. The members come in the candidates' order, not in the order of the measure. A group no candidate falls in is an error, as a cohort without members is.
+    attributes:
+      measure:
         range: string
         required: true
+        description: "Name of the measure the candidates are split by: a measure of a ``Phenotype`` sidecar or a column of a tabular file."
+      phenotype_file:
+        range: string
         description: >-
-          The subject identifiers this cohort holds, without the ``sub-`` prefix, in the order a stacked read returns them. When the enclosing dataset lists its ``subjects``, every member must be one of them.
+          Path of the phenotype table this rule reads, where it is not the dataset's own (``Dataset.phenotype_file``). Resolved as ``Cohort.members_file`` is.
+      grouping:
+        range: CohortGrouping
+        required: true
+        description: "How the candidates are cut into groups."
+      n_groups:
+        range: integer
+        required: true
+        minimum_value: 1
+        description: "Number of groups the candidates are cut into."
+      group:
+        range: integer
+        required: true
+        minimum_value: 1
+        description: >-
+          Which group this cohort holds, counted from 1 for the lowest values of the measure to ``n_groups`` for the highest.
+      of:
+        range: string
+        description: >-
+          ``cohort_id`` of another cohort of the same dataset whose members are the candidates, so a split is taken inside a cohort. That cohort may itself be typed, read from a file or admitted by a rule; a chain that leads back to this cohort is an error.
+      missing:
+        range: MissingValuePolicy
+        ifabsent: string(refuse)
+        description: "What happens to a candidate without a finite value of the measure."
 
   Dataset:
     description: >-
@@ -168,6 +213,14 @@ classes:
       - dataset_id
       - subjects
     attributes:
+      subjects_file:
+        range: string
+        description: >-
+          Path of a file that lists this dataset's subjects, in place of ``subjects``; a dataset states one of the two. A ``.yaml`` or ``.json`` file holds what ``subjects`` would hold (identifiers, ``Subject`` records or a mapping keyed by identifier), a ``.tsv`` or ``.csv`` file is a participants table read by its ``participant_id`` column, and any other file holds one identifier per line. Read each time the subjects are asked for and resolved as ``Cohort.members_file`` is, with the same rule for what a message may say.
+      phenotype_file:
+        range: string
+        description: >-
+          Path of this dataset's phenotype table, which a cohort ``rule`` reads its measure from: a ``Phenotype`` sidecar (``.yaml``, values in its companion) or a tabular file (``.tsv`` or ``.csv``, one row per subject under ``participant_id``, one column per measure, ``n/a`` for a missing value); a file of another suffix is an error. Resolved as ``Cohort.members_file`` is.
       cohorts:
         multivalued: true
         range: Cohort
@@ -399,6 +452,23 @@ classes:
         description: "Asset seeding the file when that variant is selected."
 
 enums:
+  CohortGrouping:
+    description: >-
+      How a cohort rule cuts its candidates into groups along a measure. The values and their meaning are those of ``tvbo.analysis.statistics.group_index``, which a grouped statistic uses too.
+    permissible_values:
+      equal_width:
+        description: >-
+          Bins of equal width. The range from the smallest to the largest finite value among the candidates is cut into ``n_groups`` intervals of the same width; each is closed below and open above, and the last is closed on both sides, so the largest value belongs to it. Group sizes follow the distribution of the measure and a bin may hold nobody. Refused when all values are equal and more than one group is asked for, since the range then has no width.
+      equal_count:
+        description: >-
+          Groups of equal size by rank. The candidates are ordered by ascending value, equal values in the candidates' own order, and that order is cut into ``n_groups`` consecutive runs whose sizes differ by at most one, the longer runs first. Equal values can therefore fall into neighbouring groups.
+  MissingValuePolicy:
+    description: "How a rule treats a candidate that has no finite value of its measure."
+    permissible_values:
+      refuse:
+        description: "An error that states how many candidates have none."
+      exclude:
+        description: "The candidate belongs to no group; ranks and bin edges are taken over the candidates that have a value."
   SubjectBatchMode:
     description: >-
       How a multi-subject dataset's per-subject fits are executed.

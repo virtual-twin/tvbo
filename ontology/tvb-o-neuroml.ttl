@@ -6,10 +6,15 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix tvbo: <https://w3id.org/tvbo/> .
 
+tvbo:neuroml a owl:Ontology ;
+    dcterms:description "OWL rendering of the NeuroML2 core LEMS ComponentType hierarchy: one class per ComponentType, extends as rdfs:subClassOf, cross-referenced to the canonical NeuroML type via skos:exactMatch."@en ;
+    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
+    dcterms:title "TVB-O NeuroML-core reference"@en ;
+    rdfs:seeAlso <http://www.neuroml.org/schema/neuroml2> .
+
 nml:Display a owl:Class ;
     rdfs:label "Display"@en ;
     dcterms:description "Details of a display to generate (usually a set of traces given by _Line_s in a newly opened window) on completion of the simulation."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:Display ;
     nml:hasParameter "timeScale",
         "xmax",
@@ -20,7 +25,6 @@ nml:Display a owl:Class ;
 nml:EIF_cond_alpha_isfa_ista a owl:Class ;
     rdfs:label "EIF_cond_alpha_isfa_ista"@en ;
     dcterms:description "Adaptive exponential integrate and fire neuron according to Brette R and Gerstner W (2005) with alpha-function-shaped post-synaptic conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCondCell ;
     skos:exactMatch neuroml2:EIF_cond_alpha_isfa_ista ;
     nml:exposes "w" ;
@@ -36,7 +40,6 @@ nml:EIF_cond_alpha_isfa_ista a owl:Class ;
 nml:EIF_cond_exp_isfa_ista a owl:Class ;
     rdfs:label "EIF_cond_exp_isfa_ista"@en ;
     dcterms:description "Adaptive exponential integrate and fire neuron according to Brette R and Gerstner W (2005) with exponentially-decaying post-synaptic conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCondCell ;
     skos:exactMatch neuroml2:EIF_cond_exp_isfa_ista ;
     nml:exposes "w" ;
@@ -52,61 +55,52 @@ nml:EIF_cond_exp_isfa_ista a owl:Class ;
 nml:EventOutputFile a owl:Class ;
     rdfs:label "EventOutputFile"@en ;
     dcterms:description "A file in which to save event information (e.g. spikes from cells in a population) in a specified _format"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:EventOutputFile .
 
 nml:EventSelection a owl:Class ;
     rdfs:label "EventSelection"@en ;
     dcterms:description "A specific source of events with an associated _id, which will be recorded inside the file specified in the parent _EventOutputFile_. The attribute _select should point to a cell inside a _population_ (e.g. hhpop[0], see https://docs.neuroml.org/Userdocs/Paths.html), and the _eventPort specifies the port for the emitted events, which usually has id: spike. Note: the _id used on this element (and appearing in the file alongside the event time) can be different from the id/index of the cell in the population."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:EventSelection .
 
 nml:HHExpLinearRate a owl:Class ;
     rdfs:label "HHExpLinearRate"@en ;
     dcterms:description "Exponential linear form for rate equation. Linear for large positive _v, exponentially decays for large negative _v."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseHHRate ;
     skos:exactMatch neuroml2:HHExpLinearRate .
 
 nml:HHExpLinearVariable a owl:Class ;
     rdfs:label "HHExpLinearVariable"@en ;
     dcterms:description "Exponential linear form for variable equation. Linear for large positive _v, exponentially decays for large negative _v."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseHHVariable ;
     skos:exactMatch neuroml2:HHExpLinearVariable .
 
 nml:HHExpRate a owl:Class ;
     rdfs:label "HHExpRate"@en ;
     dcterms:description "Exponential form for rate equation (Q: Should these be renamed hhExpRate, etc?)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseHHRate ;
     skos:exactMatch neuroml2:HHExpRate .
 
 nml:HHExpVariable a owl:Class ;
     rdfs:label "HHExpVariable"@en ;
     dcterms:description "Exponential form for variable equation"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseHHVariable ;
     skos:exactMatch neuroml2:HHExpVariable .
 
 nml:HHSigmoidRate a owl:Class ;
     rdfs:label "HHSigmoidRate"@en ;
     dcterms:description "Sigmoidal form for rate equation"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseHHRate ;
     skos:exactMatch neuroml2:HHSigmoidRate .
 
 nml:HHSigmoidVariable a owl:Class ;
     rdfs:label "HHSigmoidVariable"@en ;
     dcterms:description "Sigmoidal form for variable equation"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseHHVariable ;
     skos:exactMatch neuroml2:HHSigmoidVariable .
 
 nml:HH_cond_exp a owl:Class ;
     rdfs:label "HH_cond_exp"@en ;
     dcterms:description "Single-compartment Hodgkin-Huxley-type neuron with transient sodium and delayed-rectifier potassium currents using the ion channel models from Traub."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNCell ;
     skos:exactMatch neuroml2:HH_cond_exp ;
     nml:exposes "h",
@@ -125,35 +119,30 @@ nml:HH_cond_exp a owl:Class ;
 nml:IF_cond_alpha a owl:Class ;
     rdfs:label "IF_cond_alpha"@en ;
     dcterms:description "Leaky integrate and fire model with fixed threshold and alpha-function-shaped post-synaptic conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCondCell ;
     skos:exactMatch neuroml2:IF_cond_alpha .
 
 nml:IF_cond_exp a owl:Class ;
     rdfs:label "IF_cond_exp"@en ;
     dcterms:description "Leaky integrate and fire model with fixed threshold and exponentially-decaying post-synaptic conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCondCell ;
     skos:exactMatch neuroml2:IF_cond_exp .
 
 nml:IF_curr_alpha a owl:Class ;
     rdfs:label "IF_curr_alpha"@en ;
     dcterms:description "Leaky integrate and fire model with fixed threshold and alpha-function-shaped post-synaptic current"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCell ;
     skos:exactMatch neuroml2:IF_curr_alpha .
 
 nml:IF_curr_exp a owl:Class ;
     rdfs:label "IF_curr_exp"@en ;
     dcterms:description "Leaky integrate and fire model with fixed threshold and decaying-exponential post-synaptic current"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCell ;
     skos:exactMatch neuroml2:IF_curr_exp .
 
 nml:Line a owl:Class ;
     rdfs:label "Line"@en ;
     dcterms:description "Specification of a single time varying _quantity to plot on the _Display_. Note that all quantities are handled internally in LEMS in SI units, and so a _scale should be used if it is to be displayed in other units."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:Line ;
     nml:hasParameter "scale",
         "timeScale" .
@@ -161,25 +150,21 @@ nml:Line a owl:Class ;
 nml:Meta a owl:Class ;
     rdfs:label "Meta"@en ;
     dcterms:description "Metadata to add to simulation"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:Meta .
 
 nml:OutputColumn a owl:Class ;
     rdfs:label "OutputColumn"@en ;
     dcterms:description "Specification of a single time varying _quantity to record during the simulation. Note that all quantities are handled internally in LEMS in SI units, and so the value for the quantity in the file (as well as time) will be in SI units."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:OutputColumn .
 
 nml:OutputFile a owl:Class ;
     rdfs:label "OutputFile"@en ;
     dcterms:description "A file in which to save recorded values from the simulation"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:OutputFile .
 
 nml:Simulation a owl:Class ;
     rdfs:label "Simulation"@en ;
     dcterms:description "The main element in a LEMS Simulation file. Defines the _length of simulation, the timestep (dt) _step and an optional _seed to use for stochastic elements, as well as _Display_s, _OutputFile_s and _EventOutputFile_s to record. Specifies a _target component to run, usually the id of a _network_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:Simulation ;
     nml:hasParameter "length",
         "step" .
@@ -187,7 +172,6 @@ nml:Simulation a owl:Class ;
 nml:SpikeSourcePoisson a owl:Class ;
     rdfs:label "SpikeSourcePoisson"@en ;
     dcterms:description "Spike source, generating spikes according to a Poisson process."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikeSource ;
     skos:exactMatch neuroml2:SpikeSourcePoisson ;
     nml:eventPort "in" ;
@@ -201,7 +185,6 @@ nml:SpikeSourcePoisson a owl:Class ;
 nml:adExIaFCell a owl:Class ;
     rdfs:label "adExIaFCell"@en ;
     dcterms:description "Model based on Brette R and Gerstner W (2005) Adaptive Exponential Integrate-and-Fire Model as an Effective Description of Neuronal Activity. J Neurophysiol 94:3637-3642"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotCap ;
     skos:exactMatch neuroml2:adExIaFCell ;
     nml:exposes "w" ;
@@ -219,7 +202,6 @@ nml:adExIaFCell a owl:Class ;
 nml:alphaCondSynapse a owl:Class ;
     rdfs:label "alphaCondSynapse"@en ;
     dcterms:description "Alpha synapse: rise time and decay time are both tau_syn. Conductance based synapse."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePynnSynapse ;
     skos:exactMatch neuroml2:alphaCondSynapse ;
     nml:exposes "A",
@@ -229,7 +211,6 @@ nml:alphaCondSynapse a owl:Class ;
 nml:alphaCurrSynapse a owl:Class ;
     rdfs:label "alphaCurrSynapse"@en ;
     dcterms:description "Alpha synapse: rise time and decay time are both tau_syn. Current based synapse."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePynnSynapse ;
     skos:exactMatch neuroml2:alphaCurrSynapse ;
     nml:exposes "A" .
@@ -237,7 +218,6 @@ nml:alphaCurrSynapse a owl:Class ;
 nml:alphaCurrentSynapse a owl:Class ;
     rdfs:label "alphaCurrentSynapse"@en ;
     dcterms:description "Alpha current synapse: rise time and decay time are both _tau."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCurrentBasedSynapse ;
     skos:exactMatch neuroml2:alphaCurrentSynapse ;
     nml:hasParameter "ibase",
@@ -246,7 +226,6 @@ nml:alphaCurrentSynapse a owl:Class ;
 nml:alphaSynapse a owl:Class ;
     rdfs:label "alphaSynapse"@en ;
     dcterms:description "Ohmic synapse model where rise time and decay time are both _tau. Max conductance reached during this time (assuming zero conductance before) is _gbase * _weight."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseConductanceBasedSynapse ;
     skos:exactMatch neuroml2:alphaSynapse ;
     nml:hasParameter "tau" .
@@ -254,7 +233,6 @@ nml:alphaSynapse a owl:Class ;
 nml:baseConductanceScalingCaDependent a owl:Class ;
     rdfs:label "baseConductanceScalingCaDependent"@en ;
     dcterms:description "Base ComponentType for a scaling to apply to a gate's conductance which depends on Ca concentration. Usually a generic expression of _caConc (so no standard, non-base form here)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseConductanceScaling ;
     skos:exactMatch neuroml2:baseConductanceScalingCaDependent ;
     nml:requires "caConc" .
@@ -262,14 +240,12 @@ nml:baseConductanceScalingCaDependent a owl:Class ;
 nml:baseSynapseDL a owl:Class ;
     rdfs:label "baseSynapseDL"@en ;
     dcterms:description "Base type for all synapses, i.e. ComponentTypes which produce a dimensionless current and change Dynamics in response to an incoming event. cno_0000009"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrentDL ;
     skos:exactMatch neuroml2:baseSynapseDL .
 
 nml:baseVoltageConcDepRate a owl:Class ;
     rdfs:label "baseVoltageConcDepRate"@en ;
     dcterms:description "Base ComponentType for voltage and concentration dependent rate. Produces a time varying rate _r which depends on _v and _caConc."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepRate ;
     skos:exactMatch neuroml2:baseVoltageConcDepRate ;
     nml:requires "caConc" .
@@ -277,7 +253,6 @@ nml:baseVoltageConcDepRate a owl:Class ;
 nml:baseVoltageConcDepTime a owl:Class ;
     rdfs:label "baseVoltageConcDepTime"@en ;
     dcterms:description "Base type for voltage and calcium concentration dependent ComponentType producing value _t with dimension time (e.g. for time course of rate variable)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepTime ;
     skos:exactMatch neuroml2:baseVoltageConcDepTime ;
     nml:requires "caConc" .
@@ -285,7 +260,6 @@ nml:baseVoltageConcDepTime a owl:Class ;
 nml:baseVoltageConcDepVariable a owl:Class ;
     rdfs:label "baseVoltageConcDepVariable"@en ;
     dcterms:description "Base ComponentType for voltage and calcium concentration dependent variable _x, which depends on _v and _caConc."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepVariable ;
     skos:exactMatch neuroml2:baseVoltageConcDepVariable ;
     nml:requires "caConc" .
@@ -293,21 +267,18 @@ nml:baseVoltageConcDepVariable a owl:Class ;
 nml:biophysicalProperties a owl:Class ;
     rdfs:label "biophysicalProperties"@en ;
     dcterms:description "The biophysical properties of the _cell_, including the _membraneProperties_ and the _intracellularProperties_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:biophysicalProperties ;
     nml:exposes "totSpecCap" .
 
 nml:biophysicalProperties2CaPools a owl:Class ;
     rdfs:label "biophysicalProperties2CaPools"@en ;
     dcterms:description "The biophysical properties of the _cell_, including the _membraneProperties2CaPools_ and the _intracellularProperties2CaPools_ for a cell with two Ca pools"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:biophysicalProperties2CaPools ;
     nml:exposes "totSpecCap" .
 
 nml:blockingPlasticSynapse a owl:Class ;
     rdfs:label "blockingPlasticSynapse"@en ;
     dcterms:description "Biexponential synapse that allows for     optional block and plasticity     mechanisms, which can be expressed as     child elements."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:expTwoSynapse ;
     skos:exactMatch neuroml2:blockingPlasticSynapse ;
     nml:eventPort "relay" .
@@ -315,7 +286,6 @@ nml:blockingPlasticSynapse a owl:Class ;
 nml:cell2CaPools a owl:Class ;
     rdfs:label "cell2CaPools"@en ;
     dcterms:description "Variant of cell with two independent Ca2+ pools. Cell with _segment_s specified in a _morphology_ element along with details on its _biophysicalProperties_. NOTE: this can only be correctly simulated using jLEMS when there is a single segment in the cell, and _v of this cell represents the membrane potential in that isopotential segment."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:cell ;
     skos:exactMatch neuroml2:cell2CaPools ;
     nml:exposes "caConc2",
@@ -325,7 +295,6 @@ nml:cell2CaPools a owl:Class ;
 nml:channelDensityGHK a owl:Class ;
     rdfs:label "channelDensityGHK"@en ;
     dcterms:description "Specifies a time varying conductance density, _gDensity, which is distributed on an area of the cell, producing a current density _iDensity and whose reversal potential is calculated from the Goldman Hodgkin Katz equation. Hard coded for Ca only! See https://github.com/OpenSourceBrain/ghk-nernst."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensity ;
     skos:exactMatch neuroml2:channelDensityGHK ;
     nml:hasParameter "permeability" ;
@@ -336,7 +305,6 @@ nml:channelDensityGHK a owl:Class ;
 nml:channelDensityGHK2 a owl:Class ;
     rdfs:label "channelDensityGHK2"@en ;
     dcterms:description "Time varying conductance density, _gDensity, which is distributed on an area of the cell, producing a current density _iDensity. Modified version of Jaffe et al. 1994 (used also in Lawrence et al. 2006). See https://github.com/OpenSourceBrain/ghk-nernst."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensityCond ;
     skos:exactMatch neuroml2:channelDensityGHK2 ;
     nml:requires "caConc",
@@ -346,7 +314,6 @@ nml:channelDensityGHK2 a owl:Class ;
 nml:channelDensityNernst a owl:Class ;
     rdfs:label "channelDensityNernst"@en ;
     dcterms:description "Specifies a time varying conductance density, _gDensity, which is distributed on an area of the _cell, producing a current density _iDensity and whose reversal potential is calculated from the Nernst equation. Hard coded for Ca only! See https://github.com/OpenSourceBrain/ghk-nernst."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensityCond ;
     skos:exactMatch neuroml2:channelDensityNernst ;
     nml:exposes "erev" ;
@@ -357,7 +324,6 @@ nml:channelDensityNernst a owl:Class ;
 nml:channelDensityNernstCa2 a owl:Class ;
     rdfs:label "channelDensityNernstCa2"@en ;
     dcterms:description "This component is similar to the original component type _channelDensityNernst_ but it is changed in order to have a reversal potential that depends on a second independent Ca++ pool (ca2). See https://github.com/OpenSourceBrain/ghk-nernst."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensityCond ;
     skos:exactMatch neuroml2:channelDensityNernstCa2 ;
     nml:exposes "erev" ;
@@ -368,7 +334,6 @@ nml:channelDensityNernstCa2 a owl:Class ;
 nml:channelDensityNonUniform a owl:Class ;
     rdfs:label "channelDensityNonUniform"@en ;
     dcterms:description "Specifies a time varying ohmic conductance density, which is distributed on a region of the _cell. The conductance density of the channel is not uniform, but is set using the _variableParameter_. Note, there is no dynamical description of this in LEMS yet, as this type only makes sense for multicompartmental cells. A ComponentType for this needs to be present to enable export of NeuroML 2 multicompartmental cells via LEMS/jNeuroML to NEURON"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensity ;
     skos:exactMatch neuroml2:channelDensityNonUniform ;
     nml:hasParameter "erev" .
@@ -376,21 +341,18 @@ nml:channelDensityNonUniform a owl:Class ;
 nml:channelDensityNonUniformGHK a owl:Class ;
     rdfs:label "channelDensityNonUniformGHK"@en ;
     dcterms:description "Specifies a time varying conductance density, which is distributed on a region of the _cell, and whose current is calculated from the Goldman-Hodgkin-Katz equation. Hard coded for Ca only!. The conductance density of the channel is not uniform, but is set using the _variableParameter_. Note, there is no dynamical description of this in LEMS yet, as this type only makes sense for multicompartmental cells. A ComponentType for this needs to be present to enable export of NeuroML 2 multicompartmental cells via LEMS/jNeuroML to NEURON"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensity ;
     skos:exactMatch neuroml2:channelDensityNonUniformGHK .
 
 nml:channelDensityNonUniformNernst a owl:Class ;
     rdfs:label "channelDensityNonUniformNernst"@en ;
     dcterms:description "Specifies a time varying conductance density, which is distributed on a region of the _cell, and whose reversal potential is calculated from the Nernst equation. Hard coded for Ca only!. The conductance density of the channel is not uniform, but is set using the _variableParameter_. Note, there is no dynamical description of this in LEMS yet, as this type only makes sense for multicompartmental cells. A ComponentType for this needs to be present to enable export of NeuroML 2 multicompartmental cells via LEMS/jNeuroML to NEURON"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensity ;
     skos:exactMatch neuroml2:channelDensityNonUniformNernst .
 
 nml:channelDensityVShift a owl:Class ;
     rdfs:label "channelDensityVShift"@en ;
     dcterms:description "Same as _channelDensity_, but with a _vShift parameter to change voltage activation of gates. The exact usage of _vShift in expressions for rates is determined by the individual gates."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:channelDensity ;
     skos:exactMatch neuroml2:channelDensityVShift ;
     nml:hasParameter "vShift" .
@@ -398,7 +360,6 @@ nml:channelDensityVShift a owl:Class ;
 nml:channelPopulation a owl:Class ;
     rdfs:label "channelPopulation"@en ;
     dcterms:description "Population of a _number of ohmic ion channels. These each produce a conductance _channelg across a reversal potential _erev, giving a total current _i. Note that active membrane currents are more frequently specified as a density over an area of the _cell_ using _channelDensity_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelPopulation ;
     skos:exactMatch neuroml2:channelPopulation ;
     nml:hasParameter "erev",
@@ -407,7 +368,6 @@ nml:channelPopulation a owl:Class ;
 nml:channelPopulationNernst a owl:Class ;
     rdfs:label "channelPopulationNernst"@en ;
     dcterms:description "Population of a _number of channels with a time varying reversal potential _erev determined by Nernst equation. Note: hard coded for Ca only!"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelPopulation ;
     skos:exactMatch neuroml2:channelPopulationNernst ;
     nml:exposes "erev" ;
@@ -419,7 +379,6 @@ nml:channelPopulationNernst a owl:Class ;
 nml:closedState a owl:Class ;
     rdfs:label "closedState"@en ;
     dcterms:description "A _KSState_ with _relativeConductance of 0"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:KSState ;
     skos:exactMatch neuroml2:closedState ;
     nml:hasParameter "relativeConductance" .
@@ -427,7 +386,6 @@ nml:closedState a owl:Class ;
 nml:compoundInput a owl:Class ;
     rdfs:label "compoundInput"@en ;
     dcterms:description "Generates a current which is the sum of all its child _basePointCurrent_ element, e.g. can be a combination of _pulseGenerator_, _sineGenerator_ elements producing a single _i. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrent ;
     skos:exactMatch neuroml2:compoundInput ;
     nml:eventPort "in" .
@@ -435,7 +393,6 @@ nml:compoundInput a owl:Class ;
 nml:compoundInputDL a owl:Class ;
     rdfs:label "compoundInputDL"@en ;
     dcterms:description "Generates a current which is the sum of all its child _basePointCurrentDL_ elements, e.g. can be a combination of _pulseGeneratorDL_, _sineGeneratorDL_ elements producing a single _i. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrentDL ;
     skos:exactMatch neuroml2:compoundInputDL ;
     nml:eventPort "in" .
@@ -443,7 +400,6 @@ nml:compoundInputDL a owl:Class ;
 nml:connectionWD a owl:Class ;
     rdfs:label "connectionWD"@en ;
     dcterms:description "Event connection between named components, which gets processed via a new instance of a synapse component which is created on the target component, includes setting of _weight and _delay for the synaptic connection"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:connection ;
     skos:exactMatch neuroml2:connectionWD ;
     nml:hasParameter "delay",
@@ -452,13 +408,11 @@ nml:connectionWD a owl:Class ;
 nml:continuousConnection a owl:Class ;
     rdfs:label "continuousConnection"@en ;
     dcterms:description "An instance of a connection in a _continuousProjection_ between _presynapticPopulation to another _postsynapticPopulation through a _preComponent at the start and _postComponent at the end. Can be used for analog synapses."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:continuousConnection .
 
 nml:continuousConnectionInstanceW a owl:Class ;
     rdfs:label "continuousConnectionInstanceW"@en ;
     dcterms:description "An instance of a connection in a _continuousProjection_ between _presynapticPopulation to another _postsynapticPopulation through a _preComponent at the start and _postComponent at the end. Populations need to be of type _populationList_ and contain _instance_ and _location_ elements. Can be used for analog synapses. Includes setting of _weight for the connection"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:continuousConnectionInstance ;
     skos:exactMatch neuroml2:continuousConnectionInstanceW ;
     nml:hasParameter "weight" .
@@ -466,13 +420,11 @@ nml:continuousConnectionInstanceW a owl:Class ;
 nml:continuousProjection a owl:Class ;
     rdfs:label "continuousProjection"@en ;
     dcterms:description "A projection between _presynapticPopulation and _postsynapticPopulation through components _preComponent at the start and _postComponent at the end of a _continuousConnection_ or _continuousConnectionInstance_. Can be used for analog synapses."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:continuousProjection .
 
 nml:decayingPoolConcentrationModel a owl:Class ;
     rdfs:label "decayingPoolConcentrationModel"@en ;
     dcterms:description "Model of an intracellular buffering mechanism for _ion (currently hard Coded to be calcium, due to requirement for _iCa) which has a baseline level _restingConc and tends to this value with time course _decayConstant. The ion is assumed to occupy a shell inside the membrane of thickness _shellThickness."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:concentrationModel ;
     skos:exactMatch neuroml2:decayingPoolConcentrationModel ;
     nml:hasParameter "decayConstant",
@@ -483,20 +435,17 @@ nml:decayingPoolConcentrationModel a owl:Class ;
 nml:distal a owl:Class ;
     rdfs:label "distal"@en ;
     dcterms:description "Point on a _segment_ furthest from the soma. Should always be present in the description of a _segment_, unlike _proximal_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:point3DWithDiam ;
     skos:exactMatch neuroml2:distal .
 
 nml:distalDetails a owl:Class ;
     rdfs:label "distalDetails"@en ;
     dcterms:description "What to do at the distal point when creating an inhomogeneous parameter"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:distalDetails .
 
 nml:doubleSynapse a owl:Class ;
     rdfs:label "doubleSynapse"@en ;
     dcterms:description "Synapse consisting of two independent synaptic mechanisms (e.g. AMPA-R and NMDA-R), which can be easily colocated in connections"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepSynapse ;
     skos:exactMatch neuroml2:doubleSynapse ;
     nml:eventPort "relay" .
@@ -504,13 +453,11 @@ nml:doubleSynapse a owl:Class ;
 nml:electricalConnection a owl:Class ;
     rdfs:label "electricalConnection"@en ;
     dcterms:description "To enable connections between populations through gap junctions."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:electricalConnection .
 
 nml:electricalConnectionInstanceW a owl:Class ;
     rdfs:label "electricalConnectionInstanceW"@en ;
     dcterms:description "To enable connections between populations through gap junctions. Populations need to be of type _populationList_ and contain _instance_ and _location_ elements. Includes setting of _weight for the connection"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:electricalConnectionInstance ;
     skos:exactMatch neuroml2:electricalConnectionInstanceW ;
     nml:hasParameter "weight" .
@@ -518,7 +465,6 @@ nml:electricalConnectionInstanceW a owl:Class ;
 nml:electricalProjection a owl:Class ;
     rdfs:label "electricalProjection"@en ;
     dcterms:description "A projection between _presynapticPopulation to another _postsynapticPopulation through gap junctions."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:electricalProjection .
 
 nml:eventPort a owl:AnnotationProperty ;
@@ -528,7 +474,6 @@ nml:eventPort a owl:AnnotationProperty ;
 nml:expCondSynapse a owl:Class ;
     rdfs:label "expCondSynapse"@en ;
     dcterms:description "Conductance based synapse with instantaneous rise and single exponential decay (with time constant tau_syn)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePynnSynapse ;
     skos:exactMatch neuroml2:expCondSynapse ;
     nml:exposes "g" ;
@@ -537,14 +482,12 @@ nml:expCondSynapse a owl:Class ;
 nml:expCurrSynapse a owl:Class ;
     rdfs:label "expCurrSynapse"@en ;
     dcterms:description "Current based synapse with instantaneous rise and single exponential decay (with time constant tau_syn)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePynnSynapse ;
     skos:exactMatch neuroml2:expCurrSynapse .
 
 nml:expOneSynapse a owl:Class ;
     rdfs:label "expOneSynapse"@en ;
     dcterms:description "Ohmic synapse model whose conductance rises instantaneously by (_gbase * _weight) on receiving an event, and which decays exponentially to zero with time course _tauDecay"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseConductanceBasedSynapse ;
     skos:exactMatch neuroml2:expOneSynapse ;
     nml:hasParameter "tauDecay" .
@@ -552,7 +495,6 @@ nml:expOneSynapse a owl:Class ;
 nml:expThreeSynapse a owl:Class ;
     rdfs:label "expThreeSynapse"@en ;
     dcterms:description "Ohmic synapse similar to expTwoSynapse but consisting of two components that can differ in decay times and max conductances but share the same rise time."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseConductanceBasedSynapseTwo ;
     skos:exactMatch neuroml2:expThreeSynapse ;
     nml:hasParameter "tauDecay1",
@@ -562,7 +504,6 @@ nml:expThreeSynapse a owl:Class ;
 nml:explicitInput a owl:Class ;
     rdfs:label "explicitInput"@en ;
     dcterms:description "An explicit input (anything which extends _basePointCurrent_) to a target cell in a population"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:explicitInput .
 
 nml:exposes a owl:AnnotationProperty ;
@@ -572,7 +513,6 @@ nml:exposes a owl:AnnotationProperty ;
 nml:fitzHughNagumo1969Cell a owl:Class ;
     rdfs:label "fitzHughNagumo1969Cell"@en ;
     dcterms:description "The Fitzhugh Nagumo model is a two-dimensional simplification of the Hodgkin-Huxley model of spike generation in squid giant axons.  This system was suggested by FitzHugh (FitzHugh R. [1961]: Impulses and physiological states in theoretical models of nerve membrane.  Biophysical J.  1:445-466), who called it \" Bonhoeffer-van der Pol model \", and the equivalent circuit by Nagumo et al.  (Nagumo J., Arimoto S., and Yoshizawa S. [1962] An active pulse transmission line simulating nerve axon. Proc IRE. 50:2061-2070.1962). This version corresponds to the one described in FitzHugh R.[1969]: Mathematical models of excitation and propagation in nerve.  Chapter 1 (pp. 1-85 in H.P. Schwan, ed. Biological Engineering, McGraw-Hill Book Co., N.Y.)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotDL ;
     skos:exactMatch neuroml2:fitzHughNagumo1969Cell ;
     nml:exposes "F",
@@ -587,7 +527,6 @@ nml:fitzHughNagumo1969Cell a owl:Class ;
 nml:fitzHughNagumoCell a owl:Class ;
     rdfs:label "fitzHughNagumoCell"@en ;
     dcterms:description "Simple dimensionless model of spiking cell from FitzHugh and Nagumo. Superseded by _fitzHughNagumo1969Cell (See https://github.com/NeuroML/NeuroML2/issues/42)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotDL ;
     skos:exactMatch neuroml2:fitzHughNagumoCell ;
     nml:exposes "W" ;
@@ -596,7 +535,6 @@ nml:fitzHughNagumoCell a owl:Class ;
 nml:fixedFactorConcentrationModel a owl:Class ;
     rdfs:label "fixedFactorConcentrationModel"@en ;
     dcterms:description "Model of buffering of concentration of an ion (currently hard coded to be calcium, due to requirement for _iCa) which has a baseline level _restingConc and tends to this value with time course _decayConstant. A fixed factor _rho is used to scale the incoming current *independently of the size of the compartment* to produce a concentration change."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:concentrationModel ;
     skos:exactMatch neuroml2:fixedFactorConcentrationModel ;
     nml:hasParameter "decayConstant",
@@ -608,7 +546,6 @@ nml:fixedFactorConcentrationModel a owl:Class ;
 nml:fixedFactorConcentrationModelTraub a owl:Class ;
     rdfs:label "fixedFactorConcentrationModelTraub"@en ;
     dcterms:description "Model of buffering of concentration of an ion (currently hard coded to be calcium, due to requirement for _iCa) which has a baseline level _restingConc and tends to this value with time course 1 / _beta. A fixed factor _phi is used to scale the incoming current *independently of the size of the compartment* to produce a concentration change. Not recommended for use in models other than Traub et al. 2005!"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:concentrationModel ;
     skos:exactMatch neuroml2:fixedFactorConcentrationModelTraub ;
     nml:hasParameter "beta",
@@ -620,7 +557,6 @@ nml:fixedFactorConcentrationModelTraub a owl:Class ;
 nml:fixedTimeCourse a owl:Class ;
     rdfs:label "fixedTimeCourse"@en ;
     dcterms:description "Time course of a fixed magnitude _tau which can be used for the time course in _gateHHtauInf_, _gateHHratesTau_ or _gateHHratesTauInf_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepTime ;
     skos:exactMatch neuroml2:fixedTimeCourse ;
     nml:hasParameter "tau" .
@@ -628,68 +564,57 @@ nml:fixedTimeCourse a owl:Class ;
 nml:foaf_account a owl:Class ;
     rdfs:label "foaf_account"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_account .
 
 nml:foaf_fundedBy a owl:Class ;
     rdfs:label "foaf_fundedBy"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_fundedBy .
 
 nml:foaf_homepage a owl:Class ;
     rdfs:label "foaf_homepage"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_homepage .
 
 nml:foaf_mbox a owl:Class ;
     rdfs:label "foaf_mbox"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_mbox .
 
 nml:foaf_name a owl:Class ;
     rdfs:label "foaf_name"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_name .
 
 nml:foaf_publications a owl:Class ;
     rdfs:label "foaf_publications"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_publications .
 
 nml:foaf_thumbnail a owl:Class ;
     rdfs:label "foaf_thumbnail"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_thumbnail .
 
 nml:foaf_weblog a owl:Class ;
     rdfs:label "foaf_weblog"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:foaf_weblog .
 
 nml:forwardTransition a owl:Class ;
     rdfs:label "forwardTransition"@en ;
     dcterms:description "A forward only _KSTransition_ for a _gateKS_ which specifies a _rate (type _baseHHRate_) which follows one of the standard Hodgkin Huxley forms (e.g. _HHExpRate_, _HHSigmoidRate_, _HHExpLinearRate_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:KSTransition ;
     skos:exactMatch neuroml2:forwardTransition .
 
 nml:from a owl:Class ;
     rdfs:label "from"@en ;
     dcterms:description "In a _path_ or _subTree_, specifies which _segment (inclusive) from which to calculate the _segmentGroup_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:from .
 
 nml:gapJunction a owl:Class ;
     rdfs:label "gapJunction"@en ;
     dcterms:description "Gap junction/single electrical connection"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSynapse ;
     skos:exactMatch neuroml2:gapJunction ;
     nml:exposes "i" ;
@@ -699,7 +624,6 @@ nml:gapJunction a owl:Class ;
 nml:gateFractional a owl:Class ;
     rdfs:label "gateFractional"@en ;
     dcterms:description "Gate composed of subgates contributing with fractional conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateFractional ;
     nml:exposes "rateScale" .
@@ -707,7 +631,6 @@ nml:gateFractional a owl:Class ;
 nml:gateHHInstantaneous a owl:Class ;
     rdfs:label "gateHHInstantaneous"@en ;
     dcterms:description "Gate which follows the general Hodgkin Huxley formalism but is instantaneous, so tau = 0 and gate follows exactly inf value"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateHHInstantaneous ;
     nml:exposes "inf",
@@ -716,7 +639,6 @@ nml:gateHHInstantaneous a owl:Class ;
 nml:gateHHrates a owl:Class ;
     rdfs:label "gateHHrates"@en ;
     dcterms:description "Gate which follows the general Hodgkin Huxley formalism"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateHHrates ;
     nml:exposes "alpha",
@@ -728,7 +650,6 @@ nml:gateHHrates a owl:Class ;
 nml:gateHHratesInf a owl:Class ;
     rdfs:label "gateHHratesInf"@en ;
     dcterms:description "Gate which follows the general Hodgkin Huxley formalism"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateHHratesInf ;
     nml:exposes "alpha",
@@ -740,7 +661,6 @@ nml:gateHHratesInf a owl:Class ;
 nml:gateHHratesTau a owl:Class ;
     rdfs:label "gateHHratesTau"@en ;
     dcterms:description "Gate which follows the general Hodgkin Huxley formalism"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateHHratesTau ;
     nml:exposes "alpha",
@@ -752,7 +672,6 @@ nml:gateHHratesTau a owl:Class ;
 nml:gateHHratesTauInf a owl:Class ;
     rdfs:label "gateHHratesTauInf"@en ;
     dcterms:description "Gate which follows the general Hodgkin Huxley formalism"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateHHratesTauInf ;
     nml:exposes "alpha",
@@ -764,7 +683,6 @@ nml:gateHHratesTauInf a owl:Class ;
 nml:gateHHtauInf a owl:Class ;
     rdfs:label "gateHHtauInf"@en ;
     dcterms:description "Gate which follows the general Hodgkin Huxley formalism"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:gate ;
     skos:exactMatch neuroml2:gateHHtauInf ;
     nml:exposes "inf",
@@ -774,7 +692,6 @@ nml:gateHHtauInf a owl:Class ;
 nml:gateKS a owl:Class ;
     rdfs:label "gateKS"@en ;
     dcterms:description "A gate which consists of multiple _KSState_s and _KSTransition_s giving the rates of transition between them"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseGate ;
     skos:exactMatch neuroml2:gateKS ;
     nml:exposes "rateScale" .
@@ -782,7 +699,6 @@ nml:gateKS a owl:Class ;
 nml:gradedSynapse a owl:Class ;
     rdfs:label "gradedSynapse"@en ;
     dcterms:description "Graded/analog synapse. Based on synapse in Methods of http://www.nature.com/neuro/journal/v7/n12/abs/nn1352.html"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseGradedSynapse ;
     skos:exactMatch neuroml2:gradedSynapse ;
     nml:exposes "i",
@@ -802,7 +718,6 @@ nml:hasParameter a owl:AnnotationProperty ;
 nml:hindmarshRose1984Cell a owl:Class ;
     rdfs:label "hindmarshRose1984Cell"@en ;
     dcterms:description "         The Hindmarsh Rose model is a simplified point cell model which         captures complex firing patterns of single neurons, such as         periodic and chaotic bursting. It has a fast spiking subsystem,         which is a generalization of the FitzHugh-Nagumo system, coupled         to a slower subsystem which allows the model to fire bursts. The         dynamical variables x,y,z correspond to the membrane potential, a         recovery variable, and a slower adaptation current, respectively.          See Hindmarsh J. L., and Rose R. M. (1984) A model of neuronal         bursting using three coupled first order differential equations.         Proc. R. Soc. London, Ser. B 221:87–102.         "@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotCap ;
     skos:exactMatch neuroml2:hindmarshRose1984Cell ;
     nml:exposes "chi",
@@ -827,7 +742,6 @@ nml:hindmarshRose1984Cell a owl:Class ;
 nml:iafRefCell a owl:Class ;
     rdfs:label "iafRefCell"@en ;
     dcterms:description "Integrate and fire cell  with capacitance _C, _leakConductance, _leakReversal and refractory period _refract"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:iafCell ;
     skos:exactMatch neuroml2:iafRefCell ;
     nml:hasParameter "refract" .
@@ -835,7 +749,6 @@ nml:iafRefCell a owl:Class ;
 nml:iafTauRefCell a owl:Class ;
     rdfs:label "iafTauRefCell"@en ;
     dcterms:description "Integrate and fire cell which returns to its leak reversal potential of _leakReversal with a time course _tau. It has a refractory period of _refract after spiking"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:iafTauCell ;
     skos:exactMatch neuroml2:iafTauRefCell ;
     nml:hasParameter "refract" .
@@ -843,38 +756,32 @@ nml:iafTauRefCell a owl:Class ;
 nml:include a owl:Class ;
     rdfs:label "include"@en ;
     dcterms:description "Include all members of another _segmentGroup_ in this group"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:include .
 
 nml:inhomogeneousParameter a owl:Class ;
     rdfs:label "inhomogeneousParameter"@en ;
     dcterms:description "An inhomogeneous parameter specified across the _segmentGroup_ (see _variableParameter_ for usage)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:inhomogeneousParameter .
 
 nml:inhomogeneousValue a owl:Class ;
     rdfs:label "inhomogeneousValue"@en ;
     dcterms:description "Specifies the _value of an _inhomogeneousParameter. For usage see _variableParameter_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:inhomogeneousValue .
 
 nml:initMembPotential a owl:Class ;
     rdfs:label "initMembPotential"@en ;
     dcterms:description "Explicitly set initial membrane potential for the cell"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:initMembPotential ;
     nml:hasParameter "value" .
 
 nml:inputList a owl:Class ;
     rdfs:label "inputList"@en ;
     dcterms:description "An explicit list of _input_s to a _population."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:inputList .
 
 nml:inputW a owl:Class ;
     rdfs:label "inputW"@en ;
     dcterms:description "Specifies input lists. Can set _weight to scale individual inputs."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:input ;
     skos:exactMatch neuroml2:inputW ;
     nml:hasParameter "weight" .
@@ -882,13 +789,11 @@ nml:inputW a owl:Class ;
 nml:instance a owl:Class ;
     rdfs:label "instance"@en ;
     dcterms:description "Specifies a single instance of a component in a _population_ (placed at _location_)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:instance .
 
 nml:intracellularProperties2CaPools a owl:Class ;
     rdfs:label "intracellularProperties2CaPools"@en ;
     dcterms:description "Variant of intracellularProperties with 2 independent Ca pools"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:intracellularProperties ;
     skos:exactMatch neuroml2:intracellularProperties2CaPools ;
     nml:exposes "caConc",
@@ -899,21 +804,18 @@ nml:intracellularProperties2CaPools a owl:Class ;
 nml:ionChannelKS a owl:Class ;
     rdfs:label "ionChannelKS"@en ;
     dcterms:description "A kinetic scheme based ion channel with multiple _gateKS_s, each of which consists of multiple _KSState_s and _KSTransition_s giving the rates of transition between them"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseIonChannel ;
     skos:exactMatch neuroml2:ionChannelKS .
 
 nml:ionChannelPassive a owl:Class ;
     rdfs:label "ionChannelPassive"@en ;
     dcterms:description "Simple passive ion channel where the constant conductance through the channel is equal to _conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:ionChannel ;
     skos:exactMatch neuroml2:ionChannelPassive .
 
 nml:ionChannelVShift a owl:Class ;
     rdfs:label "ionChannelVShift"@en ;
     dcterms:description "Same as _ionChannel_, but with a _vShift parameter to change voltage activation of gates. The exact usage of _vShift in expressions for rates is determined by the individual gates."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:ionChannel ;
     skos:exactMatch neuroml2:ionChannelVShift ;
     nml:hasParameter "vShift" .
@@ -921,7 +823,6 @@ nml:ionChannelVShift a owl:Class ;
 nml:izhikevich2007Cell a owl:Class ;
     rdfs:label "izhikevich2007Cell"@en ;
     dcterms:description "Cell based on the modified Izhikevich model in Izhikevich 2007, Dynamical systems in neuroscience, MIT Press"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotCap ;
     skos:exactMatch neuroml2:izhikevich2007Cell ;
     nml:exposes "u" ;
@@ -938,7 +839,6 @@ nml:izhikevich2007Cell a owl:Class ;
 nml:izhikevichCell a owl:Class ;
     rdfs:label "izhikevichCell"@en ;
     dcterms:description "Cell based on the 2003 model of Izhikevich, see http://izhikevich.org/publications/spikes.htm"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPot ;
     skos:exactMatch neuroml2:izhikevichCell ;
     nml:exposes "U" ;
@@ -952,7 +852,6 @@ nml:izhikevichCell a owl:Class ;
 nml:linearGradedSynapse a owl:Class ;
     rdfs:label "linearGradedSynapse"@en ;
     dcterms:description "Behaves just like a one way gap junction."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseGradedSynapse ;
     skos:exactMatch neuroml2:linearGradedSynapse ;
     nml:exposes "i" ;
@@ -962,7 +861,6 @@ nml:linearGradedSynapse a owl:Class ;
 nml:location a owl:Class ;
     rdfs:label "location"@en ;
     dcterms:description "Specifies the (x,y,z) location of a single _instance_ of a component in a _population_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:location ;
     nml:hasParameter "x",
         "y",
@@ -971,13 +869,11 @@ nml:location a owl:Class ;
 nml:member a owl:Class ;
     rdfs:label "member"@en ;
     dcterms:description "A single identified _segment which is part of the _segmentGroup_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:member .
 
 nml:membraneProperties2CaPools a owl:Class ;
     rdfs:label "membraneProperties2CaPools"@en ;
     dcterms:description "Variant of membraneProperties with 2 independent Ca pools"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:membraneProperties ;
     skos:exactMatch neuroml2:membraneProperties2CaPools ;
     nml:exposes "iCa",
@@ -989,13 +885,11 @@ nml:membraneProperties2CaPools a owl:Class ;
 nml:morphology a owl:Class ;
     rdfs:label "morphology"@en ;
     dcterms:description "The collection of _segment_s which specify the 3D structure of the cell, along with a number of _segmentGroup_s"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:morphology .
 
 nml:networkWithTemperature a owl:Class ;
     rdfs:label "networkWithTemperature"@en ;
     dcterms:description "Same as _network_, but with an explicit _temperature for temperature dependent elements (e.g. ion channels)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:network ;
     skos:exactMatch neuroml2:networkWithTemperature ;
     nml:hasParameter "temperature" .
@@ -1003,7 +897,6 @@ nml:networkWithTemperature a owl:Class ;
 nml:openState a owl:Class ;
     rdfs:label "openState"@en ;
     dcterms:description "A _KSState_ with _relativeConductance of 1"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:KSState ;
     skos:exactMatch neuroml2:openState ;
     nml:hasParameter "relativeConductance" .
@@ -1011,25 +904,21 @@ nml:openState a owl:Class ;
 nml:orcid_id a owl:Class ;
     rdfs:label "orcid_id"@en ;
     dcterms:description "https://docs.biosimulations.org/concepts/conventions/simulation-project-metadata/"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:orcid_id .
 
 nml:parent a owl:Class ;
     rdfs:label "parent"@en ;
     dcterms:description "Specifies the _segment_ which is this segment's parent. The _fractionAlong specifies where it is connected, usually 1 (the default value), meaning the _distal_ point of the parent, or 0, meaning the _proximal_ point. If it is between these, a linear interpolation between the 2 points should be used."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:parent .
 
 nml:path a owl:Class ;
     rdfs:label "path"@en ;
     dcterms:description "Include all the _segment_s between those specified by _from_ and _to_, inclusive"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:path .
 
 nml:pinskyRinzelCA3Cell a owl:Class ;
     rdfs:label "pinskyRinzelCA3Cell"@en ;
     dcterms:description "Reduced CA3 cell model from Pinsky, P.F., Rinzel, J. Intrinsic and network rhythmogenesis in a reduced traub model for CA3 neurons. J Comput Neurosci 1, 39-60 (1994). See https://github.com/OpenSourceBrain/PinskyRinzelModel"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPot ;
     skos:exactMatch neuroml2:pinskyRinzelCA3Cell ;
     nml:exposes "Cad",
@@ -1068,7 +957,6 @@ nml:pinskyRinzelCA3Cell a owl:Class ;
 nml:pointCellCondBased a owl:Class ;
     rdfs:label "pointCellCondBased"@en ;
     dcterms:description "Simple model of a conductance based cell, with no separate _morphology_ element, just an absolute capacitance _C, and a set of channel _populations. Note: use of _cell_ is generally preferable (and more widely supported), even for a single compartment cell."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotCap ;
     skos:exactMatch neuroml2:pointCellCondBased ;
     nml:hasParameter "thresh",
@@ -1077,7 +965,6 @@ nml:pointCellCondBased a owl:Class ;
 nml:pointCellCondBasedCa a owl:Class ;
     rdfs:label "pointCellCondBasedCa"@en ;
     dcterms:description "TEMPORARY: Point cell with conductances and Ca concentration info. Not yet fully tested!!! TODO: Remove in favour of _cell_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotCap ;
     skos:exactMatch neuroml2:pointCellCondBasedCa ;
     nml:exposes "caConc",
@@ -1088,7 +975,6 @@ nml:pointCellCondBasedCa a owl:Class ;
 nml:poissonFiringSynapse a owl:Class ;
     rdfs:label "poissonFiringSynapse"@en ;
     dcterms:description "Poisson spike generator firing at _averageRate, which is connected to single _synapse that is triggered every time a spike is generated, producing an input current. See also _transientPoissonFiringSynapse_."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrentSpiking ;
     skos:exactMatch neuroml2:poissonFiringSynapse ;
     nml:eventPort "in",
@@ -1102,7 +988,6 @@ nml:poissonFiringSynapse a owl:Class ;
 nml:population a owl:Class ;
     rdfs:label "population"@en ;
     dcterms:description "A population of components, with just one parameter for the _size, i.e. number of components to create. Note: quite often this is used with type=_populationList_ which means the size is determined by the number of _instance_s (with _location_s) in the list. The _size attribute is still set, and there will be a validation error if this does not match the number in the list."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePopulation ;
     skos:exactMatch neuroml2:population ;
     nml:hasParameter "size" .
@@ -1110,33 +995,28 @@ nml:population a owl:Class ;
 nml:populationList a owl:Class ;
     rdfs:label "populationList"@en ;
     dcterms:description "An explicit list of _instance_s (with _location_s) of components in the population. "@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePopulation ;
     skos:exactMatch neuroml2:populationList .
 
 nml:projection a owl:Class ;
     rdfs:label "projection"@en ;
     dcterms:description "Projection from one population, _presynapticPopulation to another, _postsynapticPopulation, through _synapse. Contains lists of _connection_ or _connectionWD_ elements."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:projection .
 
 nml:proximal a owl:Class ;
     rdfs:label "proximal"@en ;
     dcterms:description "Point on a _segment_ closest to the soma. Note, the proximal point can be omitted, and in this case is defined as being the point _fractionAlong between the proximal and _distal_ point of the _parent_, i.e. if _fractionAlong = 1 (as it is by default) it will be the _distal on the parent, or if _fractionAlong = 0, it will be the proximal point. If between 0 and 1, it is the linear interpolation between the two points."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:point3DWithDiam ;
     skos:exactMatch neuroml2:proximal .
 
 nml:proximalDetails a owl:Class ;
     rdfs:label "proximalDetails"@en ;
     dcterms:description "What to do at the proximal point when creating an inhomogeneous parameter"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:proximalDetails .
 
 nml:pulseGenerator a owl:Class ;
     rdfs:label "pulseGenerator"@en ;
     dcterms:description "Generates a constant current pulse of a certain _amplitude for a specified _duration after a _delay. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrent ;
     skos:exactMatch neuroml2:pulseGenerator ;
     nml:eventPort "in" ;
@@ -1147,7 +1027,6 @@ nml:pulseGenerator a owl:Class ;
 nml:pulseGeneratorDL a owl:Class ;
     rdfs:label "pulseGeneratorDL"@en ;
     dcterms:description "Dimensionless equivalent of _pulseGenerator_. Generates a constant current pulse of a certain _amplitude for a specified _duration after a _delay. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrentDL ;
     skos:exactMatch neuroml2:pulseGeneratorDL ;
     nml:eventPort "in" ;
@@ -1158,7 +1037,6 @@ nml:pulseGeneratorDL a owl:Class ;
 nml:q10ConductanceScaling a owl:Class ;
     rdfs:label "q10ConductanceScaling"@en ;
     dcterms:description "A value for the conductance scaling which varies as a standard function of the difference between the current temperature, _temperature, and the temperature at which the conductance was originally determined, _experimentalTemp"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseConductanceScaling ;
     skos:exactMatch neuroml2:q10ConductanceScaling ;
     nml:hasParameter "experimentalTemp",
@@ -1167,7 +1045,6 @@ nml:q10ConductanceScaling a owl:Class ;
 nml:q10ExpTemp a owl:Class ;
     rdfs:label "q10ExpTemp"@en ;
     dcterms:description "A value for the Q10 scaling which varies as a standard function of the difference between the current temperature, _temperature, and the temperature at which the gating variable equations were determined, _experimentalTemp"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseQ10Settings ;
     skos:exactMatch neuroml2:q10ExpTemp ;
     nml:hasParameter "experimentalTemp",
@@ -1176,7 +1053,6 @@ nml:q10ExpTemp a owl:Class ;
 nml:q10Fixed a owl:Class ;
     rdfs:label "q10Fixed"@en ;
     dcterms:description "A fixed value, _fixedQ10, for the scaling of the time course of the gating variable"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseQ10Settings ;
     skos:exactMatch neuroml2:q10Fixed ;
     nml:hasParameter "fixedQ10" .
@@ -1184,7 +1060,6 @@ nml:q10Fixed a owl:Class ;
 nml:rampGenerator a owl:Class ;
     rdfs:label "rampGenerator"@en ;
     dcterms:description "Generates a ramping current after a time _delay, for a fixed _duration. During this time the current steadily changes from _startAmplitude to _finishAmplitude. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrent ;
     skos:exactMatch neuroml2:rampGenerator ;
     nml:eventPort "in" ;
@@ -1197,7 +1072,6 @@ nml:rampGenerator a owl:Class ;
 nml:rampGeneratorDL a owl:Class ;
     rdfs:label "rampGeneratorDL"@en ;
     dcterms:description "Dimensionless equivalent of _rampGenerator_. Generates a ramping current after a time _delay, for a fixed _duration. During this time the dimensionless current steadily changes from _startAmplitude to _finishAmplitude. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrentDL ;
     skos:exactMatch neuroml2:rampGeneratorDL ;
     nml:eventPort "in" ;
@@ -1210,7 +1084,6 @@ nml:rampGeneratorDL a owl:Class ;
 nml:rectangularExtent a owl:Class ;
     rdfs:label "rectangularExtent"@en ;
     dcterms:description "For defining a 3D rectangular box"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:rectangularExtent ;
     nml:hasParameter "xLength",
         "xStart",
@@ -1222,7 +1095,6 @@ nml:rectangularExtent a owl:Class ;
 nml:region a owl:Class ;
     rdfs:label "region"@en ;
     dcterms:description "Initial attempt to specify 3D region for placing cells. Work in progress..."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:region .
 
 nml:requires a owl:AnnotationProperty ;
@@ -1232,21 +1104,18 @@ nml:requires a owl:AnnotationProperty ;
 nml:resistivity a owl:Class ;
     rdfs:label "resistivity"@en ;
     dcterms:description "The resistivity, or specific axial resistance, of the cytoplasm"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:resistivity ;
     nml:hasParameter "value" .
 
 nml:reverseTransition a owl:Class ;
     rdfs:label "reverseTransition"@en ;
     dcterms:description "A reverse only _KSTransition_ for a _gateKS_ which specifies a _rate (type _baseHHRate_) which follows one of the standard Hodgkin Huxley forms (e.g. _HHExpRate_, _HHSigmoidRate_, _HHExpLinearRate_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:KSTransition ;
     skos:exactMatch neuroml2:reverseTransition .
 
 nml:segment a owl:Class ;
     rdfs:label "segment"@en ;
     dcterms:description "A segment defines the smallest unit within a possibly branching structure (_morphology_), such as a dendrite or axon. Its _id should be a nonnegative integer (usually soma/root = 0). Its end points are given by the _proximal_ and _distal_ points. The _proximal_ point can be omitted, usually because it is the same as a point on the _parent_ segment, see _proximal_ for details. _parent_ specifies the parent segment. The first segment of a _cell_ (with no _parent_) usually represents the soma. The shape is normally a cylinder (radii of the _proximal_ and _distal_ equal, but positions different) or a conical frustum (radii and positions different). If the x,y,x positions of the _proximal_ and _distal_ are equal, the segment can be interpreted as a sphere, and in this case the radii of these points must be equal. NOTE: LEMS does not yet support multicompartmental modelling, so the Dynamics here is only appropriate for single compartment modelling. "@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:segment ;
     nml:exposes "length",
         "radDist",
@@ -1255,13 +1124,11 @@ nml:segment a owl:Class ;
 nml:segmentGroup a owl:Class ;
     rdfs:label "segmentGroup"@en ;
     dcterms:description "A method to describe a group of _segment_s in a _morphology_, e.g. soma_group, dendrite_group, axon_group. While a name is useful to describe the group, the _neuroLexId attribute can be used to explicitly specify the meaning of the group, e.g. sao1044911821 for 'Neuronal Cell Body', sao1211023249 for 'Dendrite'. The _segment_s in this group can be specified as: a list of individual _member_ segments; a _path_, all of the segments along which should be included; a _subTree_ of the _cell_ to include; other segmentGroups to _include_ (so all segments from those get included here). An _inhomogeneousParameter_ can be defined on the region of the cell specified by this group (see _variableParameter_ for usage)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:segmentGroup .
 
 nml:silentSynapse a owl:Class ;
     rdfs:label "silentSynapse"@en ;
     dcterms:description "Dummy synapse which emits no current. Used as presynaptic endpoint for analog synaptic connection."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseGradedSynapse ;
     skos:exactMatch neuroml2:silentSynapse ;
     nml:exposes "i" ;
@@ -1270,7 +1137,6 @@ nml:silentSynapse a owl:Class ;
 nml:sineGenerator a owl:Class ;
     rdfs:label "sineGenerator"@en ;
     dcterms:description "Generates a sinusoidally varying current after a time _delay, for a fixed _duration. The _period and maximum _amplitude of the current can be set as well as the _phase at which to start. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrent ;
     skos:exactMatch neuroml2:sineGenerator ;
     nml:eventPort "in" ;
@@ -1283,7 +1149,6 @@ nml:sineGenerator a owl:Class ;
 nml:sineGeneratorDL a owl:Class ;
     rdfs:label "sineGeneratorDL"@en ;
     dcterms:description "Dimensionless equivalent of _sineGenerator_. Generates a sinusoidally varying current after a time _delay, for a fixed _duration. The _period and maximum _amplitude of the current can be set as well as the _phase at which to start. Scaled by _weight, if set"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrentDL ;
     skos:exactMatch neuroml2:sineGeneratorDL ;
     nml:eventPort "in" ;
@@ -1296,7 +1161,6 @@ nml:sineGeneratorDL a owl:Class ;
 nml:species a owl:Class ;
     rdfs:label "species"@en ;
     dcterms:description "Description of a chemical species identified by _ion, which has internal, _concentration, and external, _extConcentration values for its concentration"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:species ;
     nml:exposes "concentration",
         "extConcentration" ;
@@ -1306,7 +1170,6 @@ nml:species a owl:Class ;
 nml:specificCapacitance a owl:Class ;
     rdfs:label "specificCapacitance"@en ;
     dcterms:description "Capacitance per unit area"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:specificCapacitance ;
     nml:exposes "specCap" ;
     nml:hasParameter "value" .
@@ -1314,7 +1177,6 @@ nml:specificCapacitance a owl:Class ;
 nml:spike a owl:Class ;
     rdfs:label "spike"@en ;
     dcterms:description "Emits a single spike at the specified _time"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikeSource ;
     skos:exactMatch neuroml2:spike ;
     nml:exposes "spiked" ;
@@ -1323,7 +1185,6 @@ nml:spike a owl:Class ;
 nml:spikeArray a owl:Class ;
     rdfs:label "spikeArray"@en ;
     dcterms:description "Set of spike ComponentTypes, each emitting one spike at a certain time. Can be used to feed a predetermined spike train into a cell"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikeSource ;
     skos:exactMatch neuroml2:spikeArray ;
     nml:eventPort "in" .
@@ -1331,7 +1192,6 @@ nml:spikeArray a owl:Class ;
 nml:spikeGenerator a owl:Class ;
     rdfs:label "spikeGenerator"@en ;
     dcterms:description "Simple generator of spikes at a regular interval set by _period"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikeSource ;
     skos:exactMatch neuroml2:spikeGenerator ;
     nml:exposes "tnext" ;
@@ -1340,7 +1200,6 @@ nml:spikeGenerator a owl:Class ;
 nml:spikeGeneratorRandom a owl:Class ;
     rdfs:label "spikeGeneratorRandom"@en ;
     dcterms:description "Generator of spikes with a random interspike interval of at least _minISI and at most _maxISI"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikeSource ;
     skos:exactMatch neuroml2:spikeGeneratorRandom ;
     nml:exposes "isi",
@@ -1351,7 +1210,6 @@ nml:spikeGeneratorRandom a owl:Class ;
 nml:spikeGeneratorRefPoisson a owl:Class ;
     rdfs:label "spikeGeneratorRefPoisson"@en ;
     dcterms:description "Generator of spikes whose ISI distribution is the maximum entropy distribution over [ _minimumISI, +infinity ) with mean: 1 / _averageRate"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:spikeGeneratorPoisson ;
     skos:exactMatch neuroml2:spikeGeneratorRefPoisson ;
     nml:hasParameter "minimumISI" .
@@ -1359,14 +1217,12 @@ nml:spikeGeneratorRefPoisson a owl:Class ;
 nml:spikeThresh a owl:Class ;
     rdfs:label "spikeThresh"@en ;
     dcterms:description "Membrane potential at which to emit a spiking event. Note, usually the spiking event will not be emitted again until the membrane potential has fallen below this value and rises again to cross it in a positive direction"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:spikeThresh ;
     nml:hasParameter "value" .
 
 nml:stdpSynapse a owl:Class ;
     rdfs:label "stdpSynapse"@en ;
     dcterms:description "Spike timing dependent plasticity mechanism,  NOTE: EXAMPLE NOT YET WORKING!!!! cno_0000034"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:expTwoSynapse ;
     skos:exactMatch neuroml2:stdpSynapse ;
     nml:exposes "M",
@@ -1376,7 +1232,6 @@ nml:stdpSynapse a owl:Class ;
 nml:subGate a owl:Class ;
     rdfs:label "subGate"@en ;
     dcterms:description "Gate composed of subgates contributing with fractional conductance"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:subGate ;
     nml:exposes "inf",
         "q",
@@ -1388,13 +1243,11 @@ nml:subGate a owl:Class ;
 nml:subTree a owl:Class ;
     rdfs:label "subTree"@en ;
     dcterms:description "Include all the _segment_s distal to that specified by _from_ in the _segmentGroup_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:subTree .
 
 nml:synapticConnectionWD a owl:Class ;
     rdfs:label "synapticConnectionWD"@en ;
     dcterms:description "Explicit event connection between named components, which gets processed via a new instance of a _synapse component which is created on the target component, includes setting of _weight and _delay for the synaptic connection"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:synapticConnection ;
     skos:exactMatch neuroml2:synapticConnectionWD ;
     nml:hasParameter "delay",
@@ -1403,14 +1256,12 @@ nml:synapticConnectionWD a owl:Class ;
 nml:tauInfTransition a owl:Class ;
     rdfs:label "tauInfTransition"@en ;
     dcterms:description "KS Transition specified in terms of time constant _tau_ and steady state _inf_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:KSTransition ;
     skos:exactMatch neuroml2:tauInfTransition .
 
 nml:timedSynapticInput a owl:Class ;
     rdfs:label "timedSynapticInput"@en ;
     dcterms:description "Spike array connected to a single _synapse, producing a current triggered by each _spike_ in the array."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrentSpiking ;
     skos:exactMatch neuroml2:timedSynapticInput ;
     nml:eventPort "in" ;
@@ -1419,13 +1270,11 @@ nml:timedSynapticInput a owl:Class ;
 nml:to a owl:Class ;
     rdfs:label "to"@en ;
     dcterms:description "In a _path_, specifies which _segment (inclusive) up to which to calculate the _segmentGroup_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:to .
 
 nml:transientPoissonFiringSynapse a owl:Class ;
     rdfs:label "transientPoissonFiringSynapse"@en ;
     dcterms:description "Poisson spike generator firing at _averageRate after a _delay and for a _duration, connected to single _synapse that is triggered every time a spike is generated, providing an input current.                       Similar to ComponentType _poissonFiringSynapse_."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrentSpiking ;
     skos:exactMatch neuroml2:transientPoissonFiringSynapse ;
     nml:eventPort "in",
@@ -1441,7 +1290,6 @@ nml:transientPoissonFiringSynapse a owl:Class ;
 nml:tsodyksMarkramDepFacMechanism a owl:Class ;
     rdfs:label "tsodyksMarkramDepFacMechanism"@en ;
     dcterms:description "Full Tsodyks-Markram STP model with both depression and facilitation, as in Tsodyks, Pawelzik and Markram 1998."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePlasticityMechanism ;
     skos:exactMatch neuroml2:tsodyksMarkramDepFacMechanism ;
     nml:hasParameter "initReleaseProb",
@@ -1451,7 +1299,6 @@ nml:tsodyksMarkramDepFacMechanism a owl:Class ;
 nml:tsodyksMarkramDepMechanism a owl:Class ;
     rdfs:label "tsodyksMarkramDepMechanism"@en ;
     dcterms:description "Depression-only Tsodyks-Markram model, as in Tsodyks and Markram 1997."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePlasticityMechanism ;
     skos:exactMatch neuroml2:tsodyksMarkramDepMechanism ;
     nml:hasParameter "initReleaseProb",
@@ -1460,7 +1307,6 @@ nml:tsodyksMarkramDepMechanism a owl:Class ;
 nml:vHalfTransition a owl:Class ;
     rdfs:label "vHalfTransition"@en ;
     dcterms:description "Transition which specifies both the forward and reverse rates of transition"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:KSTransition ;
     skos:exactMatch neuroml2:vHalfTransition ;
     nml:hasParameter "gamma",
@@ -1473,13 +1319,11 @@ nml:vHalfTransition a owl:Class ;
 nml:variableParameter a owl:Class ;
     rdfs:label "variableParameter"@en ;
     dcterms:description "Specifies a _parameter (e.g. condDensity) which can vary its value across a _segmentGroup. The value is calculated from _value attribute of the _inhomogeneousValue_ subelement. This element is normally a child of _channelDensityNonUniform_, _channelDensityNonUniformNernst_ or _channelDensityNonUniformGHK_ and is used to calculate the value of the conductance, etc. which will vary on different parts of the cell. The _segmentGroup specified here needs to define an _inhomogeneousParameter_ (referenced from _inhomogeneousParameter in the _inhomogeneousValue_), which calculates a _variable (e.g. p) varying across the cell (e.g. based on the path length from soma), which is then used in the _value attribute of the _inhomogeneousValue_ (so for example condDensity = f(p))"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:variableParameter .
 
 nml:voltageClamp a owl:Class ;
     rdfs:label "voltageClamp"@en ;
     dcterms:description "Voltage clamp. Applies a variable current _i to try to keep parent at _targetVoltage. Not yet fully tested!!! Consider using voltageClampTriple!!"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrent ;
     skos:exactMatch neuroml2:voltageClamp ;
     nml:eventPort "in" ;
@@ -1491,7 +1335,6 @@ nml:voltageClamp a owl:Class ;
 nml:voltageClampTriple a owl:Class ;
     rdfs:label "voltageClampTriple"@en ;
     dcterms:description "Voltage clamp with 3 clamp levels. Applies a variable current _i (through _simpleSeriesResistance) to try to keep parent cell at _conditioningVoltage until time _delay, _testingVoltage until _delay + _duration, and _returnVoltage afterwards. Only enabled if _active = 1. "@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrent ;
     skos:exactMatch neuroml2:voltageClampTriple ;
     nml:eventPort "in" ;
@@ -1506,7 +1349,6 @@ nml:voltageClampTriple a owl:Class ;
 nml:voltageConcDepBlockMechanism a owl:Class ;
     rdfs:label "voltageConcDepBlockMechanism"@en ;
     dcterms:description "Synaptic blocking mechanism which varys with membrane potential across the synapse, e.g. in NMDA receptor mediated synapses"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseBlockMechanism ;
     skos:exactMatch neuroml2:voltageConcDepBlockMechanism ;
     nml:hasParameter "blockConcentration",
@@ -1517,21 +1359,18 @@ nml:voltageConcDepBlockMechanism a owl:Class ;
 nml:baseBlockMechanism a owl:Class ;
     rdfs:label "baseBlockMechanism"@en ;
     dcterms:description "Base of any ComponentType which produces a varying scaling (or blockage) of synaptic strength of magnitude _scaling"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseBlockMechanism ;
     nml:exposes "blockFactor" .
 
 nml:baseCell a owl:Class ;
     rdfs:label "baseCell"@en ;
     dcterms:description "Base type of any cell (e.g. point neuron like _izhikevich2007Cell_, or a morphologically detailed _Cell_ with _segment_s) which can be used in a _population_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseStandalone ;
     skos:exactMatch neuroml2:baseCell .
 
 nml:baseConductanceBasedSynapseTwo a owl:Class ;
     rdfs:label "baseConductanceBasedSynapseTwo"@en ;
     dcterms:description "Synapse model suited for a sum of two expTwoSynapses which exposes a conductance _g in addition to producing a current. Not necessarily ohmic!! cno_0000027"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepSynapse ;
     skos:exactMatch neuroml2:baseConductanceBasedSynapseTwo ;
     nml:exposes "g" ;
@@ -1542,14 +1381,12 @@ nml:baseConductanceBasedSynapseTwo a owl:Class ;
 nml:baseCurrentBasedSynapse a owl:Class ;
     rdfs:label "baseCurrentBasedSynapse"@en ;
     dcterms:description "Synapse model which produces a synaptic current."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSynapse ;
     skos:exactMatch neuroml2:baseCurrentBasedSynapse .
 
 nml:baseIaf a owl:Class ;
     rdfs:label "baseIaf"@en ;
     dcterms:description "Base ComponentType for an integrate and fire cell which emits a spiking event at membrane potential _thresh and and resets to _reset"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPot ;
     skos:exactMatch neuroml2:baseIaf ;
     nml:hasParameter "reset",
@@ -1558,7 +1395,6 @@ nml:baseIaf a owl:Class ;
 nml:baseIafCapCell a owl:Class ;
     rdfs:label "baseIafCapCell"@en ;
     dcterms:description "Base Type for all Integrate and Fire cells with a capacitance _C, threshold _thresh and reset membrane potential _reset"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPotCap ;
     skos:exactMatch neuroml2:baseIafCapCell ;
     nml:hasParameter "reset",
@@ -1567,7 +1403,6 @@ nml:baseIafCapCell a owl:Class ;
 nml:baseVoltageDepPointCurrentDL a owl:Class ;
     rdfs:label "baseVoltageDepPointCurrentDL"@en ;
     dcterms:description "Base type for all ComponentTypes which produce a dimensionless current _I and require a dimensionless membrane potential _V exposed on the parent Component"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrentDL ;
     skos:exactMatch neuroml2:baseVoltageDepPointCurrentDL ;
     nml:requires "V" .
@@ -1575,7 +1410,6 @@ nml:baseVoltageDepPointCurrentDL a owl:Class ;
 nml:cell a owl:Class ;
     rdfs:label "cell"@en ;
     dcterms:description "Cell with _segment_s specified in a _morphology_ element along with details on its _biophysicalProperties_. NOTE: this can only be correctly simulated using jLEMS when there is a single segment in the cell, and _v of this cell represents the membrane potential in that isopotential segment."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPot ;
     skos:exactMatch neuroml2:cell ;
     nml:exposes "caConc",
@@ -1590,7 +1424,6 @@ nml:cell a owl:Class ;
 nml:channelDensity a owl:Class ;
     rdfs:label "channelDensity"@en ;
     dcterms:description "Specifies a time varying ohmic conductance density, _gDensity, which is distributed on an area of the _cell (specified in _membraneProperties_) with fixed reversal potential _erev producing a current density _iDensity"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensityCond ;
     skos:exactMatch neuroml2:channelDensity ;
     nml:hasParameter "erev" .
@@ -1598,31 +1431,26 @@ nml:channelDensity a owl:Class ;
 nml:connection a owl:Class ;
     rdfs:label "connection"@en ;
     dcterms:description "Event connection directly between named components, which gets processed via a new instance of a _synapse component which is created on the target component. Normally contained inside a _projection_ element."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:connection .
 
 nml:continuousConnectionInstance a owl:Class ;
     rdfs:label "continuousConnectionInstance"@en ;
     dcterms:description "An instance of a connection in a _continuousProjection_ between _presynapticPopulation to another _postsynapticPopulation through a _preComponent at the start and _postComponent at the end. Populations need to be of type _populationList_ and contain _instance_ and _location_ elements. Can be used for analog synapses."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:continuousConnectionInstance .
 
 nml:electricalConnectionInstance a owl:Class ;
     rdfs:label "electricalConnectionInstance"@en ;
     dcterms:description "To enable connections between populations through gap junctions. Populations need to be of type _populationList_ and contain _instance_ and _location_ elements."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:electricalConnectionInstance .
 
 nml:explicitConnection a owl:Class ;
     rdfs:label "explicitConnection"@en ;
     dcterms:description "Explicit event connection between components"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:explicitConnection .
 
 nml:iafCell a owl:Class ;
     rdfs:label "iafCell"@en ;
     dcterms:description "Integrate and fire cell with capacitance _C, _leakConductance and _leakReversal"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseIafCapCell ;
     skos:exactMatch neuroml2:iafCell ;
     nml:hasParameter "leakConductance",
@@ -1631,7 +1459,6 @@ nml:iafCell a owl:Class ;
 nml:iafTauCell a owl:Class ;
     rdfs:label "iafTauCell"@en ;
     dcterms:description "Integrate and fire cell which returns to its leak reversal potential of _leakReversal with a time constant _tau"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseIaf ;
     skos:exactMatch neuroml2:iafTauCell ;
     nml:hasParameter "leakReversal",
@@ -1640,13 +1467,11 @@ nml:iafTauCell a owl:Class ;
 nml:input a owl:Class ;
     rdfs:label "input"@en ;
     dcterms:description "Specifies a single input to a _target, optionally giving the _segmentId (default 0) and _fractionAlong the segment (default 0.5)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:input .
 
 nml:intracellularProperties a owl:Class ;
     rdfs:label "intracellularProperties"@en ;
     dcterms:description "Biophysical properties related to the intracellular space within the _cell_, such as the _resistivity_ and the list of ionic _species_ present. _caConc and _caConcExt are explicitly exposed here to facilitate accessing these values from other Components, even though _caConcExt is clearly not an intracellular property"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:intracellularProperties ;
     nml:exposes "caConc",
         "caConcExt" .
@@ -1654,14 +1479,12 @@ nml:intracellularProperties a owl:Class ;
 nml:ionChannelHH a owl:Class ;
     rdfs:label "ionChannelHH"@en ;
     dcterms:description "Note _ionChannel_ and _ionChannelHH_ are currently functionally identical. This is needed since many existing examples use ionChannel, some use ionChannelHH. NeuroML v2beta4 should remove one of these, probably ionChannelHH."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseIonChannel ;
     skos:exactMatch neuroml2:ionChannelHH .
 
 nml:membraneProperties a owl:Class ;
     rdfs:label "membraneProperties"@en ;
     dcterms:description "Properties specific to the membrane, such as the _populations of channels, _channelDensities, _specificCapacitance, etc."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:membraneProperties ;
     nml:exposes "iCa",
         "totChanCurrent",
@@ -1671,14 +1494,12 @@ nml:membraneProperties a owl:Class ;
 nml:network a owl:Class ;
     rdfs:label "network"@en ;
     dcterms:description "Network containing: _population_s (potentially of type _populationList_, and so specifying a list of cell _location_s); _projection_s (with lists of _connection_s) and/or _explicitConnection_s; and _inputList_s (with lists of _input_s) and/or _explicitInput_s. Note: often in NeuroML this will be of type _networkWithTemperature_ if there are temperature dependent elements (e.g. ion channels)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseStandalone ;
     skos:exactMatch neuroml2:network .
 
 nml:spikeGeneratorPoisson a owl:Class ;
     rdfs:label "spikeGeneratorPoisson"@en ;
     dcterms:description "Generator of spikes whose ISI is distributed according to an exponential PDF with scale: 1 / _averageRate"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikeSource ;
     skos:exactMatch neuroml2:spikeGeneratorPoisson ;
     nml:exposes "isi",
@@ -1689,14 +1510,12 @@ nml:spikeGeneratorPoisson a owl:Class ;
 nml:synapticConnection a owl:Class ;
     rdfs:label "synapticConnection"@en ;
     dcterms:description "Explicit event connection between named components, which gets processed via a new instance of a _synapse component which is created on the target component"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:explicitConnection ;
     skos:exactMatch neuroml2:synapticConnection .
 
 nml:KSState a owl:Class ;
     rdfs:label "KSState"@en ;
     dcterms:description "One of the states in which a _gateKS_ can be. The rates of transitions between these states are given by _KSTransition_s"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:KSState ;
     nml:exposes "occupancy",
         "q" ;
@@ -1705,7 +1524,6 @@ nml:KSState a owl:Class ;
 nml:baseCellMembPotDL a owl:Class ;
     rdfs:label "baseCellMembPotDL"@en ;
     dcterms:description "Any spiking cell which has a dimensioness membrane potential, _V (as opposed to a membrane potential units of voltage, _baseCellMembPot_)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikingCell ;
     skos:exactMatch neuroml2:baseCellMembPotDL ;
     nml:exposes "V" .
@@ -1713,14 +1531,12 @@ nml:baseCellMembPotDL a owl:Class ;
 nml:baseChannelPopulation a owl:Class ;
     rdfs:label "baseChannelPopulation"@en ;
     dcterms:description "Base type for any current produced by a population of channels, all of which are of type _ionChannel"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrent ;
     skos:exactMatch neuroml2:baseChannelPopulation .
 
 nml:baseConductanceScaling a owl:Class ;
     rdfs:label "baseConductanceScaling"@en ;
     dcterms:description "Base ComponentType for a scaling to apply to a gate's conductance, e.g. temperature dependent scaling"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseConductanceScaling ;
     nml:exposes "factor" ;
     nml:requires "temperature" .
@@ -1728,7 +1544,6 @@ nml:baseConductanceScaling a owl:Class ;
 nml:baseGate a owl:Class ;
     rdfs:label "baseGate"@en ;
     dcterms:description "Base ComponentType for a voltage and/or concentration dependent gate"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseGate ;
     nml:exposes "fcond",
         "q" ;
@@ -1737,7 +1552,6 @@ nml:baseGate a owl:Class ;
 nml:baseIonChannel a owl:Class ;
     rdfs:label "baseIonChannel"@en ;
     dcterms:description "Base for all ion channel ComponentTypes"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseIonChannel ;
     nml:exposes "fopen",
         "g" ;
@@ -1747,7 +1561,6 @@ nml:baseIonChannel a owl:Class ;
 nml:basePlasticityMechanism a owl:Class ;
     rdfs:label "basePlasticityMechanism"@en ;
     dcterms:description "Base plasticity mechanism."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:basePlasticityMechanism ;
     nml:eventPort "in" ;
     nml:exposes "plasticityFactor" .
@@ -1755,14 +1568,12 @@ nml:basePlasticityMechanism a owl:Class ;
 nml:basePopulation a owl:Class ;
     rdfs:label "basePopulation"@en ;
     dcterms:description "A population of multiple instances of a specific _component, which anything which extends _baseCell_. "@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseStandalone ;
     skos:exactMatch neuroml2:basePopulation .
 
 nml:basePyNNCell a owl:Class ;
     rdfs:label "basePyNNCell"@en ;
     dcterms:description "Base type of any PyNN standard cell model. Note: membrane potential _v has dimensions voltage, but all other parameters are dimensionless. This is to facilitate translation to and from PyNN scripts in Python, where these parameters have implicit units, see http://neuralensemble.org/trac/PyNN/wiki/StandardModels"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPot ;
     skos:exactMatch neuroml2:basePyNNCell ;
     nml:eventPort "spike_in_E",
@@ -1777,7 +1588,6 @@ nml:basePyNNCell a owl:Class ;
 nml:baseQ10Settings a owl:Class ;
     rdfs:label "baseQ10Settings"@en ;
     dcterms:description "Base ComponentType for a scaling to apply to gating variable time course, usually temperature dependent"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseQ10Settings ;
     nml:exposes "q10" ;
     nml:requires "temperature" .
@@ -1785,7 +1595,6 @@ nml:baseQ10Settings a owl:Class ;
 nml:baseSpikingCell a owl:Class ;
     rdfs:label "baseSpikingCell"@en ;
     dcterms:description "Base type of any cell which can emit _spike events."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCell ;
     skos:exactMatch neuroml2:baseSpikingCell ;
     nml:eventPort "spike" .
@@ -1793,7 +1602,6 @@ nml:baseSpikingCell a owl:Class ;
 nml:baseVoltageDepRate a owl:Class ;
     rdfs:label "baseVoltageDepRate"@en ;
     dcterms:description "Base ComponentType for voltage dependent rate. Produces a time varying rate _r which depends on _v."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseVoltageDepRate ;
     nml:exposes "r" ;
     nml:requires "v" .
@@ -1801,7 +1609,6 @@ nml:baseVoltageDepRate a owl:Class ;
 nml:baseVoltageDepTime a owl:Class ;
     rdfs:label "baseVoltageDepTime"@en ;
     dcterms:description "Base ComponentType for voltage dependent ComponentType producing value _t with dimension time (e.g. for time course of rate variable). Note: time course would not normally be fit to exp/sigmoid etc."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseVoltageDepTime ;
     nml:exposes "t" ;
     nml:requires "v" .
@@ -1809,7 +1616,6 @@ nml:baseVoltageDepTime a owl:Class ;
 nml:baseVoltageDepVariable a owl:Class ;
     rdfs:label "baseVoltageDepVariable"@en ;
     dcterms:description "Base ComponentType for voltage dependent variable  _x, which depends on _v. Can be used for inf/steady state of rate variable."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseVoltageDepVariable ;
     nml:exposes "x" ;
     nml:requires "v" .
@@ -1817,7 +1623,6 @@ nml:baseVoltageDepVariable a owl:Class ;
 nml:expTwoSynapse a owl:Class ;
     rdfs:label "expTwoSynapse"@en ;
     dcterms:description "Ohmic synapse model whose conductance waveform on receiving an event has a rise time of _tauRise and a decay time of _tauDecay. Max conductance reached during this time (assuming zero conductance before) is _gbase * _weight."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseConductanceBasedSynapse ;
     skos:exactMatch neuroml2:expTwoSynapse ;
     nml:hasParameter "tauDecay",
@@ -1826,14 +1631,12 @@ nml:expTwoSynapse a owl:Class ;
 nml:ionChannel a owl:Class ;
     rdfs:label "ionChannel"@en ;
     dcterms:description "Note _ionChannel_ and _ionChannelHH_ are currently functionally identical. This is needed since many existing examples use ionChannel, some use ionChannelHH. NeuroML v2beta4 should remove one of these, probably ionChannelHH."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:ionChannelHH ;
     skos:exactMatch neuroml2:ionChannel .
 
 nml:point3DWithDiam a owl:Class ;
     rdfs:label "point3DWithDiam"@en ;
     dcterms:description "Base type for ComponentTypes which specify an ( _x, _y, _z ) coordinate along with a _diameter. Note: no dimension used in the attributes for these coordinates! These are assumed to have dimension micrometer (10^-6 m). This is due to micrometers being the default option for the majority of neuronal morphology formats, and dimensions are omitted here to facilitate reading and writing of morphologies in NeuroML."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:point3DWithDiam ;
     nml:hasParameter "diameter",
         "x",
@@ -1843,7 +1646,6 @@ nml:point3DWithDiam a owl:Class ;
 nml:baseConductanceBasedSynapse a owl:Class ;
     rdfs:label "baseConductanceBasedSynapse"@en ;
     dcterms:description "Synapse model which exposes a conductance _g in addition to producing a current. Not necessarily ohmic!! cno_0000027"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepSynapse ;
     skos:exactMatch neuroml2:baseConductanceBasedSynapse ;
     nml:exposes "g" ;
@@ -1853,14 +1655,12 @@ nml:baseConductanceBasedSynapse a owl:Class ;
 nml:baseGradedSynapse a owl:Class ;
     rdfs:label "baseGradedSynapse"@en ;
     dcterms:description "Base type for graded synapses"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSynapse ;
     skos:exactMatch neuroml2:baseGradedSynapse .
 
 nml:baseHHRate a owl:Class ;
     rdfs:label "baseHHRate"@en ;
     dcterms:description "Base ComponentType for rate which follow one of the typical forms for rate equations in the standard HH formalism, using the parameters _rate, _midpoint and _scale"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepRate ;
     skos:exactMatch neuroml2:baseHHRate ;
     nml:hasParameter "midpoint",
@@ -1870,7 +1670,6 @@ nml:baseHHRate a owl:Class ;
 nml:baseHHVariable a owl:Class ;
     rdfs:label "baseHHVariable"@en ;
     dcterms:description "Base ComponentType for voltage dependent dimensionless variable which follow one of the typical forms for variable equations in the standard HH formalism, using the parameters _rate, _midpoint, _scale"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepVariable ;
     skos:exactMatch neuroml2:baseHHVariable ;
     nml:hasParameter "midpoint",
@@ -1880,7 +1679,6 @@ nml:baseHHVariable a owl:Class ;
 nml:basePyNNIaFCell a owl:Class ;
     rdfs:label "basePyNNIaFCell"@en ;
     dcterms:description "Base type of any PyNN standard integrate and fire model"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNCell ;
     skos:exactMatch neuroml2:basePyNNIaFCell ;
     nml:hasParameter "tau_m",
@@ -1892,7 +1690,6 @@ nml:basePyNNIaFCell a owl:Class ;
 nml:baseVoltageDepPointCurrentSpiking a owl:Class ;
     rdfs:label "baseVoltageDepPointCurrentSpiking"@en ;
     dcterms:description "Base type for all ComponentTypes which produce a current _i, require a membrane potential _v exposed on the parent and emit spikes (on a port _spike). The exposed variable _tsince can be used for plotting the time since the Component has spiked last"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepPointCurrent ;
     skos:exactMatch neuroml2:baseVoltageDepPointCurrentSpiking ;
     nml:eventPort "spike" ;
@@ -1901,7 +1698,6 @@ nml:baseVoltageDepPointCurrentSpiking a owl:Class ;
 nml:concentrationModel a owl:Class ;
     rdfs:label "concentrationModel"@en ;
     dcterms:description "Base for any model of an _ion concentration which changes with time. Internal (_concentration) and external (_extConcentration) values for the concentration of the ion are given."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:concentrationModel ;
     nml:exposes "concentration",
         "extConcentration" ;
@@ -1912,7 +1708,6 @@ nml:concentrationModel a owl:Class ;
 nml:KSTransition a owl:Class ;
     rdfs:label "KSTransition"@en ;
     dcterms:description "Specified the forward and reverse rates of transition between two _KSState_s in a _gateKS_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:KSTransition ;
     nml:exposes "rf",
         "rr" .
@@ -1920,7 +1715,6 @@ nml:KSTransition a owl:Class ;
 nml:baseChannelDensityCond a owl:Class ;
     rdfs:label "baseChannelDensityCond"@en ;
     dcterms:description "Base type for distributed conductances on an area of a cell producing a (not necessarily ohmic) current"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseChannelDensity ;
     skos:exactMatch neuroml2:baseChannelDensityCond ;
     nml:exposes "gDensity" ;
@@ -1929,7 +1723,6 @@ nml:baseChannelDensityCond a owl:Class ;
 nml:basePyNNIaFCondCell a owl:Class ;
     rdfs:label "basePyNNIaFCondCell"@en ;
     dcterms:description "Base type of conductance based PyNN IaF cell models"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePyNNIaFCell ;
     skos:exactMatch neuroml2:basePyNNIaFCondCell ;
     nml:hasParameter "e_rev_E",
@@ -1938,7 +1731,6 @@ nml:basePyNNIaFCondCell a owl:Class ;
 nml:basePynnSynapse a owl:Class ;
     rdfs:label "basePynnSynapse"@en ;
     dcterms:description "Base type for all PyNN synapses. Note, the current _I produced is dimensionless, but it requires a membrane potential _v with dimension voltage"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseVoltageDepSynapse ;
     skos:exactMatch neuroml2:basePynnSynapse ;
     nml:hasParameter "tau_syn" .
@@ -1946,13 +1738,11 @@ nml:basePynnSynapse a owl:Class ;
 nml:baseStandalone a owl:Class ;
     rdfs:label "baseStandalone"@en ;
     dcterms:description "Base type of any Component which can have _Notes_, _Annotation_, or a _property_ list."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseStandalone .
 
 nml:baseSynapse a owl:Class ;
     rdfs:label "baseSynapse"@en ;
     dcterms:description "Base type for all synapses, i.e. ComponentTypes which produce a current (dimension current) and change Dynamics in response to an incoming event. cno_0000009"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrent ;
     skos:exactMatch neuroml2:baseSynapse ;
     nml:eventPort "in" .
@@ -1960,7 +1750,6 @@ nml:baseSynapse a owl:Class ;
 nml:baseVoltageDepPointCurrent a owl:Class ;
     rdfs:label "baseVoltageDepPointCurrent"@en ;
     dcterms:description "Base type for all ComponentTypes which produce a current _i (with dimension current) and require a voltage _v exposed on the parent Component, which would often be the membrane potential of a Component extending _baseCellMembPot_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:basePointCurrent ;
     skos:exactMatch neuroml2:baseVoltageDepPointCurrent ;
     nml:requires "v" .
@@ -1968,7 +1757,6 @@ nml:baseVoltageDepPointCurrent a owl:Class ;
 nml:baseVoltageDepSynapse a owl:Class ;
     rdfs:label "baseVoltageDepSynapse"@en ;
     dcterms:description "Base type for synapses with a dependence on membrane potential"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSynapse ;
     skos:exactMatch neuroml2:baseVoltageDepSynapse ;
     nml:requires "v" .
@@ -1976,7 +1764,6 @@ nml:baseVoltageDepSynapse a owl:Class ;
 nml:baseChannelDensity a owl:Class ;
     rdfs:label "baseChannelDensity"@en ;
     dcterms:description "Base type for a current of density _iDensity distributed on an area of a _cell_, flowing through the specified _ionChannel. Instances of this (normally _channelDensity_) are specified in the _membraneProperties_ of the _cell_."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseChannelDensity ;
     nml:exposes "iDensity" ;
     nml:requires "v" .
@@ -1984,14 +1771,12 @@ nml:baseChannelDensity a owl:Class ;
 nml:basePointCurrentDL a owl:Class ;
     rdfs:label "basePointCurrentDL"@en ;
     dcterms:description "Base type for all ComponentTypes which produce a dimensionless current _I. There are many dimensionless equivalents of all the core current producing ComponentTypes such as _pulseGenerator_ / _pulseGeneratorDL_, _sineGenerator_ / _sineGeneratorDL_ and _rampGenerator_ / _rampGeneratorDL_"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:basePointCurrentDL ;
     nml:exposes "I" .
 
 nml:baseCellMembPot a owl:Class ;
     rdfs:label "baseCellMembPot"@en ;
     dcterms:description "Any spiking cell which has a membrane potential _v with units of voltage (as opposed to a dimensionless membrane potential used in _baseCellMembPotDL_)."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseSpikingCell ;
     skos:exactMatch neuroml2:baseCellMembPot ;
     nml:exposes "v" .
@@ -1999,7 +1784,6 @@ nml:baseCellMembPot a owl:Class ;
 nml:baseCellMembPotCap a owl:Class ;
     rdfs:label "baseCellMembPotCap"@en ;
     dcterms:description "Any cell with a membrane potential _v with voltage units and a membrane capacitance _C. Also defines exposed value _iSyn for current due to external synapses and _iMemb for total transmembrane current (usually channel currents plus _iSyn)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseCellMembPot ;
     skos:exactMatch neuroml2:baseCellMembPotCap ;
     nml:exposes "iMemb",
@@ -2009,7 +1793,6 @@ nml:baseCellMembPotCap a owl:Class ;
 nml:basePointCurrent a owl:Class ;
     rdfs:label "basePointCurrent"@en ;
     dcterms:description "Base type for all ComponentTypes which produce a current _i (with dimension current)"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseStandalone ;
     skos:exactMatch neuroml2:basePointCurrent ;
     nml:exposes "i" .
@@ -2017,7 +1800,6 @@ nml:basePointCurrent a owl:Class ;
 nml:baseSpikeSource a owl:Class ;
     rdfs:label "baseSpikeSource"@en ;
     dcterms:description "Base for any ComponentType whose main purpose is to emit spikes (on a port _spike). The exposed variable _tsince can be used for plotting the time since the Component has spiked last."@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     skos:exactMatch neuroml2:baseSpikeSource ;
     nml:eventPort "spike" ;
     nml:exposes "tsince" .
@@ -2025,13 +1807,6 @@ nml:baseSpikeSource a owl:Class ;
 nml:gate a owl:Class ;
     rdfs:label "gate"@en ;
     dcterms:description "Conveniently named baseGate"@en ;
-    rdfs:isDefinedBy tvbo:neuroml ;
     rdfs:subClassOf nml:baseGate ;
     skos:exactMatch neuroml2:gate .
-
-tvbo:neuroml a owl:Ontology ;
-    dcterms:description "OWL rendering of the NeuroML2 core LEMS ComponentType hierarchy: one class per ComponentType, extends as rdfs:subClassOf, cross-referenced to the canonical NeuroML type via skos:exactMatch."@en ;
-    dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
-    dcterms:title "TVB-O NeuroML-core reference"@en ;
-    rdfs:seeAlso <http://www.neuroml.org/schema/neuroml2> .
 

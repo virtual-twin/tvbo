@@ -136,3 +136,47 @@ def test_a_name_two_folders_resolve_in_an_untyped_slot_is_reported():
 
     assert migrated == text
     assert changes[0].new is None and "atlases, networks each resolve" in changes[0].reason
+
+
+RETIRED = "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-400_desc-SC_relmat"
+CURRENT = "tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-400_desc-SC_relmat"
+
+
+def test_a_name_several_records_share_is_reported_and_a_retired_stem_beside_it_rewritten():
+    """``Schaefer2018`` names twenty atlases, so the registry refuses it and the migration reports that refusal; the retired stem in the same file still takes its record's stem."""
+    text = f"parcellation: {{atlas: {{iri: tvbo:atlases/Schaefer2018}}}}\nnetwork: {{iri: tvbo:networks/{RETIRED}}}\n"
+    migrated, changes, _ = migrate_text(text)
+
+    assert migrated == text.replace(RETIRED, CURRENT)
+    refused, rewritten = changes
+    assert (refused.line, refused.new) == (1, None)
+    assert "Several curated BrainAtlas records answer to 'Schaefer2018'" in refused.reason
+    assert (rewritten.line, rewritten.new) == (2, f"tvbo:networks/{CURRENT}")
+
+
+def test_an_archived_network_is_reported_with_its_refusal_and_left_as_written():
+    """The migration does not rewrite an archived network's IRI to the network that replaced it, whose weights differ here, since tvbo hands out no archived data (register AR1): it reports the registry's refusal, which names that network, and leaves the IRI as written."""
+    archived = "tpl-FSLMNI152_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_scale-1000_desc-SC_relmat"
+    text = f"network: {{iri: tvbo:networks/{archived}}}\n"
+    migrated, changes, _ = migrate_text(text)
+
+    assert migrated == text
+    [refused] = changes
+    assert (refused.line, refused.new) == (1, None)
+    assert refused.reason.startswith(f"Network {archived!r} was archived")
+
+
+def test_migrate_iris_reports_a_shared_name_and_goes_on_to_the_next_file(tmp_path: Path):
+    """The command reports the refusal for the first file and still rewrites the second, so a run never stops part way."""
+    from typer.testing import CliRunner
+
+    from tvbo.cli import app
+
+    (tmp_path / "a.yaml").write_text("network: {iri: tvbo:networks/Schaefer2018}\n")
+    (tmp_path / "b.yaml").write_text(f"network: {{iri: tvbo:networks/{RETIRED}}}\n")
+    result = CliRunner().invoke(app, ["migrate-iris", str(tmp_path)])
+
+    assert result.exit_code == 0, result.output
+    assert f"{tmp_path / 'a.yaml'}:1: tvbo:networks/Schaefer2018: Several curated networks have" in result.output
+    assert (tmp_path / "a.yaml").read_text() == "network: {iri: tvbo:networks/Schaefer2018}\n"
+    assert (tmp_path / "b.yaml").read_text() == f"network: {{iri: tvbo:networks/{CURRENT}}}\n"

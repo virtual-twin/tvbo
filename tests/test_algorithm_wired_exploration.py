@@ -19,7 +19,7 @@ dynamics:
   name: TunedLeak
   label: TunedLeak
   parameters:
-    g: {value: 0.0, heterogeneous: true, free: true, shape: "(n_nodes,)"}
+    g: {value: 0.0, heterogeneous: true, shape: "(n_nodes,)"}
   state_variables:
     x:
       initial_value: 0.0

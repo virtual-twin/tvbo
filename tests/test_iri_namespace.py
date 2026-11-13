@@ -73,9 +73,9 @@ def _module_namespaces() -> dict[str, str]:
 
 @functools.cache
 def _records(folder: str) -> frozenset[str]:
-    """The names and file stems of the records *folder* files, every local name the registry resolves in it."""
+    """The names and file stems of the records *folder* files: every local name a record of *folder* answers to; one several records share is refused by the registry."""
     index = registry._build_name_index(registry.DATABASE_ROOT / folder)
-    return frozenset(index) | {path.stem for path in index.values()}
+    return frozenset(index) | {path.stem for paths in index.values() for path in paths}
 
 
 @pytest.fixture(scope="module")
@@ -101,8 +101,9 @@ def test_every_filed_record_is_an_individual_of_the_abox(folder: str, abox_subje
     """Each record the registry resolves, one filed in a subfolder too, is the term its :func:`~tvbo.data.registry.record_iri` names."""
     index = registry._build_name_index(registry.DATABASE_ROOT / folder)
     unminted = sorted(
-        name
-        for name, path in index.items()
+        path.stem
+        for paths in index.values()
+        for path in paths
         if str(gen_abox.expand_curie(registry.record_iri(folder, path))) not in abox_subjects
     )
     assert not unminted, f"{folder}/ files records the A-box does not mint: {unminted}"
@@ -121,15 +122,16 @@ def test_every_record_iri_a_spec_writes_is_a_term(abox_subjects: set[str]):
 
 @pytest.mark.parametrize("folder", sorted(registry._IRI_SCOPES))
 def test_no_two_records_of_a_folder_differ_only_by_case(folder: str):
-    """:func:`~tvbo.data.registry.resolve` matches a ``name:`` or stem in any case and returns the first record that matches, so each case-folded spelling must belong to one record."""
-    spellings: dict[str, dict[str, Path]] = {}
-    for name, path in registry._build_name_index(registry.DATABASE_ROOT / folder).items():
-        for local in {name, path.stem}:
-            spellings.setdefault(local.lower(), {})[local] = path
+    """:func:`~tvbo.data.registry.resolve` matches a ``name:`` or stem in any case and refuses one that several records answer to, so two records spelled alike but for case would each be refused under its own spelling; each case-folded spelling a record answers to is spelled one way. A ``name:`` several records share in one spelling, ``Schaefer2018``, is refused by design and named apart by stem."""
+    spellings: dict[str, dict[str, set[Path]]] = {}
+    for name, paths in registry._build_name_index(registry.DATABASE_ROOT / folder).items():
+        for path in paths:
+            for local in {name, path.stem}:
+                spellings.setdefault(local.lower(), {}).setdefault(local, set()).add(path)
     clashes = sorted(
-        sorted(f"{local} ({path.relative_to(registry.DATABASE_ROOT)})" for local, path in found.items())
+        sorted(f"{local} ({path.relative_to(registry.DATABASE_ROOT)})" for local, paths in found.items() for path in paths)
         for found in spellings.values()
-        if len(set(found.values())) > 1
+        if len(found) > 1 and len(set().union(*found.values())) > 1
     )
     assert not clashes, f"{folder}/ records whose names differ only by case: {clashes}"
 

@@ -3814,4 +3814,6 @@ bids:
   cohort: HCPYA
   reconstruction: dTOR
   atlas: vDBS1
+  desc: SC
+  suffix: relmat
 distance_unit: mm

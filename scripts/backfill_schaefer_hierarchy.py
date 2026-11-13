@@ -47,7 +47,7 @@ def parse_args() -> argparse.Namespace:
 
 def load_atlas_entities(atlas_dir: Path, seg: str, scale: str) -> list[dict] | None:
     """Load atlas entities sorted by lookupLabel, or None if not found."""
-    path = atlas_dir / (f"tpl-FSLMNI152_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_desc-ordered_dseg.yaml")
+    path = atlas_dir / (f"tpl-MNI152NLin6Asym_atlas-Schaefer2018_seg-{seg}_scale-{scale}_res-1_dseg.yaml")
     if not path.exists():
         return None
     with open(path) as f:

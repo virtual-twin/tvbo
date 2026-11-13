@@ -5,6 +5,7 @@ number_of_nodes: 9
 distance_unit: mm
 time_unit: ms
 data_file: SmileyNetwork.h5
+primary_weight: sc
 parameters:
   conduction_speed:
     label: v

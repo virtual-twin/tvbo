@@ -12,6 +12,8 @@ bids:
   cohort: HCPYA
   reconstruction: dTOR
   atlas: Lobar8
+  desc: SCFC
+  suffix: relmat
 parameters:
   conduction_speed:
     label: v

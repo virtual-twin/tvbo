@@ -297,35 +297,35 @@ def test_an_authored_layer_survives_on_a_network_that_also_names_a_data_file(roo
 def test_reading_a_companion_layer_asks_nothing_of_a_sourced_one(root, tmp_path):
     net = Network(**_over_a_group_companion(tmp_path, _network_spec()["edges"][0], {"label": "length"}))
     np.testing.assert_array_equal(net.matrix("length", format="dense"), GROUP + 100.0)
-    assert net.sources_layer("weights") and not net.sources_layer("length") and net.declares_references()
+    assert net.sources_layer("weight") and not net.sources_layer("length") and net.declares_references()
     with pytest.raises(LookupError, match="not declared by any dataset"):
         net.matrix("weight", format="dense")
 
 
-def _sourced_as_weights(tmp_path, root, results):
-    """The group companion's network with its weight layer declared under the plural spelling, bound to subject 01."""
-    spec = _over_a_group_companion(tmp_path, {**_network_spec()["edges"][0], "label": "weights"})
-    return Network(**spec).bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
+def _sourced_as_declared_weights(tmp_path, root, results):
+    """The group companion's network with its weight layer declared as ``sc``, the edge its ``primary_weight`` names, bound to subject 01."""
+    spec = _over_a_group_companion(tmp_path, {**_network_spec()["edges"][0], "label": "sc"})
+    return Network(**spec, primary_weight="sc").bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
 
 
-def test_a_sourced_layer_replaces_the_companions_under_another_spelling_of_its_name(root, results, tmp_path):
-    """``weights`` is the weight layer, so the companion's ``weight`` leaves the edges and its other layers stay."""
-    net = _sourced_as_weights(tmp_path, root, results)
-    assert sorted(str(edge.label) for edge in net.edges) == ["length", "weights"]
+def test_a_sourced_layer_replaces_the_companions_under_the_other_name_of_the_weights(root, results, tmp_path):
+    """``sc`` is the weight layer, so the companion's ``weight`` leaves the edges and its other layers stay."""
+    net = _sourced_as_declared_weights(tmp_path, root, results)
+    assert sorted(str(edge.label) for edge in net.edges) == ["length", "sc"]
     np.testing.assert_array_equal(net.matrix("length", format="dense"), GROUP + 100.0)
 
 
-def test_a_run_materialises_the_sourced_layer_and_not_the_companions_other_spelling_of_it(root, results, tmp_path):
-    net = _sourced_as_weights(tmp_path, root, results)
+def test_a_run_materialises_the_sourced_layer_and_not_the_companions_other_name_for_it(root, results, tmp_path):
+    net = _sourced_as_declared_weights(tmp_path, root, results)
     np.testing.assert_array_equal(net.materialize("weight").arrays["edges/weight"], _expected("01")[2])
 
 
 def test_a_frozen_companion_holds_the_sourced_layer_and_not_the_one_it_replaced(root, results, tmp_path):
-    net = _sourced_as_weights(tmp_path, root, results)
+    net = _sourced_as_declared_weights(tmp_path, root, results)
     net.matrix("weight")
     net.save(tmp_path / "frozen_network.yaml")
     with h5py.File(tmp_path / "frozen_network.h5") as companion:
-        assert sorted(companion["edges"]) == ["length", "weights"]
+        assert sorted(companion["edges"]) == ["length", "sc"]
     back = Network.from_file(tmp_path / "frozen_network.yaml")
     back.bind_references(subject="01", datasets=[_dataset(root)], results_root=results)
     np.testing.assert_array_equal(back.materialize("weight").arrays["edges/weight"], _expected("01")[2])
@@ -359,7 +359,7 @@ def test_a_frozen_reference_reopens_its_companion_when_explicit_edges_sit_beside
 
 def test_one_argument_name_means_one_reference_within_a_chain(root):
     spec = _network_spec()
-    second = {"name": "weights", "equation": {"rhs": "weight * cohort_mean"}, "arguments": {}}
+    second = {"name": "cohortScale", "output": "weight", "equation": {"rhs": "weight * cohort_mean"}, "arguments": {}}
     second["arguments"]["cohort_mean"] = {"used": {"analysis": "toy_presence", "output": "toy_presence"}}
     spec["transforms"].insert(1, second)
     with pytest.raises(ValueError, match="'cohort_mean' twice with different `used:` references"):

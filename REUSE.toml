@@ -1,0 +1,486 @@
+version = 1
+
+# Code and documentation
+[[annotations]]
+path = "**"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "EUPL-1.2"
+
+# Package files: a file under tvbo/ is licensed only by an entry below
+[[annotations]]
+path = "tvbo/**"
+
+# Ontology and LinkML schema
+[[annotations]]
+path = ["schema/**", "ontology/**", "tvbo/data/ontology/**"]
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Merged ontology
+[[annotations]]
+path = ["ontology/tvbo.owl", "tvbo/data/ontology/tvbo.owl", "tvbo/data/ontology/tvb-o.owl"]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "Gene Ontology Consortium, release 2023-07-27, CC BY 4.0",
+    "QUDT, Quantities, Units, Dimensions and Types, by QUDT.org (https://qudt.org), licensed under CC BY 4.0",
+    "UCUM codes: Regenstrief Institute, Inc. and The UCUM Organization (https://ucum.org/license)",
+    "NeuroML2 CoreTypes, NeuroML contributors (https://github.com/NeuroML/NeuroML2)",
+]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Units module
+[[annotations]]
+path = ["ontology/tvb-o-units.ttl", "tvbo/data/ontology/unit_facts.json"]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "QUDT, Quantities, Units, Dimensions and Types, by QUDT.org (https://qudt.org), licensed under CC BY 4.0",
+    "UCUM codes: Regenstrief Institute, Inc. and The UCUM Organization (https://ucum.org/license)",
+]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# NeuroML module
+[[annotations]]
+path = ["ontology/tvb-o-neuroml.ttl", "tvbo/data/ontology/neuroml_contracts.json"]
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", "NeuroML2 CoreTypes, NeuroML contributors (https://github.com/NeuroML/NeuroML2)"]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Curated records
+[[annotations]]
+path = ["tvbo/database/**/*.yaml", "tvbo/data/db/**/*.yaml", "tvbo/data/db/**/*.yml", "tvbo/data/db/db.pkl", "tvbo/data/db/README.md"]
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Code, templates and package documentation
+[[annotations]]
+path = [
+    "**/*.py",
+    "ontology/*.ru",
+    "tvbo/**/*.mako",
+    "tvbo/**/*.tmpl",
+    "tvbo/skills/**/*.md",
+    "tvbo/skills/**/*.yaml",
+    "tvbo/codegen/*.md",
+    "tvbo/py.typed",
+    "tvbo/logging.conf",
+    "tvbo/juliapkg.json",
+    "tvbo/data/media/logo_ascii.txt",
+    "tvbo/data/tvb-go/Tripletts_with_keywords/VisualizeKeywordAnnotations.qmd",
+]
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "EUPL-1.2"
+
+# Copies of the LinkML schema the package ships, and its table of renamed record stems
+[[annotations]]
+path = ["tvbo/rules/study_layout.yaml", "tvbo/datamodel/tvbo_datamodel.schema.json", "tvbo/data/renamed_stems.yaml"]
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Records with Schaefer2018 parcel labels and centres
+[[annotations]]
+path = "tvbo/database/**/*_atlas-Schaefer2018_*.yaml"
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", "Copyright (c) 2016 Computational Brain Imaging Group (CBIG)"]
+SPDX-License-Identifier = "CC-BY-4.0 AND MIT"
+
+# Records with Hansen 2022 parcel labels and centres
+[[annotations]]
+path = "tvbo/database/**/*_rec-Hansen2022_*.yaml"
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "2022 Justine Y. Hansen et al., netneurolab/hansen_receptors",
+    "Copyright (c) 2018, Network Neuroscience Lab",
+    "Copyright (c) 2016 Computational Brain Imaging Group (CBIG)",
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND CC-BY-NC-SA-4.0 AND MIT"
+
+# Records with HCP-MMP1 parcel labels and centres
+[[annotations]]
+path = "tvbo/database/**/*_atlas-HCPMMP1_*.yaml"
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND LicenseRef-HCP-WU-Minn-Open-Access"
+
+# Records with HCPex parcel labels
+[[annotations]]
+path = "tvbo/database/**/*_atlas-HCPex_*.yaml"
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "2021 Chu-Chung Huang, Edmund T. Rolls, Jianfeng Feng, Ching-Po Lin (HCPex)",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND GPL-3.0-only AND LicenseRef-HCP-WU-Minn-Open-Access"
+
+# Records with Harvard-Oxford parcel labels
+[[annotations]]
+path = "tvbo/database/**/*_atlas-HOCPA_*.yaml"
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", "Harvard-Oxford cortical structural atlas, distributed with FSL, CC BY-SA 4.0"]
+SPDX-License-Identifier = "CC-BY-4.0 AND CC-BY-SA-4.0"
+
+# Atlas records with FreeSurfer labels
+[[annotations]]
+path = ["tvbo/database/atlases/**/*_atlas-DesikanKilliany_*.yaml", "tvbo/database/atlases/**/*_atlas-Destrieux_*.yaml", "tvbo/data/db/BrainAtlas/DesikanKilliany.yml"]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND LicenseRef-FreeSurfer"
+
+# Network records with FreeSurfer labels and MNI ICBM 2009c centres
+[[annotations]]
+path = ["tvbo/database/networks/**/*_atlas-DesikanKilliany_*.yaml", "tvbo/database/networks/**/*_atlas-Destrieux_*.yaml"]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND LicenseRef-MNI-ICBM152 AND LicenseRef-FreeSurfer"
+
+# Sensor records with tvb-data positions
+[[annotations]]
+path = "tvbo/database/networks/**/acq-*_sensors.yaml"
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others']
+SPDX-License-Identifier = "CC-BY-4.0 AND GPL-3.0-or-later"
+
+# Sensor records with MNE standard_1005 positions projected onto FreeSurfer's fsaverage
+[[annotations]]
+path = "tvbo/database/networks/**/*_acq-EEGstandard1005_*_sensors.yaml"
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "Copyright 2011-2025 MNE-Python authors",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND BSD-3-Clause AND LicenseRef-FreeSurfer"
+
+# Records whose inlined labels, centres or values come from a source of unknown licence
+[[annotations]]
+path = [
+    "tvbo/database/**/*_atlas-vDBS1_*.yaml",
+    "tvbo/database/**/*_atlas-Yeo17_*.yaml",
+    "tvbo/database/**/*_atlas-Lobar_*.yaml",
+    "tvbo/database/**/*_atlas-Lobar8_*.yaml",
+    "tvbo/database/**/*_rec-avgMatrix_*.yaml",
+    "tvbo/database/**/*_desc-MEGAlpha_*.yaml",
+]
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# Surface network records, whose mesh and lobe mapping live in their data file
+[[annotations]]
+path = "tvbo/database/networks/**/*_desc-surf_relmat.yaml"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# dTOR-985 connectomes
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-dTOR_*.h5"
+SPDX-FileCopyrightText = [
+    "2024 Gavin Elias, Jürgen Germann, Suresh Joel, Ningfei Li, Andreas Horn, Alexandre Boutet, Andres Lozano (dTOR-985, https://doi.org/10.6084/m9.figshare.c.6844890)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Copyright (c) 2016 Computational Brain Imaging Group (CBIG)",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "The General Hospital Corporation (FreeSurfer)",
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "CC0-1.0 AND LicenseRef-HCP-WU-Minn-Open-Access"
+
+# MGH-USC HCP 32 connectomes
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-MghUscHcp32_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Andreas Horn et al., Lead-DBS group connectome MGH-USC HCP 32, dataset v1.2",
+    "Data collection and sharing for this project was provided by the Human Connectome Project (HCP; Principal Investigators: Bruce Rosen, M.D., Ph.D., Arthur W. Toga, Ph.D., Van J. Weeden, MD). HCP funding was provided by the National Institute of Dental and Craniofacial Research (NIDCR), the National Institute of Mental Health (NIMH), and the National Institute of Neurological Disorders and Stroke (NINDS). HCP data are disseminated by the Laboratory of Neuro Imaging at the University of Southern California.",
+    "Copyright (c) 2016 Computational Brain Imaging Group (CBIG)",
+    "The General Hospital Corporation (FreeSurfer)",
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-HCP-MGH-USC-DUA"
+
+# PPMI 85 connectomes: cohort-level parcellated matrices with no participant-level data; the tractogram is not distributed
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-PPMI85_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Siobhan Ewert et al., Lead-DBS group connectome PPMI 85, dataset v1.1",
+    "Data used in the preparation of this article were obtained from the Parkinson's Progression Markers Initiative (PPMI) database (www.ppmi-info.org/data). For up-to-date information on the study, visit www.ppmi-info.org.",
+    "PPMI – a public-private partnership – is funded by The Michael J. Fox Foundation for Parkinson's Research and funding partners, including AbbVie, Alamar Biosciences, Aligning Science Across Parkinson's (ASAP), Arrowhead Pharma, Arvinas, AskBio, BIAL, BioArctic, Biohaven, BlueRock Therapeutics, Bristol Myers Squibb, Calico Labs, Capsida Biotherapeutics, Critical Path Institute, DaCapo Brainscience, Denali, Edmond J. Safra Foundation, Eli Lilly, Gain Therapeutics, GE Healthcare, Genentech, GSK, Insitro, Johnson & Johnson Innovative Medicine, Lundbeck, Merck, Neumora, Neuron23, Novartis, Olink, Regeneron, Roche, Sanofi, Tenvie, UCB, Vanqua Bio, Voyager Therapeutics, The Weston Family Foundation.",
+    "Copyright (c) 2016 Computational Brain Imaging Group (CBIG)",
+    "The General Hospital Corporation (FreeSurfer)",
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-PPMI-DUA"
+
+# Hansen 2022 connectome
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-Hansen2022_*.h5"
+SPDX-FileCopyrightText = [
+    "2022 Justine Y. Hansen et al., netneurolab/hansen_receptors",
+    "Copyright (c) 2018, Network Neuroscience Lab",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0 AND LicenseRef-HCP-WU-Minn-Open-Access"
+
+# Average HCP-MMP1 connectome
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-avgMatrix_atlas-HCPMMP1_*.h5"
+SPDX-FileCopyrightText = [
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# dk_average connectomes and their lobar aggregate
+[[annotations]]
+path = ["tvbo/database/networks/**/*_rec-avgMatrix_atlas-DesikanKilliany_*.h5", "tvbo/database/networks/**/*_rec-avgMatrix_atlas-Lobar8_*.h5"]
+SPDX-FileCopyrightText = [
+    "2023 Michael Schirner, Gustavo Deco, Petra Ritter (https://doi.org/10.1038/s41467-023-38626-y); tvboptim dk_average",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "The General Hospital Corporation (FreeSurfer)",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# dTOR-985 lobar connectome with a dk_average FC edge
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-dTOR_atlas-Lobar8_desc-SCFC_*.h5"
+SPDX-FileCopyrightText = [
+    "2024 Gavin Elias, Jürgen Germann, Suresh Joel, Ningfei Li, Andreas Horn, Alexandre Boutet, Andres Lozano (dTOR-985, https://doi.org/10.6084/m9.figshare.c.6844890)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "2023 Michael Schirner, Gustavo Deco, Petra Ritter (https://doi.org/10.1038/s41467-023-38626-y); tvboptim dk_average",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# dTOR-985 connectome on HCPex
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-dTOR_atlas-HCPex_*.h5"
+SPDX-FileCopyrightText = [
+    "2024 Gavin Elias, Jürgen Germann, Suresh Joel, Ningfei Li, Andreas Horn, Alexandre Boutet, Andres Lozano (dTOR-985, https://doi.org/10.6084/m9.figshare.c.6844890)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "2021 Chu-Chung Huang, Edmund T. Rolls, Jianfeng Feng, Ching-Po Lin (HCPex)",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "CC0-1.0 AND LicenseRef-HCP-WU-Minn-Open-Access AND GPL-3.0-only"
+
+# dTOR-985 connectome on vDBS1
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-dTOR_atlas-vDBS1_*.h5"
+SPDX-FileCopyrightText = [
+    "2024 Gavin Elias, Jürgen Germann, Suresh Joel, Ningfei Li, Andreas Horn, Alexandre Boutet, Andres Lozano (dTOR-985, https://doi.org/10.6084/m9.figshare.c.6844890)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# MGH-USC HCP 32 connectomes on HCP-MMP1
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-MghUscHcp32_atlas-HCPMMP1_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Andreas Horn et al., Lead-DBS group connectome MGH-USC HCP 32, dataset v1.2",
+    "Data collection and sharing for this project was provided by the Human Connectome Project (HCP; Principal Investigators: Bruce Rosen, M.D., Ph.D., Arthur W. Toga, Ph.D., Van J. Weeden, MD). HCP funding was provided by the National Institute of Dental and Craniofacial Research (NIDCR), the National Institute of Mental Health (NIMH), and the National Institute of Neurological Disorders and Stroke (NINDS). HCP data are disseminated by the Laboratory of Neuro Imaging at the University of Southern California.",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-HCP-MGH-USC-DUA AND LicenseRef-HCP-WU-Minn-Open-Access"
+
+# PPMI 85 connectomes on HCP-MMP1: cohort-level parcellated matrices with no participant-level data, on HCP Open Access parcels
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-PPMI85_atlas-HCPMMP1_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Siobhan Ewert et al., Lead-DBS group connectome PPMI 85, dataset v1.1",
+    "Data used in the preparation of this article were obtained from the Parkinson's Progression Markers Initiative (PPMI) database (www.ppmi-info.org/data). For up-to-date information on the study, visit www.ppmi-info.org.",
+    "PPMI – a public-private partnership – is funded by The Michael J. Fox Foundation for Parkinson's Research and funding partners, including AbbVie, Alamar Biosciences, Aligning Science Across Parkinson's (ASAP), Arrowhead Pharma, Arvinas, AskBio, BIAL, BioArctic, Biohaven, BlueRock Therapeutics, Bristol Myers Squibb, Calico Labs, Capsida Biotherapeutics, Critical Path Institute, DaCapo Brainscience, Denali, Edmond J. Safra Foundation, Eli Lilly, Gain Therapeutics, GE Healthcare, Genentech, GSK, Insitro, Johnson & Johnson Innovative Medicine, Lundbeck, Merck, Neumora, Neuron23, Novartis, Olink, Regeneron, Roche, Sanofi, Tenvie, UCB, Vanqua Bio, Voyager Therapeutics, The Weston Family Foundation.",
+    "2016 Matthew F. Glasser et al., HCP-MMP1.0 (BALSA study RVVG)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-PPMI-DUA AND LicenseRef-HCP-WU-Minn-Open-Access"
+
+# MGH-USC HCP 32 connectome on Harvard-Oxford
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-MghUscHcp32_atlas-HOCPA_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Andreas Horn et al., Lead-DBS group connectome MGH-USC HCP 32, dataset v1.2",
+    "Data collection and sharing for this project was provided by the Human Connectome Project (HCP; Principal Investigators: Bruce Rosen, M.D., Ph.D., Arthur W. Toga, Ph.D., Van J. Weeden, MD). HCP funding was provided by the National Institute of Dental and Craniofacial Research (NIDCR), the National Institute of Mental Health (NIMH), and the National Institute of Neurological Disorders and Stroke (NINDS). HCP data are disseminated by the Laboratory of Neuro Imaging at the University of Southern California.",
+    "Harvard-Oxford cortical structural atlas, distributed with FSL, CC BY-SA 4.0",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-HCP-MGH-USC-DUA AND CC-BY-SA-4.0"
+
+# MGH-USC HCP 32 connectome on vDBS1
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-MghUscHcp32_atlas-vDBS1_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Andreas Horn et al., Lead-DBS group connectome MGH-USC HCP 32, dataset v1.2",
+    "Data collection and sharing for this project was provided by the Human Connectome Project (HCP; Principal Investigators: Bruce Rosen, M.D., Ph.D., Arthur W. Toga, Ph.D., Van J. Weeden, MD). HCP funding was provided by the National Institute of Dental and Craniofacial Research (NIDCR), the National Institute of Mental Health (NIMH), and the National Institute of Neurological Disorders and Stroke (NINDS). HCP data are disseminated by the Laboratory of Neuro Imaging at the University of Southern California.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# PPMI 85 connectome on vDBS1: unresolved while the vDBS1 atlas has no licence
+[[annotations]]
+path = "tvbo/database/networks/**/*_rec-PPMI85_atlas-vDBS1_*.h5"
+SPDX-FileCopyrightText = [
+    "2017 Siobhan Ewert et al., Lead-DBS group connectome PPMI 85, dataset v1.1",
+    "Data used in the preparation of this article were obtained from the Parkinson's Progression Markers Initiative (PPMI) database (www.ppmi-info.org/data). For up-to-date information on the study, visit www.ppmi-info.org.",
+    "PPMI – a public-private partnership – is funded by The Michael J. Fox Foundation for Parkinson's Research and funding partners, including AbbVie, Alamar Biosciences, Aligning Science Across Parkinson's (ASAP), Arrowhead Pharma, Arvinas, AskBio, BIAL, BioArctic, Biohaven, BlueRock Therapeutics, Bristol Myers Squibb, Calico Labs, Capsida Biotherapeutics, Critical Path Institute, DaCapo Brainscience, Denali, Edmond J. Safra Foundation, Eli Lilly, Gain Therapeutics, GE Healthcare, Genentech, GSK, Insitro, Johnson & Johnson Innovative Medicine, Lundbeck, Merck, Neumora, Neuron23, Novartis, Olink, Regeneron, Roche, Sanofi, Tenvie, UCB, Vanqua Bio, Voyager Therapeutics, The Weston Family Foundation.",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# Lobar8 surfaces on fsaverage
+[[annotations]]
+path = "tvbo/database/networks/**/*_atlas-Lobar8_*desc-surf_relmat.h5"
+SPDX-FileCopyrightText = [
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-FreeSurfer"
+
+# Lobar surface on fsLR
+[[annotations]]
+path = "tvbo/database/networks/**/*_atlas-Lobar_*desc-surf_relmat.h5"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# tvb-data sensor arrays
+[[annotations]]
+path = "tvbo/database/networks/**/acq-*Brainstorm*_sensors.h5"
+SPDX-FileCopyrightText = '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others'
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# MNE standard_1005 sensors projected onto fsaverage
+[[annotations]]
+path = "tvbo/database/networks/**/*_acq-EEGstandard1005_*_sensors.h5"
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "Copyright 2011-2025 MNE-Python authors",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND BSD-3-Clause AND LicenseRef-FreeSurfer"
+
+# Smiley example network
+[[annotations]]
+path = "tvbo/database/networks/SmileyNetwork.h5"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# dk_average matrices
+[[annotations]]
+path = "tvbo/database/networks/bids/dk_average/*.dense.tsv"
+SPDX-FileCopyrightText = [
+    "2023 Michael Schirner, Gustavo Deco, Petra Ritter (https://doi.org/10.1038/s41467-023-38626-y); tvboptim dk_average",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "The General Hospital Corporation (FreeSurfer)",
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# dk_average sidecars and node indices
+[[annotations]]
+path = ["tvbo/database/networks/bids/dk_average/*.json", "tvbo/database/networks/bids/dk_average/*_nodeindices.tsv"]
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Desikan-Killiany label volume and the parcel centres
+[[annotations]]
+path = ["tvbo/database/atlases/**/*_atlas-DesikanKilliany_*dseg.nii.gz", "tvbo/database/atlases/**/*_atlas-*_*centers.txt"]
+SPDX-FileCopyrightText = [
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+    "Charité Universitätsmedizin Berlin",
+]
+SPDX-License-Identifier = "LicenseRef-MNI-ICBM152 AND LicenseRef-FreeSurfer"
+
+# Atlas dataset description
+[[annotations]]
+path = "tvbo/database/atlases/dataset_description.json"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Bibliography
+[[annotations]]
+path = "tvbo/database/references.bib"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# TVB-O and GO term table
+[[annotations]]
+path = "tvbo/data/_tvb-o.csv"
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", "Gene Ontology Consortium, release 2023-07-27, CC BY 4.0"]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# FreeSurfer colour table and label lists
+[[annotations]]
+path = ["tvbo/data/freesurfer/FreeSurferColorLUT.txt", "tvbo/data/freesurfer/FS_aparc_labels.txt", "tvbo/data/freesurfer/FS86_labels.txt"]
+SPDX-FileCopyrightText = [
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "LicenseRef-FreeSurfer"
+
+# Gene Ontology
+[[annotations]]
+path = "tvbo/data/go-basic.obo"
+SPDX-FileCopyrightText = "Gene Ontology Consortium, release 2023-07-27, CC BY 4.0"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# Emoji images
+[[annotations]]
+path = ["tvbo/data/media/chart-increasing.png", "tvbo/data/media/file-folder.png", "tvbo/data/media/page-facing-up.png"]
+SPDX-FileCopyrightText = "Apple Inc."
+SPDX-License-Identifier = "LicenseRef-TVBO-Unresolved"
+
+# ASCII cortex drawn from a FreeSurfer surface
+[[annotations]]
+path = "tvbo/data/media/cortex_ascii.txt"
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "EUPL-1.2 AND LicenseRef-FreeSurfer"
+
+# NeuroMMSig amyloid-beta subgraph
+[[annotations]]
+path = "tvbo/data/NeuroMMSig_abeta_subgraph.dill"
+SPDX-FileCopyrightText = "NeuroMMSig Knowledge, Domingo-Fernández et al. 2017, AETIONOMY (IMI grant 115568)"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# TVB logo
+[[annotations]]
+path = "tvbo/data/tvb_logo.svg"
+SPDX-FileCopyrightText = '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others'
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+# TVB-O curation of GO terms and keywords
+[[annotations]]
+path = [
+    "tvbo/data/tvb-go/TVB-O_GO_list_curation.xlsx",
+    "tvbo/data/tvb-go/Tripletts_with_keywords/Keywords_cluster.xlsx",
+    "tvbo/data/tvb-go/Tripletts_with_keywords/GO_terms_keywords_TVBO3_2_final.csv",
+    "tvbo/data/tvb-go/Tripletts_with_keywords/Model_parameter_keywords_TVB3_2_final.csv",
+    "tvbo/data/tvb-go/Tripletts_with_keywords/go-keywords-tvbo.svg",
+]
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", "Gene Ontology Consortium, release 2023-07-27, CC BY 4.0"]
+SPDX-License-Identifier = "CC-BY-4.0"
+
+# MRtrix3 HCP-MMP1 lookup table
+[[annotations]]
+path = "tvbo/data/tvbo_data/hcpmmp1_ordered.txt"
+SPDX-FileCopyrightText = "Copyright (c) 2008-2022 the MRtrix3 contributors"
+SPDX-License-Identifier = "MPL-2.0"

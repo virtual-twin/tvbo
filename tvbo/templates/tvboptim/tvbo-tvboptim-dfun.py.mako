@@ -17,6 +17,7 @@ Output:
 import textwrap
 from tvbo.codegen import render_expression
 from tvbo.codegen.templater import entry_point_name
+from tvbo.codegen.dims import dynamics_sizes
 from tvbo.templates.base.utils import referenced_parameters, samples_over_time
 from tvbo.templates.tvboptim.utils import get_param_info, get_recorded_variable_names, render_jax_default, get_mode_layout, resolve_distribution
 from tvbo.utils import initial_value as _initial_value
@@ -76,6 +77,9 @@ aux_names = all_aux_names
 
 # Extract parameter info using shared utility
 param_names, param_defaults, param_shapes = get_param_info(model.parameters)
+# Sizes fix array extents when the module is compiled, so they are integer constants of the dynamics rather than traced parameters.
+_sizes = dynamics_sizes(model, context.get('experiment'))
+param_names = [name for name in param_names if name not in _sizes]
 derived_param_names = [p.name for p in model.in_dependency_order('derived_parameters').values()] if model.derived_parameters else []
 
 # Detect parameters with distribution.axis == 'time' — these are stochastic
@@ -195,6 +199,9 @@ class ${class_name}(AbstractDynamics):
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         % for name in referenced_parameters(model, param_names):
         ${name} = params.${name}
+        % endfor
+        % for name in referenced_parameters(model, list(_sizes)):
+        ${name} = ${_sizes[name]}
         % endfor
         % for sp_name, sp_info in stochastic_params.items():
         % if _stoch_settle:
