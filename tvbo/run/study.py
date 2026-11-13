@@ -288,12 +288,12 @@ def _record_run(ctx: dict | None, experiment, saved) -> None:
 # One experiment
 
 
-def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> None:
-    """Apply ``(dotted.path, value)`` overrides to a resolved experiment in place.
+def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> list:
+    """Apply ``(dotted.path, value)`` overrides to a resolved experiment in place, and return what they invalidated.
 
-    Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can stay the single source of truth while a run uses test settings. Mutates the loaded object only — the recipe file is untouched.
+    Traverses attributes and keyed collections (LinkML keyed dicts) so one recipe can stay the single source of truth while a run uses test settings. A mapping set on a slot that holds one record class is built as that record (:func:`_record_for_slot`), as the recipe would have built it. Mutates the loaded object only — the recipe file is untouched.
 
-    Anything on the path that has already MATERIALISED from its declaration is invalidated, so it rebuilds from the new value. Without this an override of, say, a graph generator's connectome is reported and then ignored — the network resolved at load time and keeps the matrix it built — and the run completes, looks right, and is not the run that was asked for.
+    Anything on the path that has already MATERIALISED from its declaration is invalidated before the value is written, and the path is then walked again, so what the invalidation puts back (the nodes and the count a node selection replaced) cannot overwrite the value and the rebuild starts from it. Without this an override of, say, a graph generator's connectome is reported and then ignored — the network resolved at load time and keeps the matrix it built — and the run completes, looks right, and is not the run that was asked for. The invalidated objects are returned once each, in the order the overrides reached them, for :func:`rebuild_invalidated` to rebuild after every override has landed, since a declaration several overrides change together is consistent only at the end.
     """
 
     def _step(cur, seg):
@@ -306,13 +306,21 @@ def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> None:
         except Exception as e:
             raise StudyRunError(f"--set: cannot resolve {seg!r} on {type(cur).__name__}") from e
 
+    def _walk(segs) -> list:
+        chain = [experiment]
+        for seg in segs:
+            chain.append(_step(chain[-1], seg))
+        return chain
+
+    invalidated: dict[int, Any] = {}
     for path, value in overrides:
         segs = [p for p in path.split(".") if p]
-        cur, chain = experiment, [experiment]
-        for seg in segs[:-1]:
-            cur = _step(cur, seg)
-            chain.append(cur)
-        leaf = segs[-1]
+        target = _invalidate_on_path(_walk(segs[:-1]))
+        cur, leaf = _walk(segs[:-1])[-1], segs[-1]
+        try:
+            value = _record_for_slot(cur, leaf, value)
+        except (TypeError, ValueError) as exc:
+            raise StudyRunError(f"--set {path}: {exc}") from exc
         if isinstance(cur, dict):
             cur[leaf] = value
         elif hasattr(cur, leaf):
@@ -322,21 +330,43 @@ def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> None:
                 cur[leaf] = value
             except Exception:
                 setattr(cur, leaf, value)
-        rebuilt = _invalidate_on_path(chain)
-        logger.info(f"--set {path} = {value!r}" + (f"  ({rebuilt} rebuilds from it)" if rebuilt else ""))
+        if target is not None:
+            invalidated.setdefault(id(target), target)
+        logger.info(
+            f"--set {path} = {value!r}" + (f"  ({type(target).__name__} rebuilds from it)" if target is not None else "")
+        )
+    return list(invalidated.values())
+
+
+def _record_for_slot(holder, leaf: str, value):
+    """*value* as the datamodel record the slot *leaf* of *holder* holds, built as a recipe builds it, when *value* is a mapping and the slot's type names one record class (``node_selection``, ``graph_generator``); any other value unchanged, a keyed collection included."""
+    import dataclasses
+    import typing
+
+    if not isinstance(value, dict) or isinstance(holder, dict):
+        return value
+    hint = typing.get_type_hints(type(holder)).get(leaf)
+    records = [t for t in typing.get_args(hint) if isinstance(t, type) and dataclasses.is_dataclass(t)]
+    return records[0](**value) if len(records) == 1 else value
 
 
 def _invalidate_on_path(chain: list):
     """Invalidate the innermost object on *chain* that materialises from its declaration.
 
-    Returns the name of what was invalidated, or ``None``. Innermost wins: an override inside one network's generator must not rebuild an unrelated network beside it.
+    Returns the object invalidated, or ``None``. Innermost wins: an override inside one network's generator must not rebuild an unrelated network beside it.
     """
     for obj in reversed(chain):
         invalidate = getattr(obj, "invalidate_resolution", None)
         if callable(invalidate):
             invalidate()
-            return type(obj).__name__
+            return obj
     return None
+
+
+def rebuild_invalidated(objects) -> None:
+    """Resolve again each object an override invalidated (:func:`apply_overrides`), from the directory of the recipe it was loaded from, so the run receives what the overridden declaration builds."""
+    for obj in objects:
+        obj._resolve(source_dir=getattr(obj, "_source_dir", None))
 
 
 def apply_max_iterations(experiment, n: int | None) -> None:
@@ -523,7 +553,7 @@ def _set_axis_parameter(experiment, parameter: str, value) -> None:
         if dyn is not None and _set_in(getattr(dyn, "parameters", None), name):
             return
         # An experiment-scoped axis has an attribute path, so the override walk resolves it.
-        apply_overrides(experiment, [(parameter, value)])
+        rebuild_invalidated(apply_overrides(experiment, [(parameter, value)]))
         return
     dyn = getattr(experiment, "dynamics", None)
     if dyn is not None and _set_in(getattr(dyn, "parameters", None), parameter):
@@ -570,7 +600,7 @@ def run_experiment(
     """Run one experiment under *options*, persist its container, and record the run in the container's sidecar.
 
     Args:
-        experiment: A runnable experiment; the overrides, pins and iteration cap in *options* are applied to it in place.
+        experiment: A runnable experiment; the overrides, pins and iteration cap in *options* are applied to it in place, and what an override invalidates is rebuilt before it runs.
         spec: The recipe the run was asked for, which roots its paths and its provenance.
         out_dir: Results directory, in place of *base*'s.
         options: How the experiment executes and saves; the defaults run it as written.
@@ -581,7 +611,7 @@ def run_experiment(
         StudyRunError: An override or pin names nothing on the experiment, an element pin names no per-node parameter, or a shard or limit asks a backend to slice a sweep it does not vectorise.
     """
     options = options or RunOptions()
-    apply_overrides(experiment, options.overrides)
+    rebuild_invalidated(apply_overrides(experiment, options.overrides))
     apply_axis_pins(experiment, options.pins)
     apply_max_iterations(experiment, options.max_iterations)
     ctx = provenance_ctx(spec, experiment if owner is None else owner, out_dir, base=base)

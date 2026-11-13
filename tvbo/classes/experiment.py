@@ -2642,7 +2642,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def dataset_subject_ids(self) -> list:
         """Enumerate the cohort for the per-subject workflow fan-out: the dataset's subjects, narrowed to those its network can be built for.
 
-        An explicit ``dataset.subjects`` list wins (a curated subset). Otherwise the subjects are discovered by querying ``dataset.bids_root`` with the first dataset-sourced observation's ``query`` — the same filter that resolves each shard's target, so discovery and resolution never diverge. An experiment that reads a cohort keeps only the members of every such cohort (:meth:`subject_selection`). Returns subject IDs without the ``sub-`` prefix; empty when the experiment has no dataset-sourced observation.
+        An explicit list wins (a curated subset): ``dataset.subjects``, or the file ``dataset.subjects_file`` names. Otherwise the subjects are discovered by querying ``dataset.bids_root`` with the first dataset-sourced observation's ``query`` — the same filter that resolves each shard's target, so discovery and resolution never diverge. An experiment that reads a cohort keeps only the members of every such cohort (:meth:`subject_selection`). Returns subject IDs without the ``sub-`` prefix; empty when the experiment has no dataset-sourced observation.
         """
         return list(self.subject_selection()["subjects"])
 
@@ -2653,8 +2653,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         """
         listed = self._dataset_subjects()
         cohort_ids = self.per_subject_cohorts() if listed else []
-        datasets = self._reference_datasets() if cohort_ids else []
-        members = {c: tuple(_cohort.cohort_members(*_cohort.find_cohort(datasets, c))) for c in cohort_ids}
+        context = self._reference_context() if cohort_ids else {}
+        datasets = context.get("datasets", [])
+        members = {
+            c: tuple(_cohort.cohort_members(*_cohort.find_cohort(datasets, c), context.get("source_dir"))) for c in cohort_ids
+        }
         reached_from = (tuple(listed), tuple(members.items()))
         cached = getattr(self, "_subject_selection", None)
         if cached is not None and cached[0] == reached_from:
@@ -2680,9 +2683,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         ds = getattr(self, "dataset", None)
         if ds is None:
             return []
-        subs = getattr(ds, "subjects", None)
-        if subs:
-            return list(_cohort.subject_entries(subs))
+        listed = _cohort.dataset_subjects(ds, self._reference_context()["source_dir"])
+        if listed:
+            return list(listed)
         targets = self.dataset_observation_targets
         root = getattr(ds, "bids_root", None)
         if not targets or not root:
@@ -2782,7 +2785,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             dataset, _ = _cohort.find_cohort(context["datasets"], ref.cohort)
             root = _cohort.dataset_root(dataset, context["source_dir"])
             entities = _cohort.query_entities(getattr(ref, "query", None))
-            for member in _cohort.members_read(ref, context["datasets"], subject)[0]:
+            for member in _cohort.members_read(ref, context["datasets"], subject, context["source_dir"])[0]:
                 path = _cohort.subject_file(root, member, *entities)
                 held = files.setdefault(member, [])
                 if path not in held:
@@ -2792,19 +2795,25 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def bundled_cohorts(self) -> list:
         """The cohorts the experiment's references name, as the experiment's own dataset declares them in a kit that bundles their members' files.
 
-        A kit carries no study, so each cohort moves into the dataset the frozen experiment keeps, holding only the members the kit's runs read (:func:`tvbo.data.cohort.members_read`, over the fan-out's subjects or the one run that has none), since only their files travel, in the order they are first read. Its description records how many members the study's cohort has. Empty for an experiment that reads no cohort.
+        A kit carries no study, so each cohort moves into the dataset the frozen experiment keeps, holding only the members the kit's runs read (:func:`tvbo.data.cohort.members_read`, over the fan-out's subjects or the one run that has none), since only their files travel, in the order they are first read. Its description records how the study's cohort admits its members, when it does not type them (:func:`tvbo.data.cohort.admission`), and how many it has. The members are typed on the returned record whichever way the study states them; a kit writes those the study keeps in a file or admits by a rule to a file of its own (:func:`tvbo.data.cohort.lists_from_file`). Empty for an experiment that reads no cohort.
         """
-        datasets = self._reference_datasets()
+        context = self._reference_context()
+        datasets, source_dir = context["datasets"], context["source_dir"]
         read: dict = {}
         for subject in self.dataset_subject_ids() or [None]:
             for ref in self.declared_references():
                 if getattr(ref, "cohort", None):
-                    read.setdefault(str(ref.cohort), {}).update(dict.fromkeys(_cohort.members_read(ref, datasets, subject)[0]))
+                    read.setdefault(str(ref.cohort), {}).update(
+                        dict.fromkeys(_cohort.members_read(ref, datasets, subject, source_dir)[0])
+                    )
         cohorts = []
         for cohort_id, members in read.items():
             dataset, declared = _cohort.find_cohort(datasets, cohort_id)
-            n_members = len(_cohort.cohort_members(dataset, declared))
+            n_members = len(_cohort.cohort_members(dataset, declared, source_dir))
             note = f"Bundled into this kit: the {len(members)} of its {n_members} members the experiment reads."
+            admitted = _cohort.admission(dataset, declared)
+            if admitted:
+                note = f"Admitted in the study as {admitted}. {note}"
             description = getattr(declared, "description", None)
             cohorts.append(
                 tvbo_datamodel.Cohort(

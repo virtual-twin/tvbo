@@ -5,7 +5,7 @@ Defines [`Network`](#tvbo.classes.network.Network) and its matrix-style subclass
 
 import os
 import warnings
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -747,6 +747,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if not self.nodes and not self.number_of_nodes:
             self.number_of_nodes = 1
             self.nodes = [tvbo_datamodel.Node(id=0, label="node_0")]
+            object.__setattr__(self, "_placeholder_nodes", True)
 
     # Canonical resolver                                                   #
     def _is_materialized(self) -> bool:
@@ -791,6 +792,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
            ``get_normative_connectome_data``.
         6. None of the above: no-op (Network must have been constructed via explicit ``nodes``/``edges`` or ``Network.from_matrix``).
 
+        Once the source has delivered, a node list whose length is not the side of the layers stored for it is refused (:meth:`_check_stored_node_count`), and a declared ``node_selection`` restricts the network to the nodes it keeps (:meth:`_apply_node_selection`) before anything below reads a node or an array.
+
         Whichever source loads, what the network lists beside it is read by its kind (:meth:`_keep_authored_edges`). A layer entry that states where its matrix comes from (``used:`` / ``producer:``) replaces the source's layer of that name under any spelling, and the source fills the nodes and every other layer. A layer entry that only names its layer keeps the slots it states on the source's matrix. A route to another network is kept. An edge between two of the network's own nodes is a listed graph, and beside a source it is refused, naming both.
 
         Parameters
@@ -804,17 +807,21 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         listed = [e for e in self.edges or [] if _is_listed_edge(e)]
         if listed and not self._holds_arrays() and self._named_source():
             raise ValueError(_read_or_listed(self._named_source(), listed))
-        if not self._is_materialized():
+        recorded, generated = self._labels_beside_applied_selection(), False
+        if not self._is_materialized() or self._companion_holds_dropped_nodes():
             authored = list(self.edges or [])
             if getattr(self, "data_file", None):
                 self._resolve_from_data_file(source_dir)
             elif getattr(self, "bids_dir", None):
                 self._resolve_from_bids_dir(source_dir)
             elif self._has_graph_generator():
+                generated = True
                 self._resolve_from_graph_generator(source_dir)
             elif getattr(self, "parcellation", None):
                 self._resolve_from_parcellation()
             self._keep_authored_edges(authored)
+        self._check_stored_node_count()
+        self._apply_node_selection(generated=generated, recorded=recorded)
         # 2. Multi-scale resolution (idempotent no-ops when unused). Runs whether or not macro connectivity was already materialised so a DB-loaded network still gets its node_template / subnetworks / sourced parameters expanded.
         self._apply_declared_nodes()
         self._expand_node_template()
@@ -855,13 +862,15 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def invalidate_resolution(self) -> None:
         """Drop everything ``_resolve`` materialised, so the next access rebuilds it.
 
-        Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the old matrix.
+        Resolution is idempotent and latches, which is what stops a network being rebuilt on every access — and what makes a spec edited AFTER load silently inert. A caller that changes the declaration (a ``--set`` on a graph_generator parameter, a swapped parcellation) has to say so, or the run reports the new value and integrates the old matrix. A node selection this object applied is taken back (:meth:`_undo_node_selection`), so the rebuild selects again from what the source delivers, and what the ``used:`` references read is dropped with the rest, so they are read again for the nodes the rebuild keeps.
         """
+        self._undo_node_selection()
         for attr in ("_resolved", "_producers_resolved"):
             object.__setattr__(self, attr, False)
         object.__setattr__(self, "_store", None)
         object.__setattr__(self, "_arrays", {})
         object.__setattr__(self, "_sourced_array_keys", set())
+        object.__setattr__(self, "_reference_cache", {})
 
     def _has_graph_generator(self) -> bool:
         """True if this Network has a resolvable GraphGenerator.
@@ -1164,6 +1173,208 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             self.mesh = loaded_mesh
         self._resident().update(loaded._resident())
 
+    def _stored_square_layers(self) -> list[tuple[str, int]]:
+        """The name and the side of each square layer the companion's header reports, which reads no value; a route to another network is left out, since its matrix runs over that network's nodes as well, and so is a layer that is not square. Empty without a companion that reports shapes."""
+        store = getattr(self, "_store", None)
+        if store is None or not hasattr(store, "info"):
+            return []
+        routes = {str(_edge_slot(edge, "label")).lower() for edge in self.edges or [] if _is_route(edge)}
+        try:
+            names = [name for name in store.names if str(name).lower() not in routes]
+        except (AttributeError, OSError, KeyError):
+            return []
+        layers = []
+        with store if hasattr(store, "__enter__") and names else nullcontext():
+            for name in names:
+                try:
+                    shape = tuple(store.info(name).shape)
+                except (KeyError, OSError):
+                    continue
+                if len(shape) == 2 and shape[0] == shape[1]:
+                    layers.append((name, shape[0]))
+        return layers
+
+    def _check_stored_node_count(self) -> None:
+        """Refuse a node list whose length is not the side of a layer the companion stores for these nodes (:meth:`_stored_square_layers`).
+
+        A sidecar that lists fewer nodes than its matrices have rows would otherwise load, and a run on it would integrate every stored node under the shorter list. A network that lists no node is not checked, and one whose nodes are placeholders (made up from a count or the one-node default) is told that it lists none.
+        """
+        n = len(self.nodes or [])
+        if not n:
+            return
+        for name, side in self._stored_square_layers():
+            if side != n:
+                listed = (
+                    f"lists no node of its own ({n} placeholder node(s))"
+                    if getattr(self, "_placeholder_nodes", False)
+                    else f"lists {n} node(s)"
+                )
+                held = (
+                    " Its `node_selection` is marked applied, so the stored layers have to be the selected ones already: `save` writes them."
+                    if getattr(getattr(self, "node_selection", None), "applied", None)
+                    else ""
+                )
+                raise ValueError(
+                    f"This network {listed} and its companion {Path(self._store._path).name} stores the layer {name!r} as {side} x {side}. A node list and the layers it indexes have one length; to take some of a stored network's nodes, declare `node_selection`.{held}"
+                )
+
+    def _labels_beside_applied_selection(self) -> list[str] | None:
+        """The labels of the nodes this record lists beside a ``node_selection`` it marks applied, which are the nodes the resolution that wrote it kept; ``None`` without such a selection or beside placeholder nodes."""
+        selection = getattr(self, "node_selection", None)
+        if selection is None or not selection.applied or not self.nodes or getattr(self, "_placeholder_nodes", False):
+            return None
+        return [str(label) for label in self.node_labels]
+
+    def _companion_holds_dropped_nodes(self) -> bool:
+        """Whether this record marks its ``node_selection`` applied beside a ``data_file`` companion that stores layers over more nodes than it lists: a dumped record naming the companion it was selected from, whose own nodes are then read again (:meth:`_resolve_from_data_file`) and selected from."""
+        selection = getattr(self, "node_selection", None)
+        if selection is None or not selection.applied or not getattr(self, "data_file", None):
+            return False
+        n = len(self.nodes or [])
+        return any(side > n for _, side in self._stored_square_layers())
+
+    def _carried_names(self, labels, carried: list[str]) -> list:
+        """Each of *labels* as the label of the node it names among *carried*: itself when a node carries it, else the node it names through :meth:`region_alias_map`, as a ``by_label`` reconciliation matches it, else ``None``."""
+        known = set(carried)
+        aliases = self.region_alias_map() if any(label not in known for label in labels) else {}
+        return [label if label in known else aliases.get(label) for label in labels]
+
+    def _selected_positions(self, selection, carried: list[str]) -> list[int]:
+        """The positions among *carried*, this network's node labels in order, of the nodes *selection* keeps.
+
+        A label is matched as :meth:`_carried_names` matches it. Raises for a selection that states both or neither of ``keep`` and ``drop``, a label that names no node (with the labels the network carries, or the nearest ones on a large network), a label listed twice or naming several nodes, and a selection that leaves no node.
+        """
+        from collections import Counter
+
+        from tvbo.utils import labels_offered
+
+        keep, drop = [str(k) for k in selection.keep or []], [str(k) for k in selection.drop or []]
+        if bool(keep) == bool(drop):
+            stated = "both `keep` and `drop`" if keep else "neither `keep` nor `drop`"
+            raise ValueError(f"`node_selection` states {stated}; a selection names the nodes to keep or the nodes to drop.")
+        slot, listed = ("keep", keep) if keep else ("drop", drop)
+        named = self._carried_names(listed, carried)
+        unknown = [label for label, node in zip(listed, named, strict=True) if node is None]
+        if unknown:
+            raise ValueError(
+                f"`node_selection.{slot}` names {unknown}, which this network does not carry. It carries {len(carried)} node(s): {labels_offered(unknown, carried)}."
+            )
+        times_named, times_carried = Counter(named), Counter(carried)
+        repeated = sorted({label for label, node in zip(listed, named, strict=True) if times_named[node] > 1})
+        if repeated:
+            raise ValueError(f"`node_selection.{slot}` lists {repeated} more than once.")
+        shared = sorted(node for node in named if times_carried[node] > 1)
+        if shared:
+            raise ValueError(
+                f"`node_selection.{slot}` names {shared}, a label several nodes of this network carry, so it selects no one node."
+            )
+        chosen = set(named)
+        positions = [i for i, label in enumerate(carried) if (label in chosen) == bool(keep)]
+        if not positions:
+            raise ValueError(f"`node_selection` leaves no node of the {len(carried)} this network carries.")
+        return positions
+
+    def _apply_node_selection(self, generated: bool = False, recorded: list[str] | None = None) -> None:
+        """Restrict this network to the nodes its ``node_selection`` keeps, once (``NodeSelection``).
+
+        Runs after the source has delivered nodes and arrays and before a declared node, a template, a transform or a reference reads them, so everything downstream sees the selected network only; nothing has been read through ``used:`` or computed by a ``producer:`` yet, since both are read on first access. The kept nodes stay in their order and are renumbered from 0 on copies, so node and edge objects a caller passed in keep their own numbering; an edge listed between two nodes is renumbered with them and goes when either of its nodes goes; every resident edge matrix, edge-parameter matrix and ``nodes/<name>`` array is cut to the kept nodes, and the companion store is read through :class:`~tvbo.data.matrix_io.NodeSelectedStore` from here on.
+
+        The selection is then marked ``applied`` and stays on the record, so a save, a kit or a dump states how the network was derived. One that arrives marked ``applied`` beside nodes that are already the selected ones (a save, a kit) selects nothing again; beside a source that delivers the nodes it drops (a dumped record naming the unselected companion, a curated network, an atlas) it is applied again by label, and the nodes it then keeps have to be *recorded*, the ones the record lists: a record that lists a node the selection leaves out is refused as marked ``applied`` by hand, and any other difference as written from a source that has changed since. On a graph *generated* by this resolution it is refused: a generator builds as many nodes as ``number_of_nodes`` states, which after a selection is the kept count, so the graph that was selected from cannot be built again. Refused, beside what :meth:`_selected_positions` refuses: a network carrying a mesh or a route to another network, whose arrays run over more than these nodes, and a node declared by label that the selection drops.
+        """
+        selection = getattr(self, "node_selection", None)
+        if selection is None:
+            return
+        carried = [str(label) for label in self.node_labels]
+        if selection.applied and generated:
+            raise ValueError(
+                f"`node_selection` is marked applied on a generated graph. The graph is generated again on load with `number_of_nodes` ({self.number_of_nodes}), the count the selection kept, so the graph it selected from cannot be built again. `Network.save` writes the selected network with its arrays; a dumped record of a selected generated graph does not load back."
+            )
+        if selection.applied:
+            listed = [str(label) for label in [*(selection.keep or []), *(selection.drop or [])]]
+            named = self._carried_names(listed, carried)
+            present = {node for node in named if node is not None}
+            if (None not in named and present == set(carried)) if selection.keep else not present:
+                self._check_recorded_nodes(recorded)
+                return
+        if not carried:
+            raise ValueError("`node_selection` is declared on a network that carries no node to select from.")
+        positions = self._selected_positions(selection, carried)
+        resident, store = self._resident(), getattr(self, "_store", None)
+        routed = [str(_edge_slot(edge, "label")) for edge in self.edges or [] if _is_route(edge)]
+        if routed:
+            raise ValueError(
+                f"`node_selection` cannot restrict a network with a route to another network ({routed[0]!r}): its matrix runs over that network's nodes as well."
+            )
+        if getattr(self, "mesh", None) is not None or any(key.startswith("mesh/") for key in [*resident, *self._lazy_paths()]):
+            raise ValueError(
+                "`node_selection` cannot restrict a network that carries a mesh: its vertices and faces are not per-node arrays."
+            )
+        dropped = {carried[i] for i in set(range(len(carried))) - set(positions)}
+        declared = [
+            spec["label"] for spec in getattr(self, "_declared_node_specs", None) or [] if str(spec["label"]) in dropped
+        ]
+        if declared:
+            raise ValueError(
+                f"Nodes {declared} are declared by label and dropped by `node_selection`; a node that is left out takes no declaration."
+            )
+        import copy
+
+        from tvbo.data.matrix_io import NodeSelectedStore, select_edge_nodes, select_node_entries
+
+        nodes, edges, n = list(self.nodes), list(self.edges or []), len(carried)
+        undo = {"nodes": nodes, "edges": edges, "number_of_nodes": self.number_of_nodes}
+        was_at, now_at = self.node_index_map(), {old: new for new, old in enumerate(positions)}
+        kept_edges = []
+        for edge in edges:
+            if _is_listed_edge(edge) and edge.source is not None and edge.target is not None:
+                ends = [now_at.get(was_at.get(end, end)) for end in (edge.source, edge.target)]
+                if None in ends:
+                    continue
+                edge = copy.copy(edge)
+                edge.source, edge.target = ends
+            kept_edges.append(edge)
+        kept_nodes = [copy.copy(nodes[old]) for old in positions]
+        for new, node in enumerate(kept_nodes):
+            node.id = new
+        self.nodes, self.edges, self.number_of_nodes = kept_nodes, kept_edges, len(positions)
+        for key in list(resident):
+            if key.startswith("edges/"):
+                resident[key] = select_edge_nodes(resident[key], positions, n, f"the array `{key}`")
+            else:
+                resident[key] = select_node_entries(resident[key], positions, n, f"the array `{key}`")
+        if store is not None:
+            self._store = NodeSelectedStore(store, positions, n)
+        selection.applied = True
+        object.__setattr__(self, "_node_selection_undo", undo)
+        object.__setattr__(self, "_selected_from", (positions, n))
+        self._check_recorded_nodes(recorded, dropped)
+
+    def _check_recorded_nodes(self, recorded: list[str] | None, left_out=frozenset()) -> None:
+        """Refuse a selection marked applied whose kept nodes are not the *recorded* ones the record lists; nothing to check when it lists none. A record that lists a node the selection leaves out (*left_out*) holds no node to apply it to: ``applied`` set by hand, or a selection changed on a network read from a saved selection. Any other difference means the source has changed since the record was written. Either is named."""
+        kept = [str(label) for label in self.node_labels]
+        if recorded is None or kept == recorded:
+            return
+        listed_left_out = [label for label in recorded if label in left_out]
+        if listed_left_out:
+            raise ValueError(
+                f"`node_selection` is marked applied, and this record lists {listed_left_out[:6]}, which the selection leaves out. The nodes listed beside `applied: true` are the selected ones, so the selection cannot be changed on them: a recipe leaves `applied` unset, and a saved selected network is selected again from its source network."
+            )
+        lost, gained = [k for k in recorded if k not in kept], [k for k in kept if k not in recorded]
+        raise ValueError(
+            f"`node_selection` is marked applied beside the {len(recorded)} node(s) this record lists, and applied to what its source delivers now it keeps {len(kept)}: {len(lost)} listed and no longer given {lost[:6]}, {len(gained)} given and not listed {gained[:6]}. The record was written from a source that has changed since."
+        )
+
+    def _undo_node_selection(self) -> None:
+        """Put back the node and edge lists a selection applied on this object replaced, and mark it unapplied. A network that was loaded with its selection already applied holds nothing to put back and is left as it is."""
+        undo = getattr(self, "_node_selection_undo", None)
+        if undo is None:
+            return
+        self.nodes, self.edges, self.number_of_nodes = undo["nodes"], undo["edges"], undo["number_of_nodes"]
+        if getattr(self, "node_selection", None) is not None:
+            self.node_selection.applied = None
+        object.__setattr__(self, "_node_selection_undo", None)
+        object.__setattr__(self, "_selected_from", None)
+
     def _resolve_from_bids_dir(self, source_dir: str | Path | None) -> None:
         """Populate self from a BEP017 BIDS directory at ``self.bids_dir``: its nodes and its matrices. The directory declares no edges, so the ones this network authored stay."""
         bids_dir = Path(self.bids_dir)
@@ -1383,21 +1594,23 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_parameter_sources(self, source_dir: str | Path | None) -> None:
         """Populate network ``parameters`` declared via ``source`` + ``measure``.
 
-        A parameter such as ``cortical_gradient`` may point at a curated Network (``source``: an IRI / path) and name a per-node ``measure`` carried by that network's nodes (``measure``: e.g. ``megalpha``). This loads the referenced network and gathers the per-node measure values into a 1-D array stored on ``parameter.value``. A no-op for ordinary scalar parameters.
+        A parameter such as ``cortical_gradient`` may point at a curated Network (``source``: an IRI / path) and name a per-node ``measure`` carried by that network's nodes (``measure``: e.g. ``megalpha``). This loads the referenced network and gathers the per-node measure values into a 1-D array on this network's nodes (:meth:`_measure_on_own_nodes`), stored on ``parameter.value``. A no-op for ordinary scalar parameters.
         """
         params = getattr(self, "parameters", None)
         if not params:
             return
-        for param in params.values():
+        for name, param in params.items():
             source = getattr(param, "source", None)
             measure = getattr(param, "measure", None)
             if not source or not measure:
                 continue
             if isinstance(getattr(param, "value", None), (list, np.ndarray)):
                 continue  # already materialised
-            values = self._load_measure_from_source(source, measure, source_dir)
-            if values is not None:
-                param.value = values
+            found = self._load_measure_from_source(source, measure, source_dir)
+            if found is not None:
+                param.value = self._measure_on_own_nodes(
+                    *found, what=f"network parameter {name!r} (`source: {source}`)", measure=measure
+                )
 
     @classmethod
     def _load_measure_from_source(
@@ -1405,11 +1618,11 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         source: str,
         measure: str,
         source_dir: str | Path | None = None,
-    ) -> np.ndarray | None:
+    ) -> tuple[list, np.ndarray] | None:
         """Load a per-node ``measure`` array from a referenced network ``source``.
 
         ``source`` is resolved as (1) a curated-network IRI via the registry, (2) a path relative to ``source_dir``, or (3) an absolute path. The named measure is read from each node's ``parameters[measure]`` value.
-        Returns a 1-D ``ndarray`` (node order preserved), or ``None`` when the source cannot be resolved.
+        Returns the referenced network's node labels and the 1-D ``ndarray`` of their values, in its node order, or ``None`` when the source cannot be resolved.
         """
         path = cls._resolve_network_iri(source)
         if path is None:
@@ -1432,7 +1645,27 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             if not isinstance(val, (int, float)) or isinstance(val, bool):
                 return None
             vals.append(float(val))
-        return np.asarray(vals) if vals else None
+        return (net.node_labels, np.asarray(vals)) if vals else None
+
+    def _measure_on_own_nodes(self, labels, values, *, what: str, measure: str) -> np.ndarray:
+        """*values*, one per node of the referenced network labelled *labels*, on this network's nodes.
+
+        By label, as written, when the referenced network carries every label of this one once, whatever the two counts: a network that carries some of its source's nodes (``node_selection``) or the same nodes in another order reads each node's own value. The values are taken in the referenced network's order only from a network with as many nodes that shares no label with this one (another nomenclature for the same nodes). Any other source is refused: one that lacks a label of this network, with both counts and the labels it lacks, also when it shares the others, and one that carries a label more than once.
+        """
+        own = [str(label) for label in self.node_labels]
+        at = {str(label): i for i, label in enumerate(labels)}
+        lacking = [label for label in own if label not in at]
+        if not lacking and len(at) == len(labels):
+            return np.asarray([values[at[label]] for label in own])
+        if len(values) == len(own) and not at.keys() & set(own):
+            return values
+        if lacking:
+            raise ValueError(
+                f"{what} reads {len(values)} values of {measure!r} for a network of {len(own)} nodes, and the referenced network has no node labelled {lacking[:6]}{', ...' if len(lacking) > 6 else ''}. A measure is read in the source's order only from a network with as many nodes that shares no label with this one; otherwise it is aligned by label."
+            )
+        raise ValueError(
+            f"{what} reads {len(values)} values of {measure!r} for a network of {len(own)} nodes, and the referenced network carries a label more than once, so the values cannot be aligned by label."
+        )
 
     # -- Backward-compat properties: conduction_speed, global_coupling_strength --
     @property
@@ -4286,7 +4519,18 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     "producer must return the (n, n) array or sparse matrix itself, or a "
                     "dict from which `output:` names one."
                 )
+            self._check_produced_side(label, produced)
             arrays[_array_key(label)] = produced
+
+    def _check_produced_side(self, label: str, produced) -> None:
+        """Refuse a square layer a ``producer:`` built for another number of nodes than this network carries, with both counts; a layer that is not square, a projection onto other nodes, is not compared."""
+        shape, n = tuple(getattr(produced, "shape", ())), len(self.nodes or [])
+        if n and len(shape) == 2 and shape[0] == shape[1] != n:
+            selected = getattr(self, "_selected_from", None)
+            kept = f" (the {n} its `node_selection` keeps of {selected[1]})" if selected is not None else ""
+            raise ValueError(
+                f"network edge {label!r}: its `producer:` built a {shape[0]} x {shape[1]} layer for a network of {n} nodes{kept}. A produced layer has a row and a column for each node the network carries."
+            )
 
     def _read_sourced_layers(self, names) -> None:
         """Make resident each layer among *names* that an edge declares with ``used:``, on the first read of that layer.
@@ -4387,8 +4631,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         n = len(self.nodes or [])
         shape = tuple(da.shape)
         if n and any(size != n for size in shape):
+            selected = getattr(self, "_selected_from", None)
+            kept = f" (the {n} its `node_selection` keeps of {selected[1]})" if selected is not None else ""
             raise ValueError(
-                f"network {what}: the referenced array has shape {shape} for a network of {n} nodes. "
+                f"network {what}: the referenced array has shape {shape} for a network of {n} nodes{kept}. "
                 "Declare `reconcile: by_label` on the reference to align it to this network's nodes by name."
             )
         cache[id(ref)] = (ref, np.asarray(da.values))

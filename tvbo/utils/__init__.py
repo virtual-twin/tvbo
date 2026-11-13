@@ -309,6 +309,17 @@ def edge_index(target, edges) -> int | None:
     return labels.get(str(target), int(numbered.group(1)) - 1 if numbered else None)
 
 
+def labels_offered(unknown, carried, *, up_to: int = 20) -> str:
+    """What a refusal of the labels *unknown* offers from the labels *carried*: all of them when there are at most *up_to*, else the nearest to each unknown one by spelling."""
+    import difflib
+
+    carried = [str(label) for label in carried]
+    if len(carried) <= up_to:
+        return ", ".join(carried)
+    near = sorted({match for label in unknown for match in difflib.get_close_matches(str(label), carried, n=3)})
+    return f"the nearest are {', '.join(near) or 'none'}"
+
+
 def edge_label(ref):
     """Canonical ``Network.matrix()`` label for a network reference, else ``None``.
 

@@ -550,11 +550,33 @@ def select_labeled(da, sel: Mapping[str, object] | None):
 # --------------------------------------------------------------------------- RECONCILE
 
 
-def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[str], node_dims: Sequence[str] | None = None):
+def _reference_text(ref) -> str:
+    """How an error names a reference: what it reads from and the ``output`` it takes."""
+    where = next(
+        (
+            f"{slot} {str(getattr(ref, slot))!r}"
+            for slot in ("experiment", "analysis", "cohort", "iri")
+            if getattr(ref, slot, None) is not None
+        ),
+        None,
+    )
+    output = getattr(ref, "output", None)
+    return f"the reference to {where}" + (f", output {str(output)!r}" if output else "") if where else "a reference"
+
+
+def reconcile_by_label(
+    da,
+    alias_map: Mapping[str, str],
+    model_labels: Sequence[str],
+    node_dims: Sequence[str] | None = None,
+    what: str | None = None,
+):
     """Align every labelled node axis of ``da`` to the model's node order, by label.
 
     A node axis is any dimension carrying string coordinates, except the one a whole cohort is stacked along (:data:`SUBJECT_DIM`), whose labels are member identifiers even where they coincide with node labels. Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix.
     Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every such axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
+
+    A model label a node axis does not carry raises a ``ValueError`` that names the labels, the axis, *what* is being reconciled and the labels the axis offers: all of them on a short axis, the nearest by spelling on a long one (:func:`tvbo.utils.labels_offered`).
     """
     import numpy as np
 
@@ -568,9 +590,18 @@ def reconcile_by_label(da, alias_map: Mapping[str, str], model_labels: Sequence[
         if vals.dtype.kind not in ("U", "S", "O"):
             continue
         mapped = [alias_map.get(str(v), str(v)) for v in vals]
+        offered = set(mapped)
         # Only a real node axis, one with overlapping labels that no cohort is stacked along; forcing another through .sel raises.
-        if node_dims is None and (d == SUBJECT_DIM or not (model_set & set(mapped))):
+        if node_dims is None and (d == SUBJECT_DIM or not (model_set & offered)):
             continue
+        absent = [str(m) for m in model_labels if str(m) not in offered]
+        if absent:
+            from tvbo.utils import labels_offered
+
+            raise ValueError(
+                f"`reconcile: by_label` on {what or 'an array'}: no entry along {d!r} is labelled {absent[:6]}{', ...' if len(absent) > 6 else ''}. "
+                f"The axis carries {len(mapped)} label(s): {labels_offered(absent, mapped)}."
+            )
         da = da.assign_coords({d: mapped})
         da = da.sel({d: list(model_labels)})
     return da
@@ -674,7 +705,7 @@ def _finish(da, ref, alias_map, model_labels):
     """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container. RECONCILE lays out the node axes only, so a stacked cohort keeps its members in their order (:func:`reconcile_by_label`)."""
     da = apply_transform(da, getattr(ref, "transform", None))
     if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
-        da = reconcile_by_label(da, alias_map, model_labels)
+        da = reconcile_by_label(da, alias_map, model_labels, what=_reference_text(ref))
     return da
 
 

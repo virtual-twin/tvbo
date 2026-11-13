@@ -419,3 +419,125 @@ class LazyArrayStore:
             if key in store:
                 return np.asarray(_read_values(store[key]))
         raise KeyError(key)
+
+
+# ── Node selection ────────────────────────────────────────────────────
+
+
+def select_edge_nodes(matrix, index, n_nodes: int, what: str):
+    """The rows and columns *index* of an edge matrix over *n_nodes* nodes, in the storage format it came in. A matrix of another shape raises, naming it as *what*, since nothing then says which of its axes run over the nodes."""
+    from scipy import sparse
+
+    if tuple(matrix.shape) != (n_nodes, n_nodes):
+        raise ValueError(
+            f"{what} is {' x '.join(str(side) for side in matrix.shape)} on a network of {n_nodes} nodes, so a node selection cannot restrict it."
+        )
+    if sparse.issparse(matrix):
+        return matrix.tocsr()[index][:, index].asformat(matrix.format)
+    return matrix[np.ix_(index, index)]
+
+
+def select_node_entries(array, index, n_nodes: int, what: str):
+    """The entries *index* along the first axis of a per-node array over *n_nodes* nodes. An array whose first axis has another length raises, naming it as *what*."""
+    if not getattr(array, "shape", ()) or array.shape[0] != n_nodes:
+        raise ValueError(
+            f"{what} has shape {tuple(getattr(array, 'shape', ()))} on a network of {n_nodes} nodes, so a node selection cannot restrict it."
+        )
+    return array[index]
+
+
+class NodeSelectedStore:
+    """A companion store read through a node selection: every array comes back for the kept nodes only.
+
+    Stands in for the store a network's source attached (:class:`LazyArrayStore`) once the network's ``node_selection`` is applied, and answers the same calls, so nothing that reads the companion sees a dropped node. An edge matrix and its edge-parameter matrices lose the dropped rows and columns (:func:`select_edge_nodes`), a ``nodes/<name>`` dataset loses the dropped entries (:func:`select_node_entries`), and :meth:`info` reports the selected shape beside the bytes the stored array costs to read. A dataset outside ``nodes/`` raises, since nothing says whether it runs over the nodes. An edge matrix is read and cut once and then kept, as the store it stands in for keeps what it reads.
+
+    Args:
+        store: The store to read from; its own selection, if it is one of these, is applied first.
+        index: Positions of the kept nodes among the store's nodes, ascending.
+        n_nodes: How many nodes the store's arrays run over.
+    """
+
+    def __init__(self, store, index, n_nodes: int):
+        self._inner = store
+        self._index = np.asarray(index, dtype=int)
+        self._n_nodes = int(n_nodes)
+        self._cut: dict[str, Any] = {}
+        self._cut_params: dict[str, dict[str, Any]] = {}
+
+    @property
+    def _path(self) -> Path:
+        return self._inner._path
+
+    @property
+    def _meta(self) -> dict:
+        return self._inner._meta
+
+    @property
+    def _loaded(self) -> bool:
+        return self._inner._loaded
+
+    @property
+    def names(self) -> list[str]:
+        """The edge matrices the companion carries, without reading a value."""
+        return self._inner.names
+
+    def __enter__(self):
+        self._inner.__enter__()
+        return self
+
+    def __exit__(self, *exc):
+        return self._inner.__exit__(*exc)
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._inner
+
+    def __getitem__(self, key: str):
+        """One edge matrix on the kept nodes, in its stored format."""
+        if key not in self._cut:
+            self._cut[key] = select_edge_nodes(self._inner[key], self._index, self._n_nodes, self._what(f"edges/{key}"))
+        return self._cut[key]
+
+    def edge_params_of(self, key: str) -> dict:
+        """The edge-parameter matrices stored beside one edge matrix, on the kept nodes."""
+        if key not in self._cut_params:
+            self._cut_params[key] = {
+                name: select_edge_nodes(matrix, self._index, self._n_nodes, self._what(f"edges/{key}/edge_parameters/{name}"))
+                for name, matrix in self._inner.edge_params_of(key).items()
+            }
+        return self._cut_params[key]
+
+    @property
+    def arrays(self) -> Mapping:
+        """Edge matrices on the kept nodes as a read-per-key mapping."""
+        return _LazyView(lambda: self.names, self.__getitem__)
+
+    @property
+    def edge_params(self) -> Mapping:
+        """Edge parameters on the kept nodes as a read-per-key mapping, keyed like :attr:`arrays`."""
+        return _LazyView(lambda: self.names, self.edge_params_of)
+
+    def info(self, key: str) -> ArrayInfo:
+        """Shape, dtype and format of one array as this store serves it: the stored header with every node axis at the kept count."""
+        stored = self._inner.info(key)
+        node_axes = len(stored.shape) if stored.path.startswith("edges/") else 1
+        shape = tuple(
+            len(self._index) if axis < node_axes and side == self._n_nodes else side for axis, side in enumerate(stored.shape)
+        )
+        return ArrayInfo(stored.path, shape, stored.dtype, stored.format, stored.nbytes)
+
+    def dataset_keys(self, prefix: str = "") -> list[str]:
+        """Dataset paths under ``prefix``, as the companion lists them."""
+        return self._inner.dataset_keys(prefix)
+
+    def read_dataset(self, key: str):
+        """A ``nodes/<name>`` dataset for the kept nodes. A dataset the companion holds at any other path raises ``ValueError``, since nothing says whether it runs over the nodes; one it does not hold raises ``KeyError`` as on the store itself."""
+        stored = self._inner.read_dataset(key)
+        if not key.startswith("nodes/"):
+            raise ValueError(
+                f"{self._what(key)} is not a per-node dataset, so a node selection cannot say what is left of it."
+            )
+        return select_node_entries(stored, self._index, self._n_nodes, self._what(key))
+
+    def _what(self, key: str) -> str:
+        """How an error names one stored array: its path and the companion that holds it."""
+        return f"`{key}` in {Path(self._path).name}"
