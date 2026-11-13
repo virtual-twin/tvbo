@@ -921,7 +921,7 @@ classes:
       size:
         range: float
         description: "Text size in points, overriding the figure's font size for this label alone."
-      weight:
+      font_weight:
         range: FontWeight
         description: "How heavy the label is set, overriding the figure's font weight for this label alone."
       color:

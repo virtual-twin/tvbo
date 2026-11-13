@@ -2841,8 +2841,6 @@
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/font_weight">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>font_weight (slot)</rdfs:label>
-        <skos:definition>Weight of body text.</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>font_weight</skos:notation>
     </owl:ObjectProperty>
     
@@ -6060,12 +6058,6 @@
     <!-- https://w3id.org/tvbo/waves -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/waves"/>
-    
-
-
-    <!-- https://w3id.org/tvbo/weight -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/weight"/>
     
 
 
@@ -11136,7 +11128,13 @@
 
     <!-- https://w3id.org/tvbo/weight -->
 
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/weight"/>
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/weight">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>weight (slot)</rdfs:label>
+        <skos:definition>Connection weight (explicit edges)</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>weight</skos:notation>
+    </owl:DatatypeProperty>
     
 
 
@@ -14781,6 +14779,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/font_weight"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/FontWeight"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/ha"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -14829,13 +14833,13 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
-                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/FontWeight"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/font_weight"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -14895,12 +14899,6 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/x"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -14914,6 +14912,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/font_weight"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -14968,12 +14972,6 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/va"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -20273,12 +20271,6 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/connectivity"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -20381,12 +20373,6 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/delay"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
             </owl:Restriction>
@@ -20430,6 +20416,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/valid_diagonal"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -20466,6 +20458,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/valid_diagonal"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/weight"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -57815,11 +57813,11 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid5128">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid5129">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -86288,14 +86286,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T3D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Siemens per square centimetre (conductance density)</rdfs:comment>
@@ -86330,14 +86328,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T3D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Siemens per square metre (conductance density, SI)</rdfs:comment>
@@ -86732,13 +86730,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Kilo-ohm centimetre (axial resistivity)</rdfs:comment>
@@ -86843,14 +86841,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E-1L2I0M1H0T-4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millivolt per second</rdfs:comment>
@@ -87026,7 +87024,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/A"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
@@ -87037,14 +87035,14 @@ to a task-appropriate range (e.g. omega in Hz).
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/A"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Mole per metre per ampere per second (concentration-current coupling)</rdfs:comment>
@@ -87457,14 +87455,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L0I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/RAD"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/RAD"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Radian per millisecond</rdfs:comment>
@@ -87545,14 +87543,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E1L-2I0M0H0T0D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroA"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroA"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Microampere per square centimetre (current density)</rdfs:comment>
@@ -90429,11 +90427,6 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Per-group boolean derived variable: a wave is present this timestep.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>waves</skos:notation>
-    </rdf:Description>
-    <rdf:Description rdf:about="https://w3id.org/tvbo/weight">
-        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
-        <rdfs:label>weight (slot)</rdfs:label>
-        <skos:notation>weight</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/weighted">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>

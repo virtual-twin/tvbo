@@ -2047,9 +2047,9 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         tail = None
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
             tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
-        text_kwargs = _resolve_colors(
-            {k: _enum_value(getattr(a, k)) if k == "weight" else getattr(a, k) for k in ("rotation", "ha", "va", "size", "weight", "color") if getattr(a, k, None) is not None}
-        )
+        text_kwargs = _resolve_colors({k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None})
+        if getattr(a, "font_weight", None) is not None:
+            text_kwargs["weight"] = _enum_value(a.font_weight)
         text_kwargs.setdefault("ha", "center")
         text_kwargs.setdefault("va", "center")
         out.append(

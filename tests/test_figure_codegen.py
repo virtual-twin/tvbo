@@ -595,7 +595,7 @@ def test_render_code_annotation_text_kwargs():
     A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line.
     """
     fig = _cartesian_figure()
-    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5, weight="bold")]
+    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5, font_weight="bold")]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     assert "'rotation': 90.0" in code and "'ha': 'right'" in code
     assert "'va': 'top'" in code and "'size': 6.5" in code
