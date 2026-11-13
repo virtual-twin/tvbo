@@ -1,3 +1,7 @@
+## Unreleased
+
+- `tvbo[knowledge]` holds setuptools below 81: pybel imports `pkg_resources`, which setuptools 81 removed, so a fresh install of the extra failed on `import pybel`.
+
 ## 0.9.0rc1 – unreleased
 
 ### Added

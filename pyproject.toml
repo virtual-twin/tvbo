@@ -77,6 +77,7 @@ pde = ["scikit-fem>=8.0.0", "meshio>=5.3.0", "nibabel>=5.0.0"]
 knowledge = [
     "goatools>=1.4.12",
     "pybel>=0.14.10",
+    "setuptools<81",  # pybel imports pkg_resources, which setuptools 81 removed
     "fuzzywuzzy>=0.18.0",
     "python-Levenshtein>=0.26.1",
     "simple_colors>=0.1",
