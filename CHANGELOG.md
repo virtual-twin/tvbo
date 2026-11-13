@@ -2,6 +2,8 @@
 
 - `tvbo[knowledge]` holds setuptools below 81: pybel imports `pkg_resources`, which setuptools 81 removed, so a fresh install of the extra failed on `import pybel`.
 
+- `references.bib`: 295 author fields written as "Surname AB" are now "Surname, A. B.", so citation styles read surname and initials correctly (APA printed "A et al." for Spiegler A); the stray `date` of Jirsa2017 that overrode its year is removed.
+
 ## 0.9.0rc1 – unreleased
 
 ### Added
