@@ -527,13 +527,11 @@ def network_array(net, output: str, name: str):
     if repeated:
         raise ValueError(f"{name}: node labels {repeated[:5]} occur more than once, so its arrays cannot be aligned by label.")
     # `matrix` answers a weight name with zeros on a file that holds none, which would read as an unconnected subject.
-    from tvbo.classes.network import _declares_layer
-
     spellings = set(net._matrix_names(output))
     held = (
         any(str(n).lower() in spellings for n in net.matrix_names)
         or bool(net._placed_edges() and net.carries(output))
-        or _declares_layer(
+        or net._declares_layer(
             net.edges or [], output
         )  # a layer declared with `used:` or `producer:` is read on demand and listed nowhere before
     )

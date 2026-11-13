@@ -1,6 +1,6 @@
 """A layer a network declares beats its source's layer of that name, and the source fills the rest.
 
-A network names one source of connectivity (a ``data_file`` companion, a curated network by ``iri``, a ``bids_dir``, a graph generator, a ``parcellation``) and may declare single layers itself, computed by a ``producer:`` or read through ``used:``. One rule holds for every source. Template edges are declarations and hold no connectivity, so the source still loads. A declared layer replaces the source's layer of that name under any spelling (``weights`` is ``weight``), in every lookup and in what a run materialises. The nodes and every other layer are the source's.
+A network names one source of connectivity (a ``data_file`` companion, a curated network by ``iri``, a ``bids_dir``, a graph generator, a ``parcellation``) and may declare single layers itself, computed by a ``producer:`` or read through ``used:``. One rule holds for every source. Template edges are declarations and hold no connectivity, so the source still loads. A declared layer replaces the source's layer of that name, and a layer declared under the edge ``primary_weight`` names replaces the source's ``weight``, in every lookup and in what a run materialises. The nodes and every other layer are the source's.
 
 What a network lists beside its source is read by the kind of edge. A layer entry that only names its layer keeps every slot it states and takes the rest, with the matrix, from the source. A route to or from another network is kept as written and never stands in for the source. An edge between two of the network's own nodes is a listed graph, which a source cannot sit beside: the network is refused, naming both.
 
@@ -97,15 +97,15 @@ def _produced(label, n):
 
 
 @pytest.mark.parametrize("source", [_companion, _bids_directory, _generator, _parcellation])
-def test_a_produced_layer_replaces_the_sources_under_any_spelling_and_the_source_fills_the_rest(study_dir, source):
-    """Declared as ``weights``, the produced matrix is what ``matrix("weight")`` returns and what a run materialises, whatever the source holds as ``weight``."""
+def test_a_produced_layer_replaces_the_sources_under_the_declared_weight_name_and_the_source_fills_the_rest(study_dir, source):
+    """Declared as ``sc``, the edge ``primary_weight`` names, the produced matrix is what ``matrix("weight")`` returns and what a run materialises, whatever the source holds as ``weight``."""
     spec = source(study_dir)
     plain = Network(**spec)
     n = plain.number_of_nodes
     ring = np.roll(2.0 * np.eye(n), 1, axis=1)
     assert not np.array_equal(plain.matrix("weight", format="dense"), ring)
 
-    net = Network(**spec, edges=[_produced("weights", n)])
+    net = Network(**spec, primary_weight="sc", edges=[_produced("sc", n)])
     np.testing.assert_array_equal(net.matrix("weight", format="dense"), ring)
     np.testing.assert_array_equal(net.materialize("weight").arrays["edges/weight"], ring)
     np.testing.assert_array_equal(net.matrix("length", format="dense"), plain.matrix("length", format="dense"))
@@ -129,16 +129,16 @@ def _layer(net, name):
 
 @pytest.mark.parametrize("source", EVERY_SOURCE)
 def test_a_named_layer_keeps_what_it_declares_and_the_source_supplies_the_matrix(study_dir, source):
-    """A layer entry stating a unit and a description beside a source keeps both, under the spelling it chose, on the matrix the source holds."""
+    """A layer entry stating a unit and a description beside a source keeps both, under the edge ``primary_weight`` names, on the matrix the source holds as ``weight``."""
     spec = source(study_dir)
     plain = Network(**spec)
-    net = Network(**spec, edges=[{"label": "weights", "unit": "count", "description": "streamline counts"}])
+    net = Network(**spec, primary_weight="sc", edges=[{"label": "sc", "unit": "count", "description": "streamline counts"}])
     for layer in ("weight", "length"):
         np.testing.assert_array_equal(net.matrix(layer, format="dense"), plain.matrix(layer, format="dense"))
     assert net.node_labels == plain.node_labels
-    mine = _layer(net, "weights")
+    mine = _layer(net, "sc")
     assert (str(mine.unit), str(mine.description)) == ("count", "streamline counts")
-    assert [str(edge.label) for edge in net.edges if str(edge.label) in ("weight", "weights")] == ["weights"]
+    assert [str(edge.label) for edge in net.edges if str(edge.label) in ("weight", "sc")] == ["sc"]
     np.testing.assert_array_equal(
         net.materialize("weight").arrays["edges/weight"], plain.materialize("weight").arrays["edges/weight"]
     )
@@ -202,9 +202,9 @@ def test_a_matrix_file_is_read_beside_a_layer_entry_and_a_route(study_dir):
 
 def test_a_produced_weight_layer_replaces_the_matrix_files(study_dir):
     """The file holds the one ``weight`` matrix, so a ``weight`` layer that states its own origin is the network's and the file gives only the node count."""
-    net = Network(**_matrix_file(study_dir), edges=[_produced("weights", 4)])
+    net = Network(**_matrix_file(study_dir), edges=[_produced("weight", 4)])
     np.testing.assert_array_equal(net.matrix("weight", format="dense"), np.roll(2.0 * np.eye(4), 1, axis=1))
-    assert net.number_of_nodes == 4 and [str(edge.label) for edge in net.edges] == ["weights"]
+    assert net.number_of_nodes == 4 and [str(edge.label) for edge in net.edges] == ["weight"]
 
 
 def test_a_curated_network_named_by_iri_loads_beside_declared_edges_and_nodes(study_dir):
@@ -213,7 +213,7 @@ def test_a_curated_network_named_by_iri_loads_beside_declared_edges_and_nodes(st
     n, region = plain.number_of_nodes, plain.node_labels[2]
     assert n > 1
     ring = np.roll(2.0 * np.eye(n), 1, axis=1)
-    net = Network(iri=CURATED, edges=[_produced("weights", n)], nodes={region: {"parameters": {"gain": {"value": 3.0}}}})
+    net = Network(iri=CURATED, edges=[_produced("weight", n)], nodes={region: {"parameters": {"gain": {"value": 3.0}}}})
     np.testing.assert_array_equal(net.matrix("weight", format="dense"), ring)
     np.testing.assert_array_equal(net.matrix("length", format="dense"), plain.matrix("length", format="dense"))
     assert net.node_labels == plain.node_labels

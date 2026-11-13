@@ -97,7 +97,7 @@ def load_fsaverage_pial(hemi: str) -> tuple[np.ndarray, np.ndarray]:
     return vertices, faces
 
 
-def dk_to_lobar8(labels: np.ndarray, key_to_name: dict[int, str], hemi_prefix: str, vertices: np.ndarray) -> np.ndarray:
+def dk_to_lobar8(labels: np.ndarray, key_to_name: dict[int, str], hemi_prefix: str) -> np.ndarray:
     """Map DK vertex labels → Lobar8 indices, a medial-wall vertex kept as -1."""
     label_to_idx = {}
     for key, name in key_to_name.items():
@@ -159,7 +159,7 @@ def hemisphere(hemi_code: str, hemi_prefix: str) -> tuple[np.ndarray, np.ndarray
     """A hemisphere's pial vertices, its triangles and its vertex → lobe mapping."""
     vertices, faces = load_fsaverage_pial(hemi_code)
     labels, key2name = load_dk_labels(hemi_code)
-    return vertices.astype(np.float32), faces.astype(np.int32), dk_to_lobar8(labels, key2name, hemi_prefix, vertices)
+    return vertices.astype(np.float32), faces.astype(np.int32), dk_to_lobar8(labels, key2name, hemi_prefix)
 
 
 def save_surface(

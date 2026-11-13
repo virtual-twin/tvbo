@@ -13,6 +13,7 @@ import pytest
 from tvbo.classes.network import Network
 
 SHIPPED = "tvbo/database/networks/bids/dk_average"
+MEASURES = ["streamlineCount", "tractLength"]
 
 
 @pytest.fixture
@@ -35,7 +36,7 @@ def test_the_declared_length_unit_reaches_the_delay_conversion(bids_dir):
 
     This is the whole point of reading the field. Left at the `mm` default, the same connectome yields delays a thousand times too short, and every number downstream stays plausible.
     """
-    network = Network.from_bids(bids_dir, atlas="Probe")
+    network = Network.from_bids(bids_dir, atlas="Probe", structural_measures=MEASURES)
 
     assert str(network.distance_unit) == "m"
     assert network._unit_conversion_factor("ms") == 1000.0
@@ -43,7 +44,7 @@ def test_the_declared_length_unit_reaches_the_delay_conversion(bids_dir):
 
 def test_every_measures_unit_is_recorded_not_just_the_length(bids_dir):
     """`arbitrary` normalises onto the enum rather than being dropped."""
-    network = Network.from_bids(bids_dir, atlas="Probe")
+    network = Network.from_bids(bids_dir, atlas="Probe", structural_measures=MEASURES)
 
     assert network._bids_measure_units == {
         "streamlineCount": "arbitrary_unit",
@@ -53,7 +54,7 @@ def test_every_measures_unit_is_recorded_not_just_the_length(bids_dir):
 
 def test_an_explicit_distance_unit_still_wins(bids_dir):
     """The sidecar is a default, not an override — the caller stays in charge."""
-    network = Network.from_bids(bids_dir, atlas="Probe", distance_unit="cm")
+    network = Network.from_bids(bids_dir, atlas="Probe", structural_measures=MEASURES, distance_unit="cm")
 
     assert str(network.distance_unit) == "cm"
 
@@ -73,7 +74,7 @@ def test_a_sidecar_without_the_field_changes_nothing(bids_dir):
     for sidecar in bids_dir.glob("*.json"):
         sidecar.write_text(json.dumps({"RelationshipMeasure": "x"}))
 
-    network = Network.from_bids(bids_dir, atlas="Probe")
+    network = Network.from_bids(bids_dir, atlas="Probe", structural_measures=MEASURES)
 
     assert str(network.distance_unit) == "mm"
     assert network._bids_measure_units == {}

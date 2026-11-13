@@ -23,7 +23,7 @@ EDGE_DEFS = {
     "weight": {
         "source": "connectivity/dk_average/data.npz",
         "key": "weights",
-        "unit": "a.u.",
+        "unit": "arbitrary_unit",
         "description": "Streamline count (normalised)",
         "non_negative": True,
         "valid_diagonal": False,
@@ -39,7 +39,7 @@ EDGE_DEFS = {
     "fc": {
         "source": "functional/dk_average/data.npz",
         "key": "fc",
-        "unit": "r_pearson",
+        "unit": "dimensionless",
         "description": "Pearson correlation of BOLD signal",
         "non_negative": False,
         "valid_diagonal": True,
@@ -139,6 +139,24 @@ ABBREV_TO_FREESURFER = {
 }
 """Label mapping from the tvboptim abbreviations to the FreeSurfer aparc names used by the dTOR DK network."""
 
+DESCRIPTION = "Group-average connectome of the HCP Young Adult S900 release on 84 Desikan-Killiany regions, 34 cortical, 7 subcortical and the cerebellar cortex per hemisphere: normalised streamline counts (`weight`) and mean tract lengths (`length`) from diffusion MRI, and the Pearson correlation of resting-state BOLD (`fc`). The arrays are tvboptim's `dk_average` (`src/tvboptim/data/connectivity/dk_average/data.npz` and `functional/dk_average/data.npz`), cast to float32 by `scripts/import_tvboptim_networks.py` (commit 2f6c965c6); `networks/bids/dk_average/dataset_description.json` lists Schirner, Deco and Ritter (2023) under `SourceDatasets`."
+"""The network's description: what the arrays measure, on which regions, and where they come from."""
+
+PROVENANCE = {
+    "derived_from": "https://www.humanconnectome.org/study/hcp-young-adult/document/900-subjects-data-release",
+    "references": [
+        "https://www.humanconnectome.org/study/hcp-young-adult/document/900-subjects-data-release",
+        "https://doi.org/10.1016/j.neuroimage.2013.05.041",
+        "https://doi.org/10.1038/s41467-023-38626-y",
+        "https://github.com/virtual-twin/tvboptim",
+    ],
+    "how_to_acknowledge": [
+        "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University."
+    ],
+    "generated_by": "tvbo scripts/import_tvboptim_networks.py",
+}
+"""Where the network comes from: the HCP Young Adult S900 release (Van Essen et al. 2013), Schirner, Deco and Ritter (2023) and tvboptim, with the acknowledgement HCP data asks for."""
+
 
 def _get_dk87_coords():
     """Load coordinates from the existing 87-node DK network, keyed by label."""
@@ -174,10 +192,12 @@ def import_dk_average():
         if name not in ("weight", "length"):
             net.set_matrix(name, mat)
 
-    # Transfer coordinates from existing 87-node DK network via label mapping
+    # Transfer coordinates from existing 87-node DK network via label mapping, and give each node its side and its homologue
     dk87_coords = _get_dk87_coords()
     matched = 0
     for node in net.nodes:
+        side, other = ("left", "R.") if node.label.startswith("L.") else ("right", "L.")
+        node.hemisphere, node.homologue = side, other + node.label[2:]
         fs_label = ABBREV_TO_FREESURFER.get(node.label)
         if fs_label and fs_label in dk87_coords:
             x, y, z = dk87_coords[fs_label]
@@ -186,15 +206,21 @@ def import_dk_average():
 
     # Network metadata
     net.label = "DesikanKilliany (avgMatrix SC+FC)"
+    net.description = DESCRIPTION
     net.descriptor = "SCFC"
     net.number_of_nodes = len(labels)
     net.number_of_regions = len(labels)
+    net.time_unit = "ms"
+    net.provenance = PROVENANCE
 
     # BIDS metadata
     net.bids = tvbo_datamodel.BidsEntities(
         template="MNI152NLin2009cAsym",
         cohort="HCPYA",
         reconstruction="avgMatrix",
+        atlas="DesikanKilliany",
+        desc="SCFC",
+        suffix="relmat",
     )
     net.parcellation = tvbo_datamodel.Parcellation(
         atlas=tvbo_datamodel.BrainAtlas(
@@ -213,8 +239,7 @@ def import_dk_average():
             if attr in edef:
                 setattr(e, attr, edef[attr])
 
-    fname = "tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat"
-    out_path = NETWORK_DIR / f"{fname}.yaml"
+    out_path = (NETWORK_DIR / net.bids_filename).with_suffix(".yaml")
     net.save(out_path)
     print(f"Saved: {out_path.name}")
     print(f"  {len(labels)} nodes, {len(EDGE_DEFS)} matrices ({', '.join(EDGE_DEFS)})")

@@ -678,6 +678,50 @@ class TestBEP017Export:
             content = node_files[0].read_text()
             assert "region_0" in content
 
+    @pytest.mark.parametrize("held", [np.asarray, sparse.csr_matrix], ids=["dense", "sparse"])
+    def test_to_bep017_writes_every_layer_under_a_bids_label_that_reads_back(self, tmp_path, held):
+        """Each file names its edge as a BIDS label, the name's letters and digits in their own case, so every file name parses as BIDS and a camelCase name such as ``streamlineCount`` is its own label, and reading each label back gives the layer its sidecar's ``RelationshipMeasure`` names, value for value, whether the network holds its layers dense or sparse."""
+        import json
+        import re
+
+        from tvbo import Network
+        from tvbo.cli.validate import _entity_problems
+
+        m = np.array([[0.0, 2.0, 0.5], [3.0, 0.0, 1.0], [0.25, 4.0, 0.0]])
+        net = Network(number_of_nodes=3)
+        for name, matrix in (("weight", m), ("sc_binary", (m > 0) * 1.0), ("streamlineCount", 10 * m), ("fc", m / 3)):
+            net.set_matrix(name, held(matrix))
+        net.to_bep017(tmp_path)
+
+        files = sorted(p.name for p in tmp_path.glob("*_relmat.dense.tsv"))
+        assert files == [f"meas-{label}_relmat.dense.tsv" for label in ("fc", "scbinary", "streamlineCount", "weight")]
+        assert [problem for name in files for problem in _entity_problems(name)] == []
+        written = {
+            re.search(r"meas-([^_]+)_", name).group(1): json.loads(
+                (tmp_path / name.replace(".dense.tsv", ".json")).read_text()
+            )["RelationshipMeasure"]
+            for name in files
+        }
+        assert written == {"fc": "fc", "scbinary": "sc_binary", "streamlineCount": "streamlineCount", "weight": "weight"}
+        back = Network.from_bids(tmp_path, observational_measures=[label for label in written if label != "weight"])
+        for label, name in written.items():
+            np.testing.assert_array_equal(np.asarray(back.matrix(label)), net.matrix(name, format="dense"))
+
+    @pytest.mark.parametrize(
+        ("first", "second", "label"),
+        [("sc_binary", "scbinary", "scbinary"), ("Weight", "weight", "weight")],
+        ids=["dropped-character", "case"],
+    )
+    def test_to_bep017_refuses_two_edges_written_under_one_label(self, tmp_path, first, second, label):
+        """Two edge names whose BIDS labels are the same without regard to case would share one file, a label dropping what is not a letter or digit and a case-insensitive file system, macOS's and Windows' default, folding case, so the export refuses them by name."""
+        from tvbo import Network
+
+        net = Network(number_of_nodes=3)
+        net.set_matrix(first, np.eye(3))
+        net.set_matrix(second, 2 * np.eye(3))
+        with pytest.raises(ValueError, match=rf"'{first}' and '{second}' are both written as meas-{label}"):
+            net.to_bep017(tmp_path)
+
 
 # ── TVB ZIP full roundtrip test ───────────────────────────────────────
 

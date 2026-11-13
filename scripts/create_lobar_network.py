@@ -220,6 +220,24 @@ DK_ABBREV_TO_LOBE = {
 The cortical entries follow the same grouping that :data:`DK_REGION_TO_LOBE` spells out in full region names.
 """
 
+LOBAR8_DESCRIPTION = "The Desikan-Killiany avgMatrix network `tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat`, and so the HCP Young Adult S900 group average, aggregated to 8 lobes per hemisphere by `compute_lobar_avgmatrix` and `build_lobar8_network` in `scripts/create_lobar_network.py` (commit 25b293c40). Each of a hemisphere's 42 regions joins one lobe by the script's `DK_ABBREV_TO_LOBE`: 11 cortical regions Frontal, 5 Parietal, 9 Temporal, 4 Occipital, 4 Cingulate and the insula Insular; the thalamus, caudate, putamen, pallidum, hippocampus, amygdala and accumbens Subcortical; the cerebellar cortex Cerebellum. For each pair of lobes, over every pair of their regions, a region paired with itself included, `weight` is the mean weight, `length` the mean tract length weighted by the weights (the sum of weight times length over the sum of weights) and `fc` the mean correlation; the Desikan-Killiany diagonal is zero in all three."
+"""The Lobar8 network's description: its parent, how regions join lobes and how each matrix aggregates."""
+
+LOBAR8_PROVENANCE = {
+    "derived_from": "tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-avgMatrix_atlas-DesikanKilliany_desc-SCFC_relmat",
+    "references": [
+        "https://www.humanconnectome.org/study/hcp-young-adult/document/900-subjects-data-release",
+        "https://doi.org/10.1016/j.neuroimage.2013.05.041",
+        "https://doi.org/10.1038/s41467-023-38626-y",
+        "https://github.com/virtual-twin/tvboptim",
+    ],
+    "how_to_acknowledge": [
+        "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University."
+    ],
+    "generated_by": "tvbo scripts/create_lobar_network.py",
+}
+"""Where the Lobar8 network comes from: the Desikan-Killiany avgMatrix network it aggregates, with that network's references and acknowledgement."""
+
 
 def compute_lobar_avgmatrix(dk_network_dir: Path) -> dict[str, np.ndarray]:
     """Aggregate the DK 84-node avgMatrix SC+FC to lobar level.
@@ -566,14 +584,17 @@ def build_lobar8_network(
     )
     net8.set_matrix("fc", FC)
 
-    # Set node positions from centroids
+    # Set node positions from centroids, and give each node its side and its homologue
     for node in net8.nodes:
+        side, other = ("left", "RH_") if node.label.startswith("LH_") else ("right", "LH_")
+        node.hemisphere, node.homologue = side, other + node.label[3:]
         c = centroids.get(node.label)
         if c:
             node.position = {"x": float(round(c[0], 4)), "y": float(round(c[1], 4)), "z": float(round(c[2], 4))}
 
     # Metadata
     net8.label = "Lobar8 (avgMatrix)"
+    net8.description = LOBAR8_DESCRIPTION
     net8.descriptor = "SCFC"
     net8.distance_unit = "mm"
     net8.time_unit = "ms"
@@ -590,7 +611,10 @@ def build_lobar8_network(
         "cohort": "HCPYA",
         "reconstruction": "avgMatrix",
         "atlas": "Lobar8",
+        "desc": "SCFC",
+        "suffix": "relmat",
     }
+    net8.provenance = LOBAR8_PROVENANCE
 
     # Subgroup mapping
     group_names = []
@@ -742,7 +766,7 @@ def build_surface_network(
 
     Creates a mesh-bearing Network from fsLR 32k surfaces where each vertex is mapped to its parent lobe in the lobar SC network.
 
-    The Network holds no per-vertex Node objects — the geometry lives in the mesh HDF5 — so it is constructed with ``number_of_nodes=0`` and the vertex count is assigned afterwards, which avoids auto-generating 64k placeholder nodes.
+    The Network holds no per-vertex Node objects — the geometry lives in the mesh HDF5 — so it is built from its vertex count alone, whose placeholder nodes a save leaves out. It is named on fsLR 32k (``tpl-fsLR_…_den-32k``) and spells the ``cohort-`` and ``rec-`` of its parent.
 
     Parameters
     ----------
@@ -778,23 +802,26 @@ def build_surface_network(
     norms[norms == 0] = 1.0
     normals = (normals / norms).astype(np.float32)
 
-    surface_net = Network(nodes=[], edges=[], number_of_nodes=0)
-    surface_net.number_of_nodes = n_vertices
+    surface_net = Network(number_of_nodes=n_vertices)
     surface_net.label = f"Lobar surface (fsLR 32k, {n_vertices} vertices)"
     surface_net.descriptor = "surf"
     surface_net.distance_unit = "mm"
+    surface_net.time_unit = "ms"
 
     surface_net.parcellation = {
         "atlas": {
             "name": "Lobar",
-            "coordinateSpace": "MNI152NLin2009cAsym",
+            "coordinateSpace": "fsLR",
         }
     }
     surface_net.bids = {
-        "template": "MNI152NLin2009cAsym",
+        "template": "fsLR",
         "cohort": "HCPYA",
         "reconstruction": "dTOR",
         "atlas": "Lobar",
+        "density": "32k",
+        "desc": "surf",
+        "suffix": "relmat",
     }
 
     # Store mesh data
@@ -958,8 +985,7 @@ def main() -> None:
             _precomputed=(vertices, triangles, hemi_index, region_mapping),
         )
 
-        surf_name = network.bids_filename.replace(f"_desc-{network.descriptor}_", "_desc-surf_")
-        surf_sidecar = (args.output_dir / surf_name).with_suffix(".yaml")
+        surf_sidecar = (args.output_dir / surface_net.bids_filename).with_suffix(".yaml")
 
         if surf_sidecar.exists() and not args.overwrite:
             print(f"[skip] {surf_sidecar.name} already exists (use --overwrite)")

@@ -192,7 +192,7 @@ with h5py.File(tmpdir / "visual.h5", "r") as f:
     f.visititems(show)
 ```
 
-Each edge group (`edges/weights`, `edges/lengths`) stores:
+Each edge group (`edges/weight`, `edges/length`) stores:
 
 - **`format`** attr: `"dense"`, `"csr"`, or `"coo"`
 - **`shape`** attr: matrix dimensions $[N, N]$
@@ -370,7 +370,7 @@ A `nodes` mapping keyed by region label attaches values to the nodes the source 
 
 | The entry has | It is | Beside a source |
 |---|---|---|
-| no `source`/`target`, and a `used:` or a `producer:` | a layer the network supplies | It replaces the source's layer of that name under any spelling (`weights` is `weight`). The source provides the nodes and every other layer. |
+| no `source`/`target`, and a `used:` or a `producer:` | a layer the network supplies | It replaces the source's layer of that name under any spelling (`tractLength` is `length`). The source provides the nodes and every other layer. |
 | no `source`/`target`, and no origin | a layer entry | It keeps every slot it states (`unit`, `description`, `coupling`, a flag) and takes the others, and the matrix, from the source's entry of that layer. |
 | a `source_network` or a `target_network` | a route to another network | It is kept as written. It is no connectivity of this network, so the source loads beside it. |
 | a `source` and a `target` in this network | a listed edge | The network is refused. A graph is either read from a source or listed edge by edge. |
@@ -415,13 +415,13 @@ TVBO uses **hierarchical network composition** to represent both scales in one c
 ```
 Parent Network (dk_sc.yaml + dk_sc.h5)
 ├── 87 DK region nodes
-├── edges/weights/data    (87 × 87)   dense
-└── edges/lengths/data    (87 × 87)   dense
+├── edges/weight/data     (87 × 87)   dense
+└── edges/length/data     (87 × 87)   dense
 
 Child Network (surface_rh.yaml + surface_rh.h5)
 ├── parent_network: dk_sc.yaml
 ├── 2 562 vertex nodes  (fsaverage 3k, RH)
-├── edges/weights/       CSR sparse  (2 562 × 2 562, fill ~10 %)
+├── edges/weight/        CSR sparse  (2 562 × 2 562, fill ~10 %)
 │   ├── data      (nnz,)
 │   ├── indices   (nnz,)
 │   └── indptr    (2 563,)
@@ -738,7 +738,7 @@ Attach the subnetwork weight matrix and save. `Network.save()` writes the YAML s
 # Embed the 10×10 subnetwork into the full 12×12 node space: nodes 0–1 are mean-field, nodes 2–11 are the spiking subnetwork
 W_full = np.zeros((12, 12))
 W_full[2:, 2:] = W_sub
-net.set_matrix("weights", W_full)
+net.set_matrix("weight", W_full)
 
 # Save → creates .yaml sidecar + .h5 companion
 net.save(tmpdir / "multiscale_cortex.yaml")
@@ -781,7 +781,7 @@ with h5py.File(tmpdir / "multiscale_cortex.h5", "r") as f:
     f.visititems(show)
 ```
 
-The template edge `label: weights` tells `save()` to write the matrix at `edges/weights/data` in HDF5. On load, the same label routes the lazy reader back to the right dataset. No manual `h5py` code needed, because the Network API handles the full sidecar and companion lifecycle.
+The template edge `label: weight` tells `save()` to write the matrix at `edges/weight/data` in HDF5. On load, the same label routes the lazy reader back to the right dataset. No manual `h5py` code needed, because the Network API handles the full sidecar and companion lifecycle.
 
 #### Interface Variables
 
@@ -1077,12 +1077,12 @@ nodes:
       z: 0
 
 edges:
-  - label: weights         # Template edge (matrix name)
+  - label: weight          # Template edge (matrix name)
     format: dense           # "dense", "csr", or "coo"
     weighted: true
     valid_diagonal: false
     non_negative: true
-  - label: lengths
+  - label: length
     unit: mm
     format: dense
 

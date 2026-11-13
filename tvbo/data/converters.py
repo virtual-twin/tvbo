@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import scipy.sparse as sp
 
 from tvbo.data.matrix_io import edge_name, template_edges
 
@@ -120,7 +121,7 @@ def _bep017_stem(network) -> str:
 def to_bep017(network, output_dir):
     """Export a tvbo Network to BEP017-compatible per-measure files.
 
-    Each template edge becomes one ``<stem>_meas-<name>_relmat.dense.tsv`` + JSON sidecar, and the nodes one ``<stem>_nodeindices.tsv``, where ``<stem>`` is the network's own BIDS name in the entity order of :data:`~tvbo.data.network_io.RELMAT_PATTERNS` (:func:`_bep017_stem`, through pybids ``build_path``, §6.5), so a subject's or a template's connectome keeps its ``sub-`` or ``tpl-``. Reads data directly from the Network object — no YAML round-trip needed.
+    Each template edge becomes one ``<stem>_meas-<label>_relmat.dense.tsv`` + JSON sidecar, ``<label>`` being the edge name as a BIDS label (:func:`~tvbo.adapters.bids.entity_value`) and the sidecar's ``RelationshipMeasure`` the name itself, and the nodes one ``<stem>_nodeindices.tsv``, where ``<stem>`` is the network's own BIDS name in the entity order of :data:`~tvbo.data.network_io.RELMAT_PATTERNS` (:func:`_bep017_stem`, through pybids ``build_path``, §6.5), so a subject's or a template's connectome keeps its ``sub-`` or ``tpl-``. Reads data directly from the Network object — no YAML round-trip needed.
 
     Parameters
     ----------
@@ -129,6 +130,8 @@ def to_bep017(network, output_dir):
     output_dir : str or Path
         Output directory for BEP017 files.
     """
+    from tvbo.adapters.bids import entity_value
+
     store = getattr(network, "_store", None)
     # `Network.arrays` is keyed by companion path; `edge_arrays` is the same set keyed by the edge name a BEP017 filename is built from.
     arrays = dict(store.arrays) if store else {}
@@ -140,14 +143,23 @@ def to_bep017(network, output_dir):
     atlas = relmat_entities(network)["atlas"]
 
     edges = network.edges or []
+    labelled = {}
     for e in template_edges(edges):
         name = edge_name(e)
         if name not in arrays:
             continue
+        label = entity_value(name)
+        key = label.lower()  # macOS and Windows file systems ignore case, so meas-Weight and meas-weight are one file
+        if key in labelled:
+            raise ValueError(
+                f"The edges {labelled[key]!r} and {name!r} are both written as meas-{label}, without regard to case, so a BEP017 export cannot hold both; rename one of them."
+            )
+        labelled[key] = name
 
-        # BEP017 uses meas-<name> per file (one matrix per file)
-        tsv_name = "_".join(filter(None, [stem, f"meas-{name}_relmat.dense.tsv"]))
-        np.savetxt(out / tsv_name, arrays[name], delimiter="\t", fmt="%.8g")
+        tsv_name = "_".join(filter(None, [stem, f"meas-{label}_relmat.dense.tsv"]))
+        matrix = arrays[name]
+        # 17 significant digits read every float64 back as itself.
+        np.savetxt(out / tsv_name, matrix.toarray() if sp.issparse(matrix) else matrix, delimiter="\t", fmt="%.17g")
 
         # JSON sidecar (tvbo fields → BEP017 field names)
         sidecar = {

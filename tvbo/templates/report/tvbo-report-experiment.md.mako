@@ -23,7 +23,7 @@ Context Variables:
 </%doc>
 <%
 from sympy import latex, Eq, Symbol
-from tvbo.utils import as_list, parameters_acted_on, report
+from tvbo.utils import as_list, parameters_acted_on, report, transform_target
 from tvbo.parse.expression import parse_eq
 
 # ── Short-hands ──
@@ -376,7 +376,7 @@ s = sec()
 n_regions = _p(net, 'number_of_nodes', None) or _p(net, 'number_of_regions', None)
 cond_speed = _p(net, 'conduction_speed', None)
 gcs = _p(net, 'global_coupling_strength', None)
-transform_rows = [(t.name, text) for t in (_p(net, 'transforms', None) or []) if (text := _transform_text(t))]
+transform_rows = [(transform_target(t), text) for t in (_p(net, 'transforms', None) or []) if (text := _transform_text(t))]
 net_label = _p(net, 'label', '')
 net_desc = _p(net, 'description', '')
 parcellation = _p(net, 'parcellation', None)

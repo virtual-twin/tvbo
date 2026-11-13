@@ -828,7 +828,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
     Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.
 
-    The generic canonical keys `weight` and `length` that `from_matrix` produces are remapped onto the edge names the sidecar declares, because they are only two of arbitrarily many edge attributes a sidecar may bundle (`weight_NMF_*`, `fc`, `local_connectivity`). Two guards keep that from doing harm: an array already named by a template edge is left alone, so a directly-named `length` edge is never renamed away; and where no template edge matches, the generic key stays, since the loader resolves `weight`/`length` directly and renaming on a guess would misplace the matrix.
+    The generic keys `weight` and `length` that `from_matrix` and a parcellation produce are two of arbitrarily many edge attributes a sidecar may bundle (`weight_NMF_*`, `fc`, `local_connectivity`), so each is saved under the edge the network declares for it. The resident `weight` is saved under the edge `primary_weight` names, unless the network holds that edge already, and stays `weight` without one. The resident `length` is saved under the sidecar's tract-length edge (`tractLength`), unless a template edge is named `length`, so a directly-named `length` edge is never renamed away; with neither it stays `length`, which the loader resolves directly.
 
     With ``binary_format="csv"`` every array an HDF5 companion would hold is written to a CSV of its own (:func:`_write_csv_arrays`), which the sidecar names on the record of what it holds (:func:`_place_links`); the network's ``data_file`` names the first of them.
 
@@ -849,7 +849,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    from tvbo.classes.network import _is_weight_name, _read_held, _unheld_weight
+    from tvbo.classes.network import _read_held, _unheld_weight
 
     # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone. A layer declared with `used:` is never read from the companion, under any spelling of its name: once frozen the companion holds no matrix for it, and its value is the one its binding read, if any. A layer the companion holds is read, and an error reading it is raised (`_read_held`); a declared layer it does not hold is carried as in memory, declared and with no matrix, except a weight with nothing in memory either, which is refused below as `matrix()` refuses it.
     store = getattr(network, "_store", None)
@@ -869,25 +869,22 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     # Network._items() hides _cached_* attrs, so yaml_dumper works directly
     meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
 
-    # Remap the generic `weight`/`length` keys onto the sidecar's declared edge names — see this function's docstring for why, and for the two guards.
+    # Save the generic `weight`/`length` keys under the edges the network declares for them — see this function's docstring.
+    primary = str(network.primary_weight or "weight")
     if arrays:
-        from tvbo.classes.network import _LENGTH_MEASURES, _WEIGHT_MEASURES
+        from tvbo.classes.network import _LENGTH_MEASURES
 
         names = [edge_name(te) for te in template_edges(meta.get("edges", []))]
         nameset = set(names)
-        if "weight" in arrays and "weight" not in nameset:
-            w_name = next((nm for nm in names if nm.lower() in _WEIGHT_MEASURES), None) or next(
-                (nm for nm in names if nm.lower() not in _LENGTH_MEASURES), None
-            )
-            if w_name and w_name != "weight":
-                arrays[w_name] = arrays.pop("weight")
+        if "weight" in arrays and primary not in arrays:
+            arrays[primary] = arrays.pop("weight")
         if "length" in arrays and "length" not in nameset:
             l_name = next((nm for nm in names if nm.lower() in _LENGTH_MEASURES), None)
             if l_name and l_name != "length":
                 arrays[l_name] = arrays.pop("length")
 
     if unheld:
-        missing = next((name for name in unheld if _is_weight_name(name) and name not in arrays), None)
+        missing = next((name for name in unheld if name.lower() in {"weight", primary.lower()} and name not in arrays), None)
         if missing is not None:
             raise _unheld_weight(missing, store)
 

@@ -156,13 +156,6 @@ def _two_sources(first: str, second: str) -> str:
     return f"This network names {first} and {second} as the source of its connectivity. A network is read from one source: drop one of the two."
 
 
-def _answers_to(mine, theirs) -> bool:
-    """Whether the layer entry *mine* a network wrote and the entry *theirs* its source loaded are one layer: both template edges, both routes or neither, and one name under any spelling."""
-    if not (_is_template_edge(mine) and _is_template_edge(theirs)) or _is_route(mine) != _is_route(theirs):
-        return False
-    return bool(mine.label) and str(getattr(theirs, "label", "") or "").lower() in _alias_group(mine.label)
-
-
 def _fill_unstated(mine, theirs, stated=None) -> None:
     """Give the layer entry *mine* every slot it does not state from *theirs*, the source's entry of the same layer; a keyed collection (``parameters``, ``events``) gains the keys it lacks.
 
@@ -183,14 +176,14 @@ def _fill_unstated(mine, theirs, stated=None) -> None:
             setattr(mine, field.name, other)
 
 
-_WEIGHT_TARGETS = ("weight", "weights", "sc")
 _LENGTH_TARGETS = ("length", "lengths")
+_FORMER_WEIGHT_NAMES = ("weights", "sc", "streamlinecount", "streamlinedensity")
+"""Names a weight is often given that tvbo does not read as the weights (register WT1): a network that holds an edge of one of them and neither a ``weight`` edge nor a ``primary_weight`` is refused naming it, and so is a transform aimed at one no layer of the network has, since either would otherwise read as an unconnected network."""
 
 
 def _is_weight_name(name) -> bool:
-    """Whether *name* spells the connection-weight property."""
-    low = str(name).lower()
-    return low in _WEIGHT_TARGETS or low in _WEIGHT_MEASURES
+    """Whether *name* is ``weight``, the edge a network's weights are read from unless its ``primary_weight`` names another (:meth:`Network._matrix_names`)."""
+    return str(name).lower() == "weight"
 
 
 def _companion_name(store) -> str:
@@ -340,24 +333,14 @@ def _is_length_name(name) -> bool:
 
 
 def _alias_group(name) -> tuple:
-    """Every spelling of the edge property *name* names, canonical spellings first.
+    """Every spelling of the edge property *name* names, canonical spellings first: the tract length has several, and every other name, ``weight`` among them, is its own.
 
-    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and `Network.transforms_for` selects transforms through it, so a lookup and its transform cannot disagree about whether two names mean the same property — the failure that let `matrix("sc")` return the weight array with its declared transforms silently skipped.
+    The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and `Network.transforms_for` selects transforms through it, so a lookup and its transform cannot disagree about whether two names mean the same property. Which edge a network's weights are is the network's own declaration (:meth:`Network._matrix_names`).
     Names are lowercase; callers match source keys case-insensitively.
     """
-    if _is_weight_name(name):
-        return _WEIGHT_TARGETS + tuple(sorted(_WEIGHT_MEASURES.difference(_WEIGHT_TARGETS)))
     if _is_length_name(name):
         return _LENGTH_TARGETS + tuple(sorted(_LENGTH_MEASURES.difference(_LENGTH_TARGETS)))
     return (str(name).lower(),)
-
-
-def _declares_layer(edges, name) -> bool:
-    """Whether one of *edges* states where the layer *name* comes from (``used:`` / ``producer:``) under any spelling of it, so a source's own layer of that name yields to it."""
-    if not name:
-        return False
-    names = _alias_group(name)
-    return any(_declares_its_matrix(e) and str(getattr(e, "label", "") or "").lower() in names for e in edges or [])
 
 
 def _warn_superseded_accessor(old: str, new: str) -> None:
@@ -565,8 +548,7 @@ def _filter_networks_by_entities(entities: dict[str, str | None]) -> list:
     return [f for f in sorted(NETWORK_DIR.glob("*.yaml")) if carries(f.stem, entities)]
 
 
-# Known BEP017 weight-like and length-like measure names for auto-classification
-_WEIGHT_MEASURES = {"streamlinecount", "streamlinedensity", "weight", "weights"}
+# BEP017 measure names of a tract length, for auto-classification
 _LENGTH_MEASURES = {
     "tractlength",
     "tractlengths",
@@ -577,10 +559,10 @@ _LENGTH_MEASURES = {
 }
 
 
-def _discover_bids_measures(bids_dir) -> list[str]:
-    """Auto-discover structural measures from BEP017 relmat files.
+def _discover_bids_measures(bids_dir, primary_weight: str | None = None) -> list[str]:
+    """The structural measures of a BEP017 folder that states none, from the ``meas-<name>`` of its relmat files: the weights, then a tract length (:data:`_LENGTH_MEASURES`) when the folder holds one.
 
-    Parses ``meas-<name>`` from filenames and classifies into [weight_measure, length_measure] order by matching against known naming conventions.  Falls back to file order if names are unknown.
+    The weights are the measure *primary_weight* names, else ``meas-weight``, matched without regard to case and taken in the folder's spelling, so a folder with measures and none of them the weights is refused, naming its measures and the declarations that name the weights.
     """
     import re
 
@@ -598,20 +580,20 @@ def _discover_bids_measures(bids_dir) -> list[str]:
     if not measures:
         return ["weight", "tract_length"]  # default canonical names
 
-    # Classify: put weight-like first, length-like second
-    weight_names = [m for m in measures if m.lower() in _WEIGHT_MEASURES]
+    wanted = primary_weight or "weight"
+    weights = next((m for m in measures if m.lower() == wanted.lower()), None)
+    if weights is None:
+        declared = (
+            "the measure its `primary_weight` names"
+            if primary_weight
+            else "and the network states neither `primary_weight` nor `structural_measures`"
+        )
+        raise ValueError(
+            f"{bids_dir} holds the measures {', '.join(sorted(measures))} and no {wanted!r}, {declared}: "
+            "tvbo reads a network's weights from 'weight' unless `primary_weight` names the measure that holds them, or `structural_measures` names them, weights first and the tract length second."
+        )
     length_names = [m for m in measures if m.lower() in _LENGTH_MEASURES]
-    other = [m for m in measures if m.lower() not in _WEIGHT_MEASURES and m.lower() not in _LENGTH_MEASURES]
-
-    result = []
-    if weight_names:
-        result.append(weight_names[0])
-    if length_names:
-        result.append(length_names[0])
-    # Append any remaining (unknown measures in file order)
-    result.extend(other)
-    # If no known names matched, return all in file order
-    return result or measures
+    return [weights, *length_names[:1]]
 
 
 def _bids_measure_units(bids_dir, measures) -> dict:
@@ -743,15 +725,8 @@ def _curated_network(sidecar: Path):
 
 
 def _normative_layers(net) -> tuple:
-    """The weights and the lengths, ``None`` without them, of a curated network :func:`_normative_network` loaded, in their stored format; raises ``ValueError`` when it holds no weights, naming a surface mesh as one and the network whose nodes are its regions."""
-    arrays = net._store.arrays
-    weights = arrays.get("weight")
-    if weights is None:
-        weights = arrays.get("weights")
-    lengths = arrays.get("length")
-    if lengths is None:
-        lengths = arrays.get("lengths")
-    if weights is None:
+    """The weights and the lengths, ``None`` without them, of a curated network :func:`_normative_network` loaded, in their stored format and without its transforms, read as :meth:`Network.matrix` reads them, so the weights are the edge its ``primary_weight`` names, else ``weight``; raises ``ValueError`` when it holds no weights, naming a surface mesh as one and the network whose nodes are its regions."""
+    if not net.has_connectome:
         data_file = Path(net._store._path).name
         if net.mesh is None:
             raise ValueError(f"No 'weight' edge found in {data_file}")
@@ -761,7 +736,8 @@ def _normative_layers(net) -> tuple:
             else ""
         )
         raise ValueError(f"{data_file} holds a surface mesh of {net.number_of_nodes} vertices and no connectome{regions}.")
-    return weights, lengths
+    lengths = net.matrix("length", apply_transforms=False) if net.carries("length") else None
+    return net.matrix("weight", apply_transforms=False), lengths
 
 
 def _network_ref_string(net: "Network") -> str:
@@ -956,11 +932,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             self, "_stated_edge_slots", list(zip(_authored, _stated, strict=False))
         )  # each edge beside the slots its declaration wrote
 
-        if _edge_file_weights is not None and not _declares_layer(self.edges, "weight"):
-            _weight = tvbo_datamodel.Edge(label="weight")
-            self.set_matrix(
-                next((str(e.label) for e in self.edges or [] if _answers_to(e, _weight)), "weight"), _edge_file_weights
-            )
+        if _edge_file_weights is not None and not self._declares_layer(self.edges, "weight"):
+            self.set_matrix("weight", _edge_file_weights)
 
         # Stash raw template specs (plain dicts) for expansion in _resolve.
         object.__setattr__(self, "_node_template_spec", _nt_spec)
@@ -1092,7 +1065,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _keep_authored_edges(self, authored: list) -> None:
         """Put the edges this network *wrote* back over what its source loaded.
 
-        A source that replaces the edge list (a companion, a generator returning a network) would otherwise erase every entry beside it. Each entry is read by its kind. A layer entry that states where its matrix comes from (``used:`` / ``producer:``) is the network's layer of that name under every spelling (:func:`_declares_layer`), so the source's entry of it is dropped, and so is the array the source made resident for it, which every lookup would otherwise serve first. A layer entry that only names its layer takes the place of the source's entry of that layer (:func:`_answers_to`), keeping the slots it states and taking the others from it (:func:`_fill_unstated`); the matrix is the source's. A route is kept as written. The source keeps every other layer. An entry the source has no counterpart for keeps its place in ``edges``, or follows the source's edges where the source replaced the list.
+        A source that replaces the edge list (a companion, a generator returning a network) would otherwise erase every entry beside it. Each entry is read by its kind. A layer entry that states where its matrix comes from (``used:`` / ``producer:``) is the network's layer of that name under every spelling (:meth:`_declares_layer`), so the source's entry of it is dropped, and so is the array the source made resident for it, which every lookup would otherwise serve first. A layer entry that only names its layer takes the place of the source's entry of that layer (:meth:`_answers_to`), keeping the slots it states and taking the others from it (:func:`_fill_unstated`); the matrix is the source's. A route is kept as written. The source keeps every other layer. An entry the source has no counterpart for keeps its place in ``edges``, or follows the source's edges where the source replaced the list.
         """
         if not authored:
             return
@@ -1103,9 +1076,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         for edge in self.edges or []:
             if id(edge) in mine:
                 edges.append(edge)
-            elif _is_template_edge(edge) and _declares_layer(declared, edge.label):
+            elif _is_template_edge(edge) and self._declares_layer(declared, edge.label):
                 continue
-            elif (owner := next((own for own in named if _answers_to(own, edge)), None)) is None:
+            elif (owner := next((own for own in named if self._answers_to(own, edge)), None)) is None:
                 edges.append(edge)
             elif id(owner) not in placed:
                 _fill_unstated(
@@ -1116,7 +1089,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         held = {id(edge) for edge in edges}
         self.edges = edges + [edge for edge in authored if id(edge) not in held]
         resident = self._resident()
-        for key in [k for k in resident if _declares_layer(declared, _edge_name(k))]:
+        for key in [k for k in resident if self._declares_layer(declared, _edge_name(k))]:
             del resident[key]
 
     def invalidate_resolution(self) -> None:
@@ -1776,6 +1749,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             atlas=atlas,
             structural_measures=list(self.structural_measures) if self.structural_measures else None,
             observational_measures=list(self.observational_measures) if self.observational_measures else None,
+            primary_weight=self.primary_weight,
         )
         for attr in ("nodes", "number_of_nodes"):
             val = getattr(loaded, attr, None)
@@ -2378,7 +2352,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         structural_measures : list of str, optional
             Measures to use for structural network.
             First is used as weights, second (if present) as lengths.
-            If None, auto-discovered from available ``meas-*`` relmat files.
+            If None, the weights (the measure ``primary_weight`` names, else ``weight``) and a tract length from the folder's ``meas-*`` relmat files (:func:`_discover_bids_measures`), which refuses a folder whose measures do not include the weights.
         observational_measures : list of str, optional
             Measures to load as observational targets for optimization (e.g., ["correlation"] for FC). Stored in network._observations.
         **kwargs : Any
@@ -2395,10 +2369,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         ```python
         from tvbo import Network
 
-        # Auto-discover measures from directory
-        network = Network.from_bids("tvbo/database/networks/bids/dk_average")
-
-        # Or specify measures explicitly
+        # dk_average's weights are its streamline counts, so it names them
         network = Network.from_bids(
             "tvbo/database/networks/bids/dk_average",
             structural_measures=["streamlineCount", "tractLength"],
@@ -2414,7 +2385,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         bids_dir = Path(bids_dir)
 
         if structural_measures is None:
-            structural_measures = _discover_bids_measures(bids_dir)
+            structural_measures = _discover_bids_measures(bids_dir, kwargs.get("primary_weight"))
         if observational_measures is None:
             observational_measures = []
 
@@ -2535,8 +2506,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         bids_dir : str or Path
             Path to BEP017-compliant BIDS directory.
         structural_measures : list of str, optional
-            Measures for structural connectivity.
-            If None, auto-discovered from available ``meas-*`` relmat files.
+            Measures for structural connectivity, weights first and the tract length second.
+            If None, the weights (the measure ``primary_weight`` names, else ``weight``) and a tract length from the folder's ``meas-*`` relmat files (:func:`_discover_bids_measures`), which refuses a folder whose measures do not include the weights.
         observational_measures : list of str, optional
             Measures for observational targets (e.g., ["BoldCorrelation"]).
             If None, does not load observational data.
@@ -2553,16 +2524,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         >>> network = Network()
         >>> network.load_from_bids(
         ...     "tvbo/database/networks/bids/dk_average",
-        ... )
-        >>> network.load_from_bids(
-        ...     "tvbo/database/networks/bids/dk_average",
+        ...     structural_measures=["streamlineCount", "tractLength"],
         ...     observational_measures=["BoldCorrelation"],
         ... )
         """
         bids_dir = Path(bids_dir)
 
         if structural_measures is None:
-            structural_measures = _discover_bids_measures(bids_dir)
+            structural_measures = _discover_bids_measures(bids_dir, self.primary_weight)
 
         # Find relmat files
         relmat_files = list(bids_dir.glob("*_relmat.dense.tsv")) + list(bids_dir.glob("*_relmat.tsv"))
@@ -3723,15 +3692,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             # No explicit edges - generate from stored matrices. Build edges from the union of all stored matrices, attaching each matrix's values as named edge attributes.
             from scipy import sparse as _sp
 
-            # Collect matrix names from in-memory arrays, template-edge metadata, and common aliases accessible via the generic matrix(...) accessor.
-            matrix_names = set(self.edge_arrays())
+            # Each layer once, from in-memory arrays and template-edge metadata, under `weight` or `length` when it is the weights or the length and else the first name it is held by (_layer_names).
+            held = set(self.edge_arrays()) | {"weight", "length"}
             for e in self.edges or []:
                 lbl = getattr(e, "label", None) or getattr(e, "name", None)
                 if lbl:
-                    matrix_names.add(lbl)
-            for name in ("weight", "weights", "length", "lengths", "sc", "fc"):
-                if self.matrix(name) is not None:
-                    matrix_names.add(name)
+                    held.add(lbl)
+            layers = {}
+            for name in sorted(held, key=lambda n: (n not in ("weight", "length"), n)):
+                layers.setdefault(self._layer_names(name), name)
+            matrix_names = layers.values()
 
             # Materialize all available matrices as dense arrays.
             dense = {}
@@ -5148,7 +5118,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
     def sources_layer(self, name: str) -> bool:
         """Whether the layer *name* is read through a ``used:`` reference, so it has no values until :meth:`bind_references` names the run."""
-        names = _alias_group(name)
+        names = self._layer_names(name)
         return any(
             str(getattr(edge, "label", "") or "").lower() in names and getattr(edge, "used", None) is not None
             for edge in self.edges or []
@@ -5269,7 +5239,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def array(self, path: str):
         """The array at ``path``, resident or read from the companion on first use; ``None`` when there is neither.
 
-        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:func:`_declares_layer`), is not this network's and is not read from the companion. A layer the companion holds and cannot read raises (:func:`_read_held`), and so does a dataset it holds, such as one whose CSV is missing; a companion that cannot be opened holds nothing.
+        A bare name is an edge matrix; ``mesh/vertices`` or ``nodes/coordinates`` is any dataset the companion carries. What this reads is kept, so the residency `repr` reports is exactly what has been paid for. Reads come back in their stored format. A companion matrix of a layer an edge declares with ``used:`` or ``producer:``, under any spelling of its name (:meth:`_declares_layer`), is not this network's and is not read from the companion. A layer the companion holds and cannot read raises (:func:`_read_held`), and so does a dataset it holds, such as one whose CSV is missing; a companion that cannot be opened holds nothing.
         """
         key = _array_key(path)
         if (name := _edge_name(key)) is not None:
@@ -5278,7 +5248,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if key in resident:
             return resident[key]
         store = getattr(self, "_store", None)
-        if store is None or _declares_layer(self.edges, name):
+        if store is None or self._declares_layer(self.edges, name):
             return None
         try:
             held = store.holds(key) if name is None else name in store
@@ -5357,7 +5327,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     ) -> None:
         """Set a named edge matrix.
 
-        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion.
+        Accepts dense NumPy arrays, scipy sparse matrices (CSR, COO, etc.), or any array-like that can be converted. The matrix is stored internally and a template edge is created/updated automatically so that ``save()`` writes it to the HDF5 companion. ``weight`` sets the edge ``primary_weight`` names when the network declares one, the edge `matrix("weight")` serves.
 
         Parameters
         ----------
@@ -5371,6 +5341,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         >>> net.set_matrix("weight", W_dense)
         >>> net.set_matrix("local_connectivity", LC_sparse_csr)
         """
+        if _is_weight_name(name) and self.primary_weight:
+            name = self.primary_weight
         self._get_arrays()
         self.set_array(name, data)
         self._ensure_template_edge(name)
@@ -5397,7 +5369,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         if spellings & {str(n).lower() for n in self.matrix_names}:
             return True
         placed = self._placed_edges()
-        if _is_weight_name(name):
+        if "weight" in spellings:
             return bool(placed) or bool(self.nodes) or (self.number_of_nodes or 0) >= 1
         if not placed:
             return False
@@ -5447,14 +5419,45 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             raise KeyError(name)
         return store.info(name)
 
-    def _matrix_names(self, name: str) -> tuple:
-        """Spellings to try for a named edge matrix, most specific first.
+    def _layer_names(self, name) -> tuple:
+        """The names the layer *name* goes by on this network, most specific first.
 
-        A declared ``primary_weight`` wins for every weight spelling, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled controls) and still present one of them as the active weight. Beyond that the order is :func:`_alias_group`'s, which also drives transform selection.
+        The weights are the edge ``primary_weight`` names, then ``weight``, and that edge answers to ``weight`` as well, so one sidecar can carry several connectivity variants (band-specific reweightings, shuffled controls) and present one of them as the weights. Any other layer is spelled as :func:`_alias_group` spells it. Every lookup of a layer goes through this: a matrix and its transforms (:meth:`_matrix_names`), a layer an edge declares or sources (:meth:`_declares_layer`, :meth:`sources_layer`) and a source's entry of a layer (:meth:`_answers_to`).
         """
-        primary = getattr(self, "primary_weight", None) if _is_weight_name(name) else None
-        head = (str(primary).lower(),) if primary else ()
-        return tuple(dict.fromkeys(head + _alias_group(name)))
+        primary = str(self.primary_weight or "").lower()
+        if str(name).lower() not in {"weight", primary} - {""}:
+            return _alias_group(name)
+        return tuple(dict.fromkeys((primary or "weight", "weight")))
+
+    def _answers_to(self, mine, theirs) -> bool:
+        """Whether the layer entry *mine* this network wrote and the entry *theirs* its source loaded are one layer: both template edges, both routes or neither, and one layer under any name it goes by (:meth:`_layer_names`)."""
+        if not (_is_template_edge(mine) and _is_template_edge(theirs)) or _is_route(mine) != _is_route(theirs):
+            return False
+        return bool(mine.label) and str(getattr(theirs, "label", "") or "").lower() in self._layer_names(mine.label)
+
+    def _declares_layer(self, edges, name) -> bool:
+        """Whether one of *edges* states where the layer *name* comes from (``used:`` / ``producer:``) under any name the layer goes by (:meth:`_layer_names`), so a source's own layer of that name yields to it."""
+        if not name:
+            return False
+        names = self._layer_names(name)
+        return any(_declares_its_matrix(e) and str(getattr(e, "label", "") or "").lower() in names for e in edges or [])
+
+    def _matrix_names(self, name: str) -> tuple:
+        """Spellings to try for a named edge matrix, most specific first: the names its layer goes by (:meth:`_layer_names`). Without a ``primary_weight`` the weights are ``weight``, and a network that holds no ``weight`` and an edge of a name a weight is often given (:data:`_FORMER_WEIGHT_NAMES`) is refused naming it."""
+        if _is_weight_name(name) and not self.primary_weight:
+            self._refuse_undeclared_weights()
+        return self._layer_names(name)
+
+    def _refuse_undeclared_weights(self) -> None:
+        """Refuse a network that holds no ``weight`` edge, declares no ``primary_weight`` and holds an edge of a name a weight is often given (:data:`_FORMER_WEIGHT_NAMES`), which nothing would read as its weights."""
+        held = {str(n).lower(): str(n) for n in self.matrix_names}
+        spelled = next((held[n] for n in _FORMER_WEIGHT_NAMES if n in held), None)
+        if spelled is not None and "weight" not in held:
+            raise ValueError(
+                f"This network holds the edge {spelled!r} and no 'weight', and declares no `primary_weight`: tvbo reads a network's weights "
+                f"from its 'weight' edge, or from the edge `primary_weight` names. Declare `primary_weight: {spelled}` if {spelled!r} is its weights, "
+                "or name the edge 'weight'."
+            )
 
     def matrix(
         self,
@@ -5471,7 +5474,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Parameters
         ----------
         name : str
-            Matrix name (e.g. ``"weight"``, ``"length"``). Alias spellings (``weights``/``sc``, ``lengths``) resolve to the same matrix.
+            Matrix name (e.g. ``"weight"``, ``"length"``). ``weight`` and the edge ``primary_weight`` names are the weights; the spellings of a length (``lengths``, ``tractLength``) resolve to the same matrix.
         format : str, optional
             Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
             If ``None``, returns the matrix in whatever format it is currently stored in.
@@ -5486,6 +5489,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
 
         candidates = self._matrix_names(name)
+        weights = "weight" in candidates
         self._read_sourced_layers(candidates)
         arrays = self._get_arrays()
         store = getattr(self, "_store", None)
@@ -5520,14 +5524,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 if not unheld:
                     mat = arrays[_array_key(found)] = _read_held(store, found)
         if mat is None:
-            if _is_weight_name(name):
+            if weights:
                 mat = self._weights_from_edges()
             elif _is_length_name(name):
                 mat = self._lengths_from_edges()
 
         # No edges is zero weights, not absent ones: a single-node model and an uncoupled ensemble are both legitimate, and every consumer builds an (n, n) array from this.
         _unconnected = False
-        if mat is None and _is_weight_name(name):
+        if mat is None and weights:
             if unheld:
                 raise _unheld_weight(found, store)
             n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
@@ -5583,9 +5587,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         --------
         >>> net.add_edge(0, 1, weight=0.5, length=30.0)
         """
-        # Map common singular → plural names to match template edge conventions
+        # Other spellings of the length and delay matrices, as template edges name them
         _NORMALIZE = {
-            "weights": "weight",
             "lengths": "length",
             "delays": "delay",
             "distance": "length",
@@ -5675,7 +5678,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def transforms_for(self, target: str):
         """The declared `transforms:` that retarget *target*, in declaration order.
 
-        The one place the target name is matched, so the singular and plural spellings of an edge property stay equivalent everywhere and a new alias is added once. The aliases mirror the ones `matrix` already resolves when it looks the matrix itself up, so `matrix("weights")` and `matrix("weight")` cannot disagree about whether a transform applies. Both the runtime and the emitters that inline a transform into a generated script select through this.
+        The one place the target name is matched, through the names `matrix` resolves the matrix itself by (:meth:`_matrix_names`), so a transform on ``weight`` and one on the edge ``primary_weight`` names both apply to the weights, and `matrix("weight")` and `matrix` of that edge cannot disagree about whether a transform applies. A transform aimed at a name a weight is often given and no layer of this network has (:data:`_FORMER_WEIGHT_NAMES`) is refused naming it, since it would apply to nothing. Both the runtime and the emitters that inline a transform into a generated script select through this.
 
         Args:
             target: Edge property a transform retargets, e.g. `"weight"` or `"length"`.
@@ -5683,7 +5686,16 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         Returns:
             List of `Function` transforms declared against *target*.
         """
-        names = _alias_group(target)
+        unheld = set(_FORMER_WEIGHT_NAMES) - {str(n).lower() for n in self.matrix_names}
+        unheld -= {str(getattr(e, "label", "") or "").lower() for e in self.edges or []}
+        aimed = [str(transform_target(t)) for t in self.transforms or []]
+        stray = next((name for name in aimed if name.lower() in unheld), None)
+        if stray is not None:
+            raise ValueError(
+                f"A transform of this network is aimed at {stray!r}, which no layer of it is: the weights are the 'weight' edge, or the edge "
+                f"`primary_weight` names. Aim it at the weights with `name: weight`, or, for a transform after the first, a name of its own and `output: weight`."
+            )
+        names = self._matrix_names(target)
         return [t for t in (self.transforms or []) if str(transform_target(t)).lower() in names]
 
     def transform_expression(self, func):
@@ -5729,13 +5741,14 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         from tvbo.utils import edge_label
 
         target = edge_label(transform_target(func)) or transform_target(func)
+        own = set(self._matrix_names(target))
         sourced = self._sourced_arguments(func)
 
         def resolve(name):
             if str(name) in sourced:
                 return self._sourced(sourced[str(name)].used, f"transform {target!r}, argument {name!r}")
             label = edge_label(name) or name
-            if label == target:
+            if str(label).lower() in own:
                 return M
             stored = self.matrix(label, format="dense")
             if stored is not None:

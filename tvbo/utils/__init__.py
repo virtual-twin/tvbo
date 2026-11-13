@@ -326,14 +326,10 @@ def edge_param(edge, name: str, default=None):
 
 _NETWORK_EDGE_ALIASES = {
     "weight": "weight",
-    "weights": "weight",
     "length": "length",
     "lengths": "length",
 }
-"""Ergonomic shortcuts for the canonical ``network.edges.<label>``.
-
-Both spellings resolve to a connectome matrix through ``Network.matrix()``.
-"""
+"""Shortcuts for the canonical ``network.edges.<label>``, each resolving to a connectome matrix through ``Network.matrix()``: ``weight``, the weights' only name (register WT1), and ``length`` with its plural."""
 
 
 def edge_index(target, edges) -> int | None:
@@ -362,7 +358,7 @@ def labels_offered(unknown, carried, *, up_to: int = 20) -> str:
 def edge_label(ref):
     """Canonical ``Network.matrix()`` label for a network reference, else ``None``.
 
-    The one resolver for every way a recipe can point at a connectome matrix, so a transform equation, an observation source and an exploration axis cannot mean different matrices by the same name. Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight(s)``/``length(s)`` shortcut. Returns ``None`` for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
+    The one resolver for every way a recipe can point at a connectome matrix, so a transform equation, an observation source and an exploration axis cannot mean different matrices by the same name. Accepts the fully-qualified form (``network.weight``, ``network.edges.length``), the explicit ``edges.<label>`` form (any label), and the bare ``weight``, ``length`` and ``lengths`` shortcuts. Returns ``None`` for anything that is not a connectome-matrix reference (state variables, ``network.observations.*``, ...), which callers route through their normal path.
     """
     if not isinstance(ref, str):
         return None
@@ -373,11 +369,11 @@ def edge_label(ref):
 
 
 def transform_target(func):
-    """The edge attribute a ``transforms:`` entry rewrites, or ``None``.
+    """The edge attribute a ``transforms:`` entry rewrites, or ``None``: its ``output``, else its ``name``.
 
-    A transform's identifier *is* its target, so a recipe spells it ``target:`` — the schema declares that an alias of ``name``, which LinkML requires to stay the identifier. Reading it through here says which of the two meanings a call site wants, since ``name: weight`` beside ``rhs: weight / max(weight)`` otherwise reads as if the two were different things.
+    ``name`` identifies the entry, so two transforms of one attribute cannot both be named after it: the first is (``name: weight``), and each later one names the attribute as its ``output`` (``name: cohortScale``, ``output: weight``). They apply in the order declared. Reading the target through here says which of the two meanings a call site wants.
     """
-    return getattr(func, "name", None)
+    return getattr(func, "output", None) or getattr(func, "name", None)
 
 
 def noise_sigma(noise):

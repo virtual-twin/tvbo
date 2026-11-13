@@ -1348,7 +1348,7 @@ classes:
             primary_weight:
                 range: string
                 description: >-
-                    Name of the edge group that should serve as the canonical weights matrix when ``weights_matrix`` is queried. Lets a single Network sidecar bundle several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated SC, shuffled controls) under different edge names while still presenting one of them as the active weight to consumers (simulators, observation pipelines). Defaults to ``weight`` / ``weights`` / ``sc`` lookup when not set.
+                    Name of the edge whose matrix is the network's weights: ``matrix("weight")`` reads it, and a save writes the weights under it. Lets a single Network sidecar bundle several connectivity variants (e.g. band-specific NMF reweightings, distance-modulated SC, shuffled controls) under different edge names while presenting one of them as the weights to consumers (simulators, observation pipelines). Without it the weights are the ``weight`` edge; a network that holds its weights under another name (``sc``, ``weights``) declares that name here, and is refused naming the edge until it does.
             coupling:
                 multivalued: true
                 range: Coupling
@@ -1414,7 +1414,7 @@ classes:
                 multivalued: true
                 inlined_as_list: true
                 description: >-
-                    Ordered list of transforms applied to edge property matrices. Each entry's `name:` is the edge property it rewrites (e.g. 'weight', 'length'), and that property is also the value under transform inside the entry's own equation, which is written over the network's edge attributes. Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially, each seeing the previous one's output.
+                    Ordered list of transforms applied to edge property matrices. Each entry rewrites the edge property its `output:` names, else the one its `name:` is (e.g. 'weight', 'length'), and that property is also the value under transform inside the entry's own equation, which is written over the network's edge attributes. Supports equation-based (symbolic) or callable-based (software) transforms. Multiple transforms on the same target are applied sequentially, each seeing the previous one's output; since `name:` identifies an entry, each after the first states the target as its `output:`.
 
             # BIDS integration (BEP017)
             data_file:

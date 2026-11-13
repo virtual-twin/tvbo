@@ -67,7 +67,7 @@ edges:
     coupling: linear
 
   # ── Subnetwork template edge (10×10 local connectivity) ──
-  - label: weights
+  - label: weight
     format: dense
     weighted: true
     directed: true

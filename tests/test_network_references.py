@@ -235,7 +235,8 @@ def test_the_cohort_scale_of_a_ruled_connectome_is_one_number_from_one_expressio
     scaled["transforms"].insert(
         1,
         {
-            "name": "weights",
+            "name": "cohortScale",
+            "output": "weight",
             "equation": {"rhs": "weight * scale"},
             "arguments": {"scale": {"used": {"analysis": "toy_scale", "output": "toy_scale"}}},
         },
@@ -254,7 +255,8 @@ def test_a_kit_refuses_an_experiment_that_reads_a_network_file_through_a_referen
     plain = SimulationStudy.from_file(str(_study_file(root, tmp_path))).get_experiment(1)
     kit._refuse_network_references(plain)
     through = {
-        "name": "weights",
+        "name": "scaledByOther",
+        "output": "weight",
         "equation": {"rhs": "weight * mean(other)"},
         "arguments": {"other": {"used": {"iri": str(ruled), "output": "weight"}}},
     }
@@ -273,7 +275,8 @@ def test_a_kit_accepts_an_experiment_that_reads_a_curated_network_through_a_refe
 
     curated = "tvbo:tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat"
     through = {
-        "name": "weights",
+        "name": "scaledByOther",
+        "output": "weight",
         "equation": {"rhs": "weight * mean(other)"},
         "arguments": {"other": {"used": {"iri": curated, "output": "weight"}}},
     }

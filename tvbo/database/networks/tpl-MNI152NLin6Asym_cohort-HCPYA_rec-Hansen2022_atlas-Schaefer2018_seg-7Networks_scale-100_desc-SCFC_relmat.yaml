@@ -7,6 +7,7 @@ number_of_nodes: 100
 descriptor: SCFC
 distance_unit: mm
 data_file: tpl-MNI152NLin6Asym_cohort-HCPYA_rec-Hansen2022_atlas-Schaefer2018_seg-7Networks_scale-100_desc-SCFC_relmat.h5
+primary_weight: sc
 edges:
   - label: sc
     format: dense

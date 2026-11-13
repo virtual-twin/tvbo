@@ -1209,6 +1209,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
     else:
         raw = network.matrix("weight", apply_transforms=False) if hasattr(network, "matrix") else None
         n_nodes = None if raw is None else raw.shape[0]
+    weight_names = network._layer_names("weight")
     transforms: list[tuple[str, list[str]]] = []
     const_env: list[str] = []
     const_seen: set[str] = set()
@@ -1230,9 +1231,10 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
             if name in sourced:
                 return f"_network_datum({name!r})"
             label = edge_label(name) or name
-            source = _KIT_EDGE_ARRAYS.get(label)
+            kit_label = "weight" if str(label).lower() in weight_names else label
+            source = _KIT_EDGE_ARRAYS.get(kit_label)
             if source is not None:
-                labels_used.add(label)
+                labels_used.add(kit_label)
                 return source
             if name in node_vectors:
                 vec = np.asarray(node_vectors[name]).ravel()
@@ -1288,7 +1290,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         mask_lines = [f"{symbol} = {render_expression(mask, format='jax')}" for symbol, mask in masks.items()]
         if any("jsp." in line for line in [expr, *mask_lines]):
             _add_const("jsp", "import jax.scipy as jsp")
-        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), target="weight")
+        chained, constant = emit_env(edge_symbols(exp, masks), _resolver(t), targets=weight_names)
         for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
         transforms.append((expr, chained + mask_lines))
@@ -4411,7 +4413,7 @@ def network_leaf_is_matrix(leaf: Any) -> bool:
 def network_axis_leaf(ref: Any) -> str | None:
     """Graph leaf swept by a ``network.``-scoped exploration axis, else None.
 
-    Accepts the canonical ``network.edges.<label>`` form and the ``network.weight(s)``/``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
+    Accepts the canonical ``network.edges.<label>`` form and the ``network.weight`` and ``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
         ValueError: the reference is ``network.``-scoped but names an attribute
