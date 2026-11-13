@@ -113,6 +113,7 @@ tvbo:Fold a owl:Class ;
 
 # Saddle-node is the classical name for the same phenomenon.
 tvbo:SaddleNode owl:equivalentClass tvbo:Fold ;
+    rdfs:label "Saddle-node"@en ;
     skos:altLabel "saddle-node", "sn" .
 
 # Branch point (transcritical / pitchfork): a real eigenvalue crosses zero

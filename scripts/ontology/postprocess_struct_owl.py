@@ -6,7 +6,9 @@ LinkML's `gen-owl` emits a usable OWL file but stops short of the publication-re
 * canonical ontology IRI (`https://w3id.org/tvbo/struct`) instead of the synthetic `https://w3id.org/tvbo.owl.ttl`;
 * `owl:versionIRI` pinned to the schema `version`;
 * `owl:versionInfo` mirroring `pav:version`;
-* `dcterms:created` / `dcterms:modified` / `dcterms:creator` / `dcterms:contributor` / `dcterms:description`.
+* `dcterms:created` / `dcterms:modified` / `dcterms:creator` / `dcterms:contributor` / `dcterms:description`;
+* an `rdfs:label` on every TVB-O class and property, its name qualified as `_qualify_labels` describes;
+* no triple for a LinkML annotation tag.
 
 We do this as a post-process rather than fighting LinkML's emitter so that future LinkML upgrades remain drop-in.
 
@@ -31,6 +33,7 @@ DEFAULT_OWL = REPO / "ontology" / "tvb-o-struct.owl"
 CANONICAL_IRI = URIRef("https://w3id.org/tvbo/struct")
 TVBO = Namespace("https://w3id.org/tvbo/")
 PAV = Namespace("http://purl.org/pav/")
+SLOT_TYPES = (OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
 
 
 def _retype_float_facets(g: Graph) -> None:
@@ -50,13 +53,68 @@ def _retype_float_facets(g: Graph) -> None:
                             g.add((facet_node, facet, retyped))
 
 
+def _split_scope(local: str) -> tuple[str | None, str]:
+    """Split a TVB-O local name into the scope it is nested in and its bare name.
+
+    The scope is the enum before `#` (`DimensionType#time`) or the module path before the last `/` (`study/role`), its own `/` written as `.`; a top-level term (`license`) has none.
+
+    Args:
+        local: The IRI after `https://w3id.org/tvbo/`.
+
+    Returns:
+        The scope, or `None` for a top-level term, and the bare name.
+    """
+    if "#" in local:
+        scope, name = local.split("#", 1)
+        return scope, name
+    head, _, tail = local.rpartition("/")
+    return (head.replace("/", "."), tail) if head and tail else (None, local)
+
+
+def _drop_annotation_tags(g: Graph) -> None:
+    """Remove the triples `gen-owl` writes for a LinkML annotation tag such as `collection_key` or `simple_dict_value`.
+
+    Their predicate is a TVB-O IRI that no property declares, and they direct the YAML dialect, which `hatch_build.py` reads from the schema, not the ontology.
+
+    Args:
+        g: The parsed T-box, mutated in place.
+    """
+    declared = {s for t in SLOT_TYPES for s in g.subjects(RDF.type, t)}
+    for predicate in {p for p in g.predicates() if p.startswith(TVBO) and p not in declared}:
+        g.remove((None, predicate, None))
+
+
+def _qualify_labels(g: Graph) -> None:
+    """Label every TVB-O class and property by its name as written, qualified where the bare name could repeat another term's label, and keep the bare name as its `skos:notation`.
+
+    The qualifier answers two facts the code cannot show:
+
+    * **Local-name collisions.** A LinkML enum's permissible value, and a slot nested under a sub-namespace, both carry a bare local name that repeats across parents — `DimensionType#time` vs `EventType#time` vs `SamplingAxis#time`, or `tvb-o/dbs/scale` vs `tvb-o/software/scale`. The parent is the IRI fragment before `#`, or the path before the final `/`, and the label becomes `"<value> (<parent>)"`; an unscoped sibling such as `tvb-o/scale` is the canonical one and keeps its bare label.
+    * **Slot labels against imported classes.** A top-level TVBO property (`tvbo:x`, `tvbo:license`) shares its readable label with an InterLex or SANDS class of the same name. Only the TVBO side is qualified, to `"<name> (slot)"`; the imported class label is left untouched.
+
+    This applies both to a term whose label is its bare name and to one `gen-owl` leaves unlabeled, as it does every attribute that more than one class declares; a top-level class keeps, or gets, its bare name.
+
+    Args:
+        g: The parsed T-box, mutated in place.
+    """
+    properties = {s for t in SLOT_TYPES for s in g.subjects(RDF.type, t)}
+    for term in properties | set(g.subjects(RDF.type, OWL.Class)):
+        if not (isinstance(term, URIRef) and term.startswith(TVBO)):
+            continue
+        scope, name = _split_scope(term[len(TVBO) :])
+        qualifier = scope or ("slot" if term in properties else None)
+        bare = Literal(name)
+        labels = set(g.objects(term, RDFS.label))
+        if labels and (qualifier is None or bare not in labels):
+            continue
+        g.remove((term, RDFS.label, bare))
+        if qualifier:
+            g.add((term, SKOS.notation, bare))
+        g.add((term, RDFS.label, Literal(f"{name} ({qualifier})" if qualifier else name)))
+
+
 def _augment(g: Graph, schema: dict) -> None:
-    """Write the §2.3 ontology header into *g* and repair the labels ROBOT report flags.
-
-    Two of the label passes turn on facts the code cannot show:
-
-    * **Local-name collisions.** A LinkML enum's permissible value, and a slot nested under a sub-namespace, both carry a bare local name that repeats across parents — `DimensionType#time` vs `EventType#time` vs `SamplingAxis#time`, or `tvb-o/dbs/scale` vs `tvb-o/software/scale`. The parent is the IRI fragment before `#`, or the path before the final `/`. The bare form is demoted to `skos:notation` and the human label becomes `"<value> (<parent>)"`; an unscoped sibling such as `tvb-o/scale` is the canonical one and keeps its bare label.
-    * **Slot labels against imported classes.** A top-level TVBO property (`tvbo:x`, `tvbo:license`) shares its readable label with an InterLex or SANDS class of the same name. Only the TVBO side is scoped, to `"<name> (slot)"`, again moving the bare form to `skos:notation`; the imported class label is left untouched.
+    """Write the §2.3 ontology header into *g* and repair the labels ROBOT report flags on imported terms.
 
     Args:
         g: The parsed T-box, mutated in place.
@@ -110,55 +168,6 @@ def _augment(g: Graph, schema: dict) -> None:
 
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/axioms")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/data")))
-
-    PROPERTY_TYPES = (OWL.Class, OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
-    seen_subjects: set[URIRef] = set()
-    for ptype in PROPERTY_TYPES:
-        for s in g.subjects(RDF.type, ptype):
-            if isinstance(s, URIRef):
-                seen_subjects.add(s)
-
-    for subj in seen_subjects:
-        s = str(subj)
-        if not s.startswith(str(TVBO)):
-            continue
-        local = s[len(str(TVBO)) :]
-        scope: str | None = None
-        value: str | None = None
-        if "#" in local:
-            scope, value = local.split("#", 1)
-        elif "/" in local:
-            head, _, tail = local.rpartition("/")
-            if head and tail:
-                scope, value = head.replace("/", "."), tail
-        if scope is None or value is None:
-            continue
-        bare_label = Literal(value)
-        if (subj, RDFS.label, bare_label) not in g:
-            continue
-        g.remove((subj, RDFS.label, bare_label))
-        g.add((subj, SKOS.notation, bare_label))
-        g.add((subj, RDFS.label, Literal(f"{value} ({scope})")))
-
-    SLOT_TYPES = (OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
-    slot_subjects: set[URIRef] = set()
-    for st in SLOT_TYPES:
-        for s in g.subjects(RDF.type, st):
-            if isinstance(s, URIRef):
-                slot_subjects.add(s)
-    for subj in slot_subjects:
-        s = str(subj)
-        if not s.startswith(str(TVBO)):
-            continue
-        local = s[len(str(TVBO)) :]
-        if "/" in local or "#" in local:
-            continue  # already handled above
-        bare_label = Literal(local)
-        if (subj, RDFS.label, bare_label) not in g:
-            continue
-        g.remove((subj, RDFS.label, bare_label))
-        g.add((subj, SKOS.notation, bare_label))
-        g.add((subj, RDFS.label, Literal(f"{local} (slot)")))
 
     # ROBOT report flags `missing_label` on imported externals that LinkML references but does not relabel. Inject minimal `rdfs:label`s based on the IRI local name so downstream tooling has something to display.
     SCHEMA = Namespace("http://schema.org/")
@@ -216,6 +225,8 @@ def main() -> int:
     g.bind("pav", PAV)
     g.bind("owl", OWL)
     _retype_float_facets(g)
+    _drop_annotation_tags(g)
+    _qualify_labels(g)
     _augment(g, schema)
     write_canonical(g, args.owl)
     print(f"\u2713 Augmented ontology header in {args.owl}")
