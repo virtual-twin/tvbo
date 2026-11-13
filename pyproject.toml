@@ -138,11 +138,14 @@ tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 # The ORCHESTRATOR for `tvbo workflow submit`, needed wherever submit runs; a study's own runtime deps travel via `environment.requirements`.
 workflow = ["snakemake>=8.0.0", "snakemake-executor-plugin-slurm>=0.11.0"]
 
+# The Zarr network companion (`binary_format="zarr"`), written for Zarr 3.
+zarr = ["zarr>=3"]
+
 # Minor pinned so a local run and the CI ruff-action agree on the rule set.
 lint = ["ruff>=0.16.1,<0.17"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,lint]"]
+all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,zarr,lint]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"
