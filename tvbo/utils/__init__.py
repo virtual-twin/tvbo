@@ -261,6 +261,45 @@ def normalize_params(params) -> dict:
         return {}
 
 
+def parameters_acted_on(experiment, dynamics) -> dict[str, str]:
+    """What in *experiment* acts on each parameter of *dynamics*, as ``{name: "fitted by …; tuned by …; continued by …; held by …; swept by …"}`` in the dynamics' order.
+
+    The optimizations whose stages fit a parameter, the algorithms whose update rules tune it, the continuations that vary it (`free_parameters`) or hold it (`held_parameters`) and the explorations whose ``space`` sweeps it are named by their keys, each kind only when one acts. A reference reaches *dynamics* when it is bare or its owner is the dynamics' name or ``dynamics``.
+    """
+    references = []
+    for key, optimization in keyed_items(getattr(experiment, "optimizations", None), "optimizations"):
+        for stage in [optimization, *as_list(getattr(optimization, "stages", None))]:
+            references += [
+                ("fitted", key, getattr(entry, "parameter", None) or entry)
+                for entry in as_list(getattr(stage, "free_parameters", None))
+            ]
+    for key, algorithm in keyed_items(getattr(experiment, "algorithms", None), "algorithms"):
+        references += [("tuned", key, rule.target_parameter) for rule in as_list(getattr(algorithm, "update_rules", None))]
+    for key, continuation in keyed_items(getattr(experiment, "continuations", None), "continuations"):
+        references += [
+            ("continued", key, parameter)
+            for _, parameter in keyed_items(getattr(continuation, "free_parameters", None), "free_parameters")
+        ]
+        references += [("held", key, held.parameter) for held in as_list(getattr(continuation, "held_parameters", None))]
+    for key, exploration in keyed_items(getattr(experiment, "explorations", None), "explorations"):
+        references += [
+            ("swept", key, getattr(axis, "parameter", None) or axis_key)
+            for axis_key, axis in keyed_items(getattr(exploration, "space", None), "space")
+        ]
+    parameters = normalize_params(getattr(dynamics, "parameters", None))
+    owners = {"", "dynamics", str(getattr(dynamics, "name", None))}
+    acts = {name: {"fitted": [], "tuned": [], "continued": [], "held": [], "swept": []} for name in parameters}
+    for kind, key, reference in references:
+        owner, _, name = str(reference if isinstance(reference, str) else getattr(reference, "name", "")).rpartition(".")
+        if name in acts and owner.rpartition(".")[2] in owners and str(key) not in acts[name][kind]:
+            acts[name][kind].append(str(key))
+    return {
+        name: "; ".join(f"{kind} by {', '.join(keys)}" for kind, keys in kinds.items() if keys)
+        for name, kinds in acts.items()
+        if any(kinds.values())
+    }
+
+
 def network_couplings(network) -> dict:
     """*network*'s couplings, keyed by the role each fills.
 

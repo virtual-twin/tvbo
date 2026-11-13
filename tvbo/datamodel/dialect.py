@@ -30,6 +30,7 @@ from tvbo.datamodel.dialect_tables import KEYED_COLLECTIONS, SCALAR_SHORTCUTS, S
 __all__ = [
     "identifier_field",
     "KEYED_COLLECTIONS",
+    "RETIRED_SLOTS",
     "SCALAR_SHORTCUTS",
     "SEMANTIC_FOLDS",
     "SLOT_ALIASES",
@@ -43,6 +44,8 @@ __all__ = [
     "lift_shortcuts",
     "normalize",
     "install_on_dataclasses",
+    "refuse_dotted_parent",
+    "refuse_retired",
     "peer_module",
 ]
 
@@ -450,18 +453,51 @@ def fold_node_mapping(data: dict) -> None:
     data["nodes"] = folded
 
 
+def refuse_dotted_parent(data: dict) -> None:
+    """An edge reaches the network its network is a subnetwork of as ``parent``, and that network's parent as ``parent/parent``; a path spelled with ``..`` segments is refused, naming the edge and the spelling."""
+    for slot in ("source_network", "target_network"):
+        steps = str(data.get(slot) or "").split("/")
+        if set(steps) == {".."}:
+            raise ValueError(
+                f"Edge {data.get('label')!r}: `{slot}: {data[slot]}` is spelled `{slot}: {'/'.join('parent' for _ in steps)}`."
+            )
+
+
 SEMANTIC_FOLDS = {
     "StateVariable": _fold_state_variable_domain,
     "Dynamics": _fold_dynamics,
     "Node": _fold_label_keyed_node,
     "NodeTemplate": _fold_node_template,
     "Network": _fold_network,
+    "Edge": refuse_dotted_parent,
 }
 """Per-class dialect a table of renames cannot express, keyed like the other tables.
 
 Applied after the members are keyed, so a fold sees each collection under the names its
 own class will, whichever spelling the record was written in.
 """
+
+
+_ACTED_ON = "name the parameter where it is acted on: a fit's `free_parameters`, an update rule's `target_parameter`, a continuation's `free_parameters` or `held_parameters`, or an exploration's `space`"
+
+RETIRED_SLOTS: dict[str, dict[str, str]] = {
+    "Coupling": {
+        "inner_coupling": "write the coupling on the subnetwork",
+        "region_mapping": "write `node_mapping` on the network",
+        "regional_connectivity": "the parent network's connectivity is the regional coupling's graph",
+        "aggregation": "write the aggregation as an up edge's coupling",
+        "distribution": "write the distribution as a down edge's coupling",
+    },
+    **dict.fromkeys(("Parameter", "DerivedParameter"), {"free": _ACTED_ON}),
+}
+"""Slots a class no longer has, each with where its meaning is written now. None has a counterpart on its own class to fold into, so a record that still carries one is refused at load rather than renamed or dropped."""
+
+
+def refuse_retired(cls_name: str, data: dict) -> None:
+    """Raise when *data* carries a slot *cls_name* no longer has, naming the slot and where its meaning is written now."""
+    for slot, instead in RETIRED_SLOTS.get(cls_name, {}).items():
+        if slot in data:
+            raise ValueError(f"{cls_name}.{slot} was retired in tvbo 0.9.0: {instead}.")
 
 
 def normalize(cls_name: str, data: dict) -> dict:
@@ -480,6 +516,7 @@ def normalize(cls_name: str, data: dict) -> dict:
     for envelope_key in ENVELOPE_KEYS:
         data.pop(envelope_key, None)
 
+    refuse_retired(cls_name, data)
     fold_aliases(cls_name, data)
     lift_shortcuts(cls_name, data)
     expand_iri(cls_name, data)
@@ -515,7 +552,7 @@ def install_on_dataclasses(namespace: dict) -> None:
 
         cls.__init__ = __init__
 
-    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS):
+    for name in set(SLOT_ALIASES) | set(SCALAR_SHORTCUTS) | set(SEMANTIC_FOLDS) | set(RETIRED_SLOTS):
         cls = namespace.get(name)
         if cls is not None:
             wrap(cls)

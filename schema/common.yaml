@@ -131,11 +131,7 @@ classes:
             output:
                 range: string
                 description: >-
-                    WHICH array to take from the container at ``experiment`` / ``iri``:
-                    a recorded state variable, an ``observation__<name>``, an
-                    ``estimate__<param>`` (a tuned free parameter a fit persisted), or
-                    an external variable. Matched exactly or by the ``<producer>__<name>``
-                    suffix.
+                    WHICH array to take from the container at ``experiment`` / ``iri``: a recorded state variable, an ``observation__<name>``, an ``estimate__<param>`` (the value an algorithm's update rules tuned), an ``optimization__<name>__fitted__<path>`` (the value an optimization fitted), or an external variable. Matched exactly or by the ``<producer>__<name>`` suffix.
             sel:
                 range: Argument
                 multivalued: true

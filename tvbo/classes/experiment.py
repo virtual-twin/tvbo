@@ -48,7 +48,7 @@ from tvbo.datamodel.dialect import expand_iri
 from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.run.graph import GraphRunner as _Network
-from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, normalize_params, traverse_metadata
+from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, traverse_metadata
 from tvbo.utils.source import current_source_file
 
 sessionid = 1
@@ -1016,8 +1016,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 "coupling_inputs",
             ]
         )
-        # Expand coupling parameters with shape annotations like "(N, N)" or "(N,)"
-        self._expand_coupling_parameter_shapes(parameters)
         # Wrap array-valued (per-mode) parameters as ndarrays so the JAX backend receives jnp arrays. Bare Python lists would survive convert_dtype's tree_map (which descends into the list and only converts the scalar elements, leaving a list[Array]) and then break `scalar * param` arithmetic in the generated dfun. Mirrors render_jax_default (tvboptim).
         self._arrayify_parameter_values(parameters)
         for name, values in self._node_parameter_arrays().items():
@@ -1048,40 +1046,6 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         from tvbo.adapters.base import node_parameter_arrays
 
         return node_parameter_arrays(self.network, self.dynamics)
-
-    def _expand_coupling_parameter_shapes(self, parameters: Bunch) -> None:
-        """Expand coupling parameters that have shape annotations like (N, N) or (N,)."""
-        if not hasattr(parameters, "coupling") or self.network is None:
-            return
-
-        N = self.network.number_of_nodes
-        coupling_params = parameters.coupling
-
-        # Every coupling the network declares, not just the first: each states its own shapes.
-        declared = {
-            name: param
-            for coup in network_couplings(self.network).values()
-            for name, param in normalize_params(getattr(coup, "parameters", None)).items()
-        }
-        for param_name, param_obj in declared.items():
-            if param_name not in coupling_params:
-                continue
-
-            shape_str = getattr(param_obj, "shape", None)
-            if not shape_str:
-                continue
-
-            current_value = coupling_params[param_name]
-
-            # Parse shape string and expand
-            if shape_str == "(N, N)" or shape_str == "(N,N)":
-                # Expand scalar to NxN matrix
-                if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
-                    coupling_params[param_name] = np.full((N, N), float(current_value))
-            elif shape_str == "(N,)" or shape_str == "(N)":
-                # Expand scalar to N-vector
-                if np.isscalar(current_value) or (hasattr(current_value, "shape") and current_value.shape == ()):
-                    coupling_params[param_name] = np.full((N,), float(current_value))
 
     def _arrayify_parameter_values(self, parameters: Bunch) -> None:
         """Convert list/tuple-valued parameters in the collection to ``np.array``.
@@ -1308,6 +1272,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         A *local* ``used:`` — one carrying neither ``experiment`` nor ``iri`` — names one of this experiment's own outputs and is resolved by the in-run machinery instead, so it is skipped here rather than reaching ``locate_container``, which raises on a reference with no WHERE.
         """
+        from tvbo.codegen.dims import dynamics_sizes, resolve_shape, shape_terms
         from tvbo.data import dataref as _dref
 
         ini = getattr(self, "initial_state", None)
@@ -1343,6 +1308,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             fallback = int(_sid) if _sid is not None else None
 
         n_nodes = len(self.network.nodes) if self.network.nodes else None
+        sizes = dynamics_sizes(self.dynamics) if getattr(self, "dynamics", None) is not None else {}
         point = str(getattr(ini, "source_point", "") or "endpoint") if is_from_exp else "endpoint"
         # 'branch' has no single point for a parameter value; settle to the endpoint.
         settle = -1 if point in ("", "endpoint", "branch") else int(point)
@@ -1360,19 +1326,18 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
             A declared shape that is not checked is not a declaration. An algorithm writes a tuned weight twice -- as the observation the tuning measured, which keeps the monitor's leading axis, and as ``estimate__<param>``, which is the operating point on a labelled node axis -- so binding the first where the second was meant hands the model a ``(1, n)`` where it declared ``(n,)``. Unchecked, that inflates the model's mode axis and fails several layers down inside the solver's output assembly, in a message naming neither the parameter nor the experiment it came from.
 
-            Size-one axes are dropped only when doing so lands exactly on the declared shape, which is unambiguous and lossless. Anything else raises.
+            The declared shape is sized by the one shape reader (:func:`tvbo.codegen.dims.resolve_shape`), with the network's node count and the dynamics' sizes; without a node count a shape naming ``n_nodes`` is not checked. Size-one axes are dropped only when doing so lands exactly on the declared shape, which is unambiguous and lossless. Anything else raises.
             """
-            if not shape_decl:
+            if not shape_decl or (n_nodes is None and "n_nodes" in (shape_terms(shape_decl) or ())):
                 return arr
             want = str(shape_decl).strip()
-            expected = (n_nodes,) if want.replace(" ", "") in ("(n_nodes,)", "(n_nodes)") and n_nodes is not None else None
-            if expected is None or arr.shape == expected:
+            expected = resolve_shape(want, owner=f"Parameter {pname!r}", sizes=sizes, n_nodes=n_nodes)
+            if arr.shape == expected:
                 return arr
-            squeezed = arr.reshape(tuple(d for d in arr.shape if d != 1)) if 1 in arr.shape else arr
-            if squeezed.shape == expected:
-                return squeezed
+            if [d for d in arr.shape if d != 1] == [d for d in expected if d != 1]:
+                return arr.reshape(expected)
             raise ValueError(
-                f"Parameter {pname!r} declares shape {want} ({expected[0]} nodes) but its `used:` reference "
+                f"Parameter {pname!r} declares shape {want}, {expected}, but its `used:` reference "
                 f"{_dref.describe(spec) if hasattr(_dref, 'describe') else spec} resolves to an array of shape {arr.shape}. "
                 f"An algorithm records a tuned parameter twice: as the observation it measured, which keeps a leading "
                 f"monitor axis, and as `estimate__<param>`, which is the operating point on a labelled node axis. "
@@ -1643,7 +1608,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         # Checked here as well as at render, for the run paths that never render through the export registry (python, pyrates, gillespie).
         from tvbo import export as _export
+        from tvbo.multiscale import lower
 
+        lower(self)
         _export.refuse_unlowered_parameter_starts(self, format)
 
         if format.lower() == "tvb":

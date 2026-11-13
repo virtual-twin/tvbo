@@ -269,9 +269,10 @@ def _start_shape(start: Any) -> tuple[int, str | None]:
 
     Raises where the emitted start function, which knows only ``n_nodes``, cannot size the declaration: a shape other than one value per node or, on a coupling parameter, one per connection, and a coupling parameter drawn without a shape.
     """
+    from tvbo.codegen.dims import shape_code, shape_terms
+
     declared = getattr(start.parameter, "shape", None)
-    inner = str(declared or "").strip().strip("()").replace(" ", "")
-    shape = "(" + inner + ("," if "," not in inner else "") + ")" if inner else None
+    shape = shape_code(declared) if shape_terms(declared) else None
     if shape is None and start.kind == StartKind.EQUATION:
         return 0, None
     if shape is None and start.owner_kind == "dynamics":
@@ -778,12 +779,9 @@ def _shape_ndim(shape_str) -> int:
     Counts the comma-separated dimensions inside the parentheses so a graph-shaped (2-D, per-edge) parameter can be told apart from a per-node (1-D) or scalar one.
     Returns 0 for an absent/empty shape.
     """
-    if not shape_str:
-        return 0
-    inner = str(shape_str).strip().strip("()").strip()
-    if not inner:
-        return 0
-    return len([p for p in inner.split(",") if p.strip()])
+    from tvbo.codegen.dims import shape_terms
+
+    return len(shape_terms(shape_str) or ())
 
 
 def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
@@ -3926,8 +3924,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
 
     Handles: str, dotted notation, stringified dict, dict, and Parameter objects.
 
-    Returns dict with: name, heterogeneous, shape, coupling_key, dynamics_key,
-                       lower_bound, upper_bound
+    Returns dict with: name, heterogeneous (None where the entry writes none), shape, coupling_key, dynamics_key, lower_bound, upper_bound
     """
     all_couplings = all_couplings or {}
     result = None
@@ -3945,7 +3942,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
             param_name = ref
         result = {
             "name": param_name,
-            "heterogeneous": bool(getattr(fp, "heterogeneous", False)),
+            "heterogeneous": getattr(fp, "heterogeneous", None),
             "shape": str(fp.shape) if getattr(fp, "shape", None) else None,
             "coupling_key": source_key if is_coupling else None,
             "dynamics_key": source_key if not is_coupling and source_key else None,
@@ -3988,7 +3985,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
                         source_key = prefix
                     result = {
                         "name": param_name,
-                        "heterogeneous": bool(parsed.get("heterogeneous", False)),
+                        "heterogeneous": parsed.get("heterogeneous"),
                         "shape": parsed.get("shape"),
                         "coupling_key": source_key if is_coupling else None,
                         "dynamics_key": source_key if not is_coupling and source_key else None,
@@ -4004,7 +4001,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
                 source_key = prefix
                 result = {
                     "name": param_name,
-                    "heterogeneous": False,
+                    "heterogeneous": None,
                     "shape": None,
                     "coupling_key": source_key if is_coupling else None,
                     "dynamics_key": source_key if not is_coupling else None,
@@ -4012,7 +4009,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
             else:
                 result = {
                     "name": fp,
-                    "heterogeneous": False,
+                    "heterogeneous": None,
                     "shape": None,
                     "coupling_key": None,
                     "dynamics_key": None,
@@ -4026,7 +4023,7 @@ def parse_free_param(fp: Any, coupling_keys: set[str], model: Any = None, all_co
             source_key = prefix
         result = {
             "name": param_name,
-            "heterogeneous": bool(fp.get("heterogeneous", False)),
+            "heterogeneous": fp.get("heterogeneous"),
             "shape": str(fp["shape"]) if fp.get("shape") else None,
             "coupling_key": source_key if is_coupling else None,
             "dynamics_key": source_key if not is_coupling and source_key else None,

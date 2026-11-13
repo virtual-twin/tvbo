@@ -169,14 +169,14 @@ def test_a_route_stays_beside_a_source_and_never_stands_in_for_it(study_dir, sou
     """An edge to another network is no connectivity of this one: the source loads beneath it and the route is kept as written, with or without endpoints."""
     spec = source(study_dir)
     plain = Network(**spec)
-    route = {"label": "drive", "target_network": "..", "source_var": "phi", **ends}
+    route = {"label": "drive", "target_network": "parent", "source_var": "phi", **ends}
     net = Network(**spec, edges=[route])
     for layer in ("weight", "length"):
         np.testing.assert_array_equal(net.matrix(layer, format="dense"), plain.matrix(layer, format="dense"))
     assert net.node_labels == plain.node_labels
     kept = _layer(net, "drive")
     assert (str(kept.target_network), str(kept.source_var), kept.source, kept.target) == (
-        "..",
+        "parent",
         "phi",
         ends.get("source"),
         ends.get("target"),
@@ -195,7 +195,7 @@ def test_a_listed_edge_beside_a_source_is_refused_naming_both(study_dir, source)
 def test_a_matrix_file_is_read_beside_a_layer_entry_and_a_route(study_dir):
     """Layer entries and routes hold no connectivity, so an ``edge_matrix_files`` matrix still loads beside them."""
     spec = _matrix_file(study_dir)
-    net = Network(**spec, edges=[{"label": "weight", "unit": "count"}, {"label": "drive", "target_network": ".."}])
+    net = Network(**spec, edges=[{"label": "weight", "unit": "count"}, {"label": "drive", "target_network": "parent"}])
     np.testing.assert_array_equal(net.matrix("weight", format="dense"), SOURCE_WEIGHTS)
     assert str(_layer(net, "weight").unit) == "count"
 

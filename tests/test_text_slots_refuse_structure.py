@@ -13,10 +13,9 @@ from jsonasobj2 import JsonObj
 
 import tvbo.datamodel.schema as schema
 from tvbo.datamodel.schema import (
-    Coupling,
     Dynamics,
     Equation,
-    Function,
+    Exploration,
     Observation,
     Panel,
     Parameter,
@@ -61,10 +60,11 @@ def test_the_text_branch_of_a_union_slot_is_checked():
         Parameter(name="a", unit={"value": "ms"})
 
 
-def test_a_mapping_in_a_union_slot_whose_text_branch_comes_first_builds_its_record():
-    aggregation = Coupling(name="c", aggregation={"name": "mean"}).aggregation
-    assert isinstance(aggregation, Function) and aggregation.name == "mean"
-    assert Coupling(name="c", aggregation="mean").aggregation == "mean"
+def test_a_union_slot_keeps_the_branch_a_value_matches_and_refuses_a_mapping_none_takes():
+    assert Exploration(name="s", n_parallel="auto").n_parallel == "auto"
+    assert Exploration(name="s", n_parallel=4).n_parallel == 4
+    with pytest.raises(ValueError, match=r"for slot n_parallel"):
+        Exploration(name="s", n_parallel={"value": 4})
 
 
 def test_an_identifier_slot_is_checked_too():

@@ -2257,6 +2257,8 @@ classes:
                 slot_uri: rdfs:comment
             heterogeneous:
                 range: boolean
+                description: >-
+                    One value per node of the network the parameter's owner runs on, rather than one shared value. Inside a templated subnetwork, every copy of the template gets its own value at the parameter's declared shape; without it, every copy holds the template's value.
             distribution:
                 range: Distribution
                 inlined: true
@@ -2285,8 +2287,6 @@ classes:
                 slot_uri: prov:used
                 description: >-
                     WHERE + WHICH + SLICE in one edge — this parameter's array sourced from another experiment's result (an operating point, a tuned ``estimate__<name>`` a fit persisted), a dataset, or a curated entity, PROV ``prov:used``. The full cross-container form of which `source:`+`measure:` is the no-``sel``/no-``experiment`` shorthand; adds label ``reconcile`` and a swept-point ``sel``. Like `source:` the array is resolved lazily and never inlined. An in-study ``experiment`` reference also registers the workflow dependency. Mutually exclusive with `value:`/`source:`/`producer:`.
-            free:
-                range: boolean
             shape:
                 range: string
                 description: >-
@@ -3024,13 +3024,12 @@ classes:
                     Dotted reference to the Parameter to optimize. Format: "<scope>.<param_name>" where <scope> is either a Dynamics class name or a coupling key.
             heterogeneous:
                 range: boolean
-                ifabsent: boolean(false)
                 description: >-
-                    If true, the parameter is optimized per-element (broadcast to `shape`). If false, a single scalar is optimized and broadcast at runtime.
+                    `true` fits one value per node where the parameter declares one scalar, and `false` one scalar where it declares one value per node. An entry fits its parameter at the parameter's own layout and writes `heterogeneous` or `shape` only to change it; an entry that writes the layout its parameter already declares is refused.
             shape:
                 range: string
                 description: >-
-                    Optimization shape as a Python-tuple-style string (e.g. "(n_nodes,)" or "(n_nodes, n_nodes)"). Required when heterogeneous is true.
+                    The shape the parameter is fitted at, as a Python-tuple-style string (e.g. "(n_nodes,)" or "(n_nodes, n_nodes)"), written only to change the parameter's own layout; "()" fits one scalar.
             initial_value:
                 range: ScalarValue
                 description: "Optional initial value for the optimizer (overrides the referenced Parameter's value)."
@@ -3537,6 +3536,21 @@ classes:
                 description: >-
                     Toolkit-specific string options for this branch (linear solver, etc.).
 
+    HeldParameter:
+        class_uri: tvbo:HeldParameter
+        description: >-
+            A parameter a continuation holds to a target: the parameter, and the algorithm whose objective (a TuningObjective with target_variable and target_value) states the target it is held to.
+        attributes:
+            parameter:
+                range: string
+                required: true
+                description: The parameter held, by name, a parameter of the continuation's dynamics.
+            algorithm:
+                range: Algorithm
+                inlined: false
+                required: true
+                description: The algorithm, by name, whose objective gives the target.
+
     Continuation:
         class_uri: tvbo:Continuation
         description: >-
@@ -3561,6 +3575,13 @@ classes:
                 inlined_as_list: true
                 description: >-
                     The parameters the continuation varies, each a parameter of its dynamics with a domain (lo, hi) bounding it and an optional value it starts from, the dynamics' own value where none is given. A bound the domain leaves out is the dynamics parameter's own; one neither declares is refused by name, since the range decides which part of the diagram is computed. A continuation an experiment declares frees one parameter, and is refused when it frees none. A two-parameter (codim-2) continuation is a branch of it: the branch's nested continuation frees the second parameter, listed alone or after the primary it inherits (for primary p and second C, [C] or [p, C]), and is continued from the special points the branch's source_point selects. Its result carries the primary in param and the second in param2 on every backend.
+            held_parameters:
+                multivalued: true
+                range: HeldParameter
+                inlined: true
+                inlined_as_list: true
+                description: >-
+                    The parameters the continuation holds to a target while it varies its free parameter, as feedback inhibition control holds J_i: each names the parameter and the algorithm whose objective states the target. The continued system gains each held parameter as an unknown whose equation is that objective's residual. Refused when the objective states no target_variable and target_value, when no update rule of the algorithm targets the parameter, and on a continuation backend that holds no parameters (bifurcationkit holds them).
 
             # --- Step size control ---
             ds:
@@ -3850,53 +3871,6 @@ classes:
                 inlined: true
                 description: >-
                     Observable functions computed from edge inputs and parameters after simulation. Maps to obsf/obssym in ND.jl EdgeModel. Example: absolute force magnitude computed from force components.
-
-            # Hierarchical/subspace coupling attributes (optional)
-            inner_coupling:
-                range: Coupling
-                description: "For hierarchical coupling: inner coupling applied at regional level"
-                inlined: true
-            region_mapping:
-                range: RegionMapping
-                description: "For hierarchical coupling: vertex-to-region mapping for aggregation"
-                inlined: true
-            regional_connectivity:
-                range: Network
-                description: "For hierarchical coupling: region-to-region connectivity with weights and delays"
-                inlined: true
-            aggregation:
-                range: ScalarValue
-                any_of:
-                    - range: string
-                    - range: Function
-                      inlined: true
-                description: "For hierarchical coupling: aggregation method ('sum', 'mean', 'max') or custom Function"
-            distribution:
-                range: ScalarValue
-                any_of:
-                    - range: string
-                    - range: Function
-                      inlined: true
-                description: "For hierarchical coupling: distribution method ('broadcast', 'weighted') or custom Function"
-
-    RegionMapping:
-        class_uri: tvbo:RegionMapping
-        description: "Maps vertices to parent regions for hierarchical/aggregated coupling"
-        slots:
-            - label
-            - description
-            - dataLocation
-        attributes:
-            vertex_to_region:
-                description: "Array mapping each vertex index to its parent region index. Can use dataLocation instead for large arrays."
-                multivalued: true
-                range: integer
-            n_vertices:
-                range: integer
-                description: "Total number of vertices"
-            n_regions:
-                range: integer
-                description: "Total number of regions"
 
     Sample:
         class_uri: tvbo:Sample

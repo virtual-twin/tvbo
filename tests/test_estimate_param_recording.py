@@ -1,6 +1,6 @@
-"""ExperimentResult.save() records an algorithm's tuned FREE parameters as ``estimate__<param>`` on LABELLED node axes (``node`` for vectors, ``node_i``+ ``node_j`` for per-edge matrices), so a ``from_experiment`` warm-start reloads them as a prior location and reconciles by label with the existing `.sel` path.
+"""ExperimentResult.save() records each parameter an algorithm's update rules tune as ``estimate__<param>`` on LABELLED node axes (``node`` for vectors, ``node_i``+ ``node_j`` for per-edge matrices), so a ``from_experiment`` warm-start reloads them as a prior location and reconciles by label with the existing `.sel` path.
 
-Source-side, additive, container-layer only (no codegen). Filtered to free params, so it never shadows a ``<sv>_final`` state observation.
+Source-side, additive, container-layer only (no codegen). Filtered to the update-rule targets, so a state variable is never recorded and never shadows a ``<sv>_final`` state observation, and an algorithm without introspectable rules records nothing.
 """
 
 from __future__ import annotations
@@ -10,30 +10,24 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from tvbo.data.types import ExperimentResult, _algo_tuned_params, _free_param_names
+from tvbo.data.types import ExperimentResult, _algo_tuned_params
 
 
-def _param(name, free):
-    return SimpleNamespace(name=name, free=free)
+def _param(name):
+    return SimpleNamespace(name=name)
 
 
-def _fake_source(labels):
-    """A stand-in experiment: J_i (dynamics) + wLRE/wFFI (coupling) free; I_o/G fixed."""
+def _rule(target):
+    return SimpleNamespace(target_parameter=SimpleNamespace(name=target))
+
+
+def _fake_source(labels, algorithm="fic_eib"):
+    """A stand-in experiment whose *algorithm* tunes J_i (dynamics) and wLRE/wFFI (coupling); I_o and G are not tuned."""
     return SimpleNamespace(
         network=SimpleNamespace(node_labels=labels),
-        dynamics=SimpleNamespace(
-            parameters={
-                "J_i": _param("J_i", True),
-                "I_o": _param("I_o", False),
-            }
-        ),
-        coupling=SimpleNamespace(
-            parameters={
-                "wLRE": _param("wLRE", True),
-                "wFFI": _param("wFFI", True),
-                "G": _param("G", False),
-            }
-        ),
+        dynamics=SimpleNamespace(parameters={"J_i": _param("J_i"), "I_o": _param("I_o")}),
+        coupling=SimpleNamespace(parameters={"wLRE": _param("wLRE"), "wFFI": _param("wFFI"), "G": _param("G")}),
+        algorithms={algorithm: SimpleNamespace(update_rules=[_rule("J_i"), _rule("wLRE"), _rule("wFFI")], includes=[])},
     )
 
 
@@ -63,13 +57,28 @@ def _algo_state(n):
     )
 
 
-def test_free_param_names_collects_dynamics_and_coupling():
-    src = _fake_source([f"n{i}" for i in range(3)])
-    assert _free_param_names(src) == {"J_i", "wLRE", "wFFI"}
-    assert _free_param_names(None) == set()
+def test_an_algorithm_without_introspectable_rules_records_no_estimate(tmp_path):
+    xr = pytest.importorskip("xarray")
+    source = _fake_source([f"R{i}" for i in range(3)])
+    source.algorithms = None
+    res = ExperimentResult(
+        algorithms={
+            "fic_eib": SimpleNamespace(state=_algo_state(3), post_tuning=SimpleNamespace(observations={"fc_corr": 0.87}))
+        },
+        source=source,
+    )
+    ds = xr.open_dataset(
+        [p for p in res.save(str(tmp_path), compress=False, record_only=False) if p.endswith(".h5")][0], engine="h5netcdf"
+    )
+    try:
+        assert "algorithm__fic_eib__fc_corr" in ds.data_vars and not any(
+            str(name).startswith("estimate__") for name in ds.data_vars
+        )
+    finally:
+        ds.close()
 
 
-def test_save_records_labelled_estimate_for_free_params_only(tmp_path):
+def test_save_records_labelled_estimate_for_tuned_params_only(tmp_path):
     xr = pytest.importorskip("xarray")
     n = 4
     labels = [f"R{i}" for i in range(n)]
@@ -85,7 +94,7 @@ def test_save_records_labelled_estimate_for_free_params_only(tmp_path):
     try:
         names = set(ds.data_vars)
         assert {"estimate__wLRE", "estimate__wFFI", "estimate__J_i"} <= names
-        # fixed param (G) and state variable (S_e) excluded
+        # untuned param (G) and state variable (S_e) excluded
         assert "estimate__G" not in names
         assert "estimate__S_e" not in names
 
@@ -134,8 +143,9 @@ def test_estimate_uses_resolved_not_placeholder_labels(tmp_path):
 
     class _Src:
         network = SimpleNamespace(node_labels=["region_0", "region_1"])  # placeholders
-        dynamics = SimpleNamespace(parameters={"J_i": _param("J_i", True)})
+        dynamics = SimpleNamespace(parameters={"J_i": _param("J_i")})
         coupling = None
+        algorithms = {"a": SimpleNamespace(update_rules=[_rule("J_i")], includes=[])}
 
         def _resolve_model_node_labels(self):
             return ["L_V1", "R_V1"]  # hydrated real labels
@@ -148,10 +158,6 @@ def test_estimate_uses_resolved_not_placeholder_labels(tmp_path):
         assert [str(x) for x in ds["estimate__J_i"]["node"].values] == ["L_V1", "R_V1"]
     finally:
         ds.close()
-
-
-def _rule(target):
-    return SimpleNamespace(target_parameter=SimpleNamespace(name=target))
 
 
 def _source_with_algos(labels):
@@ -184,7 +190,7 @@ def test_algo_tuned_params_maps_rules_and_includes():
     tuned = _algo_tuned_params(src)
     assert tuned == {"fic": {"J_i"}, "fic_eib": {"J_i", "wLRE", "wFFI"}}
     assert _algo_tuned_params(None) == {}
-    assert _algo_tuned_params(_fake_source(["a"])) == {}  # no .algorithms → empty
+    assert _algo_tuned_params(SimpleNamespace(algorithms=None)) == {}  # no .algorithms → empty
 
 
 def test_estimate_prefers_fitting_algorithm_not_pre_pass(tmp_path):

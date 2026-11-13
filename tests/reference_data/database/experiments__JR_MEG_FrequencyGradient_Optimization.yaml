@@ -226,7 +226,6 @@ network:
           name: G
           value: 15.0
           description: Global coupling strength
-          free: true
         cmin:
           name: cmin
           value: 0.0

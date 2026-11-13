@@ -23,7 +23,7 @@ Context Variables:
 </%doc>
 <%
 from sympy import latex, Eq, Symbol
-from tvbo.utils import as_list, report
+from tvbo.utils import as_list, parameters_acted_on, report
 from tvbo.parse.expression import parse_eq
 
 # ── Short-hands ──
@@ -319,9 +319,14 @@ ${report.unit_verdict_table(unit_verdicts)}
 % endfor
 % endif
 
-% if any(_p(p, 'free', False) for p in params.values()):
+<% consumers = parameters_acted_on(exp, model) %>\
+% if consumers:
 
-**Free parameters** (optimized): ${', '.join(['$' + latex(Symbol(name)) + '$' for name, p in params.items() if _p(p, 'free', False)])}
+**Parameters acted on**
+
+% for name, acted in consumers.items():
+- $${latex(Symbol(name))}$: ${acted}
+% endfor
 % endif
 
 % if output:
@@ -507,8 +512,6 @@ post_rhs = getattr(_p(cpl_obj, 'post_expression', None), 'rhs', '')
 coupling_meta = []
 for attr, label in (
     ('coupling_function', 'function'),
-    ('aggregation', 'aggregation'),
-    ('inner_coupling', 'inner'),
     ('outsym', 'output symbol'),
     ('observed', 'observed'),
 ):
