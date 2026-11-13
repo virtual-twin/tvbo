@@ -164,7 +164,7 @@ gen-merged: gen-owl gen-abox
 		--input $(BIOLOGY_OUT) \
 		--input $(CLINICAL_TTL) \
 		--input $(CLINICAL_NMM) \
-		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru \
+		query --update ontology/fix-punning.ru --update ontology/clinical-postmerge.ru --update ontology/is-defined-by.ru \
 		annotate \
 		--prefix "pav: http://purl.org/pav/" \
 		--prefix "dcterms: http://purl.org/dc/terms/" \

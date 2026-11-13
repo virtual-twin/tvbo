@@ -6,8 +6,7 @@ LinkML's `gen-owl` emits a usable OWL file but stops short of the publication-re
 * canonical ontology IRI (`https://w3id.org/tvbo/struct`) instead of the synthetic `https://w3id.org/tvbo.owl.ttl`;
 * `owl:versionIRI` pinned to the schema `version`;
 * `owl:versionInfo` mirroring `pav:version`;
-* `dcterms:created` / `dcterms:modified` / `dcterms:creator` / `dcterms:contributor` / `dcterms:description`;
-* `rdfs:isDefinedBy <ontology IRI>` on every TVB-O class.
+* `dcterms:created` / `dcterms:modified` / `dcterms:creator` / `dcterms:contributor` / `dcterms:description`.
 
 We do this as a post-process rather than fighting LinkML's emitter so that future LinkML upgrades remain drop-in.
 
@@ -111,11 +110,6 @@ def _augment(g: Graph, schema: dict) -> None:
 
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/axioms")))
     g.add((onto, RDFS.seeAlso, URIRef("https://w3id.org/tvbo/data")))
-
-    # `rdfs:isDefinedBy` on every TVB-O class declared in this file.
-    for cls in set(g.subjects(RDF.type, OWL.Class)):
-        if isinstance(cls, URIRef) and str(cls).startswith(str(TVBO)):
-            g.add((cls, RDFS.isDefinedBy, onto))
 
     PROPERTY_TYPES = (OWL.Class, OWL.ObjectProperty, OWL.DatatypeProperty, OWL.AnnotationProperty)
     seen_subjects: set[URIRef] = set()
