@@ -11,7 +11,10 @@ See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
 
 import json
-from contextlib import nullcontext
+import os
+import shutil
+import tempfile
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -417,8 +420,10 @@ def _csv_entities(path: str) -> list[str]:
     return [f"{entity_value(group)}-{entity_value(rest)}"]
 
 
-def _write_csv_arrays(network, sidecar_path: Path, meta: dict, arrays: dict, edge_params: dict, carried: dict) -> dict:
-    """Write every array an HDF5 companion would hold to a CSV of its own beside the sidecar, and return the links :func:`_place_links` names them by.
+def _write_csv_arrays(
+    network, sidecar_path: Path, into: Path, meta: dict, arrays: dict, edge_params: dict, carried: dict
+) -> dict:
+    """Write every array an HDF5 companion would hold to a CSV of its own in *into*, named for the sidecar at *sidecar_path*, and return the links :func:`_place_links` names them by.
 
     The arrays are what :func:`_write_edges`, :func:`_write_nodes` and :func:`_write_mesh` store, written to an HDF5 file in memory and read back, so the CSVs hold the arrays an HDF5 save holds, at the same dtype and sparse format; a sparse matrix is written as one line per stored entry and never as the dense matrix (:func:`~tvbo.data.matrix_io.write_csv_array`). The coordinates are left out when every node has a position, which the sidecar then holds them as. A file takes the sidecar's name with the entities of :func:`_csv_entities`: before the suffix of a BIDS name, where BEP017 places ``meas-`` in a relationship matrix's name (``exp-1_network.yaml`` gives ``exp-1_meas-weight_network.csv``), and at the end of any other name (``n.yaml`` gives ``n_nodes-parentindex.csv``). Declared layers come first, so the first file is the first declared layer's.
 
@@ -429,7 +434,7 @@ def _write_csv_arrays(network, sidecar_path: Path, meta: dict, arrays: dict, edg
     import h5py
     from scipy import sparse
 
-    from tvbo.data.matrix_io import read_matrix, write_csv_array
+    from tvbo.data.matrix_io import _read_values, read_matrix, write_csv_array
 
     held = {}
     with h5py.File(io.BytesIO(), "w") as f:
@@ -441,7 +446,7 @@ def _write_csv_arrays(network, sidecar_path: Path, meta: dict, arrays: dict, edg
             if isinstance(node, h5py.Group) and "format" in node.attrs:
                 held[path] = read_matrix(node)
             elif isinstance(node, h5py.Dataset) and "format" not in node.parent.attrs:
-                held[path] = node[()]
+                held[path] = _read_values(node)
 
         f.visititems(collect)
     nodes = network.nodes or []
@@ -481,7 +486,7 @@ def _write_csv_arrays(network, sidecar_path: Path, meta: dict, arrays: dict, edg
 
     links = {}
     for path, value in held.items():
-        write_csv_array(sidecar_path.parent / files[path], value)
+        write_csv_array(into / files[path], value)
         links[path] = {
             "file": files[path],
             "dtype": str(value.dtype),
@@ -552,6 +557,104 @@ def _declare_array(meta: dict, path: str, per_node: bool) -> dict:
     record = owner.setdefault("parameters", {}).setdefault(name, {})
     record["measure"] = path
     return record
+
+
+def _unholdable(binary_format: str, dtype) -> bool:
+    """Whether *binary_format* cannot hold an array of *dtype*: an ``object`` array in any format, a datetime64 or timedelta64 in HDF5 and in CSV, whose arrays pass through HDF5 (:func:`_write_csv_arrays`), a long double in Zarr, and a structured or void array in CSV. Text (``<U``) every format holds (:func:`_as_stored`)."""
+    dtype = np.dtype(dtype)
+    return (
+        dtype.kind == "O"
+        or (dtype.kind in "Mm" and binary_format in ("h5", "hdf5", "csv"))
+        or (dtype.char in "gG" and binary_format == "zarr")
+        or (dtype.kind == "V" and binary_format == "csv")
+    )
+
+
+def _refuse_unholdable(network, sidecar_path: Path, binary_format: str, arrays: dict, edge_params: dict, carried: dict):
+    """Refuse a save of arrays *binary_format* cannot hold (:func:`_unholdable`) before anything is written, naming the network and each array with its dtype and the formats that hold it."""
+    every = {
+        **{f"edges/{name}": value for name, value in arrays.items()},
+        **{
+            f"edges/{layer}/edge_parameters/{name}": value
+            for layer, params in edge_params.items()
+            for name, value in params.items()
+        },
+        **carried,
+    }
+    refused = {path: value.dtype for path, value in every.items() if _unholdable(binary_format, value.dtype)}
+    if not refused:
+        return
+
+    def described(path, dtype) -> str:
+        others = [repr(other) for other in ("h5", "zarr", "csv") if not _unholdable(other, dtype)]
+        held = f"which binary_format={' or '.join(others)} holds" if others else "which no format holds"
+        return f"{path} ({dtype.type.__name__ if dtype.char in 'gG' else dtype}), {held}"
+
+    label = getattr(network, "label", None)
+    named = f"{label!r} ({sidecar_path.name})" if label else sidecar_path.name
+    advice = (
+        " An object array holds Python objects, which no format stores: give text as a text array (np.asarray(values, dtype=str)), which every format holds, and numbers at a numeric dtype."
+        if any(dtype.kind == "O" for dtype in refused.values())
+        else ""
+    )
+    raise ValueError(
+        f"The network {named} holds arrays binary_format={binary_format!r} cannot store, so nothing was written: {'; '.join(described(path, dtype) for path, dtype in refused.items())}.{advice}"
+    )
+
+
+def _as_stored(value, binary_format: str):
+    """*value* as *binary_format* stores it: a text array (``<U``) as h5py's UTF-8 string type in HDF5 and in CSV, whose arrays pass through HDF5, which :func:`~tvbo.data.matrix_io._read_values` reads back as text; a mapping of arrays, as the edge parameters of each layer are held, with each array so; any other array as it is."""
+    if isinstance(value, dict):
+        return {key: _as_stored(item, binary_format) for key, item in value.items()}
+    if binary_format == "zarr" or value.dtype.kind != "U":
+        return value
+    import h5py
+
+    return value.astype(h5py.string_dtype())
+
+
+def _staging_prefix(last: str) -> str:
+    """The start of the name of each directory a save of the file *last* writes into (:func:`_saving_into`), which says what a killed save left behind."""
+    return f".{last}.unfinished-tvbo-save-"
+
+
+def _remove_stale_staging(folder: Path, last: str) -> None:
+    """Remove each directory a save of *last* into *folder* left behind when it was killed, and no other: one named by :func:`_staging_prefix` for *last* whose process has ended."""
+    prefix = _staging_prefix(last)
+    for leftover in folder.iterdir():
+        pid = leftover.name[len(prefix) :].partition("-")[0]
+        if leftover.name.startswith(prefix) and leftover.is_dir() and pid.isdigit() and not _process_runs(int(pid)):
+            shutil.rmtree(leftover)
+
+
+def _process_runs(pid: int) -> bool:
+    """Whether a process with the id *pid* runs, one this user may not signal included."""
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass
+    return True
+
+
+@contextmanager
+def _saving_into(folder: Path, last: str):
+    """A fresh directory in *folder* for a save to write its files into, each moved onto its own name in *folder* once the block succeeds, *last* (the sidecar) after the others, replacing what was there. A block that raises leaves *folder* as it was, so a save that fails truncates no companion and leaves no sidecar naming files it did not write.
+
+    The directory is named ``.<last>.unfinished-tvbo-save-<process id>-<random>`` (:func:`_staging_prefix`), so a save that is killed outright, which runs no cleanup, leaves a directory that says what it is, and the next save of *last* into *folder* removes it (:func:`_remove_stale_staging`).
+    """
+    _remove_stale_staging(folder, last)
+    staging = Path(tempfile.mkdtemp(prefix=f"{_staging_prefix(last)}{os.getpid()}-", dir=folder))
+    try:
+        yield staging
+        for written in sorted(staging.iterdir(), key=lambda p: p.name == last):
+            target = folder / written.name
+            if target.is_dir() and not target.is_symlink():
+                shutil.rmtree(target)
+            os.replace(written, target)
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
 
 
 # ── Load ──────────────────────────────────────────────────────────────
@@ -765,6 +868,8 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
 
     With ``binary_format="csv"`` every array an HDF5 companion would hold is written to a CSV of its own (:func:`_write_csv_arrays`), which the sidecar names on the record of what it holds (:func:`_place_links`); the network's ``data_file`` names the first of them.
 
+    Every array is read, and an array declared per node whose length is not the node count refused (``Network._check_per_node_lengths``), as is an array the format cannot hold (:func:`_refuse_unholdable`), before anything is written. A text array is stored as text in every format (:func:`_as_stored`). The files are written beside the sidecar and moved onto their names once all are written (:func:`_saving_into`), so a save that fails leaves the files it would have replaced as they were.
+
     Parameters
     ----------
     network : Network
@@ -826,35 +931,41 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     for name in unread:
         arrays.pop(name, None)  # a stored matrix under a layer read per run would stand in for it on reload
 
-    if not arrays and carried.get("mesh/vertices") is None and not unread:
-        _write_v07_sidecar(network, sidecar_path, sidecar_format)
-        return
+    if hasattr(network, "_check_per_node_lengths"):
+        network._check_per_node_lengths()
+    _refuse_unholdable(network, sidecar_path, binary_format, arrays, edge_params, carried)
+    arrays, edge_params, carried = (_as_stored(group, binary_format) for group in (arrays, edge_params, carried))
 
-    companion = sidecar_path.with_suffix(f".{binary_format}")
-    meta["data_file"] = companion.name
-    meta["_sidecar_name"] = sidecar_path.name
-    data_file, links = companion.name, None
+    with _saving_into(sidecar_path.parent, sidecar_path.name) as staging:
+        if not arrays and not carried and not unread:
+            _write_v07_sidecar(network, staging / sidecar_path.name, sidecar_format)
+            return
 
-    if binary_format in ("h5", "hdf5"):
-        import h5py
+        companion = staging / f"{sidecar_path.stem}.{binary_format}"
+        meta["data_file"] = companion.name
+        meta["_sidecar_name"] = sidecar_path.name
+        data_file, links = companion.name, None
 
-        with h5py.File(companion, "w") as f:
-            _write_edges(f, meta, arrays, edge_params)
-            _write_nodes(f, network, carried)
-            _write_mesh(f, network, carried)
+        if binary_format in ("h5", "hdf5"):
+            import h5py
 
-    elif binary_format == "zarr":
-        import zarr
+            with h5py.File(companion, "w") as f:
+                _write_edges(f, meta, arrays, edge_params)
+                _write_nodes(f, network, carried)
+                _write_mesh(f, network, carried)
 
-        z = zarr.open(str(companion), mode="w")
-        _write_edges(z, meta, arrays, edge_params)
-        _write_nodes(z, network, carried)
-        _write_mesh(z, network, carried)
+        elif binary_format == "zarr":
+            import zarr
 
-    elif binary_format == "csv":
-        links = _write_csv_arrays(network, sidecar_path, meta, arrays, edge_params, carried)
-        data_file = next(link["file"] for link in links.values())
+            z = zarr.open(str(companion), mode="w")
+            _write_edges(z, meta, arrays, edge_params)
+            _write_nodes(z, network, carried)
+            _write_mesh(z, network, carried)
 
-    meta.pop("_sidecar_name", None)
-    # Write v0.7-compliant sidecar
-    _write_v07_sidecar(network, sidecar_path, sidecar_format, data_file=data_file, links=links)
+        elif binary_format == "csv":
+            links = _write_csv_arrays(network, sidecar_path, staging, meta, arrays, edge_params, carried)
+            data_file = next(link["file"] for link in links.values())
+
+        meta.pop("_sidecar_name", None)
+        # Write v0.7-compliant sidecar
+        _write_v07_sidecar(network, staging / sidecar_path.name, sidecar_format, data_file=data_file, links=links)

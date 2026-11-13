@@ -8,8 +8,8 @@ parameters:
   functional_network_labels:
     name: functional_network_labels
     description: The names of the functional networks the parcels belong to, one entry
-      for each network in each hemisphere, as the parcel labels spell them (LH_VisCent
-      in 17Networks_LH_VisCent_ExStr_1).
+      for each network in each hemisphere, as the parcel labels spell them (LH_Vis
+      in 7Networks_LH_Vis_1).
     measure: nodes/functional_network_labels
 time_unit: ms
 nodes:

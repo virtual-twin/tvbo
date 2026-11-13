@@ -146,10 +146,15 @@ def write_matrix(grp, matrix, fmt: str = "dense", dtype=None):
 
 
 def _read_values(dataset):
-    """Every value read in this module, in one place.
+    """Every value read in this module, in one place, a variable-length HDF5 string read as text (``<U``), as a save writes a text array, where h5py reads it as bytes.
 
     The array layer's contract is that metadata questions read no values, and a contract nobody can measure is a wish. Routing each read through here gives a test one seam to count.
     """
+    import h5py
+
+    info = h5py.check_string_dtype(dataset.dtype) if isinstance(dataset, h5py.Dataset) else None
+    if info is not None and info.length is None:
+        return np.asarray(dataset.asstr()[()], dtype=str)
     return dataset[()]
 
 
@@ -339,7 +344,7 @@ def write_csv_array(path, values) -> None:
 def read_csv_array(path, shape=None, dtype=None, fmt=None):
     """The array :func:`write_csv_array` wrote to *path*, at *dtype*, float64 when ``None``.
 
-    Dense, it comes back at *shape*, or 2-D as the rows give it when that is ``None``; text at a bytes or ``object`` dtype comes back as bytes, as h5py reads it. With *fmt* csr or coo the file holds one line per stored entry and the matrix comes back in that format at *shape*, which a sparse matrix needs; an entry outside it raises ``ValueError``, naming the file.
+    Dense, it comes back at *shape*, or 2-D as the rows give it when that is ``None``, an empty file as an empty array; text at a bytes or ``object`` dtype comes back as bytes, as h5py reads it. With *fmt* csr or coo the file holds one line per stored entry and the matrix comes back in that format at *shape*, which a sparse matrix needs; an entry outside it raises ``ValueError``, naming the file.
     """
     dtype = np.dtype(dtype or "float64")
     if fmt in ("csr", "coo"):
@@ -357,8 +362,10 @@ def read_csv_array(path, shape=None, dtype=None, fmt=None):
         with open(path, newline="", encoding="utf-8") as f:
             rows = list(csv.reader(f, delimiter=" "))
         values = np.array(rows if dtype.kind == "U" else [[v.encode("utf-8") for v in row] for row in rows], dtype=dtype)
-    else:
+    elif os.path.getsize(path):
         values = np.loadtxt(path, delimiter=" ", ndmin=2, dtype=dtype)
+    else:
+        values = np.zeros((0, 0), dtype)
     return values.reshape(shape) if shape is not None else values
 
 

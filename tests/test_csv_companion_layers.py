@@ -14,6 +14,8 @@ import yaml
 from scipy import sparse
 
 from tvbo import Network, SimulationExperiment
+from tvbo.classes.network import NETWORK_DIR
+from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.utils.study_layout import is_network_companion
 
 W = np.array([[0.0, 2 / 7, 5 / 7], [2 / 7, 0.0, 9 / 7], [5 / 7, 9 / 7, 0.0]])
@@ -172,7 +174,7 @@ def test_each_csv_is_named_on_the_record_of_what_it_holds(tmp_path):
         "shape": "(3,)",
         "dtype": "int32",
     }
-    assert {per_node[k]["dtype"] for k in ("names", "groups", "pairs", "phase")} == {"|S8", "object", "float32", "complex128"}
+    assert {per_node[k]["dtype"] for k in ("names", "groups", "pairs", "phase")} == {"|S8", "<U12", "float32", "complex128"}
     assert per_node["coordinates"]["shape"] == "(3, 3)" and "dtype" not in per_node["scaling"]
     assert sidecar["parameters"]["bands"] == {"measure": "nodes/bands", "source": "n_nodes-bands.csv", "shape": "(5,)"}
     named = [edge["data_file"] for edge in edges.values()] + [edges["weight"]["parameters"]["gain"]["source"]]
@@ -454,6 +456,40 @@ def test_a_curated_schaefer_network_declares_each_parcel_s_functional_network():
     names = net.array(net.parameters["functional_network_labels"].measure)
     codes = resolve_network_node(net, "functional_network").astype(int)
     assert all(f"_{names[c].decode()}_" in f"_{label}_" for c, label in zip(codes, net.node_labels, strict=True))
+
+
+@pytest.mark.parametrize("sidecar", sorted(NETWORK_DIR.glob("*atlas-Schaefer2018_seg-*.yaml")), ids=lambda f: f.stem)
+def test_a_schaefer_vocabulary_s_example_is_a_parcel_of_its_own_network(sidecar):
+    """The description of ``functional_network_labels`` gives as its example a parcel of the network it describes and that parcel's functional network: ``LH_Vis in 7Networks_LH_Vis_1`` in a 7Networks network."""
+    meta = _sidecar(sidecar)
+    example = re.search(r"\((\S+) in (\S+)\)", meta["parameters"]["functional_network_labels"]["description"])
+    network, label = example.groups()
+    assert label in [node["label"] for node in meta["nodes"]]
+    assert f"_{network}_" in f"_{label}_"
+
+
+@pytest.mark.parametrize(
+    "names", [np.array(["Vis", "Default", "Vis"]), np.array([b"Vis", b"Default", b"Vis"])], ids=["str", "bytes"]
+)
+def test_a_categorical_attribute_held_as_text_resolves_as_its_text(names):
+    """An attribute whose array holds names rather than codes into a vocabulary resolves as those names, never converted to numbers."""
+    from tvbo.data.param_io import resolve_network_node
+
+    net = _network(("weight",))
+    net.set_array("nodes/network", names)
+    net._template_parameters()["network"] = tvbo_datamodel.Parameter(name="network", measure="nodes/network")
+    resolved = resolve_network_node(net, "network")
+    assert resolved.dtype == names.dtype
+    np.testing.assert_array_equal(resolved, names)
+
+
+@pytest.mark.filterwarnings("error")
+def test_an_empty_array_reads_back_from_its_csv_without_a_warning(tmp_path):
+    """An empty per-node array's CSV is an empty file, which reads back as the empty array it holds and warns of nothing."""
+    net = _network(("weight",))
+    net.set_array("nodes/none", np.zeros(0))
+    back = _saved_and_read_back(net, tmp_path / "csv", "csv")
+    assert back.array("nodes/none").shape == (0,)
 
 
 def test_a_selected_schaefer_network_saves_its_vocabulary_whole(tmp_path):

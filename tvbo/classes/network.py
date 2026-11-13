@@ -861,6 +861,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         self._resolve_subnetworks(source_dir)
         self._resolve_parameter_sources(source_dir)
         self._check_levels()
+        self._check_per_node_lengths()
         self._resolved = True
 
     def _keep_authored_edges(self, authored: list) -> None:
@@ -1605,6 +1606,21 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             if levels and levels not in (self.parameters or {}):
                 raise ValueError(
                     f"The parameter {param.name!r} gives its values as codes into the vocabulary {levels!r} (`levels`), and the network has no parameter {levels!r}. A vocabulary is a network parameter whose `value` or `measure` lists its entries."
+                )
+
+    def _check_per_node_lengths(self) -> None:
+        """Refuse an array declared on ``node_template`` (:func:`~tvbo.data.matrix_io.declared_arrays`) whose length, from the array in hand or the companion's header, is not the node count, naming the array, its length and the count. Node ``i`` takes its entry ``i``, so an array of another length gives some node another's value or none. An array the network declares on itself, such as a vocabulary, runs over no nodes and has no length rule, and a declared array the network does not hold is left to whatever reads it."""
+        n = len(self.nodes or [])
+        for path, (scope, param) in declared_arrays(self).items():
+            if scope != "node":
+                continue
+            try:
+                shape = self.matrix_info(path).shape
+            except (KeyError, OSError):
+                continue
+            if not shape or shape[0] != n:
+                raise ValueError(
+                    f"The array {path}, which `node_template` declares as `{param.name}`, holds {shape[0] if shape else 0} values, and the network has {n} nodes. An array on `node_template` gives node i its entry i, so it has one entry per node; declare it as a network parameter if it does not run over the nodes."
                 )
 
     # Multi-scale resolution                                               #

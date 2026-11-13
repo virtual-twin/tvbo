@@ -2241,7 +2241,7 @@ classes:
                 range: string
                 required: false
                 description: >-
-                    WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array. Without a `source`, or beside the CSV a CSV save writes for it, it is the array's path in the network's own companion (``nodes/parent_index``), and on a ``node_template`` parameter that array runs over the nodes: node ``i`` takes its entry ``i``.
+                    WHICH array to select out of `source`. The address space is the source's own: a per-node measure name for a Network (aligning with Network.structural_measures / observational_measures), a dataset key for an HDF5/Zarr store, a recorded measure for an experiment result. Omit when the source resolves to a single array. Without a `source`, or beside the CSV a CSV save writes for it, it is the array's path in the network's own companion (``nodes/parent_index``), and on a ``node_template`` parameter that array runs over the nodes: node ``i`` takes its entry ``i``, so it has one entry per node, and one of another length is refused when the network is read or saved.
             source_arguments:
                 multivalued: true
                 range: Argument

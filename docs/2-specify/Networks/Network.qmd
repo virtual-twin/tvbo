@@ -225,6 +225,18 @@ net.save("out.yaml", sidecar_format="json")   # JSON sidecar + HDF5
 
 A CSV save names each file on the record of what it holds, with what the file does not record: a layer's CSV is its edge's `data_file` (with its `dtype` and sparse `format`; a sparse layer is one `row column value` line per stored entry), an edge parameter's is its `source`, a mesh array's is a field of `mesh`, and any other array's is the `source` of the parameter that declares it by `measure` (with its `dtype` and `shape`). Any other save drops these links, since its companion holds every array under its path.
 
+Every format stores a text array (`<U`) as text and reads it back as text: HDF5 as UTF-8 strings, Zarr and CSV as they hold text. An array a format cannot store is refused before anything is written, naming the network, the array, its dtype and the formats that hold it:
+
+| Array | HDF5 | Zarr | CSV |
+|---|---|---|---|
+| text (`<U`) | UTF-8 strings | text | text |
+| `object` | refused | refused | refused |
+| `datetime64`, `timedelta64` | refused | held | refused |
+| long double | held | refused | held |
+| structured or void | held | held | refused |
+
+An object array holds Python objects, which no format stores; give text as a text array (`np.asarray(values, dtype=str)`) and numbers at a numeric dtype.
+
 ### Declared node arrays
 
 A node array is declared as a parameter whose `measure` is its path in the companion. On `node_template` the array runs over the nodes, node `i` taking entry `i`, and is read as `network.nodes.<name>` without being copied onto each node. On the network it is any other array, such as a vocabulary. `levels` makes a per-node array a categorical attribute, whose codes index the vocabulary it names:
