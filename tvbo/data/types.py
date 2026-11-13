@@ -433,6 +433,54 @@ def _stacked_to_dataarray(
     return xr.DataArray(data=arr, dims=[*grid_dims, *payload_dims], coords={**grid_coords, **payload_coords}, name=name)
 
 
+def stimulus_waveforms(experiment) -> dict:
+    """``{name: expression in t}`` for every stimulus of *experiment* that is one signal in time.
+
+    The candidates are the events the run integrates as time-domain inputs (:func:`~tvbo.templates.tvboptim.utils.active_stimulus_events`), so the target of a ``fisher`` analysis, which is never integrated, is not among them. Of those, a condition-triggered (``continuous``/``discrete``) event fires on the state and a data-driven one (``dataLocation``) is already a file, so both are left out. Each remaining equation has its scalar parameters substituted, and one that still keeps a symbol other than ``t`` (an unset or per-node parameter) has no single signal in ``t`` and is left out too. The waveform is the event's shape before its per-node ``weights``. :func:`stimulus_signals` writes exactly these, and the experiment report shows the same set as display equations.
+    """
+    from sympy import Symbol, sympify
+
+    from tvbo.templates.tvboptim.utils import active_stimulus_events, is_data_driven_event
+
+    t = Symbol("t")
+    waveforms = {}
+    for event in active_stimulus_events(experiment):
+        rhs = getattr(getattr(event, "equation", None), "rhs", None)
+        if (
+            rhs is None
+            or is_data_driven_event(event)
+            or str(getattr(event, "event_type", "")).lower() in ("continuous", "discrete")
+        ):
+            continue
+        values = {
+            str(k): float(p.value)
+            for k, p in keyed_items(getattr(event, "parameters", None), "parameters")
+            if p.value is not None and np.ndim(p.value) == 0
+        }
+        expr = sympify(str(rhs), locals={k: Symbol(k) for k in [*values, "t"]}).subs(values)
+        if not expr.free_symbols - {t}:
+            waveforms[str(event.name)] = expr
+    return waveforms
+
+
+def stimulus_signals(experiment, time) -> dict:
+    """``{"event__<name>": DataArray}``, every stimulus waveform of *experiment* (:func:`stimulus_waveforms`) evaluated on *time*.
+
+    A stimulus is a symbolic equation in ``t`` and its own parameters, so the signal a run was driven with can be recomputed exactly on the recorded clock and kept beside the trajectory it drove; a figure then draws the drive and the response from one container instead of retyping the pulse. *time* is the measurement clock of the recorded trajectory, the clock the backends evaluate the equation on.
+    """
+    from sympy import Symbol, lambdify
+
+    t = np.asarray(time, dtype=float)
+    return {
+        f"event__{name}": xr.DataArray(
+            np.array(np.broadcast_to(np.asarray(lambdify(Symbol("t"), expr, modules="numpy")(t), dtype=float), t.shape)),
+            dims=["time"],
+            coords={"time": t},
+        )
+        for name, expr in stimulus_waveforms(experiment).items()
+    }
+
+
 def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes, name=None):
     """``(arr, dims, coords)`` for the per-cell payload trailing a stacked exploration array, whatever leads it.
 
@@ -454,6 +502,11 @@ def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes, name=
     while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
         arr = arr[..., 0]
         inner_dims = inner_dims[:-1]
+    # A recorded trajectory of one state variable arrives with that axis already gone, so the template would hand the node axis the name `variable`; the network's node count tells the two apart, and the axis then carries the node labels like every other node axis.
+    if not dims and nodes is not None and len(nodes) and "node" not in inner_dims and "variable" in inner_dims:
+        i = inner_dims.index("variable")
+        if arr.shape[arr.ndim - len(inner_dims) + i] == len(nodes):
+            inner_dims[i] = "node"
     coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
     return arr, trial_dims + inner_dims, coords
 
@@ -721,9 +774,8 @@ class SimulationResult:
         if self.data is None:
             raise ValueError("No simulation data to convert")
 
-        raw = np.asarray(self.data.values)
-        while raw.ndim < 4:
-            raw = np.expand_dims(raw, -1)  # pad to 4D (Time, Variable, Space, Mode)
+        padded = self.data.expand_dims([d for d in ("node", "mode") if d not in self.data.dims])
+        raw = np.asarray(padded.transpose("time", ..., "node", "mode").values)
 
         labels_dimensions = {}
         names = self.state_names
@@ -1657,19 +1709,25 @@ class ExplorationResult(Bunch):
         if getattr(self, "cell_coords", None):
             n_trials = int(getattr(self, "n_trials", 1) or 1)
             intrinsic_ts = None
-            if self.is_timeseries and self.dt:
-                r = self.results
-                t_dim = 1 + (1 if (n_trials > 1 and r.ndim > 1 and r.shape[1] == n_trials) else 0)
-                if r.ndim > t_dim:
-                    intrinsic_ts = np.arange(r.shape[t_dim]) * self.dt
-            return _stacked_to_dataarray(
+            dims, coords = None, {}
+            if self.is_timeseries:
+                tail = self.results.shape[1:]
+                trial_first = self._has_trial_axis(tail[0])
+                intrinsic, coords = self._intrinsic_dims(tail, trial_first=trial_first)
+                if len(intrinsic) == len(tail):
+                    dims = [d for d in intrinsic if d != "trial"]
+                if self.dt and "time" in intrinsic:
+                    intrinsic_ts = np.arange(tail[intrinsic.index("time")]) * self.dt
+            grid = _stacked_to_dataarray(
                 self._payload(self.results),
                 self.axes,
                 intrinsic_ts=intrinsic_ts,
                 n_trials=n_trials,
                 name=self.observable or None,
                 cell_coords=self.cell_coords,
+                dims=dims,
             )
+            return grid.assign_coords(variable=coords["variable"]) if dims and "variable" in coords else grid
         labelled = self.results  # already carries named dims
         data = self._payload(labelled)  # keep JAX-native; never np.asarray the payload
         names = [self._axis_name(ax) for ax in self.axes]
@@ -2255,6 +2313,10 @@ class ExperimentResult:
                 _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
             return _labels_cache[0]
 
+        def _with_node_labels(da):
+            """*da* with the node labels on whichever of its axes is a node axis (:func:`_node_coords`)."""
+            return da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+
         def _node_count():
             """How many node labels :func:`_node_labels` resolves, for a size-checked :func:`_node_array_dims`."""
             return len(_node_labels() or ())
@@ -2270,7 +2332,7 @@ class ExperimentResult:
             _shard = _is_partial_shard(expl)
             for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
                 if da is not None and hasattr(da, "dims"):
-                    da = da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+                    da = _with_node_labels(da)
                     if _shard:
                         # On the flat shard form the axis name is a per-point COORDINATE, and a same-named sidecar dim would silently displace it — the very coordinate reassembly pivots on. The reserved suffix keeps them apart; the gather pass renames it back once the axis is a real dimension.
                         da = da.rename({da.dims[0]: f"{da.dims[0]}__point"})
@@ -2281,7 +2343,7 @@ class ExperimentResult:
                 except Exception:
                     g = None
                 if g is not None and hasattr(g, "dims"):
-                    by_output[(_san(expl_name), "results")] = g
+                    by_output[(_san(expl_name), "results")] = _with_node_labels(g)
         outputs = [o for _, o in by_output]
         data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da for (e, o), da in by_output.items()}
 
@@ -2597,6 +2659,8 @@ class ExperimentResult:
             _idata = getattr(self.integration, "data", None)
             if _idata is not None and hasattr(_idata, "dims"):
                 data_vars["integration"] = _idata
+        if "integration" in data_vars and "time" in data_vars["integration"].coords:
+            data_vars.update(stimulus_signals(self.source, data_vars["integration"].coords["time"].values))
 
         stem = "result"
         if self.source is not None and hasattr(self.source, "get_result_stem"):

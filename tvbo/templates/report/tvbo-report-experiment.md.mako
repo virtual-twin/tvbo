@@ -356,7 +356,16 @@ out_names = [n for n in out_names if n not in dvars]
 % if events:
 **Events**
 
-${report.event_table(events, derivative_notation, report.symbol_scope(model))}
+<%
+    from tvbo.data.types import stimulus_waveforms
+
+    stimuli = list(stimulus_waveforms(exp))
+%>\
+% if stimuli:
+${report.event_equations(events, stimuli, derivative_notation, report.symbol_scope(model))}
+
+% endif
+${report.event_table(events, derivative_notation, report.symbol_scope(model), shown_above=stimuli)}
 
 % endif
 % endif

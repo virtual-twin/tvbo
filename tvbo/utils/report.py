@@ -1228,12 +1228,14 @@ def _parse(text, scope=None):
     return parse_eq(str(text), local_dict=BUILTIN_SHADOW if scope is None else scope)
 
 
-def event_table(events, derivative_notation="dot", scope=None):
+def event_table(events, derivative_notation="dot", scope=None, shown_above=()):
     """Markdown table of a model's events (spike conditions, stimuli, resets).
 
     An event is part of the model's definition — a stimulus protocol is not decoration — so it belongs in the report beside the state equations. Its condition and effect are rendered symbolically like every other equation, parsed in *scope* — the owning model's, from `symbol_scope` — or in the builtin shadow when none is given.
 
     A continuous event may declare ``affect_negative``, a separate effect for the downcrossing; it gets its own column, which drops out for the usual case where one effect serves both crossings.
+
+    An event named in *shown_above* has its effect left out of its row, for a report that writes it as a display equation above the table (`event_equations`).
     """
 
     def _expr(obj, *names):
@@ -1260,14 +1262,42 @@ def event_table(events, derivative_notation="dot", scope=None):
                 f"`{name}`",
                 str(slot(ev, "event_type", "") or ""),
                 _expr(ev, "condition"),
-                _expr(ev, "equation", "effect", "affect"),
+                "" if name in shown_above else _expr(ev, "equation", "effect", "affect"),
                 _expr(ev, "affect_negative"),
-                ", ".join(f"{p} = {format_number(slot(v, 'value', ''))}" for p, v in name_items(params)) if params else "",
+                ", ".join(
+                    f"{p} = {format_number(slot(v, 'value', ''))} {unit_text(slot(v, 'unit', None))}".rstrip()
+                    for p, v in name_items(params)
+                )
+                if params
+                else "",
+                _targets(ev),
                 slot(ev, "description", "") or slot(ev, "label", "") or "",
             ]
         )
     return table_or_prose(
-        ["Event", "Type", "Condition", "Effect", "Effect on downcrossing", "Parameters", "Description"], rows
+        ["Event", "Type", "Condition", "Effect", "Effect on downcrossing", "Parameters", "Applied to", "Description"], rows
+    )
+
+
+def _targets(event) -> str:
+    """Where an event lands: the nodes it names, with the weight each receives when it states weights."""
+    nodes = slot(event, "nodes", None)
+    if not nodes:
+        return ""
+    weights = slot(event, "weights", None)
+    listed = ", ".join(str(n) for n in nodes)
+    return f"nodes {listed} with weights {', '.join(format_number(w) for w in weights)}" if weights else f"nodes {listed}"
+
+
+def event_equations(events, stimuli, derivative_notation="dot", scope=None) -> str:
+    """The events named in *stimuli* as display equations, one ``name(t) = ...`` per event.
+
+    *stimuli* are the stimulus waveforms the run's container holds (`tvbo.data.types.stimulus_waveforms`), so the report states a drive exactly when the container records it. A stimulus is a function of time added to the port it is named after; written as a display equation it reads like the state equations beside it, where the row of `event_table` can only hold it inline.
+    """
+    by_name = dict(name_items(events))
+    return "\n".join(
+        f"$${name}(t) = {equation_latex(_parse(slot(by_name[name], 'equation').rhs, scope), derivative_notation)}$$"
+        for name in stimuli
     )
 
 
