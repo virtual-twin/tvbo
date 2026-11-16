@@ -209,6 +209,7 @@ dependencies = [
     "pytest-cov",
     "pytest-xdist",
     "pytest-timeout",
+    "fhir.resources>=8.0.0",
     "mypy",
     "nbformat>=5.10.0",
     "nbclient>=0.10.0",
