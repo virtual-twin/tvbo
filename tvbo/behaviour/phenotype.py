@@ -33,6 +33,13 @@ class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
     _values_cache = None
 
     @classmethod
+    def from_values(cls, values: Mapping[str, Sequence[float]], **fields):
+        """A Phenotype built from its record *fields*, holding *values* (``{measure_name: 1-D array}``) in memory, checked as :meth:`to_file` checks them; ``to_file`` writes them with the record."""
+        inst = cls(**fields)
+        object.__setattr__(inst, "_values_cache", inst._checked(values))
+        return inst
+
+    @classmethod
     def from_file(cls, path: str | os.PathLike):
         """Load a Phenotype sidecar from a YAML descriptor.
 
@@ -64,19 +71,7 @@ class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
         from tvbo.utils import to_dict
 
         path = Path(path)
-        if values is None:
-            values = self._values_cache or {}
-        arrays = {}
-        for m in self.measures:
-            if m not in values:
-                raise ValueError(f"Missing values for measure {m!r}")
-            arrays[m] = np.asarray(values[m])
-            if arrays[m].shape != (len(self.subjects),):
-                raise ValueError(f"Measure {m!r}: expected shape ({len(self.subjects)},), got {arrays[m].shape}")
-        orphans = [s.name for s in self.measure_specs or [] if s.name not in self.measures]
-        if orphans:
-            raise ValueError(f"measure_specs {orphans} name no measure of {list(self.measures)}")
-
+        arrays = self._checked(self._values_cache or {} if values is None else values)
         object.__setattr__(self, "_yaml_path", str(path))
         self._data_path.parent.mkdir(parents=True, exist_ok=True)
         write_companion(self._data_path, self, arrays)
@@ -86,6 +81,20 @@ class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
             if provenance_comment:
                 f.write(provenance_comment)
             yaml.safe_dump(meta, f, sort_keys=False, default_flow_style=False)
+
+    def _checked(self, values: Mapping[str, Sequence[float]]) -> dict[str, np.ndarray]:
+        """*values* as one array of ``len(subjects)`` per measure; a missing measure, a wrong length or a ``MeasureSpec`` naming no measure is refused."""
+        arrays = {}
+        for m in self.measures:
+            if m not in values:
+                raise ValueError(f"Missing values for measure {m!r}")
+            arrays[m] = np.asarray(values[m], dtype=float)
+            if arrays[m].shape != (len(self.subjects),):
+                raise ValueError(f"Measure {m!r}: expected shape ({len(self.subjects)},), got {arrays[m].shape}")
+        orphans = [s.name for s in self.measure_specs or [] if s.name not in self.measures]
+        if orphans:
+            raise ValueError(f"measure_specs {orphans} name no measure of {list(self.measures)}")
+        return arrays
 
     @property
     def _data_path(self) -> Path:
