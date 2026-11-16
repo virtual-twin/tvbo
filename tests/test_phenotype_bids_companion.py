@@ -61,3 +61,14 @@ def test_tsv_rows_must_be_the_records_subjects(tmp_path):
 def test_unknown_companion_extension_is_refused(tmp_path):
     with pytest.raises(ValueError, match="extension"):
         _phenotype("cohort.csv").to_file(tmp_path / "cohort.yaml", values={"age": [1.0, 2.0], "iq": [3.0, 4.0]})
+
+
+def test_values_in_memory_are_checked_and_written(tmp_path):
+    fields = _phenotype("cohort.tsv").model_dump(exclude_none=True)
+    with pytest.raises(ValueError, match="expected shape"):
+        Phenotype.from_values({"age": [31.0], "iq": [1.0, 2.0]}, **fields)
+
+    phenotype = Phenotype.from_values({"age": [31.0, 45.0], "iq": [100.0, 112.0]}, **fields)
+    np.testing.assert_array_equal(phenotype.get("iq"), [100.0, 112.0])
+    phenotype.to_file(tmp_path / "cohort.yaml")
+    np.testing.assert_array_equal(Phenotype.from_file(tmp_path / "cohort.yaml").get("age"), [31.0, 45.0])

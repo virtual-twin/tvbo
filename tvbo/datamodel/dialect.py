@@ -260,6 +260,25 @@ def expand_curie(iri: str) -> str:
     return str(namespaces[prefix][local])
 
 
+def compact_curie(iri: str) -> str:
+    """*iri* as a CURIE under the declared schema prefix with the longest expansion it starts with, the inverse of :func:`expand_curie`; a CURIE, or an IRI under no declared prefix, is returned as given.
+
+    >>> compact_curie("http://loinc.org/rdf/30525-0")
+    'loinc:30525-0'
+    """
+    iri = str(iri).strip()
+    for prefix, base in _schema_bases():
+        if iri.startswith(base) and len(iri) > len(base):
+            return f"{prefix}:{iri[len(base) :]}"
+    return iri
+
+
+@cache
+def _schema_bases() -> list[tuple[str, str]]:
+    """``(prefix, expansion)`` of every declared schema prefix, longest expansion first."""
+    return sorted(((p, str(ns)) for p, ns in _schema_namespaces().items()), key=lambda pair: -len(pair[1]))
+
+
 @cache
 def _schema_namespaces() -> dict:
     """The prefixes the schema modules declare, each mapped to its generated ``CurieNamespace``."""
