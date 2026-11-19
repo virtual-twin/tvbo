@@ -244,13 +244,14 @@ def test_build_context_resolves_everything():
     assert la["style"] == {"color": "red", "linestyle": "--"}
     assert a["axopts"]["xlabel"] == "KuramotoInertia.K"
     assert a["axopts"]["ylabel"] == "delta_omega"
-    # annotations -> [{text, x, y}] in axes-fraction coords
+    # annotations -> [{text, x, y, xycoords, ...}], axes fractions unless declared otherwise
     _centred = {"ha": "center", "va": "center"}  # the default when none is declared
     assert a["annotations"] == [
         {
             "text": "corner",
             "x": 0.03,
             "y": 0.95,
+            "xycoords": "axes fraction",
             "layer": None,
             "arrow": None,
             "tail": None,
@@ -262,6 +263,7 @@ def test_build_context_resolves_everything():
             "text": "xy",
             "x": 0.2,
             "y": 0.3,
+            "xycoords": "axes fraction",
             "layer": None,
             "arrow": None,
             "tail": None,

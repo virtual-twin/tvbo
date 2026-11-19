@@ -63,6 +63,12 @@ enums:
       panel:   {description: "Drawn on the panel at its position. The default."}
       caption: {description: "Written into the figure's composed caption, as part of its panel's clause, and not drawn. A sample size or a test statistic the reader needs but the panel need not carry; with `used:` the number is read from the result when the caption is composed, as a drawn annotation's is when the figure renders."}
 
+  AnnotationCoordinateSystem:
+    description: "The units an annotation's position is given in."
+    permissible_values:
+      axes: {description: "Fractions of the axes: 0 is the left or bottom edge, 1 the right or top. The default."}
+      data: {description: "The panel's data coordinates, the values its axes show, so the label stays on its place in the data when the limits move."}
+
   TickPrune:
     description: "Which end ticks to drop where a corner tick would collide with its neighbour panel's."
     permissible_values:
@@ -877,7 +883,7 @@ classes:
         description: "The stretch `[start, end]` of the animated dimension the frames advance through, in that dimension's own coordinate (seconds or milliseconds of simulated time, as recorded). A run kept long for a statistic, twenty minutes for a correlation matrix, is shown a minute at a time without a second, shorter run that would draw a different noise realisation. Unset, the frames cover the whole dimension."
 
   Annotation:
-    description: "A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
+    description: "A positioned text label on a panel, placed in axes fractions or, with `coordinate_system: data`, in the panel's data coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
     attributes:
       text:
         range: string
@@ -890,20 +896,23 @@ classes:
         description: "Bind the annotation to a scalar in a result container (same reference form a Layer uses, and the same PROV edge). The referenced value is formatted through `text` at render time, so a statistic printed on a panel is computed, never transcribed."
       x:
         range: float
-        description: "x in axes fraction (0 = left, 1 = right); defaults to 0.5."
+        description: "x in axes fraction (0 = left, 1 = right), defaulting to 0.5; in the data's units under `coordinate_system: data`, where it is required."
       y:
         range: float
-        description: "y in axes fraction (0 = bottom, 1 = top); defaults to 0.95."
+        description: "y in axes fraction (0 = bottom, 1 = top), defaulting to 0.95; in the data's units under `coordinate_system: data`, where it is required."
+      coordinate_system:
+        range: AnnotationCoordinateSystem
+        description: "The units `x`, `y` and an `arrow`'s offset are given in: `axes` fractions (unset) or the panel's `data` coordinates, where a paper places a label beside its points with `ax.text(80, 3, ...)`. Data coordinates need both `x` and `y` and are refused beside `loc`, which names a corner of the axes."
       loc:
         range: string
         description: "Named corner ('upper right', 'upper left', 'center', ...) as an alternative to x/y."
       arrow:
         range: float
         multivalued: true
-        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
+        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in the units `coordinate_system` gives (axes fractions unless it says `data`) — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
       tail_x:
         range: float
-        description: "Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
+        description: "Start the arrow at this x in DATA coordinates instead of at an `arrow` offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
       tail_used:
         range: DataRef
         inlined: true

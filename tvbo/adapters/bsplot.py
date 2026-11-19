@@ -2177,9 +2177,9 @@ def _group_axis(opts, axis: str) -> dict | None:
 
 
 def _annotations(panel, base_dir=Path(".")) -> list:
-    """Resolve ``Panel.annotations`` into ``[{text, x, y, layer}]`` in axes-fraction coords.
+    """Resolve ``Panel.annotations`` into ``[{text, x, y, xycoords, layer, ...}]``, ``xycoords`` naming the units of ``x``, ``y`` and an arrow's offset as ``ax.annotate`` does: ``"axes fraction"``, or ``"data"`` where the annotation declares ``coordinate_system: data``.
 
-    An annotation with a ``used:`` binding carries its resolved layer, so the emitted script reads the number out of the container and formats ``text`` with it — a panel's printed statistic is computed from the run, never typed into the spec.
+    An annotation with a ``used:`` binding carries its resolved layer, so the emitted script reads the number out of the container and formats ``text`` with it — a panel's printed statistic is computed from the run, never typed into the spec. A data position has no default and no named corner, so ``coordinate_system: data`` without both ``x`` and ``y``, or beside ``loc``, is refused.
     """
     out = []
     for a in getattr(panel, "annotations", None) or []:
@@ -2190,6 +2190,11 @@ def _annotations(panel, base_dir=Path(".")) -> list:
                 )
             continue
         loc = getattr(a, "loc", None)
+        xycoords = "data" if _enum_value(getattr(a, "coordinate_system", None)) == "data" else "axes fraction"
+        if xycoords == "data" and (loc is not None or getattr(a, "x", None) is None or getattr(a, "y", None) is None):
+            raise ValueError(
+                f"annotation {a.text!r} of panel {getattr(panel, 'panel_key', '?')!r} declares `coordinate_system: data`, which places it at an `x` and a `y` in the data's units: give both, and no `loc`, which names a corner of the axes."
+            )
         if loc in _ANNOT_LOC:
             x, y = _ANNOT_LOC[loc]
         else:
@@ -2212,6 +2217,7 @@ def _annotations(panel, base_dir=Path(".")) -> list:
                 "text": a.text,
                 "x": x,
                 "y": y,
+                "xycoords": xycoords,
                 "layer": layer,
                 "arrow": arrow,
                 "tail": tail,
@@ -2608,6 +2614,7 @@ def _grid_geometry(opts, n_cells):
             "text": str(text),
             "x": x,
             "y": y,
+            "xycoords": "axes fraction",
             "layer": None,
             "arrow": None,
             "tail": None,

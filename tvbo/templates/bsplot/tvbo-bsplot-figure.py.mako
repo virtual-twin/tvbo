@@ -896,24 +896,24 @@ ${colorbar(p)}\
 % endif
 % if a['tail']:
     _ty = _load_scalar(${repr(a['tail']['layer'])})
-    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="${a['xycoords']}",
                 xytext=(${a['tail']['x']}, _ty), textcoords="data",   # tail ON the computed point
                 zorder=10, **${repr(a['kwargs'])},
                 arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
                             "shrinkA": 2, "shrinkB": 2})
 % elif a['arrow']:
-    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="${a['xycoords']}",
                 xytext=(${a['x'] - a['arrow'][0]}, ${a['y'] - a['arrow'][1]}),
-                textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},
+                textcoords="${a['xycoords']}", zorder=10, **${repr(a['kwargs'])},
                 arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
                             "shrinkA": 0, "shrinkB": 0})   # above a composite panel's sub-axes
 % elif a['layer'] and a['backdrop']:
-    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10,
+    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.${'transData' if a['xycoords'] == 'data' else 'transAxes'}, zorder=10,
             bbox={"facecolor": fig.get_facecolor(), "edgecolor": "none", "pad": 1.0,
                   "alpha": 0.75},   # a statistic printed over its own scatter stays readable
             **${repr(a['kwargs'])})
 % else:
-    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10, **${repr(a['kwargs'])})
+    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.${'transData' if a['xycoords'] == 'data' else 'transAxes'}, zorder=10, **${repr(a['kwargs'])})
 % endif
 % endfor
 </%def>\
