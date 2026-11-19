@@ -365,7 +365,7 @@ def surface_panel(fig, ax, ctx):
 
     A spec declares all of this as ``surface:`` — the `Surface` class names and documents every attribute, and ``_KIND_RENAMES`` says where one reaches this callable under a different word. What is only true here:
 
-    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``used`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`); on a mesh whose vertices are named, which a ``used`` result can carry, the layer's values are placed on them by label. With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one.
+    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``used`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`); on a mesh whose vertices are named, which a ``used`` result can carry, the layer's values are placed on them by label. With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one; with ``markers: true`` the layer is a dot at each vertex over the flat mesh (see :func:`_vertex_markers`).
     """
     import bsplot
     import numpy as _np
@@ -377,6 +377,8 @@ def surface_panel(fig, ax, ctx):
     vertex_labels = _result_mesh(str(opts["mesh_result"]))[2] if opts.get("mesh_result") else None
     layers = ctx.get("layers") or []
     geometry = bool(opts.get("geometry", False))
+    if opts.get("markers") and (geometry or not layers):
+        raise ValueError("surface panel: `markers` draws a layer's values as dots, so it needs a layer of values.")
     if not layers and not (opts.get("color") or opts.get("edgecolor")):
         raise ValueError(
             "surface panel: needs a layer supplying the per-vertex values, or a `color:` / "
@@ -453,27 +455,74 @@ def surface_panel(fig, ax, ctx):
         if opts.get("edgecolor")
         else None
     )
+    cmap = _resolve_cmap(resolve_colormap(opts.get("cmap")))
+    missing = _rgba(opts["missing_color"]) if opts.get("missing_color") else None
+    painted = (
+        {
+            **_vertex_markers(verts, faces, values, missing, cmap, vmin, vmax, opts.get("marker_size")),
+            "color": opts.get("color") or fig.get_facecolor(),
+            "shade_intensity": 0.0,
+        }
+        if opts.get("markers")
+        else {"overlay": values, "mask": grey, "mask_colour": missing, "color": opts.get("color")}
+    )
     bsplot.plot_surf(
         vertices=verts,
         faces=faces,
-        overlay=values,
         ax=ax,
-        mask=grey,
-        mask_colour=_rgba(opts["missing_color"]) if opts.get("missing_color") else None,
         # A merged bilateral mesh is already whole, and the backend reads `hemi` as an instruction to go find one hemisphere's geometry — which it then cannot resolve.
         hemi="lh" if str(opts.get("hemi", "lh")) == "both" else str(opts.get("hemi", "lh")),
         view=str(opts.get("view", "lateral")),
-        cmap=_resolve_cmap(resolve_colormap(opts.get("cmap"))),
+        cmap=cmap,
         vmin=vmin,
         vmax=vmax,
-        color=opts.get("color"),
         transparency=float(opts.get("opacity", 1.0)),
         faces_kwargs=edges,
+        **painted,
     )
     ax.set_aspect("equal")  # a surface's frame is anatomy, not a coordinate system
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
+
+
+def _vertex_markers(vertices, faces, values, missing, cmap, vmin, vmax, size=None) -> dict:
+    """The dots ``markers: true`` draws, as the extra surfaces ``bsplot.plot_surf`` depth-sorts in one pass with the mesh.
+
+    One sphere per vertex, so the sort that orders the mesh's faces also hides a dot behind the mesh: a lateral view of two hemispheres shows the near one's dots rather than both overplotted. Eight segments make a sphere round enough at the millimetre a dot prints at. bsplot winds its spheres inward and culls faces by winding, which would leave each dot only its far half for the mesh to cover, so they are turned outward. Each dot sits on the surface, raised by its radius along the vertex's area-weighted normal: centred on the vertex it would be half inside the mesh, and the sort by face centroid would draw the faces around the vertex over its front. A vertex without a value gets a dot in *missing*, or bsplot's grey, as a painted face would. Unset, *size* is half the median edge length.
+    """
+    import nibabel as nib
+    import numpy as _np
+    from bsplot.graph.network import create_sphere_mesh
+
+    corners = vertices[faces]
+    radius = float(size or 0.5 * _np.median(_np.linalg.norm(corners - _np.roll(corners, 1, axis=1), axis=-1)))
+    unit, triangles = create_sphere_mesh((0.0, 0.0, 0.0), radius, resolution=8)
+    normal = _np.zeros_like(vertices)
+    _np.add.at(normal, faces, _np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])[:, None, :])
+    length = _np.linalg.norm(normal, axis=1, keepdims=True)
+    raised = vertices + radius * _np.divide(normal, length, out=_np.zeros_like(normal), where=length > 0)
+
+    def spheres(centres):
+        points = (centres[:, None, :] + unit[None]).reshape(-1, 3).astype(_np.float32)
+        wound = (triangles[None, :, ::-1] + len(unit) * _np.arange(len(centres))[:, None, None]).reshape(-1, 3)
+        return nib.gifti.GiftiImage(
+            darrays=[
+                nib.gifti.GiftiDataArray(points, intent="NIFTI_INTENT_POINTSET"),
+                nib.gifti.GiftiDataArray(wound.astype(_np.int32), intent="NIFTI_INTENT_TRIANGLE"),
+            ]
+        )
+
+    valued = ~_np.isnan(values)
+    groups = [g for g in ((valued, _np.repeat(values[valued], len(unit)), None), (~valued, None, missing)) if g[0].any()]
+    return {
+        "additional_surfaces": [spheres(raised[keep]) for keep, _, _ in groups],
+        "additional_overlays": [overlay for _, overlay, _ in groups],
+        "additional_colors": [colour for _, _, colour in groups],
+        "additional_cmaps": [cmap] * len(groups),
+        "additional_vmins": [vmin] * len(groups),
+        "additional_vmaxs": [vmax] * len(groups),
+    }
 
 
 def _atlas_spec(atlas: str, base_dir) -> Path:
@@ -1726,6 +1775,8 @@ _KIND_ATTRS = {
         "mask",
         "geometry",
         "color",
+        "markers",
+        "marker_size",
         "missing_color",
         "edge_color",
         "edge_width",

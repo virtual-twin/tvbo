@@ -1336,7 +1336,13 @@ classes:
         description: "Read the layer as (V, 3) vertex COORDINATES rather than as a field: what the panel then shows is the surface a reconstruction rebuilt, not a quantity living on a fixed one."
       color:
         range: string
-        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry."
+        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry; with `markers`, it is the mesh under the dots."
+      markers:
+        range: boolean
+        description: "Draw the layer as a dot at each vertex over the mesh instead of painting its faces: one dot per region on a parcel mesh, as a plot of region centres shows a parcellated quantity. Dots and faces are depth-sorted together, so the mesh hides the dots behind it. The dots are unlit, so a dot's colour is the colour on the bar keying it, and the mesh under them is flat, in `color` or else in the page colour, so that it only hides what lies behind it. A vertex the layer holds no value for gets a dot in `missing_color`."
+      marker_size:
+        range: float
+        description: "Radius of each dot in the mesh's own coordinate units. Unset is half the median edge length, so neighbouring dots just touch."
       missing_color:
         range: string
         description: "The colour of the atlas regions the layer carries no value for, so a region a map leaves out on purpose, such as the target the mapped quantity is measured in, reads apart from the medial wall and the rest of the mesh no region covers, which stay the base grey. Only with `atlas:`; unset, both are grey."
