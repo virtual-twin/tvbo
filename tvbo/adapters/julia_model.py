@@ -335,10 +335,46 @@ def _build_network_context(model, network, n_nodes, constraints=None) -> dict:
     }
 
 
-def build_model_context(model, network=None, constraints=None) -> dict:
+def initial_state_draws(model, seed: int) -> dict[str, str]:
+    """Julia drawing one initial value of each state variable of *model* that declares a distribution, from the module's `rng`, keyed by *seed*, by `initial_state_distribution`: a normal as ``loc .+ scale .* randn(rng)``, a uniform as ``lo .+ (hi - lo) .* rand(rng)``.
+
+    Raises:
+        ValueError: Where `initial_state_distribution` refuses a declaration, naming the variable.
+    """
+    from tvbo.templates.base.utils import collect_sv_distributions, initial_state_distribution
+
+    draws = {}
+    for _, sv, _ in collect_sv_distributions(model):
+        spec = initial_state_distribution(sv, seed)
+        if spec["family"] == "normal":
+            draws[sv.name] = f"{spec['loc']} .+ {spec['scale']} .* randn(rng)"
+        else:
+            draws[sv.name] = f"{spec['lo']} .+ ({spec['hi']} - {spec['lo']}) .* rand(rng)"
+    return draws
+
+
+def initial_state_stream(model, run_seed: int, backend: str) -> tuple[int, dict[str, str]]:
+    """The seed of the one `MersenneTwister` a single-system Julia module draws *model*'s declared initial states from, the distributions' own `seed`, else *run_seed*, and the Julia of each draw (`initial_state_draws`).
+
+    Raises:
+        NotImplementedError: Where two of the distributions resolve to different seeds, which one stream cannot honour, naming *backend*.
+    """
+    from tvbo.templates.base.utils import collect_sv_distributions
+
+    seeds = {sv.name: run_seed if d.seed is None else int(d.seed) for _, sv, d in collect_sv_distributions(model)}
+    if len(set(seeds.values())) > 1:
+        raise NotImplementedError(
+            f"the {backend} module draws every declared initial state from one random stream seeded once, and "
+            + ", ".join(f"state variable {name!r} resolves to seed {seed}" for name, seed in seeds.items())
+            + ". Give them one seed (`distribution.seed`, else `execution.random_seed`)."
+        )
+    return next(iter(seeds.values()), run_seed), initial_state_draws(model, run_seed)
+
+
+def build_model_context(model, network=None, constraints=None, draws=None) -> dict:
     """Build the full DifferentialEquations.jl model-function context.
 
-    Everything the ``tvbo-julia-model.jl.mako`` / ``tvbo-julia-ODEProblem.jl.mako`` templates need is pre-rendered here so those templates only emit syntax.
+    Everything the ``tvbo-julia-model.jl.mako`` / ``tvbo-julia-ODEProblem.jl.mako`` templates need is pre-rendered here so those templates only emit syntax. A single system's ``u0`` opens each state variable on its Julia draw in *draws* (`initial_state_stream`) where it has one, else on its `initial_value`.
 
     Multi-mode models (``number_of_modes > 1``) lay each state variable out as a contiguous length-n_modes block, so the dfun operates on per-mode vectors and writes vector slices (``dx[lo:hi] .= …``); scalar models keep the flat layout.
 
@@ -389,9 +425,9 @@ def build_model_context(model, network=None, constraints=None) -> dict:
 
     # Initial conditions, mode-expanded (each SV repeated n_modes times).
     u0 = []
-    for s in model.state_variables.values():
+    for name, s in model.state_variables.items():
         for _ in range(n_modes if n_modes > 1 else 1):
-            u0.append(initial_value(s))
+            u0.append((draws or {}).get(name, initial_value(s)))
 
     return {
         **_shared_parts(model, jl),

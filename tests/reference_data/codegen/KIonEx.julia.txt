@@ -1,3 +1,6 @@
+using Random
+rng = MersenneTwister(0)
+
 import NaNMath
 function KIonEx!(dx, _x, p, t = 0)
 
@@ -42,11 +45,11 @@ using OrdinaryDiffEqTsit5
 
 # Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
 u0 = [
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
+        -10.0 .+ (0.0 - -10.0) .* rand(rng),
+        -20.0 .+ (-5.0 - -20.0) .* rand(rng),
+        -90.0 .+ (10.0 - -90.0) .* rand(rng),
+        0.0 .+ (1.0 - 0.0) .* rand(rng),
+        0.0 .+ (1.0 - 0.0) .* rand(rng),
     ]
 
 # Define time span

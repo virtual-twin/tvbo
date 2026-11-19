@@ -1,3 +1,6 @@
+using Random
+rng = MersenneTwister(0)
+
 function CoombesByrne2D!(dx, x, p, t = 0)
 
     (;Delta, eta, k, v_syn, c_glob) = p
@@ -19,7 +22,7 @@ using OrdinaryDiffEqTsit5
 # Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
 u0 = [
         0.1,
-        0.1,
+        0.0 .+ (2.0 - 0.0) .* rand(rng),
     ]
 
 # Define time span

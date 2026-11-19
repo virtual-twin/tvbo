@@ -17,6 +17,7 @@ from tvbo.adapters.base import (
     refuse_second_definition,
     start_draw,
 )
+from tvbo.adapters.julia_model import initial_state_draws
 from tvbo.export.registry import StartKind
 
 if TYPE_CHECKING:
@@ -157,24 +158,6 @@ def _rhs(equation) -> str | None:
 def _is_julia_body(text: str) -> bool:
     """Whether *text* is Julia statements written for the edge itself, several lines or an ``e_dst``/``obsout`` assignment, rather than one expression."""
     return "\n" in text.strip() or "e_dst[" in text or "obsout[" in text
-
-
-def initial_state_draws(model, seed: int) -> dict[str, str]:
-    """Julia drawing one node's initial value of each state variable of *model* that declares a distribution, from the module's `rng`, keyed by *seed*, by `initial_state_distribution`: a normal as ``loc .+ scale .* randn(rng)``, a uniform as ``lo .+ (hi - lo) .* rand(rng)``.
-
-    Raises:
-        ValueError: Where `initial_state_distribution` refuses a declaration, naming the variable.
-    """
-    from tvbo.templates.base.utils import collect_sv_distributions, initial_state_distribution
-
-    draws = {}
-    for _, sv, _ in collect_sv_distributions(model):
-        spec = initial_state_distribution(sv, seed)
-        if spec["family"] == "normal":
-            draws[sv.name] = f"{spec['loc']} .+ {spec['scale']} .* randn(rng)"
-        else:
-            draws[sv.name] = f"{spec['lo']} .+ ({spec['hi']} - {spec['lo']}) .* rand(rng)"
-    return draws
 
 
 def vertex_outputs(model, coupling) -> list[str]:

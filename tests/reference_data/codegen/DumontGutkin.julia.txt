@@ -1,3 +1,6 @@
+using Random
+rng = MersenneTwister(0)
+
 function DumontGutkin!(dx, x, p, t = 0)
 
     (;Delta_e, Delta_i, Gamma, I_e, I_i, J_ee, J_ei, J_ie, J_ii, eta_e, eta_i, tau_e, tau_i, tau_s, c_glob) = p
@@ -26,8 +29,8 @@ using OrdinaryDiffEqTsit5
 u0 = [
         0.1,
         0.1,
-        0.1,
-        0.1,
+        0.0 .+ (2.0 - 0.0) .* rand(rng),
+        0.0 .+ (2.0 - 0.0) .* rand(rng),
         0.1,
         0.1,
         0.1,

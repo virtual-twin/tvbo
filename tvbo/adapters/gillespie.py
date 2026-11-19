@@ -12,13 +12,12 @@ import sympy as sp
 
 from tvbo.adapters.base import BaseAdapter, run_seed
 from tvbo.parse.expression import parse_eq
-from tvbo.utils import initial_value
 
 
 class GillespieAdapter(BaseAdapter):
     """Run a mean-field rate `SimulationExperiment` as a finite-N birth-death process.
 
-    The window is `BaseAdapter.get_integration_info`'s: ``step_size`` is the output sampling cadence (events are drawn in continuous time), ``transient_time`` is simulated ahead of the measured ``duration`` in the same realisation, and the recorded grid is on the measurement clock. The initial state is not recorded, as on every other backend: the settle's ``transient_time / step_size`` samples end at ``t = 0`` on ``.transient``, and ``.data`` opens one step later with ``duration / step_size`` samples.
+    The window is `BaseAdapter.get_integration_info`'s: ``step_size`` is the output sampling cadence (events are drawn in continuous time), ``transient_time`` is simulated ahead of the measured ``duration`` in the same realisation, and the recorded grid is on the measurement clock. The initial state is not recorded, as on every other backend: the settle's ``transient_time / step_size`` samples end at ``t = 0`` on ``.transient``, and ``.data`` opens one step later with ``duration / step_size`` samples. The run opens on the draw tvb and jax open on, `get_initial_values` on the run's seed: each state variable's declared distribution, else its initial value.
     """
 
     # -- symbolic model → numpy callables (birth flux + slow-variable RHS) -------------
@@ -93,7 +92,8 @@ class GillespieAdapter(BaseAdapter):
         window = self.get_integration_info()
         rec_dt, n_settle = window["dt"], window["n_transient"]
 
-        state = {n: initial_value(model.state_variables[n]) for n in sv_names}
+        opening = np.asarray(model.get_initial_values(seed=seed), dtype=float).reshape(len(model.state_variables), -1)[:, 0]
+        state = {n: float(value) for n, value in zip(model.state_variables, opening, strict=True)}
         n_count = int(round(omega * state[activity]))
         rng = np.random.default_rng(seed)
 

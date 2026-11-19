@@ -1813,7 +1813,13 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             return ExperimentResult(integration=cuda_result, source=self, name=self.label)
 
         elif format.lower() == "python":
-            from tvbo.adapters.base import BaseAdapter, declared_node_count, on_the_measurement_clock, refuse_observations
+            from tvbo.adapters.base import (
+                BaseAdapter,
+                declared_node_count,
+                on_the_measurement_clock,
+                refuse_observations,
+                run_seed,
+            )
 
             refuse_observations(self, "python")
             dt = self.integration.step_size
@@ -1823,13 +1829,14 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             # A single explicit node still declares a network, so the graph runner takes it; the count alone decides for every other form.
             declared = net is not None and (declared_node_count(net) > 1 or bool(getattr(net, "nodes", None)))
             if not declared:
-                ts = self.dynamics.run(format="python", t=_step_grid(total, dt), integration=self.integration)
+                opening = self.dynamics.get_initial_values(seed=run_seed(self))
+                ts = self.dynamics.run(format="python", t=_step_grid(total, dt), integration=self.integration, u_0=opening)
             else:
                 # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
                 bnm = _Network(net, normalize_weights=False)
                 bnm.add_local_model(self.dynamics)
                 bnm.add_coupling(BaseAdapter(self).get_default_coupling())
-                ts = bnm.run(duration=total, dt=dt, integration=self.integration)
+                ts = bnm.run(duration=total, dt=dt, integration=self.integration, seed=run_seed(self))
             recorded = ExperimentResult.from_timeseries(ts, source=self, name=self.label).integration
             data, n_settle = on_the_measurement_clock(recorded.data, settle, dt)
             measured = SimulationResult(data=data, n_transient=n_settle, observations=dict(recorded.observations or {}))

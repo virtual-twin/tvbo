@@ -1,6 +1,7 @@
 ## -*- coding: utf-8 -*-
 <%!
-from tvbo.adapters.julia_model import build_model_context, julia_solve
+from tvbo.adapters.base import run_seed
+from tvbo.adapters.julia_model import build_model_context, initial_state_stream, julia_solve
 %>
 <%
 experiment = context.get('experiment', None)
@@ -11,9 +12,14 @@ plot = context.get('plot', False)
 fout = context.get('fout', False)
 
 # All metadata→Julia translation is prepared here; the includes only emit syntax.
-mc = build_model_context(model)
+seed, draws = initial_state_stream(model, run_seed(experiment) if experiment is not None else 0, "DifferentialEquations.jl")
+mc = build_model_context(model, draws=draws)
 solve = julia_solve(model, experiment.integration if experiment is not None else None, dt)
 %>
+% if draws:
+using Random
+rng = MersenneTwister(${seed})
+% endif
 % if solve['stochastic']:
 <%include file="/tvbo-julia-SDEProblem.jl.mako" args="model=model, mc=mc, duration=duration" />
 % else:
