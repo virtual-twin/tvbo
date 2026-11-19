@@ -48,12 +48,9 @@ global_coupling_terms = _global_ct or coupling_terms
 if 'swept_params' not in context.keys():
     swept_params = ['global_speed', 'global_coupling']
 
-# Check for noise
-noisepresent = False
-if 'experiment' in context.keys() and experiment:
-    integration = getattr(experiment, 'integration', None)
-    if integration and getattr(integration, 'noise', None):
-        noisepresent = True
+# Each state variable's noise amplitude, by the reader every backend shares.
+sigmas = dict(zip(model.state_variables, _experiment.noise_sigma_array)) if _experiment is not None else {}
+noisepresent = any(sigma > 0 for sigma in sigmas.values())
 
 # Variables of interest (exposures)
 exposures = [(name, sv) for name, sv in state_vars if getattr(sv, 'record', True)]
@@ -131,6 +128,7 @@ extern "C" __global__ void ${model_name}(
     // The run's seed, one subsequence per work item, skipped past the draws of every earlier launch (at most two per state per node per step).
     curandState crndst;
     curand_init(${seed}ULL, id, 2ULL * i_step * n_node * ${n_states}, &crndst);
+    const float sqrt_dt = sqrtf(dt);
     % endif
 
     // State variable declarations
@@ -227,18 +225,14 @@ extern "C" __global__ void ${model_name}(
             d${sv_name} = dt * (${cuda_code(sv.equation)});
             % endfor
 
-            // Update state
-            % if noisepresent:
-            // With noise
+            // Update state: the Euler step, plus sigma * sqrt(dt) * N(0, 1) where the state declares noise.
             % for sv_name, sv in state_vars:
-            ${sv_name} += nsig * curand_normal(&crndst) + d${sv_name};
-            % endfor
+            % if sigmas.get(sv_name, 0.0) > 0:
+            ${sv_name} += ${sigmas[sv_name]}f * sqrt_dt * curand_normal(&crndst) + d${sv_name};
             % else:
-            // Without noise
-            % for sv_name, sv in state_vars:
             ${sv_name} += d${sv_name};
-            % endfor
             % endif
+            % endfor
 
             // Apply boundaries
             % for sv_name, sv in state_vars:
