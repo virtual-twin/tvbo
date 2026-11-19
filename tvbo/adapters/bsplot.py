@@ -365,7 +365,7 @@ def surface_panel(fig, ax, ctx):
 
     A spec declares all of this as ``surface:`` — the `Surface` class names and documents every attribute, and ``_KIND_RENAMES`` says where one reaches this callable under a different word. What is only true here:
 
-    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``used`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`); on a mesh whose vertices are named, which a ``used`` result can carry, the layer's values are placed on them by label. With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one; with ``markers: true`` the layer is a dot at each vertex over the flat mesh (see :func:`_vertex_markers`).
+    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``used`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`); on a mesh whose vertices are named, which a ``used`` result can carry, the layer's values are placed on them by label. With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one; with ``markers: true`` the layer is a dot at each vertex over the flat mesh (see :func:`_vertex_markers`); with ``shading: smooth`` each face is split into 16 before it is drawn, so a coarse mesh blends its colours and light across faces (see :func:`_smooth_mesh`).
     """
     import bsplot
     import numpy as _np
@@ -379,6 +379,15 @@ def surface_panel(fig, ax, ctx):
     geometry = bool(opts.get("geometry", False))
     if opts.get("markers") and (geometry or not layers):
         raise ValueError("surface panel: `markers` draws a layer's values as dots, so it needs a layer of values.")
+    smooth = opts.get("shading") == "smooth"
+    unblendable = {
+        "markers": "`markers` draws the layer as dots over a flat, unlit mesh",
+        "edgecolor": "`edge_color` would outline triangles the mesh does not have",
+    }
+    if smooth and any(opts.get(k) for k in unblendable):
+        raise ValueError(
+            f"surface panel: `shading: smooth` blends a painted layer across faces it splits into 16, so it is refused here: {'; '.join(why for k, why in unblendable.items() if opts.get(k))}."
+        )
     if not layers and not (opts.get("color") or opts.get("edgecolor")):
         raise ValueError(
             "surface panel: needs a layer supplying the per-vertex values, or a `color:` / "
@@ -449,6 +458,8 @@ def surface_panel(fig, ax, ctx):
             values = _np.where(grey, _np.nan, values)  # also keeps it out of the limits
 
     vmin, vmax = _colour_limits(_limits_source(layers, values), opts, True)
+    if smooth:
+        verts, faces, values, grey = _smooth_mesh(verts, faces, values, grey)
 
     edges = (
         {"edgecolor": str(opts["edgecolor"]), "linewidth": float(opts.get("edge_linewidth", 0.08))}
@@ -498,10 +509,7 @@ def _vertex_markers(vertices, faces, values, missing, cmap, vmin, vmax, size=Non
     corners = vertices[faces]
     radius = float(size or 0.5 * _np.median(_np.linalg.norm(corners - _np.roll(corners, 1, axis=1), axis=-1)))
     unit, triangles = create_sphere_mesh((0.0, 0.0, 0.0), radius, resolution=8)
-    normal = _np.zeros_like(vertices)
-    _np.add.at(normal, faces, _np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])[:, None, :])
-    length = _np.linalg.norm(normal, axis=1, keepdims=True)
-    raised = vertices + radius * _np.divide(normal, length, out=_np.zeros_like(normal), where=length > 0)
+    raised = vertices + radius * _vertex_normals(vertices, faces)
 
     def spheres(centres):
         points = (centres[:, None, :] + unit[None]).reshape(-1, 3).astype(_np.float32)
@@ -523,6 +531,49 @@ def _vertex_markers(vertices, faces, values, missing, cmap, vmin, vmax, size=Non
         "additional_vmins": [vmin] * len(groups),
         "additional_vmaxs": [vmax] * len(groups),
     }
+
+
+def _vertex_normals(vertices, faces):
+    """Each vertex's unit normal, the area-weighted mean of its faces' normals; zero at a vertex no face uses."""
+    import numpy as _np
+
+    corners = vertices[faces]
+    normal = _np.zeros_like(vertices)
+    _np.add.at(normal, faces, _np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])[:, None, :])
+    length = _np.linalg.norm(normal, axis=1, keepdims=True)
+    return _np.divide(normal, length, out=_np.zeros_like(normal), where=length > 0)
+
+
+SMOOTH_SHADING_LEVELS = 2
+"""How many times ``shading: smooth`` splits every face in four: twice makes 16 of each, enough for a parcel mesh of a few hundred vertices to print without facets."""
+
+
+def _smooth_mesh(vertices, faces, values=None, mask=None, levels=SMOOTH_SHADING_LEVELS):
+    """``(vertices, faces, values, mask)`` of the mesh ``shading: smooth`` draws: every face split in four *levels* times, with the per-vertex *values* and *mask* carried onto the new vertices.
+
+    bsplot paints a face in one colour, the mean of its corners' values, and lights it by its own normal, so a coarse mesh shows its faces twice over, as steps of colour and as steps of light, where a renderer's smooth shading blends both across them. Smaller faces do the same in a painter's algorithm. A new vertex sits on its edge's midpoint pulled along the two ends' normals, the middle of the cubic edge of a curved point-normal triangle (Vlachos et al. 2001, doi:10.1145/364338.364387), so the faces turn smoothly and the light varies across what was one face; a midpoint of the flat face would leave every one of the 16 lit alike. It takes the mean of the two ends' values, or the one value where the other end has none, and is masked where either end is, so a missing vertex still greys every face it touched. The mesh's own vertices keep their place and value, and each new face keeps its parent's winding, by which the backend culls.
+    """
+    import numpy as _np
+
+    for _ in range(levels):
+        n, normal = len(vertices), _vertex_normals(vertices, faces)
+        edges = _np.sort(_np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]]), axis=1)
+        keys, inverse = _np.unique(edges[:, 0] * n + edges[:, 1], return_inverse=True)
+        lo, hi = keys // n, keys % n
+        span = vertices[hi] - vertices[lo]
+        pull = (
+            _np.einsum("ij,ij->i", span, normal[lo])[:, None] * normal[lo]
+            - _np.einsum("ij,ij->i", span, normal[hi])[:, None] * normal[hi]
+        )
+        vertices = _np.vstack([vertices, 0.5 * (vertices[lo] + vertices[hi]) - pull / 8.0])
+        (a, b, c), (ab, bc, ca) = faces.T, n + inverse.reshape(3, -1)
+        faces = _np.concatenate([_np.c_[a, ab, ca], _np.c_[ab, b, bc], _np.c_[ca, bc, c], _np.c_[ab, bc, ca]])
+        if values is not None:
+            x, y = values[lo], values[hi]
+            values = _np.concatenate([values, _np.where(_np.isnan(x), y, _np.where(_np.isnan(y), x, 0.5 * (x + y)))])
+        if mask is not None:
+            mask = _np.concatenate([mask, mask[lo] | mask[hi]])
+    return vertices, faces, values, mask
 
 
 def _atlas_spec(atlas: str, base_dir) -> Path:
@@ -1782,6 +1833,7 @@ _KIND_ATTRS = {
         "mask",
         "geometry",
         "color",
+        "shading",
         "markers",
         "marker_size",
         "missing_color",

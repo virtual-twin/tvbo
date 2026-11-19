@@ -123,6 +123,12 @@ enums:
       anterior:  {description: "From the front."}
       posterior: {description: "From behind."}
 
+  SurfaceShading:
+    description: "How a cortical surface's faces are coloured and lit."
+    permissible_values:
+      flat:   {description: "Each face in one colour, the mean of its corners' values, lit by its own normal. The default."}
+      smooth: {description: "Colours and light blended across the faces, as a renderer's smooth shading draws a coarse mesh."}
+
   VolumeView:
     description: "Which anatomical plane a labelled volume is projected along."
     permissible_values:
@@ -1349,6 +1355,9 @@ classes:
       color:
         range: string
         description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry; with `markers`, it is the mesh under the dots."
+      shading:
+        range: SurfaceShading
+        description: "How the faces are coloured and lit. Unset is `flat`: each face takes the mean of its corners' values and is lit by its own normal, so a coarse mesh shows its faces. `smooth` blends the colours and the light across the faces, as a renderer's smooth shading does: each face is split into 16 on the curved surface its corners' normals describe, a new vertex taking the mean of its edge's two values, so it is meant for a coarse mesh such as a parcel mesh of a few hundred vertices, where 16 times the faces still draws quickly. Refused beside `markers`, whose mesh is flat and unlit under the dots, and beside `edge_color`, which would outline triangles the mesh does not have."
       markers:
         range: boolean
         description: "Draw the layer as a dot at each vertex over the mesh instead of painting its faces: one dot per region on a parcel mesh, as a plot of region centres shows a parcellated quantity. Dots and faces are depth-sorted together, so the mesh hides the dots behind it. The dots are unlit, so a dot's colour is the colour on the bar keying it, and the mesh under them is flat, in `color` or else in the page colour, so that it only hides what lies behind it. A vertex the layer holds no value for gets a dot in `missing_color`."
