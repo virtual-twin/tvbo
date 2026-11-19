@@ -114,7 +114,7 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_stat
     def _lyap_at_${a['name']}(_carry):
         _val, _seed = _carry
         _cfg = eqx.tree_at(lambda _c: _c.${path}, _le_cfg_${a['name']}, _val)
-        _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
+        _cfg = _refill_history(eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed))
         return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
     _lyap_pairs_${a['name']} = (${values_expr}, ${seeds_expr})
     # Ticks as each independent Lyapunov point completes, so a long branch does not go silent.

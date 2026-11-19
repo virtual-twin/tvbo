@@ -1516,6 +1516,23 @@ def _carry_delay_history(state, result):
     return state
 
 
+def _refill_history(state):
+    """Fill every delay line of *state* with the opening it integrates from, as TVB fills its history with the initial conditions.
+
+    tvboptim's ``prepare`` fills each delayed coupling's history buffer from the network's initial state, which on a network without a stored history is the dynamics' ``INITIAL_STATE`` on every node, and this module then writes the opening (a draw, a node's declared state, a seeded operating point, the working-point ramp, a swept initial condition, a trial's draw) into ``initial_state.dynamics`` alone. Every site that writes an opening hands the state here after the write, and every row of every buffer becomes the opening's transmitted states: the buffer ``prepare`` builds on a network whose initial state is that opening, in the buffer's own shape, so a dense and a compact coupling are filled alike. A buffer that continues a settle or an earlier solve is no opening and is never refilled. Without a delayed coupling *state* is returned as it is.
+    """
+    _lines = [_cn for _cn, _cs in state.initial_state.coupling.items() if "history" in _cs]
+    if not _lines:
+        return state
+    _opening = jnp.asarray(state.initial_state.dynamics)
+    _rows = []
+    for _cn in _lines:
+        _buffer = state.initial_state.coupling[_cn].history
+        _sent = _opening[state._internal.coupling[_cn].incoming_indices].astype(_buffer.dtype)
+        _rows.append(jnp.broadcast_to(_sent, _buffer.shape))
+    return eqx.tree_at(lambda _s: [_s.initial_state.coupling[_cn].history for _cn in _lines], state, _rows)
+
+
 def create_network(
     weights: jnp.ndarray,
     % if use_length_graph or weight_transform_needs_lengths:
@@ -1694,7 +1711,7 @@ def _sample_initial_conditions(state, key=None):
     ic = ic.at[${_sv_info['idx']}].set(${initial_condition_draw(_sv_info, '_k%d' % _si, '(n_nodes,)')})
 % endfor
     state.initial_state.dynamics = ic
-    return state
+    return _refill_history(state)
 % endif
 
 % if network_observation_names:
@@ -1819,11 +1836,10 @@ _bind_data_sources()
 _STATE_INDEX = {${', '.join("'%s': %d" % (n, i) for i, n in enumerate(state_names))}}
 
 def _set_rows(state, name_to_vals):
-    """Set per-node values of named state variables in initial_state.dynamics
-    ([n_states, n_nodes]), placing each by its canonical row index _STATE_INDEX[name]."""
+    """Set per-node values of named state variables in initial_state.dynamics ([n_states, n_nodes]), placing each by its canonical row index _STATE_INDEX[name], and refill the delay lines from the result."""
     for _name, _vals in name_to_vals.items():
         state.initial_state.dynamics = state.initial_state.dynamics.at[_STATE_INDEX[_name]].set(jnp.asarray(_vals))
-    return state
+    return _refill_history(state)
 
 # Per-node initial state declared via node ``state:`` YAML entries, keyed by name.
 % if node_state_overrides:
@@ -2078,6 +2094,7 @@ def run_simulation(
             statistics={'_endpoint': (lambda _a: _a[-1])},
         )
         _st.initial_state.dynamics = jnp.asarray(_wp_scan.stats['_endpoint'])[-1]
+        _st = _refill_history(_st)
     % endif
         return _apply_seed_params(_apply_seed_dynamics(_st))
 
@@ -2406,6 +2423,7 @@ def _own_settle(network, base):
         _tr = s.copy()
         _tr._internal = _cold._internal
         _tr.initial_state = Bunch(dynamics=s.initial_state.dynamics, coupling=_cold.initial_state.coupling, external=_cold.initial_state.external)
+        _tr = _refill_history(_tr)
 % if has_noise and settle_seed is not None:
         _tr.noise.key = jax.random.key(jnp.asarray(${int(settle_seed)}, dtype=jnp.uint32))   # the declared `Noise.settle_seed`, as in the base run
 % endif
@@ -3499,7 +3517,7 @@ ${folded_cells(_base_stream_names, _base_bs)}
         % for ax in ic_axes:
         s.initial_state.dynamics = s.initial_state.dynamics.at[${ax['ic_row']}].set(s.dynamics._ic_${ax['name']})
         % endfor
-        return _ic_base_fn(s)
+        return _ic_base_fn(_refill_history(s))
 % endif
 
 <%
@@ -3619,7 +3637,7 @@ ${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
             ${_trial_starts}
     % endif
             s.initial_state.dynamics = ic
-            return _base_ic_observable(s)
+            return _base_ic_observable(_refill_history(s))
         _trial_outs = [_run_trial(${', '.join(_trial_index + ['_trial_ics[_ti]'])}) for _ti in range(_n_trials)]
         trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
 % else:
@@ -3630,7 +3648,7 @@ ${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
             ${_trial_starts}
     % endif
             s.initial_state.dynamics = ic
-            return _base_ic_observable(s)
+            return _base_ic_observable(_refill_history(s))
 ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
 % endif
     % if expl.get('average') == 'trials':
@@ -3727,6 +3745,7 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
                 if not _k.startswith('_'):
                     _ts.coupling[_cn][_k] = _ps.coupling[_cn][_k]
         _ts.initial_state.dynamics = _ps.initial_state.dynamics
+        _ts = _refill_history(_ts)
         # A swept stimulus parameter lives on the external inputs, so it is carried too; without it the tuning would run against the default drive.
         for _en in (list(_ps.external.keys()) if getattr(_ps, 'external', None) is not None else []):
             if getattr(_ts, 'external', None) is not None and _en in _ts.external:
