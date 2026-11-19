@@ -78,8 +78,8 @@ BACKENDS = [
     pytest.param("tvb", marks=pytest.mark.backend_tvb),
 ]
 
-RTOL = {"tvboptim": 1e-8, "tvb": 1e-7}
-"""The closed form's tolerance per backend: the tvboptim run's float64, and on tvb the float32 of TVB's own delay buffer (``NDArray(..., 'f')`` in ``tvb/simulator/history.py``), which rounds what the coupling reads to about 6e-8."""
+RTOL = 1e-8
+"""The closed form's tolerance on tvboptim and tvb alike, each of which integrates the probe and stores its delay history in float64."""
 
 
 def _drawn(spec=PROBE):
@@ -106,13 +106,13 @@ def _trace(spec, backend="tvboptim"):
     return trace.transpose("time", "variable", "node")
 
 
-def _assert_reads_its_opening(x, y, t, settle=0.0, rtol=RTOL["tvboptim"]):
-    """``x`` holds one opening per node, away from the default, and ``y`` is what a history filled with that opening delivers from the first step: ``(settle + t) a W x(0)``."""
+def _assert_reads_its_opening(x, y, t, settle=0.0, weights=W):
+    """``x`` holds one opening per node, away from the default, and ``y`` is what a history filled with that opening delivers from the first step over *weights*: ``(settle + t) a W x(0)``."""
     assert np.all(np.abs(x[0] - DEFAULT_X) > 0.5), (
         "the opening must differ from the declared initial value for the comparison to mean anything"
     )
     np.testing.assert_array_equal(x, np.broadcast_to(x[0], x.shape))
-    np.testing.assert_allclose(y, (settle + t[:, None]) * A * (W @ x[0])[None, :], rtol=rtol, atol=rtol)
+    np.testing.assert_allclose(y, (settle + t[:, None]) * A * (weights @ x[0])[None, :], rtol=RTOL, atol=RTOL)
 
 
 def _sample_times(n):
@@ -120,9 +120,9 @@ def _sample_times(n):
     return DT * (1.0 + np.arange(n))
 
 
-def _assert_trace_reads_its_opening(trace, settle=0.0, rtol=RTOL["tvboptim"]):
+def _assert_trace_reads_its_opening(trace, settle=0.0, weights=W):
     _assert_reads_its_opening(
-        trace.sel(variable="x").values, trace.sel(variable="y").values, _sample_times(trace.sizes["time"]), settle, rtol
+        trace.sel(variable="x").values, trace.sel(variable="y").values, _sample_times(trace.sizes["time"]), settle, weights
     )
 
 
@@ -138,14 +138,14 @@ def _buffers(state):
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_a_drawn_opening_is_what_the_first_delayed_coupling_reads(backend):
-    _assert_trace_reads_its_opening(_trace(_drawn(), backend), rtol=RTOL[backend])
+    _assert_trace_reads_its_opening(_trace(_drawn(), backend))
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_a_node_s_declared_state_is_what_the_first_delayed_coupling_reads(backend):
     trace = _trace(_declared_per_node(), backend)
     np.testing.assert_array_equal(trace.sel(variable="x").values[0], [1.5, -0.5])
-    _assert_trace_reads_its_opening(trace, rtol=RTOL[backend])
+    _assert_trace_reads_its_opening(trace)
 
 
 @pytest.mark.backend_tvb

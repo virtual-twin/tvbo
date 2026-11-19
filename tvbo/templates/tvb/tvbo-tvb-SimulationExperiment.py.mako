@@ -18,6 +18,7 @@ experiment = context['experiment']
 from tvbo.utils import initial_value as _initial_value
 
 _tvb_coupling = context['coupling']
+_float64 = str(getattr(experiment.execution, 'precision', None) or 'float64') == 'float64'
 
 _n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
 initial_conditions = np.array([
@@ -35,6 +36,39 @@ initial_conditions = np.array([
 %if experiment.stimulation:
     <%include file="/tvbo-tvb-stimulus_equation.py.mako" />
 %endif
+%if _float64:
+######### Float64 history #########
+from tvb.simulator.descriptors import NDArray
+
+
+def _at_float64(tvb_array):
+    """TVB's history array *tvb_array* declared at float64, with its shape and mutability."""
+    return NDArray(tvb_array.shape, "d", tvb_array.read_only)
+
+
+class Float64SparseHistory(SparseHistory):
+    """TVB's sparse delay history at the declared float64.
+
+    TVB declares the delay buffer, the weights its coupling reads (`es_weights`, `nnz_weights`), the weights and delays they are cut from and the delayed and current states as float32 `NDArray`s, which allocate once and cast every assignment, so a coupling would read its sources and weights rounded to float32. Each of those arrays is declared here at float64; the integer index arrays stay TVB's.
+    """
+
+    weights = _at_float64(SparseHistory.weights)
+    delays = _at_float64(SparseHistory.delays)
+    es_weights = _at_float64(SparseHistory.es_weights)
+    buffer = _at_float64(SparseHistory.buffer)
+    current_state = _at_float64(SparseHistory.current_state)
+    delayed_state = _at_float64(SparseHistory.delayed_state)
+    nnz_weights = _at_float64(SparseHistory.nnz_weights)
+
+
+class Float64Simulator(Simulator):
+    """TVB's `Simulator`, its delay history a `Float64SparseHistory` on every configure."""
+
+    def _configure_history(self, initial_conditions=None):
+        self.history = Float64SparseHistory.from_simulator(self, initial_conditions)
+
+
+%endif
 ######### Simulation #########
 def define_simulation(connectivity, simulation_length=${settle['total_duration']}, initial_conditions=None, model_kwargs={}, coupling_kwargs={}, integration_kwargs={'dt':${settle['dt']}}, stimulus_kwargs={}):
 %if experiment.stimulation:
@@ -47,7 +81,7 @@ def define_simulation(connectivity, simulation_length=${settle['total_duration']
         weight[${experiment.stimulation.regions}] = 1.0
     %endif
 %endif
-    simulator = Simulator(
+    simulator = ${'Float64Simulator' if _float64 else 'Simulator'}(
         model=_TVBO_MODEL_CLS(**model_kwargs),
         connectivity=connectivity,
         coupling=${'%s(**coupling_kwargs)' % _tvb_coupling.name if _tvb_coupling else 'Linear(**coupling_kwargs)'},

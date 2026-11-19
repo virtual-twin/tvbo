@@ -18,7 +18,6 @@ from tvbo import ExperimentResult, SimulationExperiment
 from .test_delay_history_from_opening import (
     DT,
     DURATION,
-    RTOL,
     _assert_reads_its_opening,
     _declared_per_node,
     _trace,
@@ -90,7 +89,7 @@ def test_a_delayed_tvb_run_counts_its_settle_on_the_corrected_clock():
     _assert_on_the_measurement_clock(result, SETTLE)
     full = result.full.isel(mode=0).transpose("time", "variable", "node")
     x, y = full.sel(variable="x").values, full.sel(variable="y").values
-    _assert_reads_its_opening(x, y, full["time"].values, SETTLE, RTOL["tvb"])
+    _assert_reads_its_opening(x, y, full["time"].values, SETTLE)
 
 
 @SETTLES

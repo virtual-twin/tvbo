@@ -82,8 +82,8 @@ def test_the_observer_computes_only_the_derived_outputs():
 
 K = 0.5
 X0 = 0.3
-COUPLING_RTOL = 1e-6
-"""The tolerance on what the coupling delivered: TVB keeps its delay history, and so what its coupling reads, in float32 (G232), which rounds ``x`` to about 6e-8."""
+COUPLING_RTOL = 1e-12
+"""The tolerance on what the coupling delivered, at the float64 the declared precision gives TVB's delay history; the opening 0.3 is not exact in float32, so a float32 history misses it."""
 
 COUPLED = {
     "id": 1,
