@@ -252,10 +252,7 @@ def concordance_correlation(x, y, dim: str):
     Returns:
         The coefficient, labelled on the inputs' other dimensions.
     """
-    x, y = _along(x, dim, "x"), _along(y, dim, "y")
-    if dim in x.indexes and dim in y.indexes:
-        _same_labels(x, y, dim, ("x", "y"))
-        y = y.reindex({dim: x.indexes[dim]})
+    x, y = _paired_along(x, y, dim, ("x", "y"))
     mean_x, mean_y = x.mean(dim, skipna=False), y.mean(dim, skipna=False)
     covariance = ((x - mean_x) * (y - mean_y)).mean(dim, skipna=False)
     spread = x.var(dim, skipna=False) + y.var(dim, skipna=False) + (mean_x - mean_y) ** 2
