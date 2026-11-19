@@ -20,7 +20,7 @@ from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   load_scalar as _load_scalar, registered as _registered,
                                   significance_marks as _significance_marks,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
-from tvbo.data.dataref import match_output as _match_output, select as _select
+from tvbo.data.dataref import match_output as _match_output, select_labeled as _select
 from tvbo.plot import axis_rule as _axis_rule, field as _field, palette as _palette
 
 _RULE = ${repr(rule)}   # the axis rule this figure's theme declares; empty moves no tick, limit or spine
@@ -727,7 +727,7 @@ ${ind}    fig.set_layout_engine("tight")
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
-    _da = _select(_da, ${repr(L['sel'])}, ${repr(L['sel_method'])})
+    _da = _select(_da, ${repr(L['sel'])})
 % endif
 % if L['ref_transform']:
     _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)

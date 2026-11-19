@@ -2472,7 +2472,7 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str
 def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
-    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
+    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied, the selection taken as every ``DataRef`` reader takes it (:func:`~tvbo.data.dataref.select_labeled`). A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
 
     Under an animation the emitted script binds ``frame_dim``/``frame_pos`` onto each layer before handing the context over, so a drawer that knows nothing about animation still draws the frame the rest of the figure is at.
     """
@@ -2480,15 +2480,12 @@ def load_layer(layer: dict):
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
     ref_fn = registered(TRANSFORMS, ref_name, "transform") if ref_name else None
     ds = _open_ds(layer["container"])
-    from tvbo.data.dataref import match_output
+    from tvbo.data.dataref import match_output, select_labeled
 
     da = ds[match_output(ds.data_vars, layer["output"])]
     if fn:
         da = fn(da)
-    if layer.get("sel"):
-        from tvbo.data.dataref import select
-
-        da = select(da, layer["sel"], layer.get("sel_method"))
+    da = select_labeled(da, layer.get("sel"))
     if ref_fn:
         da = ref_fn(da)
     return _load_frame(da, layer)
@@ -2521,22 +2518,13 @@ def _items(coll):
 
 
 def _sel_dict(used):
-    """Resolve ``DataRef.sel`` (Argument dict) into ``({dim: value}, method)`` or ``(None, None)``.
+    """Resolve ``DataRef.sel`` (Argument dict) into a plain ``{dim: value}``, or ``None`` when it selects nothing.
 
-    A numeric selection uses ``method="nearest"`` (label-based nearest coordinate, e.g. the sampled K-values on a continuous sweep); a non-numeric one is an exact label match.
+    The emitted script and :func:`load_layer` apply it with :func:`~tvbo.data.dataref.select_labeled`, key by key: the nearest coordinate for a number (the sampled K-values on a continuous sweep) and the exact label for a name, so one selection can name a hemisphere and a swept coupling at once.
     """
     from tvbo.data.dataref import sel_dict
 
-    resolved = {dim: _plain(value) for dim, value in sel_dict(used).items()}
-    if not resolved:
-        return None, None
-
-    def _numeric(v):
-        vals = v if isinstance(v, (list, tuple)) else [v]
-        return all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in vals)
-
-    method = "nearest" if all(_numeric(v) for v in resolved.values()) else None
-    return resolved, method
+    return {dim: _plain(value) for dim, value in sel_dict(used).items()} or None
 
 
 def _used_ref(used):
@@ -2573,7 +2561,6 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     Under an ``animation`` the layer also gets its frame role. Undeclared, the role is read off the data: a layer carrying the animated dimension is what moves, one that does not is the fixed backdrop. That inference is the whole reason a two-panel movie needs no per-layer annotation, and a `frame:` on the layer overrides it.
     """
     used, enc = layer.used, getattr(layer, "encoding", None)
-    sel, method = _sel_dict(used)
     # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
     mark = str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line")
     style = getattr(layer, "style", None)
@@ -2600,8 +2587,7 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
         "cmap_declared": bool(getattr(style, "colormap", None)),
         "transform": getattr(layer, "transform", None),
         "ref_transform": getattr(used, "transform", None),
-        "sel": sel,
-        "sel_method": method,
+        "sel": _sel_dict(used),
         "triangle": str(triangle) if triangle else None,
         "style": kwargs,
         "frame": _frame_role(layer, animation),

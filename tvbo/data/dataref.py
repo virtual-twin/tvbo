@@ -522,14 +522,6 @@ def index_bare_axes(da, sel: Mapping[str, object] | None):
     return da.assign_coords(bare) if bare else da
 
 
-def select(da, sel: Mapping[str, object] | None, method=None):
-    """*da* at the labels *sel* names, each key resolved to the axis it names (`resolve_sel_keys`) and an unlabelled axis selectable by position (`index_bare_axes`); *method* is passed to ``.sel``. *da* itself for an empty *sel*."""
-    if not sel:
-        return da
-    da = index_bare_axes(da, sel)
-    return da.sel(resolve_sel_keys(da, sel), method=method)
-
-
 def select_labeled(da, sel: Mapping[str, object] | None):
     """Apply a label-keyed ``.sel`` to ``da``, never positional.
 
