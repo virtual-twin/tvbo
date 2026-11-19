@@ -97,13 +97,15 @@ def _exp_key_of(iri, keys) -> str | None:
 
 
 def _panel_bindings(panel) -> list:
-    """Every ``DataRef`` a panel's render opens: each layer's ``used``, each annotation's ``used``, ``significance.used`` and ``tail_used``, and the ``used`` naming a surface's mesh."""
+    """Every ``DataRef`` a panel's render opens: each layer's ``used``, each annotation's ``used``, ``significance.used`` and ``tail_used``, and the ``used`` naming a surface's mesh, the panel's own and those of every grid cell (``cells:``) and inset it draws, which are drawn as panels are. A grid's ``cell:`` template adds only its surface's mesh, which every cell draws; its layers and annotations are not drawn."""
     layers = getattr(panel, "layers", None) or []
     annotations = getattr(panel, "annotations", None) or []
-    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations, getattr(panel, "surface", None))]
+    surfaces = (getattr(panel, "surface", None), getattr(getattr(panel, "cell", None), "surface", None))
+    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations, *surfaces)]
     refs += [getattr(getattr(a, "significance", None), "used", None) for a in annotations]
     refs += [getattr(a, "tail_used", None) for a in annotations]
-    return [ref for ref in refs if ref is not None]
+    drawn = (*as_list(getattr(panel, "cells", None)), *as_list(getattr(panel, "insets", None)))
+    return [ref for ref in refs if ref is not None] + [ref for part in drawn for ref in _panel_bindings(part)]
 
 
 def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
