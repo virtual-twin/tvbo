@@ -1,6 +1,6 @@
 """Statistics over stored, labelled arrays: the implementations behind the software-based curated functions.
 
-Each function here is named by a record in ``tvbo/database/functions/`` (``SpreadBand``, ``Correlation``, ``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
+Each function here is named by a record in ``tvbo/database/functions/`` (``SpreadBand``, ``Correlation``, ``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``, ``HierarchicalClustering``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
 """
 
 from __future__ import annotations
@@ -41,6 +41,74 @@ def group_index(values, n_groups: int, grouping: str = "equal_width") -> np.ndar
             index[members] = k
         return index
     raise ValueError(f"grouping must be one of {GROUPINGS}, got {grouping!r}.")
+
+
+def _clusters(tree: np.ndarray, order: np.ndarray, cut: float) -> np.ndarray:
+    """The cluster of each leaf of the linkage matrix *tree*, in the dendrogram order *order*, the tree cut at *cut* times its highest merge.
+
+    A cluster is the subtree under a merge that lies below the cut where the merge above it, if there is one, does not, as :func:`scipy.cluster.hierarchy.dendrogram` colours the links below its ``color_threshold``; a merge at the cut is not below it. Clusters are numbered 1, 2, ... in the order their leaves come in the dendrogram from the left, the order in which scipy gives them the colours ``C1``, ``C2``, ..., and a leaf that no merge below the cut joins to another is 0, scipy's ``C0``. The numbers do not wrap round after nine as scipy's colours do.
+    """
+    n = len(order)
+    threshold = cut * tree[:, 2].max()
+    top = np.full(2 * n - 1, -1)  # each node's highest ancestor or self below the threshold, -1 for none
+    for merge in range(n - 2, -1, -1):
+        node = n + merge
+        if top[node] < 0 and tree[merge, 2] < threshold:
+            top[node] = node
+        top[tree[merge, :2].astype(int)] = top[node]
+    tops = top[order].tolist()
+    number = {node: k for k, node in enumerate(dict.fromkeys(t for t in tops if t >= 0), start=1)}
+    return np.array([number.get(t, 0) for t in tops])
+
+
+def hierarchical_clustering(features, dim: str, cut: float) -> dict:
+    """Ward hierarchical clustering of the units of *dim* by their correlation profiles, the tree cut at *cut* times its highest merge.
+
+    *features* holds one row per unit of *dim* and one column per feature along its one other dimension. The rows are correlated over the features (Pearson's r, :func:`numpy.corrcoef`), each unit is described by its row of that correlation matrix, and Ward's linkage on the Euclidean distances between those rows builds the tree: :func:`scipy.cluster.hierarchy.linkage` with ``method="ward"`` on the correlation matrix, as Koller et al. (2024, doi:10.1038/s41467-024-47860-x) cluster the components of their NMF fits (released ``scripts/results/48_results.ipynb``, cells 40 and 47). The rows are put in the order of their labels along *dim* before anything is computed, positions 0, 1, ... standing in for labels where *dim* has none, so the result, a tie between two merges included, depends on the labels and never on the order the rows come in. The clusters are cut from the tree as :func:`_clusters` states; 0.7 is the multiple below which :func:`scipy.cluster.hierarchy.dendrogram` colours by default, and the one Koller et al.'s two clusters come from (cell 49).
+
+    A row that is constant or holds a value that is not finite has no correlation and is refused by its label, as are fewer than two units, fewer than :data:`MIN_POINTS` features, a dimension beyond the two, and a *cut* that is not one finite number above 0.
+
+    Returns:
+        ``correlation`` on *dim* and *dim* with ``_j`` appended, both labelled and in dendrogram order, so that a heatmap of it shows the clustered matrix; ``linkage``, scipy's linkage matrix of the label-sorted rows on ``merge`` and ``field`` (``first``, ``second``, ``height``, ``size``), whose leaf ids are positions among the sorted labels and whose merge k forms the id n + k; ``leaf_order``, each unit's position in the dendrogram from the left; and ``cluster``, each unit's cluster (:func:`_clusters`). The last two run along *dim* in dendrogram order.
+    """
+    import xarray as xr
+    from scipy.cluster.hierarchy import leaves_list, linkage
+
+    level = np.asarray(cut)
+    if level.ndim or level.dtype.kind not in "fiu" or not 0 < float(level) < np.inf:
+        raise ValueError(
+            f"`cut` is the height the tree is cut at as a multiple of its highest merge, one finite number above 0, got {cut!r}."
+        )
+    features = _along(features, dim, "features")
+    if features.ndim != 2:
+        raise ValueError(
+            f"`features` holds one row per unit of {dim!r} and one column per feature, two dimensions; its dimensions are {list(features.dims)}."
+        )
+    if dim not in features.indexes:
+        features = features.assign_coords({dim: np.arange(features.sizes[dim])})
+    rows = features.sortby(dim).transpose(dim, ...)
+    labels, values = rows.indexes[dim], np.asarray(rows.values, dtype=float)
+    if values.shape[0] < 2 or values.shape[1] < MIN_POINTS:
+        raise ValueError(
+            f"`features` needs at least two units along {dim!r} and {MIN_POINTS} features to correlate them over; it has {values.shape[0]} and {values.shape[1]}."
+        )
+    defined = np.isfinite(values).all(axis=1) & (values.max(axis=1) > values.min(axis=1))
+    if not defined.all():
+        raise ValueError(
+            f"`features` has no correlation for {_some(labels[~defined])} along {dim!r}: a row that is constant or holds a value that is not finite correlates with nothing."
+        )
+    correlation = np.corrcoef(values)
+    tree = linkage(correlation, method="ward")
+    order = leaves_list(tree)
+    leaves = labels.values[order]
+    return {
+        "correlation": xr.DataArray(
+            correlation[np.ix_(order, order)], dims=[dim, f"{dim}_j"], coords={dim: leaves, f"{dim}_j": leaves}
+        ),
+        "linkage": xr.DataArray(tree, dims=["merge", "field"], coords={"field": ["first", "second", "height", "size"]}),
+        "leaf_order": xr.DataArray(np.arange(len(order)), dims=[dim], coords={dim: leaves}),
+        "cluster": xr.DataArray(_clusters(tree, order, float(level)), dims=[dim], coords={dim: leaves}),
+    }
 
 
 def _some(labels, limit: int = 5) -> str:
