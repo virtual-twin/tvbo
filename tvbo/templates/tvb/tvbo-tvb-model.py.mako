@@ -5,7 +5,7 @@
 import numpy as np
 from tvbo.codegen.templater import time_dependent_equations
 from tvbo.templates.base.utils import docstring_text, get_func_name, is_local_coupling, referenced_parameters
-from tvbo.templates.tvboptim.utils import get_mode_layout, get_recorded_variable_names, state_only_derived_var_names
+from tvbo.templates.tvboptim.utils import get_mode_layout, get_recorded_variable_names, state_only_dependencies, state_only_derived_var_names
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False
@@ -116,6 +116,8 @@ sv_boundaries = tvb_state_variable_boundaries(model)
     # As tvboptim records them: an output the state alone determines is computed from the recorded state on a single-mode model, any other is kept from the step's first dfun evaluation, which TVB's observer, seeing only the state, cannot repeat.
     recomputable = state_only_derived_var_names(model) if output_keys and get_mode_layout(model)[0] == 1 else ()
     stepped_outputs = tuple(name for name in output_keys if name not in recomputable)
+    # The observer binds the state-only outputs and the derived variables they read, in dependency order with the model's functions inlined, as tvboptim's realignment renders them.
+    observed_derived = state_only_dependencies(model, output_keys) if recomputable else ()
     %>
 
     variables_of_interest = List(
@@ -177,12 +179,10 @@ sv_boundaries = tvb_state_variable_boundaries(model)
                     "    ${', '.join(stepped_outputs)}, = model._first_evaluation\n"
                     "    model._first_evaluation = None\n"
                     % endif
-                    % for dv in model.in_dependency_order('derived_variables').values():
-                    % if dv.name in output_keys and dv.name not in stepped_outputs:
-                    "    ${dv.name} = ${render(dv)}\n"
-                    % endif
+                    % for name in observed_derived:
+                    "    ${name} = ${model.render_equation(model.derived_variables[name], format='numpy', inline_functions=True)}\n"
                     % endfor
-                    "    return numpy.array([{voi_names}])")
+                    "    return np.array([{voi_names}])")
         svars = ','.join(self.state_variables)
         if len(self.state_variables) == 1:
             svars += ','
@@ -190,8 +190,8 @@ sv_boundaries = tvb_state_variable_boundaries(model)
             svars=svars,
             voi_names=','.join(self.variables_of_interest)
         )
-        namespace = {'numpy': np, 'np': np, 'pi':np.pi, 'sin':np.sin}
-        namespace.update(self.__dict__)
+        # the namespace dfun runs in, plus this model's parameters
+        namespace = {**globals(), **self.__dict__}
 % if stepped_outputs:
         namespace['model'] = self
 % endif

@@ -118,7 +118,7 @@ class ModelJansen1995(Model):
             "def observe(state):\n"
             "    {svars} = state\n"
             "    v_pyr = y1 - y2\n"
-            "    return numpy.array([{voi_names}])"
+            "    return np.array([{voi_names}])"
         )
         svars = ",".join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -126,8 +126,8 @@ class ModelJansen1995(Model):
         code = template.format(
             svars=svars, voi_names=",".join(self.variables_of_interest)
         )
-        namespace = {"numpy": np, "np": np, "pi": np.pi, "sin": np.sin}
-        namespace.update(self.__dict__)
+        # the namespace dfun runs in, plus this model's parameters
+        namespace = {**globals(), **self.__dict__}
         self.log.debug("building observer with code:\n%s", code)
         exec(code, namespace)
         self.observe = namespace["observe"]

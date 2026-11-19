@@ -654,6 +654,22 @@ def state_only_derived_var_names(model: Any) -> list[str]:
     return [name for name in model.in_dependency_order("derived_variables") if name in recomputable]
 
 
+def state_only_dependencies(model: Any, names: Iterable[str]) -> list[str]:
+    """The state-only derived variables that code computing *names* from the state has to bind, in dependency order.
+
+    Those of *names* that are state-only (`state_only_derived_var_names`) and every derived variable they read, directly or through each other, read in the evaluated and the authored view alike, as `in_dependency_order` reads them. A state-only variable reads only state-only ones, so the walk never leaves that set.
+    """
+    order = state_only_derived_var_names(model)
+    views = [
+        model.symbolic_system.form(notation="symbol", evaluate=evaluate)["derived-variables"] for evaluate in (True, False)
+    ]
+    needed = set(names) & set(order)
+    for name in reversed(order):
+        if name in needed:
+            needed |= {str(symbol) for view in views for symbol in view[name].rhs.free_symbols}
+    return [name for name in order if name in needed]
+
+
 def state_only_recorded_aux(model: Any, experiment: Any = None) -> list[tuple[str, int]]:
     """Recorded derived variables that are provably functions of the state alone.
 

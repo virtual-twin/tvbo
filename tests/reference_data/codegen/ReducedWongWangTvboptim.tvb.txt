@@ -109,7 +109,7 @@ class ReducedWongWangTvboptim(Model):
             "    {svars} = state\n"
             "    H_x, = model._first_evaluation\n"
             "    model._first_evaluation = None\n"
-            "    return numpy.array([{voi_names}])"
+            "    return np.array([{voi_names}])"
         )
         svars = ",".join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -117,8 +117,8 @@ class ReducedWongWangTvboptim(Model):
         code = template.format(
             svars=svars, voi_names=",".join(self.variables_of_interest)
         )
-        namespace = {"numpy": np, "np": np, "pi": np.pi, "sin": np.sin}
-        namespace.update(self.__dict__)
+        # the namespace dfun runs in, plus this model's parameters
+        namespace = {**globals(), **self.__dict__}
         namespace["model"] = self
         self.log.debug("building observer with code:\n%s", code)
         exec(code, namespace)
