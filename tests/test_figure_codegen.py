@@ -255,6 +255,7 @@ def test_build_context_resolves_everything():
             "arrow": None,
             "tail": None,
             "significance": None,
+            "backdrop": True,
             "kwargs": _centred,
         },  # literal text
         {
@@ -265,6 +266,7 @@ def test_build_context_resolves_everything():
             "arrow": None,
             "tail": None,
             "significance": None,
+            "backdrop": True,
             "kwargs": _centred,
         },
     ]

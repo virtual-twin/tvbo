@@ -907,7 +907,7 @@ ${colorbar(p)}\
                 textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},
                 arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
                             "shrinkA": 0, "shrinkB": 0})   # above a composite panel's sub-axes
-% elif a['layer']:
+% elif a['layer'] and a['backdrop']:
     ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10,
             bbox={"facecolor": fig.get_facecolor(), "edgecolor": "none", "pad": 1.0,
                   "alpha": 0.75},   # a statistic printed over its own scatter stays readable

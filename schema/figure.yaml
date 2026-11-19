@@ -927,6 +927,9 @@ classes:
       color:
         range: string
         description: "Text colour; defaults to the current text colour."
+      backdrop:
+        range: boolean
+        description: "Whether a label that reads its number through `used:` sits on a box in the page colour, which keeps a statistic printed over its own scatter readable. Unset is true; false prints the label bare, for a plot that fills its whole area, such as a density whose empty cells take the colormap's light end, where the box shows as a patch."
       placement:
         range: AnnotationPlacement
         description: "Where the text appears: on the panel (absent, or `panel`) or in the figure's composed caption (`caption`), where the position and text style slots do not apply."

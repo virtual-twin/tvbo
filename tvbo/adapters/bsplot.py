@@ -2209,6 +2209,7 @@ def _annotations(panel, base_dir=Path(".")) -> list:
                 "arrow": arrow,
                 "tail": tail,
                 "significance": _significance(a, base_dir),
+                "backdrop": getattr(a, "backdrop", None) is not False,
                 "kwargs": text_kwargs,
             }
         )
