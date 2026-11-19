@@ -587,7 +587,7 @@ def render_tvboptim(analysis, kwargs):
     _pin_accelerator(_slot(analysis, "execution"))
     fn, src = _expression_fn(analysis, names)
     mapped = _slot(analysis, "apply_on_dimension")
-    mapped = str(mapped).split(".")[-1] if mapped else None
+    mapped = str(mapped) if mapped else None  # as the container names it: a swept parameter by its whole path
 
     agg = _slot(analysis, "aggregate")
     over = _slot(agg, "over")

@@ -175,6 +175,16 @@ def test_mapped_axis_absent_from_every_input_is_refused():
         render_tvboptim(_Analysis(rhs="a", apply_on_dimension="subject"), {"a": a})
 
 
+def test_a_grid_axis_named_by_its_parameter_path_is_mapped_under_that_name():
+    """An exploration names its axis by the parameter it sweeps, so `apply_on_dimension: KuramotoCoupling.a` maps over that axis and keeps its name and values; it is not looked up as `a`."""
+    x = _da([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], ["KuramotoCoupling.a", "node"], {"KuramotoCoupling.a": [0.1, 0.2]})
+    analysis = _Analysis(rhs="sum(x)", apply_on_dimension="KuramotoCoupling.a", dims=["KuramotoCoupling.a"])
+    out = render_tvboptim(analysis, {"x": x})
+    assert out.dims == ("KuramotoCoupling.a",)
+    np.testing.assert_allclose(out.values, [6.0, 15.0])
+    np.testing.assert_array_equal(out.coords["KuramotoCoupling.a"].values, [0.1, 0.2])
+
+
 def test_aggregate_over_an_axis_the_expression_lacks_is_refused():
     a = _da([[1.0, 2.0]], ["subject", "mode"])
     with pytest.raises(ValueError, match="does not produce"):
