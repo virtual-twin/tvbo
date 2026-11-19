@@ -1,7 +1,6 @@
 """Export-format registry.
 
-Single source of truth for *all* SimulationExperiment export backends:
-serialisation formats (YAML, openMINDS), reports (markdown, PDF), and code generators (TVB, JAX, tvboptim, Julia, NeuroML/LEMS, …).
+Single source of truth for *all* SimulationExperiment export backends: serialisation formats (YAML, openMINDS), reports (markdown, PDF), and code generators (TVB, JAX, tvboptim, Julia, NeuroML/LEMS, …).
 
 A backend self-registers an :class:`ExportFormat` describing:
 
@@ -28,12 +27,16 @@ Importer = Callable[..., Any]
 
 
 class StartKind(StrEnum):
-    """What a backend must do to honour a `tvbo.adapters.base.ParameterStart`: draw a dynamics parameter per node, draw a coupling parameter per node or per connection, evaluate a parameter's equation once, or draw a start again for each trial of an `n_trials` ensemble. ``tuple(StartKind)`` is every kind."""
+    """What a backend must do to honour a `tvbo.adapters.base.ParameterStart`: draw a dynamics parameter per node, draw a coupling parameter per node or per connection, evaluate a parameter's equation once, or draw a start again for each trial of an `n_trials` ensemble; or, for a distribution declared with ``axis: time``, draw again at every step a dynamics parameter (``TIME``), a coupling parameter (``COUPLING_TIME``), the one such parameter of a stimulus whose signal is an equation of time (``STIMULUS_TIME``), or any other event's (``EVENT_TIME``: a state-triggered, recorded or sourced event's, or one of several on one event). ``tuple(StartKind)`` is every kind."""
 
     NODE = "node"
     COUPLING = "coupling"
     EQUATION = "equation"
     TRIAL = "trial"
+    TIME = "time"
+    COUPLING_TIME = "coupling_time"
+    STIMULUS_TIME = "stimulus_time"
+    EVENT_TIME = "event_time"
 
 
 @dataclass(frozen=True)
@@ -120,8 +123,7 @@ def keys() -> Iterable[str]:
     """Return a view of every registered key and alias.
 
     Returns:
-        A view over all lookup keys, including canonical keys and aliases
-        (all lowercased). The same format may appear under several keys.
+        A view over all lookup keys, including canonical keys and aliases (all lowercased). The same format may appear under several keys.
     """
     return _REGISTRY.keys()
 

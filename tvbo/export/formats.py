@@ -288,7 +288,7 @@ _BUILTINS = [
         _render_tvboptim,
         aliases=("tvb-optim",),
         language="python",
-        parameter_starts=tuple(StartKind),
+        parameter_starts=tuple(k for k in StartKind if k not in (StartKind.COUPLING_TIME, StartKind.EVENT_TIME)),
     ),
     ExportFormat("jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python"),
     ExportFormat(

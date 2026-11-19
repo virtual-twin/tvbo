@@ -711,22 +711,6 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 "Integrate the network, or run the experiment on tvboptim."
             )
 
-    def refuse_draws_over_time(self) -> None:
-        """Raise where a dynamics parameter declares a distribution over time (`samples_over_time`), a stochastic input the template would draw once per node when it sets the initial state and never per step."""
-        from tvbo.templates.base.utils import samples_over_time
-
-        drawn = [
-            f"parameter {p_name!r} of dynamics {name!r}"
-            for name, dyn in self.build_dynamics_dict().items()
-            for p_name, p in (dyn.parameters or {}).items()
-            if samples_over_time(getattr(p, "distribution", None))
-        ]
-        if drawn:
-            raise NotImplementedError(
-                f"the NetworkDynamics.jl templates draw a parameter's distribution once per node and never per step, so {', '.join(drawn)}, declared with `axis: time`, would hold one draw for the whole run. "
-                "Declare `axis: space` for one draw per node, or run the experiment on tvboptim."
-            )
-
     def refuse_seed_mismatch(self) -> None:
         """Raise where two distributions the emitted Julia draws resolve to different seeds.
 
@@ -764,7 +748,6 @@ class NetworkDynamicsAdapter(BaseAdapter):
             )
         refuse_observations(self.experiment, "NetworkDynamics.jl")
         self.refuse_undrawn_starts()
-        self.refuse_draws_over_time()
         self.refuse_seed_mismatch()
         if self.get_execution_info()["find_fixpoint"] and self.holds_coupling():
             raise NotImplementedError(

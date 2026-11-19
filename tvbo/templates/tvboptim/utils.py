@@ -426,7 +426,7 @@ def resolve_parameter_starts(
 ) -> list[dict[str, Any]]:
     """The parameter starts a tvboptim module computes when it builds the network, one group per owner, or a refusal naming the declaration it cannot honour.
 
-    A start is a parameter of the experiment's dynamics or of one of its couplings that declares a distribution sampled over space, drawn per node or per connection, or an equation, evaluated once from the other parameters of the same owner (`tvbo.adapters.base.parameter_starts`). Each group carries the function the module emits for its owner (``function``) and the name `create_network` binds its result to (``variable``), the literal parameters its equations read (``inputs``), its starts in evaluation order (``starts``: ``name``, ``kind``, ``code``, ``seeded``, ``trial``, ``rank``, ``reads``), whether any start follows the run's seed (``seeded``) or is drawn again for each trial of an ensemble (``trial``), whether a draw is keyed by the run's seed (``run_key``) or fills the network's edges (``edges``), and for a coupling the coupling inputs it serves (``inputs_served``, from *coupling_inputs*). A coupling start is grouped under its coupling's key in *couplings*, the couplings the template integrates, whatever alias the network declares that coupling under.
+    A start is a parameter of the experiment's dynamics or of one of its couplings that declares a distribution sampled over space, drawn per node or per connection, or an equation, evaluated once from the other parameters of the same owner (`tvbo.adapters.base.parameter_starts`); a draw at every step (`per_step`) is the stochastic input the dfun and stimulus templates draw, and is left to them. Each group carries the function the module emits for its owner (``function``) and the name `create_network` binds its result to (``variable``), the literal parameters its equations read (``inputs``), its starts in evaluation order (``starts``: ``name``, ``kind``, ``code``, ``seeded``, ``trial``, ``rank``, ``reads``), whether any start follows the run's seed (``seeded``) or is drawn again for each trial of an ensemble (``trial``), whether a draw is keyed by the run's seed (``run_key``) or fills the network's edges (``edges``), and for a coupling the coupling inputs it serves (``inputs_served``, from *coupling_inputs*). A coupling start is grouped under its coupling's key in *couplings*, the couplings the template integrates, whatever alias the network declares that coupling under.
 
     Refused, by name: a start on a dynamics the module does not integrate, a parameter whose value something else declares as well (`tvbo.adapters.base.refuse_second_definition`), a distribution that does not say what to draw or a shape a draw cannot fill (`_draw_code`), and an equation that reads a symbol that is not a parameter of its owner, a parameter with no literal value or one whose value comes from elsewhere, or itself through other equations (`_owner_parameter_starts`).
     """
@@ -443,7 +443,7 @@ def resolve_parameter_starts(
         for owner, holder in owners.items()
     }
     grouped: dict[tuple[str, str], list] = {}
-    for start in parameter_starts(experiment):
+    for start in (start for start in parameter_starts(experiment) if not start.per_step):
         owner = next((o for o, params in declared.items() if any(q is start.parameter for q in params.values())), None)
         if owner is None or owner[0] != start.owner_kind:
             raise NotImplementedError(

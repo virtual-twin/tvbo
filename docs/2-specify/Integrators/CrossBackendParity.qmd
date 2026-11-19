@@ -72,7 +72,7 @@ If you run the same YAML on three backends and get rmse on the order of the sign
 
 ### 1. Stochastic time-varying parameter inputs
 
-A model parameter declared with `distribution: { axis: time }` is not a constant. tvboptim pre-generates a per-step random trajectory and indexes it inside the `dfun`. Other backends use a frozen scalar (`p.value`). See [Stochastic time-varying parameter inputs](../Models/Noise.qmd#stochastic-time-varying-parameter-inputs) for the YAML schema and code-generation details.
+A model parameter declared with `distribution: { axis: time }` is not a constant. tvboptim pre-generates a per-step random trajectory and indexes it inside the `dfun`. A backend draws such a parameter only where it declares that it draws that kind at every step, and refuses it by name when it renders or runs otherwise, rather than holding it at one value for the whole run. tvboptim declares a dynamics parameter, and the one such parameter of a stimulus whose signal is an equation of time; it refuses a coupling parameter, and an event parameter of a state-triggered, recorded or sourced event or one of several on one event. Every other backend, the continuation backends included, refuses all of them. See [Stochastic time-varying parameter inputs](../Models/Noise.qmd#stochastic-time-varying-parameter-inputs) for the YAML schema and code-generation details.
 
 The Jansen-Rit `p` parameter is the canonical example:
 

@@ -142,9 +142,9 @@ def dynamics_library(experiment) -> OrderedDict:
 
 
 class ParameterStart(NamedTuple):
-    """One dynamics or coupling parameter whose value is declared by something other than a literal: a distribution sampled over space, or an equation.
+    """One dynamics, coupling or event parameter whose value is declared by something other than a literal: a distribution, or an equation.
 
-    ``kind`` is the `StartKind` a backend must honour: a dynamics parameter drawn per node, a coupling parameter drawn per node or per connection, or an equation evaluated once from the other parameters of its owner. A draw whose distribution declares ``axis: trial`` is drawn again for each trial of an ``n_trials`` ensemble (`per_trial`), which a backend honours only by listing `StartKind.TRIAL` as well.
+    ``kind`` is the `StartKind` a backend must honour: a dynamics parameter drawn per node, a coupling parameter drawn per node or per connection, or an equation evaluated once from the other parameters of its owner. A draw whose distribution declares ``axis: trial`` is drawn again for each trial of an ``n_trials`` ensemble (`per_trial`), which a backend honours only by listing `StartKind.TRIAL` as well. A distribution declared with ``axis: time`` is drawn again at every step (`per_step`), by the kind its owner gives it.
     """
 
     owner_kind: str
@@ -159,38 +159,102 @@ class ParameterStart(NamedTuple):
         return self.kind != StartKind.EQUATION and samples_per_trial(self.parameter.distribution)
 
     @property
+    def per_step(self) -> bool:
+        """Whether the start is a draw redrawn at every integration step, a stochastic input."""
+        return self.kind in (StartKind.TIME, StartKind.COUPLING_TIME, StartKind.STIMULUS_TIME, StartKind.EVENT_TIME)
+
+    @property
+    def named(self) -> str:
+        """The parameter with its owner, as a message names it."""
+        return f"parameter {self.name!r} of {self.owner_kind} {self.owner!r}"
+
+    @property
     def label(self) -> str:
         """The parameter as a message names it, with what it declares."""
         declares = "an equation" if self.kind == StartKind.EQUATION else "a distribution sampled over space"
-        return f"parameter {self.name!r} of {self.owner_kind} {self.owner!r} ({declares}{', drawn per trial' if self.per_trial else ''})"
+        return f"{self.named} ({declares}{', drawn per trial' if self.per_trial else ''})"
+
+
+def declared_parameters(experiment) -> list[tuple[str, str, str, Any]]:
+    """Every parameter of *experiment*'s dynamics and couplings as ``(owner_kind, owner, name, parameter)``, in declaration order."""
+    owners = [("dynamics", str(name), dyn) for name, dyn in dynamics_library(experiment).items()]
+    owners += [("coupling", str(key), c) for key, c in network_couplings(getattr(experiment, "network", None)).items()]
+    return [
+        (owner_kind, owner, str(getattr(parameter, "name", None) or key), parameter)
+        for owner_kind, owner, holder in owners
+        for key, parameter in keyed_items(getattr(holder, "parameters", None), "parameters")
+    ]
+
+
+SPACE_KINDS = {"dynamics": StartKind.NODE, "coupling": StartKind.COUPLING}
+TIME_KINDS = {"dynamics": StartKind.TIME, "coupling": StartKind.COUPLING_TIME}
+
+
+def stimulus_of_time(event) -> bool:
+    """Whether *event* is a stimulus whose signal is an equation of time: not triggered by a state condition, and read neither from a recording (`dataLocation`) nor from another run's output (a `data` parameter)."""
+    kind = str(getattr(event, "event_type", None) or "stimulus").lower()
+    names = {str(getattr(p, "name", None) or key) for key, p in keyed_items(getattr(event, "parameters", None), "parameters")}
+    return "stimul" in kind and not getattr(event, "dataLocation", None) and "data" not in names
+
+
+def event_draws_over_time(experiment) -> list[ParameterStart]:
+    """Every event parameter of *experiment* whose distribution declares ``axis: time``: `StartKind.STIMULUS_TIME` where it is the only one of a stimulus that is an equation of time (`stimulus_of_time`), else `StartKind.EVENT_TIME`, so that which of several is drawn never rests on declaration order."""
+    found = []
+    for key, event in keyed_items(getattr(experiment, "events", None), "events"):
+        over_time = [
+            (str(getattr(p, "name", None) or name), p)
+            for name, p in keyed_items(getattr(event, "parameters", None), "parameters")
+            if samples_over_time(getattr(p, "distribution", None))
+        ]
+        kind = StartKind.STIMULUS_TIME if len(over_time) == 1 and stimulus_of_time(event) else StartKind.EVENT_TIME
+        found += [ParameterStart("event", str(key), name, kind, p) for name, p in over_time]
+    return found
 
 
 def parameter_starts(experiment) -> list[ParameterStart]:
-    """Every parameter of *experiment*'s dynamics and couplings that declares where its value starts, in declaration order.
+    """Every parameter of *experiment*'s dynamics and couplings that declares where its value starts, and every event parameter drawn over time (`event_draws_over_time`), in declaration order.
 
-    A parameter with an ``equation`` is listed as ``equation`` whatever else it declares, so a backend that cannot evaluate one refuses it; a parameter with a ``distribution`` whose axis is not time is a draw. A distribution over time is a stochastic input, which is another capability and is not listed.
+    A parameter with an ``equation`` is listed as ``equation`` whatever else it declares, so a backend that cannot evaluate one refuses it; a parameter with a ``distribution`` is a draw, over space or, declared with ``axis: time``, again at every step (`TIME_KINDS`).
     """
-    owners = [("dynamics", str(name), dyn) for name, dyn in dynamics_library(experiment).items()]
-    owners += [("coupling", str(key), c) for key, c in network_couplings(getattr(experiment, "network", None)).items()]
     found = []
-    for owner_kind, owner, holder in owners:
-        for key, parameter in keyed_items(getattr(holder, "parameters", None), "parameters"):
-            name = str(getattr(parameter, "name", None) or key)
-            distribution = getattr(parameter, "distribution", None)
-            if getattr(parameter, "equation", None) is not None:
-                found.append(ParameterStart(owner_kind, owner, name, StartKind.EQUATION, parameter))
-            elif distribution is not None and not samples_over_time(distribution):
-                kind = StartKind.NODE if owner_kind == "dynamics" else StartKind.COUPLING
-                found.append(ParameterStart(owner_kind, owner, name, kind, parameter))
-    return found
+    for owner_kind, owner, name, parameter in declared_parameters(experiment):
+        distribution = getattr(parameter, "distribution", None)
+        if getattr(parameter, "equation", None) is not None:
+            found.append(ParameterStart(owner_kind, owner, name, StartKind.EQUATION, parameter))
+        elif distribution is not None:
+            kind = (TIME_KINDS if samples_over_time(distribution) else SPACE_KINDS)[owner_kind]
+            found.append(ParameterStart(owner_kind, owner, name, kind, parameter))
+    return found + event_draws_over_time(experiment)
+
+
+def refuse_draws_over_time(starts: list[ParameterStart], backend: str, lowered: tuple[str, ...]) -> None:
+    """Raise where *backend* would hold at one value for the whole run a start of *starts* drawn at every step (`per_step`) whose kind it does not list among *lowered*.
+
+    tvboptim lists a dynamics parameter (`StartKind.TIME`) and the one such parameter of a stimulus that is an equation of time (`StartKind.STIMULUS_TIME`); no backend lists a coupling parameter or any other event's. The message names what the backend does honour: `axis: space` where it lowers that kind's draw over space (`SPACE_KINDS`), a `value` everywhere, and tvboptim where it draws every held one.
+    """
+    held = [start for start in starts if start.per_step and start.kind not in lowered]
+    if not held:
+        return
+    over_space = {time: SPACE_KINDS[owner] for owner, time in TIME_KINDS.items()}
+    hint = (
+        "with `axis: space`, which this backend draws when it builds the network, or by `value`"
+        if all(over_space.get(start.kind) in lowered for start in held)
+        else "by `value`"
+    )
+    tvboptim = all(start.kind in (StartKind.TIME, StartKind.STIMULUS_TIME) for start in held) and StartKind.TIME not in lowered
+    raise NotImplementedError(
+        f"the {backend} backend sets these parameters once and never per step, so {', '.join(start.named for start in held)}, declared with `axis: time`, would hold one value for the whole run. "
+        f"Declare each {hint}{', or run the experiment on tvboptim, which draws it at every step' if tvboptim else ''}."
+    )
 
 
 def refuse_parameter_starts(experiment, backend: str, lowered: tuple[str, ...] = ()) -> None:
     """Raise where *backend* would accept a parameter that declares its start and integrate one constant in its place.
 
-    A backend whose templates read a parameter's ``value`` alone runs a declared distribution at that value on every node and in every seed, and a parameter defined by an equation at whatever its fallback is, and still reports success; one that draws a start once per run gives every trial of an ensemble the same draw. *lowered* names the kinds of `ParameterStart` the backend does honour; every other one, and a start drawn per trial where `StartKind.TRIAL` is not among them, is refused by name.
+    A backend whose templates read a parameter's ``value`` alone runs a declared distribution at that value on every node and in every seed, and a parameter defined by an equation at whatever its fallback is, and still reports success; one that draws a start once per run gives every trial of an ensemble the same draw. *lowered* names the kinds of `ParameterStart` the backend does honour; every other one, a draw at every step first (`refuse_draws_over_time`), and a start drawn per trial where `StartKind.TRIAL` is not among them, is refused by name.
     """
     starts = parameter_starts(experiment)
+    refuse_draws_over_time(starts, backend, lowered)
     dropped = [start.label for start in starts if start.kind not in lowered]
     if dropped:
         raise NotImplementedError(
