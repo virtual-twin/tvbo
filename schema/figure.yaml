@@ -1269,7 +1269,7 @@ classes:
       ticklabels:
         range: string
         multivalued: true
-        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
+        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. With `ticks` the labels name those ticks one to one, and lists of different lengths are refused; without them the labels are spread evenly from the bar's lower end to its upper end, so `[low, high]` marks its two ends. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
       decimals:
         range: integer
         description: "How many decimal places the tick numbers are written to."

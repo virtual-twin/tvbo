@@ -1047,7 +1047,7 @@ def colorbar_panel(fig, ax, ctx):
 
     Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
 
-    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing.
+    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. ``ticklabels`` without ``ticks`` are spread evenly from the bar's lower end to its upper end, so ``[low, high]`` labels a quantity in arbitrary units at its two ends rather than with numbers that mean nothing; with ``ticks`` they name those ticks one to one, and lists of different lengths are refused.
 
     Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
     """
@@ -1075,10 +1075,17 @@ def colorbar_panel(fig, ax, ctx):
     cb = fig.colorbar(mappable, cax=ax.inset_axes(box), orientation="vertical" if vertical else "horizontal")
     cb.outline.set_linewidth(0.6)
     cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
-    if opts.get("ticks") is not None:
-        cb.set_ticks([float(t) for t in opts["ticks"]])
-    if opts.get("ticklabels") is not None:
-        cb.set_ticklabels([str(t) for t in opts["ticklabels"]])
+    ticks, ticklabels = opts.get("ticks"), opts.get("ticklabels")
+    if ticklabels is not None and ticks is None:
+        ticks = _np.linspace(lo, hi, len(ticklabels))
+    elif ticklabels is not None and len(ticklabels) != len(ticks):
+        raise ValueError(
+            f"colorbar panel: {len(ticklabels)} `ticklabels` for {len(ticks)} `ticks`; give one label per tick, or leave `ticks` unset to spread the labels evenly from the bar's lower end to its upper end."
+        )
+    if ticks is not None:
+        cb.set_ticks([float(t) for t in ticks])
+    if ticklabels is not None:
+        cb.set_ticklabels([str(t) for t in ticklabels])
     if opts.get("label"):
         cb.set_label(str(opts["label"]))
     return cb.ax
