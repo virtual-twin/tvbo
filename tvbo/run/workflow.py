@@ -146,6 +146,7 @@ class WorkflowPlan:
 
     chunk: int = 1  # cells per array task when axes are fanned; the number of array shards when the sweep is fully vectorised
     engine_block: dict[str, Any] = field(default_factory=dict)
+    gpu: bool = False  # the run uses the node's GPU: the experiment declares `accelerator: gpu` or the engine block a GPU gres
     overrides: list[dict[str, Any]] = field(default_factory=list)
     requirements: list[dict[str, Any]] = field(default_factory=list)  # normalized pip/conda deps
     source_spec: str = ""  # SPEC arg for `tvbo run` (recipe path / CURIE / DB name)
@@ -164,15 +165,19 @@ class WorkflowPlan:
 
     @property
     def container_exec_flags(self) -> str:
-        """``container_binds``/``container_args`` as flags for an ``exec`` call.
+        """``container_binds``/``container_args`` as flags for an ``exec`` call, and ``--nv`` when the run uses a GPU.
 
         Apptainer and Singularity share this command line, so the Slurm and Nextflow emitters (which build the exec call themselves) and the Snakemake emitter (which hands the same string to ``--apptainer-args``) render them identically. Empty when nothing is declared, so callers can concatenate unconditionally.
 
         Each bind gets its own ``--bind`` rather than joining them with the comma separator: a comma is not escapable inside one ``--bind``, so a path containing one could not be expressed at all. Paths are shell-quoted because the Slurm emitters interpolate this straight into a command line, where an unquoted space would split one bind into two arguments.
+
+        ``--nv`` binds the host's NVIDIA driver into the container, without which the image's CUDA JAX sees no GPU. It follows the declared ``container_args`` and is left out when they already hold it; on a node without a GPU the runtime only warns.
         """
         parts = ["--bind " + shlex.quote(b) for b in self.container_binds]
         if self.container_args:
             parts.append(self.container_args)
+        if self.gpu and "--nv" not in (self.container_args or "").split():
+            parts.append("--nv")
         return " ".join(parts)
 
     # ---- derived helpers --------------------------------------------------
@@ -577,6 +582,11 @@ def runtime_minutes(t) -> int | None:
         return None
 
 
+def _requests_gpu(gres) -> bool:
+    """Whether a SLURM ``gres`` asks for a GPU: ``gpu``, ``gpu:2`` or ``gpu:a100:1``, alone or as one entry of a comma-separated list."""
+    return any(entry.split(":", 1)[0].strip() == "gpu" for entry in str(gres or "").split(","))
+
+
 SUBJECT_AXIS = "dataset.active_subject"
 """The parameter a dataset fan-out's axis names: one cell per subject."""
 
@@ -899,6 +909,7 @@ def plan(
         subject_selection=subject_selection,
         chunk=max(1, chunk),
         engine_block=engine_block,
+        gpu=_accel == "gpu" or _requests_gpu(engine_block.get("gres")),
         overrides=list(overrides or []),
         requirements=_reqs,
         source_spec=source_spec or "",

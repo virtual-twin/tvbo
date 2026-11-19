@@ -531,7 +531,7 @@ def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev", binds=("/dat
         container_binds=list(binds),
         container_args=args,
         container_exec_flags=WorkflowPlan.container_exec_flags.fget(
-            SimpleNamespace(container_binds=list(binds), container_args=args)
+            SimpleNamespace(container_binds=list(binds), container_args=args, gpu=False)
         ),
     )
 
@@ -554,6 +554,7 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
         container=container,
         container_binds=list(binds),
         container_args=None,
+        gpu=False,
         requirements=list(reqs),
         experiment_selector=None,
         source_spec=None,
@@ -1019,7 +1020,7 @@ def test_bind_paths_survive_spaces_and_commas():
     from tvbo.run.workflow import WorkflowPlan
 
     flags = WorkflowPlan.container_exec_flags.fget(
-        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"], container_args=None)
+        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"], container_args=None, gpu=False)
     )
     assert flags == "--bind /data/cephfs-1 --bind '/my scratch'"
 

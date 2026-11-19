@@ -136,6 +136,9 @@ tvb = [
 # TVB optimization (JAX). pymoo backs the NSGA-II strategy (Exploration.strategy: nsga2).
 tvboptim = ["tvboptim", "pymoo>=0.6.0"]
 
+# JAX's CUDA 12 build for NVIDIA GPUs. Linux is the one platform with its wheels, so `all` leaves it out; the published image installs it.
+cuda = ["jax[cuda12]; sys_platform == 'linux'"]
+
 # The ORCHESTRATOR for `tvbo workflow submit`, needed wherever submit runs; a study's own runtime deps travel via `environment.requirements`.
 workflow = ["snakemake>=8.0.0", "snakemake-executor-plugin-slurm>=0.11.0"]
 

@@ -8,6 +8,7 @@ import os
 import re
 import shlex
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -1181,7 +1182,8 @@ def _emit_snakemake_study(
     if head is not None:
         _write_env_files(out_dir, head, setup=head.needs_env_layer)
         # A differing per-experiment image becomes that rule's own `container:` directive, but binds reach Apptainer through Snakemake's single `--apptainer-args`, which is per-run and cannot vary per rule, so say so rather than drop them silently.
-        _divergent = sorted({p.experiment_key for p in plans[1:] if p.container_exec_flags != head.container_exec_flags})
+        _declared = (head.container_binds, head.container_args)
+        _divergent = sorted({p.experiment_key for p in plans[1:] if (p.container_binds, p.container_args) != _declared})
         if _divergent:
             _common.warn(
                 f"experiments {', '.join(_divergent)} declare container_binds/container_args "
@@ -1189,6 +1191,8 @@ def _emit_snakemake_study(
                 f"--apptainer-args per run, so {head.experiment_key}'s are used for all "
                 "rules. Emit those experiments as their own kit if they need different binds."
             )
+        # The one --apptainer-args carries --nv when any rule uses a GPU; a CPU rule's declared accelerator keeps its JAX on the CPU.
+        head = replace(head, gpu=any(p.gpu for p in plans))
     _write_snakemake_profile(out_dir, block, plan=head)
     if plans:
         _write_readme(
