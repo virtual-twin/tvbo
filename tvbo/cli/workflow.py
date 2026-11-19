@@ -698,7 +698,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
 
         out_dir/
           <artefact>            # Snakefile / run.sbatch / main.nf (with nextflow.config)
-          scripts/<exp>.<ext>   # frozen backend code from experiment.render(backend)
+          scripts/<exp>.<ext>   # frozen backend code from experiment.render_code(backend)
           spec/<exp>.yaml       # frozen YAML snapshot of the experiment
           data/<dataset_id>/    # the dataset files the experiment reads (see _bundle_dataset)
           README.md             # provenance + how-to-run
@@ -987,14 +987,16 @@ def _bundle_script_artifacts(code: str, out_dir: Path) -> int:
 def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: str) -> str | None:
     """Freeze *experiment*'s pre-rendered backend script under ``out_dir/scripts/<key>.<ext>``, staging every array it loads into ``constants/``.
 
-    The rendered tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a kit executes it as-is via ``tvbo run … --rendered`` — no code generation on the node. Returns the kit-relative path, or ``None`` when the render fails, in which case the kit falls back to re-rendering from the frozen spec.
+    The rendered tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a kit executes it as-is via ``tvbo run … --rendered`` — no code generation on the node. Returns the kit-relative path, or ``None`` when the render fails, in which case the kit falls back to re-rendering from the frozen spec and a warning names the experiment and the error, since that run is no longer the frozen code the kit was meant to carry.
+
+    The script is rendered as a run renders it, through :meth:`SimulationExperiment.render_code`, which configures the experiment first, so it is the code ``run()`` executes: a network whose delays all vanish (an infinite conduction speed, or tract lengths of zero) freezes the instantaneous coupling a run integrates, not the delayed coupling its couplings declare.
     """
     from tvbo import export as _export
 
     try:
         fmt = _export.resolve(backend_name)
         ext = (fmt.extension or ".py").lstrip(".")
-        code = experiment.render(format=backend_name)
+        code = experiment.render_code(backend_name)
         scripts_dir = out_dir / "scripts"
         scripts_dir.mkdir(parents=True, exist_ok=True)
         path = scripts_dir / f"{key}.{ext}"
@@ -1006,7 +1008,7 @@ def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: st
             _common.info(f"staged {staged} producer constant(s) → constants/")
         return rel
     except Exception as exc:
-        _common.info(f"(could not render backend script for {backend_name!r}: {exc})")
+        _common.warn(f"experiment {key}: its {backend_name!r} script did not render ({exc}), so its kit runs it in spec mode")
         return None
 
 

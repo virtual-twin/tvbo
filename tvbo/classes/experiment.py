@@ -1078,7 +1078,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         Args:
             format: Backend identifier selecting what to build.
-            rendered_code: Optional pre-rendered backend script to execute instead of calling `render_code(format)`. When given, no code is generated: the string is executed as-is, so a kit frozen once (via `render(format)`) runs on a stock tvbo runtime with no codegen step. Must match `format`. When `None` (default) the behaviour is unchanged — the code is rendered on the fly.
+            rendered_code: Optional pre-rendered backend script to execute instead of calling `render_code(format)`. When given, no code is generated: the string is executed as-is, so a kit frozen once (via `render_code(format)`) runs on a stock tvbo runtime with no codegen step. Must match `format`. When `None` (default) the behaviour is unchanged — the code is rendered on the fly.
             **kwargs: Backend-specific options. Forwarded to the TVB simulator factory, to `render_code`, or interpreted as JAX flags (`jit`, `_return_namespace`) depending on `format`.
 
         Returns:
