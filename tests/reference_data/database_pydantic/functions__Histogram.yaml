@@ -6,6 +6,12 @@ description: The number of values in each of n_bins bins of equal width from low
   a value outside the range is not, and a mask restricts the count to the entries
   it marks. It returns count and center on `bin`, edge on `bin_edge`, the bins' width,
   and n, the number of values counted.
+outputs:
+- count
+- center
+- edge
+- width
+- n
 arguments:
   values:
     name: values

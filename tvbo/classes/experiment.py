@@ -1404,12 +1404,14 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         return out
 
     def _bind_network_references(self, results_root=None) -> None:
-        """Name what the network's ``used:`` layers and transform arguments resolve against in this run.
+        """Name what the network's ``used:`` layers and transform arguments, and the ``used:`` arguments of a producer given this experiment, resolve against in this run.
 
-        The run's subject selects the cohort member a layer reads, a cohort is looked up in this experiment's own dataset and in those of the study it belongs to, and analysis and experiment containers are read from *results_root*. A network that declares no reference is left as it is.
+        The run's subject selects the cohort member a layer reads, a cohort is looked up in this experiment's own dataset and in those of the study it belongs to, and analysis and experiment containers are read from *results_root*. A producer reads its containers through the experiment's network (:func:`tvbo.data.param_io._reference_context`), so a run of a kit, whose *results_root* holds the containers the kit staged, finds them there. A network that declares no reference, and that no producer of the experiment reads through, is left as it is.
         """
+        from tvbo.data.param_io import producer_references
+
         net = getattr(self, "network", None)
-        if not isinstance(net, Network) or not net.declares_references():
+        if not isinstance(net, Network) or not (net.declares_references() or producer_references(self)):
             return
         net.bind_references(results_root=results_root, **self._reference_context())
 
@@ -1445,11 +1447,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         return [*([own] if own is not None else []), *as_list(getattr(self, "_study_datasets", None))]
 
     def declared_references(self) -> list:
-        """Every ``used:`` reference this experiment reads from outside itself, in the order a plan records them: the sourced parameters of the dynamics and of each coupling, the events' parameters (a stimulus recording), the exploration builders' arguments, then the network's layers and transform arguments (:meth:`Network.declared_references`).
+        """Every ``used:`` reference this experiment reads from outside itself, in the order a plan records them: the sourced parameters of the dynamics and of each coupling, the events' parameters (a stimulus recording), the exploration builders' arguments, the arguments of every producer it declares, an observer's constants among them (:func:`tvbo.data.param_io.producer_references`), then the network's layers and transform arguments (:meth:`Network.declared_references`).
 
         A local reference (:func:`tvbo.data.dataref.is_local_ref`) names one of this experiment's own outputs and is left out. A plan's ordering edges, the per-subject fan-out, a kit's bundle and the cohorts a kit carries are all read from this one list, so a reference counts in each wherever it is declared.
         """
         from tvbo.data.dataref import is_local_ref
+        from tvbo.data.param_io import producer_references
 
         net = getattr(self, "network", None)
         holders = [getattr(getattr(self, "dynamics", None), "parameters", None)]
@@ -1466,6 +1469,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             for _, item in keyed_items(held, "parameters")
             if getattr(item, "used", None) is not None
         ]
+        refs += producer_references(self)
         refs += net.declared_references() if isinstance(net, Network) else []
         return [ref for ref in refs if not is_local_ref(ref)]
 

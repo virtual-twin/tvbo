@@ -9,7 +9,7 @@ A parameter says where its value comes from in exactly one of three ways, and th
     WHERE existing bytes live — a curated entity's IRI, or a path resolved against the declaring spec's directory. ``measure`` selects one array out of a source holding several; its address space is the source's own (an HDF5/Zarr dataset key, a Network's per-node measure name).
 
 ``producer:``
-    HOW derived bytes are made — a :class:`FunctionCall` naming the callable, its arguments, and (via ``output``) which entry to take from a callable returning several named arrays.
+    HOW derived bytes are made — a :class:`FunctionCall` naming the callable, its arguments, and (via ``output``) which entry to take from a callable returning several named arrays. Without ``output``, a producer that declares ``outputs`` is a bundle (:func:`bundle_outputs`), each of whose arrays an observer binds under its own name.
 
 Sourced and produced values are **never materialised into ``Parameter.value``**, so loading a spec stays cheap no matter how large the array is, and a dumper never sees bytes it would try to serialise back into YAML. Resolution happens here, on demand, and the result is cached in this module — the ``Parameter`` object is never mutated.
 
@@ -241,12 +241,22 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
 
 
 def _hashable(value: Any) -> Any:
-    """A stable, hashable rendering of an argument value (lists/dicts included)."""
+    """A stable, hashable rendering of an argument value (lists/dicts included).
+
+    A labelled array is keyed by its dimensions and its coordinates as well as its values: the same numbers on other labels pair with other nodes, so they are another input. Text held as Python objects, as a container's labels often are, is keyed by the text rather than by the objects' addresses.
+    """
+    import xarray as xr
+
     if isinstance(value, dict):
         return tuple(sorted((k, _hashable(v)) for k, v in value.items()))
     if isinstance(value, (list, tuple)):
         return tuple(_hashable(v) for v in value)
+    if isinstance(value, xr.DataArray):
+        coords = {str(name): coord.values for name, coord in value.coords.items()}
+        return ("labelled", value.dims, _hashable(value.values), _hashable(coords))
     if isinstance(value, np.ndarray):
+        if value.dtype.kind == "O":
+            value = value.astype(str)
         # dtype and shape too: `tobytes()` alone collides (2,3) with (3,2), and float32 with the int32 of the same bytes, onto one key and one artifact path.
         return (value.dtype.str, value.shape, value.tobytes())
     return value
@@ -345,7 +355,7 @@ def _reference_context(context: Any, ref: Any, where: str) -> dict:
 def _argument_values(producer: Any, context: Any, where: str) -> dict:
     """The producer's arguments as plain kwargs, entity references resolved.
 
-    A `network.*` value is resolved against the context, as a pipeline step's is. A `used:` reference is read as an analysis's argument is (:func:`tvbo.data.analysis_io.argument_value`), against what :func:`_reference_context` gives, and handed over as its plain array, as a `network.*` array is. Everything else is a literal. An argument whose reference cannot be read is refused, naming the producer and the argument.
+    A `network.*` value is resolved against the context, as a pipeline step's is. A `used:` reference is read as an analysis's argument is (:func:`tvbo.data.analysis_io.argument_value`), against what :func:`_reference_context` gives, and handed over as the labelled array it resolves to, so the producer pairs its entries with nodes by label; its labels key the call with its values (:func:`_hashable`). Everything else is a literal. An argument whose reference cannot be read is refused, naming the producer and the argument.
     """
     from tvbo.data.analysis_io import argument_value
     from tvbo.utils import keyed_items
@@ -355,7 +365,7 @@ def _argument_values(producer: Any, context: Any, where: str) -> dict:
         used = _slot(a, "used")
         if used is not None:
             named = f"{where}, argument {str(k)!r}"
-            out[str(k)] = np.asarray(argument_value(a, named, **_reference_context(context, used, named)))
+            out[str(k)] = argument_value(a, named, **_reference_context(context, used, named))
             continue
         value = _slot(a, "value", a)
         out[str(k)] = _resolve_ref(value, context, where) if is_reference(value) else value
@@ -510,14 +520,37 @@ def materialise(
         return path, _checked_key(path, str(measure), name)
 
     producer = _slot(param, "producer")
+    path = _produced_artifact(producer, name, context, cache_dir)
+    return path, _checked_key(path, _slot(producer, "output", None), name)
+
+
+def bundle_outputs(param: Any) -> list[str]:
+    """The names a bundle parameter binds its producer's arrays under: the ``outputs`` its producer declares, or takes from the curated function its ``iri`` names, when it selects no single ``output``; empty for any other parameter.
+
+    A bundle is one call whose named arrays an observer reads each under its own name, so a function that builds a dozen mesh operators at once is declared once and overridden in one place.
+    """
+    producer = _slot(param, "producer")
+    if producer is None or _slot(producer, "output") is not None:
+        return []
+    return [str(name) for name in _slot(producer, "outputs") or ()]
+
+
+def materialise_bundle(param: Any, context: Any = None, cache_dir: Path | None = None) -> dict[str, tuple]:
+    """Each output of the bundle parameter *param* (:func:`bundle_outputs`) as the ``(file, key)`` :func:`materialise` gives a single array, all from the one artifact its producer's call is cached in. An output the producer did not return is refused, naming the parameter."""
+    name = _declared_name(param)
+    path = _produced_artifact(_slot(param, "producer"), name, context, cache_dir)
+    return {output: (path, _checked_key(path, output, name)) for output in bundle_outputs(param)}
+
+
+def _produced_artifact(producer: Any, name: str, context: Any, cache_dir: Path | None) -> Path:
+    """The content-addressed artifact the call *producer* declares is cached in (:func:`_artifact_path`), written by running it when absent."""
     module, fname, kwargs = _producer_spec(producer, name, context)
     key = _producer_key(module, fname, kwargs)
     path = _artifact_path(module, fname, key, cache_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
-
     if not path.exists():
         _write_bundle(path, _producer_bundle(producer, name, context, (module, fname, kwargs), key))
-    return path, _checked_key(path, _slot(producer, "output", None), name)
+    return path
 
 
 def _checked_key(path: Path, key: str | None, name: str) -> str:
@@ -584,6 +617,18 @@ def _declared_producers(root: Any, _seen: set | None = None):
         children = list(getattr(root, "__dict__", {}).values())
     for child in children:
         yield from _declared_producers(child, _seen)
+
+
+def producer_references(root: Any) -> list:
+    """Every ``used:`` reference an argument of a producer under *root* reads, wherever the producer is declared (:func:`_declared_producers`), in the order they are found."""
+    from tvbo.utils import keyed_items
+
+    return [
+        _slot(argument, "used")
+        for owner in _declared_producers(root)
+        for _, argument in keyed_items(_slot(_slot(owner, "producer"), "arguments"), "arguments")
+        if _slot(argument, "used") is not None
+    ]
 
 
 def live_artifacts(root: Any, cache_dir: Path | None = None) -> tuple[set, set]:

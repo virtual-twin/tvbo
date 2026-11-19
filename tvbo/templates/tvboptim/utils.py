@@ -2296,6 +2296,21 @@ def _resolve_propagation_gate(
     return {"direction": direction, "mask": mask, "min_dispersion": float(to_numeric(get_attr(gate, "min_dispersion")))}
 
 
+def _refuse_bundle_collisions(name: Any, bundles: dict[str, list[str]], declared: dict[str, list[str]]) -> None:
+    """Refuse a bundle output named like another symbol of observation *name*.
+
+    *bundles* maps each bundle parameter to the outputs it binds (:func:`tvbo.data.param_io.bundle_outputs`), and *declared* each kind of symbol the observer declares, a ``state variable`` or a ``parameter``, to its names. An output that one of those, or another output, also names would leave the rendered update reading whichever binding came last, so it is refused, naming the bundle and the symbol.
+    """
+    owners = {symbol: f"{kind} {symbol!r}" for kind, names in declared.items() for symbol in names}
+    for bundle, outputs in bundles.items():
+        for output in outputs:
+            if output in owners:
+                raise ValueError(
+                    f"Observation {name!r}: parameter {bundle!r} binds its producer's output {output!r}, the name of the observer's {owners[output]}; one name binds one symbol."
+                )
+            owners[output] = f"output {output!r} of parameter {bundle!r}"
+
+
 def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
@@ -2303,7 +2318,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     An observation may instead opt a post-scan ``pipeline`` into streaming via ``reduce: streaming`` (currently the HRF-Volterra BOLD pipeline), in which case the reducer is lifted by :func:`_resolve_bold_stream` (tagged ``kind: 'convolution'``).
     This resolves that Dynamics into clean context for the reduction partial: the source state variable read, and for each observer state its ``init`` value, its discrete update RHS (``equation.rhs`` with ``equation_type: recurrence``), and whether it is an *accumulator* — its update references its own symbol, so its commit is gated on the first step while its memory input is still unset (a memory state, which does not reference itself, updates every step). The readout is the observer ``output`` (a derived variable's RHS, or a bare final state), and any user ``functions`` (e.g. ``wrap``) are surfaced for the printer. Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
 
-    Every RHS is parsed to a **sympy** expression against the observer's symbolic vocabulary (its states, its ``parameters``, the source, and the framework scalars ``dt``/``count``; user functions become undefined ``Function``s). An observer parameter is a named constant exactly as a model Dynamics' parameters are, scalar or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. That makes the analysis symbolic, not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression`` (which accepts sympy directly). Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
+    Every RHS is parsed to a **sympy** expression against the observer's symbolic vocabulary (its states, its ``parameters``, the source, and the framework scalars ``dt``/``count``; user functions become undefined ``Function``s). An observer parameter is a named constant exactly as a model Dynamics' parameters are, scalar or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. A parameter whose producer is a bundle (:func:`tvbo.data.param_io.bundle_outputs`) binds each of its outputs as a constant of that name instead, and a ``partition.over`` naming it stands for all of them. That makes the analysis symbolic, not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression`` (which accepts sympy directly). Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
 
     Backend array primitives (``take``, ``sum_axis``, ``clip``, ``matmul``, …) join that vocabulary as undefined ``Function``s the printer lowers later, exactly as ``parse_eq`` registers them — without it a name colliding with a SymPy builtin (``take`` is ``sympy.utilities.iterables.take``) is evaluated at parse time and blows up.
 
@@ -2355,19 +2370,35 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     param_map = get_attr(dyn, "parameters") or {}
     param_objs = dict(param_map.items()) if hasattr(param_map, "items") else {str(get_attr(p, "name")): p for p in param_map}
     param_names, param_values, param_shapes = get_param_info(param_map)
+    bundles = {n: outputs for n in param_names if (outputs := param_io.bundle_outputs(param_objs[n]))}
+    _refuse_bundle_collisions(
+        get_attr(obs, "name", None),
+        bundles,
+        {
+            "state variable": sv_names,
+            "derived variable": dv_names,
+            "derived parameter": dp_names,
+            "parameter": [n for n in param_names if n not in bundles],
+        },
+    )
 
-    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source. The spec dir grounds a relative source path exactly as bids_dir is grounded. Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
+    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source; a bundle binds each output its producer declares as a constant of that name, all read from the producer's one artifact. The spec dir grounds a relative source path exactly as bids_dir is grounded. Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
     src_file = get_attr(experiment, "_source_file", None) if experiment is not None else None
     src_dir = Path(src_file).parent if src_file else None
     parameters: dict[str, Any] = {}
     for n in param_names:
-        if n in param_values:
+        if n in bundles:
+            bound = param_io.materialise_bundle(param_objs[n], context=experiment) if experiment is not None else {}
+            for output in bundles[n]:
+                parameters[output] = {"lazy": (str(bound[output][0]), output) if bound else None, "shape": None}
+        elif n in param_values:
             parameters[n] = {"value": param_values[n], "shape": param_shapes.get(n)}
         elif experiment is None:
             parameters[n] = {"lazy": None, "shape": param_shapes.get(n)}  # deferred
         else:
             path, key = param_io.materialise(param_objs[n], source_dir=src_dir, context=experiment)
             parameters[n] = {"lazy": (str(path), key), "shape": param_shapes.get(n)}
+    param_names = list(parameters)  # the names the observer binds, a bundle's outputs in place of the bundle
     # One symbol cannot denote both a per-step state and a fixed constant: the update would read whichever the renderer bound last, silently.
     shadowed = sorted(set(param_names) & set(sv_names))
     if shadowed:
@@ -2659,7 +2690,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 f"is not an observer parameter ({sorted(parameters)}); it must be the produced "
                 "(n_groups, n) node-index table."
             )
-        over = [str(x) for x in as_list(get_attr(partition, "over"))]
+        over = [name for x in as_list(get_attr(partition, "over")) for name in bundles.get(str(x), [str(x)])]
         _missing = [p for p in over if p not in parameters]
         if _missing:
             raise ValueError(

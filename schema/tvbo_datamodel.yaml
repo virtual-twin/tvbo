@@ -50,7 +50,7 @@ slots:
         close_mappings:
             - prov:wasGeneratedBy
         description: >-
-            HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe's `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec's own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Mutually exclusive with `value:`/`source:`.
+            HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe's `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec's own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Without `output:`, a producer whose function declares `outputs` is a bundle: an observer binds each of those arrays as a constant of its own name. Mutually exclusive with `value:`/`source:`.
     time_unit:
         range: UnitEnum
         aliases:
@@ -2408,6 +2408,11 @@ classes:
             output:
                 description: "Name for this function's output (referenced by subsequent functions)"
                 range: string
+            outputs:
+                description: >-
+                    The names of the arrays a callable that returns several returns. A producer naming this function without `output:` is a bundle of them: an observer binds each as a constant of its own name, so a function that builds a dozen mesh operators in one call is declared once and overridden in one place.
+                range: string
+                multivalued: true
             # Transformation definition (equation OR callable)
             arguments:
                 description: >-
@@ -2500,6 +2505,11 @@ classes:
             output:
                 description: "Name for this step's output (referenced by subsequent functions)"
                 range: string
+            outputs:
+                description: >-
+                    The names of the arrays the invoked callable returns, as `Function.outputs` lists them; an invocation naming a curated function by `iri` takes them from that record. A producer that declares them and no `output:` is a bundle: an observer binds each array as a constant of its own name.
+                range: string
+                multivalued: true
             apply_on_dimension:
                 description: >-
                     Axis to apply the function over, one element at a time (generates a vmap in code). ``node`` applies per node, ``time`` per sample. Inside an observation pipeline the axes are the solve grid's and the ``DimensionType`` vocabulary names them; a study-level ``Analysis`` maps over the axes of the CONTAINERS it reads, which are declared by whatever produced them (``subject``, ``parcel``, ``n_modes``, ``variant``), so this is a free string rather than that closed enum.
@@ -2635,7 +2645,7 @@ classes:
                 range: string
                 multivalued: true
                 description: >-
-                  Operator parameters carrying a leading group axis, sliced per group under the vmap (the per-group meshes' fixed operators). Parameters not listed are shared.
+                  Operator parameters carrying a leading group axis, sliced per group under the vmap (the per-group meshes' fixed operators); a bundle parameter stands for every output it binds. Parameters not listed are shared.
             waves:
                 range: string
                 required: true
