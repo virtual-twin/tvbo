@@ -534,7 +534,7 @@ def _apply_axopts(ax, o):
     if o.get("hide_yaxis"):
         ax.spines[["left", "right"]].set_visible(False)   # the x axis stays; the axis rule then leaves y unplaced
         ax.tick_params(axis="y", which="both", left=False, right=False, labelleft=False, labelright=False)
-    _ticks = {_k: float(o[_v]) for _k, _v in (("labelsize", "tick_size"), ("length", "tick_length")) if o.get(_v)}
+    _ticks = {_k: float(o[_v]) for _k, _v in (("labelsize", "tick_size"), ("length", "tick_length")) if o.get(_v) is not None}   # a declared zero removes the marks
     if _ticks:
         ax.tick_params(**_ticks)          # a dense grid's cells cannot carry the figure's own tick geometry
     _apply_tick_format(ax, o)
