@@ -199,6 +199,20 @@ def test_a_declared_time_unit_scales_the_emitted_clock(tmp_path):
     assert "net.run(1500000.0 * ms)" in script
 
 
+def test_a_declared_initial_distribution_is_refused(tmp_path):
+    """Each cell opens at its `v0` parameter, else `EL`, which has no place for a draw, so a distribution declared on the excitatory cells' `v` is refused, naming it, rather than dropped."""
+    membrane = 'v: {equation: {rhs: "(gL * (EL - v) + iSyn) / C"}, initial_value: -70.0, unit: mV, record: true'
+    path = tmp_path / "drawn.yaml"
+    path.write_text(
+        DECO_COLUMN_YAML.replace(membrane, membrane + ", distribution: {name: Uniform, domain: {lo: -70.0, hi: -50.0}}", 1)
+    )
+
+    with pytest.raises(
+        NotImplementedError, match="the brian2 backend opens each cell at its v0 parameter, else EL, .* declared on 'v'"
+    ):
+        SimulationExperiment.from_file(str(path)).render("brian2")
+
+
 RAMP_EXPLORATION = """
 explorations:
   EI_ramp:

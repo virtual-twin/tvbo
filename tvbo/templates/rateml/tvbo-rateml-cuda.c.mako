@@ -16,16 +16,18 @@ Output:
 - CUDA kernel for parallel brain network simulation
 </%doc>
 <%
+from tvbo.adapters.base import baked_opening, declared_node_count, run_seed
 from tvbo.templates.base.utils import get_coupling_terms, get_func_name
 from tvbo.templates.rateml.utils import cuda_code, get_boundary_str
-from tvbo.utils import initial_value
 
 # Model name: the one sanitized identifier.
 model_name = get_func_name(model)
 
-# State variables
+# State variables, every node opening on the run's draw.
 state_vars = list(model.state_variables.items())
 n_states = len(state_vars)
+_experiment = context.get('experiment', None)
+opening = baked_opening(model, run_seed(_experiment), "rateml-cuda", declared_node_count(getattr(_experiment, 'network', None)))
 
 # Parameters (constants)
 params = list(model.parameters.items()) if model.parameters else []
@@ -132,7 +134,7 @@ extern "C" __global__ void ${model_name}(
 
     // State variable declarations
     % for sv_name, sv in state_vars:
-    float ${sv_name} = ${initial_value(sv)}f;
+    float ${sv_name} = ${opening[sv_name]}f;
     % endfor
 
     // Derivative declarations
@@ -154,7 +156,7 @@ extern "C" __global__ void ${model_name}(
     float dij = 0.0f;
     float wij = 0.0f;
 
-    // Seed the ring from the declared initial values — the time loop reads it back at t == i_step.
+    // Seed the ring from the opening — the time loop reads it back at t == i_step.
     for (unsigned int i_node = 0; i_node < n_node; i_node++)
     {
         tavg(i_node) = 0.0f;

@@ -111,7 +111,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="MontbrioPazoRoxin_inst" type="MontbrioPazoRoxin" Delta="1.0" I="0.0" J="15.0" cr="1.0" cv="0.0" eta="-5.0" tau="1.0" c_glob0="0" c_glob1="0" V_0="0.1" r_0="0.1"/>
+  <Component id="MontbrioPazoRoxin_inst" type="MontbrioPazoRoxin" Delta="1.0" I="0.0" J="15.0" cr="1.0" cv="0.0" eta="-5.0" tau="1.0" c_glob0="0" c_glob1="0" V_0="0.1" r_0="1.2739233746429086"/>
 
 
 

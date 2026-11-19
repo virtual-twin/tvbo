@@ -18,7 +18,7 @@ Anything outside this set (non-Poisson spike sources, constant-current inputs, a
 
 from __future__ import annotations
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import BaseAdapter, dynamics_library, refuse_state_distribution
 from tvbo.adapters.smallscale.lowering import (
     EVENT_SOURCE_TYPES,
     POISSON_INPUT_TYPES,
@@ -502,9 +502,15 @@ class Brian2Adapter(BaseAdapter):
     def prepare_context(self):
         """Reduce the experiment to a backend-neutral Brian2 build description.
 
-        Returns a dict the template renders and ``_instantiate`` builds: ``populations`` (per cell pop: eqs data, namespace, poisson, size) and their ``sizes``, ``hubs`` (summed-gate accumulators), ``synapses`` and ``probes`` (sparse projections and their observation probes), the clock (``dt_ms``, the settle ``transient_ms``, the ``measured_ms`` window after it and their sum ``total_ms``), and the validated continuation ``ramp`` or None.
+        Returns a dict the template renders and ``_instantiate`` builds: ``populations`` (per cell pop: eqs data, namespace, poisson, size) and their ``sizes``, ``hubs`` (summed-gate accumulators), ``synapses`` and ``probes`` (sparse projections and their observation probes), the clock (``dt_ms``, the settle ``transient_ms``, the ``measured_ms`` window after it and their sum ``total_ms``), and the validated continuation ``ramp`` or None. A declared initial-state distribution is refused, since each cell opens at its ``v0`` parameter, else ``EL``, and each synapse at its initial value.
         """
         exp = self.experiment
+        for dynamics in dynamics_library(exp).values():
+            refuse_state_distribution(
+                dynamics.state_variables or {},
+                "brian2",
+                "opens each cell at its v0 parameter, else EL, and each synapse at its initial value",
+            )
         network = exp.network
         dyn_lib = getattr(network, "dynamics", None) or {}
         nodes = getattr(network, "nodes", None) or []

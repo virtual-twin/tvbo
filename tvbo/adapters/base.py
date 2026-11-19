@@ -320,6 +320,32 @@ def run_seed(experiment) -> int:
     return int(getattr(getattr(experiment, "execution", None), "random_seed", None) or 0)
 
 
+def refuse_state_distribution(state_variables, backend: str, reason: str) -> None:
+    """Raise where any of *state_variables*, a mapping by name, declares an initial-state distribution the *backend* has no place for, saying why in *reason*."""
+    drawn = [str(name) for name, sv in state_variables.items() if getattr(sv, "distribution", None)]
+    if drawn:
+        raise NotImplementedError(
+            f"the {backend} backend {reason}, so the initial-state distribution declared on {', '.join(map(repr, drawn))} cannot reach the run. "
+            "Run the experiment on a backend that draws it for each node (tvb, jax, tvboptim), or declare an initial value instead."
+        )
+
+
+def baked_opening(model, seed: int, backend: str, instances: int = 1) -> dict[str, float]:
+    """The state *model* opens on, one number per state variable, for a backend that writes the opening into what it renders: the draw `get_initial_values` makes on *seed*, the run's seed (`run_seed`), as tvb and jax open, each declared distribution drawn and every other variable at its initial value.
+
+    The render gives each of the *instances* it builds of *model* that one opening, so a distribution on a model built more than once, which tvb and jax draw apart for each node, is refused (`refuse_state_distribution`).
+    """
+    state_variables = model.state_variables or {}
+    if instances > 1:
+        refuse_state_distribution(
+            state_variables,
+            backend,
+            f"writes one opening per state variable, shared by all {instances} instances of the model",
+        )
+    values = np.asarray(model.get_initial_values(seed=seed), dtype=float).ravel()
+    return dict(zip(state_variables, map(float, values), strict=True))
+
+
 def start_draw(start: ParameterStart, random_seed: int) -> tuple[str, dict[str, Any]]:
     """The family a drawn parameter start draws from and its resolved distribution (`resolve_distribution`), on every backend that draws one.
 

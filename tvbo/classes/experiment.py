@@ -871,6 +871,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         str YAML string or filepath if written to file.
         """
         if format.lower() == "pyrates":
+            from tvbo.adapters.base import run_seed
             from tvbo.classes.dynamics import Dynamics as DynamicsClass
             from tvbo.codegen.pyrates import to_pyrates_yaml_string
 
@@ -904,12 +905,14 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     dynamics=dynamics_dict,
                     network=network,
                     filepath=filepath,
+                    seed=run_seed(self),
                 )
             else:
                 return to_pyrates_yaml_string(
                     dynamics=dynamics,
                     network=network,
                     filepath=filepath,
+                    seed=run_seed(self),
                 )
         else:
             from pathlib import Path as _Path

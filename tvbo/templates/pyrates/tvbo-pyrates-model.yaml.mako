@@ -14,10 +14,10 @@
 ## This template can be used standalone or included via <%namespace>.
 ##
 
-<%def name="render_operator(m, op_name=None, fortran=False)">
+<%def name="render_operator(m, op_name=None, fortran=False, seed=0, instances=1)">
 <%
     from tvbo.codegen.pyrates import operator_template
-    _op = operator_template(m, op_name, fortran=fortran)
+    _op = operator_template(m, op_name, fortran=fortran, seed=seed, instances=instances)
     _op_name, description = _op['op_name'], _op['description']
     equations, variables = _op['equations'], _op['variables']
 %>\

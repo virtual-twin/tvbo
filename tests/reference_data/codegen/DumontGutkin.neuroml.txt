@@ -147,7 +147,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="DumontGutkin_inst" type="DumontGutkin" Delta_e="1.0" Delta_i="1.0" Gamma="5.0" I_e="0.0" I_i="0.0" J_ee="0.0" J_ei="10.0" J_ie="0.0" J_ii="15.0" eta_e="-5.0" eta_i="-5.0" tau_e="10.0" tau_i="10.0" tau_s="1.0" c_glob="0" V_e_0="0.1" V_i_0="0.1" r_e_0="0.1" r_i_0="0.1" s_ee_0="0.1" s_ei_0="0.1" s_ie_0="0.1" s_ii_0="0.1"/>
+  <Component id="DumontGutkin_inst" type="DumontGutkin" Delta_e="1.0" Delta_i="1.0" Gamma="5.0" I_e="0.0" I_i="0.0" J_ee="0.0" J_ei="10.0" J_ie="0.0" J_ii="15.0" eta_e="-5.0" eta_i="-5.0" tau_e="10.0" tau_i="10.0" tau_s="1.0" c_glob="0" V_e_0="0.1" V_i_0="0.1" r_e_0="1.2739233746429086" r_i_0="1.7794775825562685" s_ee_0="0.1" s_ei_0="0.1" s_ie_0="0.1" s_ii_0="0.1"/>
 
 
 

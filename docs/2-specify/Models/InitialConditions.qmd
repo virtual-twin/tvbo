@@ -112,7 +112,7 @@ res = exp.run()
 Each trial draws an independent IC of shape `(n_states, n_nodes)` and runs the simulation in parallel via `jax.vmap`. Use `average: trials` on the exploration to reduce across trials.
 
 ::: {.callout-note}
-A plain `exp.run()` opens on one draw, keyed by the distribution's own `seed`, else `execution.random_seed`, on tvboptim, tvb, jax, NetworkDynamics.jl, DifferentialEquations.jl, ModelingToolkit.jl, python and gillespie. tvboptim draws again for each trial when an `Exploration` requests `n_trials > 1`. PyRates, NeuroML/LEMS, the PDE backend, the CUDA kernel and Brian2 still open on `initial_value`.
+A plain `exp.run()` opens on one draw, keyed by the distribution's own `seed`, else `execution.random_seed`, on tvboptim, tvb, jax, NetworkDynamics.jl, DifferentialEquations.jl, ModelingToolkit.jl, python and gillespie. tvboptim draws again for each trial when an `Exploration` requests `n_trials > 1`. PyRates, NeuroML/LEMS and the CUDA kernel write that draw into what they render, one number per state variable, so a model that more than one node, cell or connection runs is refused there when it declares a distribution, since tvb and jax would draw each node apart. Brian2, the standard NeuroML cell types (but `fitzHughNagumo1969Cell`, whose `V0` and `W0` carry the draw) and the PDE backend open each state where the type or the mesh says, and refuse a declared distribution, naming the state variable.
 :::
 
 ## Settling in-band {#settling-in-band}
