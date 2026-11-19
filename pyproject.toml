@@ -74,6 +74,9 @@ data = ["dipy>=1.10.0"]
 # Surface/volume PDE backend: skfem is the FEM engine, meshio the mesh IO, nibabel the GIFTI/FreeSurfer loader — all three imported unconditionally by tvbo-pde-fem.py.mako.
 pde = ["scikit-fem>=8.0.0", "meshio>=5.3.0", "nibabel>=5.0.0"]
 
+# The wave-detection operators of a triangulated mesh (tvbo.analysis.mesh); the floors are the versions whose API it is written against.
+mesh = ["libigl>=2.6.2", "potpourri3d>=1.4.0"]
+
 # Knowledge base features
 knowledge = [
     "goatools>=1.4.12",
@@ -149,7 +152,7 @@ zarr = ["zarr>=3"]
 lint = ["ruff>=0.16.1,<0.17"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,zarr,lint]"]
+all = ["tvbo[neuroml,neuron,data,pde,mesh,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,zarr,lint]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"
