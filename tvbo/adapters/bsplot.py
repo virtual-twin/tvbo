@@ -23,13 +23,17 @@ from tvbo.utils import as_list
 def open_container(path):
     """Open a result container with xarray — public API, the opener of the emitted plot script and of the adapter's own panels alike.
 
-    An empty path means the layer's container was not on disk when the script was generated. A panel declaring a ``placeholder`` catches this and draws the label; one that does not gets the reason, where xarray would open the empty path as the working directory and fail on a directory.
+    An empty path means the layer reads an experiment whose container was not on disk when the script was generated. A path that is not a file, such as the one an analysis writes before the analysis has run (:func:`_container_path` with ``planned``), is refused naming that path and the command that writes it; the script holds the path, so it reads the container once it is there. A panel declaring a ``placeholder`` catches either and draws the label; one that does not gets the reason, where xarray would open the empty path as the working directory and fail on a directory.
     """
     import xarray as xr
 
     if not path:
         raise FileNotFoundError(
             "this layer's result container was not found when the figure was generated. Run the study so the source is on disk, then re-render."
+        )
+    if not Path(path).is_file():
+        raise FileNotFoundError(
+            f"the result container {path} is not on disk. Run the analysis or experiment that writes it (`tvbo run <study> --analysis <name>` for an analysis), or stage the file at that path, then render the figure again."
         )
     return xr.open_dataset(path, engine="h5netcdf")
 
@@ -2274,12 +2278,12 @@ def _annotations(panel, base_dir=Path(".")) -> list:
             x = a.x if getattr(a, "x", None) is not None else 0.5
             y = a.y if getattr(a, "y", None) is not None else 0.95
         used = getattr(a, "used", None)
-        layer = _resolve_layer(_UsedOnly(used), "cartesian", base_dir) if used is not None else None
+        layer = _resolve_layer(_UsedOnly(used), "cartesian", base_dir, planned=True) if used is not None else None
         arrow = [float(v) for v in (getattr(a, "arrow", None) or [])] or None
         tail_used = getattr(a, "tail_used", None)
         tail = None
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
-            tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
+            tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir, planned=True)}
         text_kwargs = _resolve_colors({k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None})
         if getattr(a, "font_weight", None) is not None:
             text_kwargs["weight"] = _enum_value(a.font_weight)
@@ -2316,7 +2320,7 @@ def _significance(annotation, base_dir=Path(".")) -> dict | None:
         raise ValueError(
             f"annotation {annotation.text!r}: every `significance.levels` threshold lies strictly between 0 and 1, got {levels}."
         )
-    return {"layer": _resolve_layer(_UsedOnly(declared.used), "cartesian", base_dir), "levels": levels}
+    return {"layer": _resolve_layer(_UsedOnly(declared.used), "cartesian", base_dir, planned=True), "levels": levels}
 
 
 def significance_marks(p_value: float, levels=SIGNIFICANCE_LEVELS) -> str:
@@ -2430,20 +2434,20 @@ def reading_results(results_dir: Path | None):
 
 
 @functools.cache
-def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str:
+def _container_path(iri, base_dir: Path, results_dir: Path | None = None, *, planned: bool = False) -> str:
     """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``, or under *results_dir* when given, which stands in for the study's own results directory (the one :func:`reading_results` names while a figure reads a sample).
 
     One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. Both are found by :mod:`tvbo.data.dataref` — :func:`~tvbo.data.dataref.locate_exp_container` for a run, :func:`~tvbo.data.dataref.locate_analysis_container` for an analysis — the lookups every cross-experiment reader shares, so a figure cannot read a different container than a warm start or a report does.
 
     An IRI that names a study (``tvbo:exp/<study>/exp-N``) is resolved against that study's root rather than ``base_dir``, so a figure owned by a study-of-studies can read a member's run; the name is matched within the tree the referring study belongs to and an unmatched or ambiguous one raises.
 
-    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. Several runs of one experiment raise :class:`~tvbo.data.dataref.AmbiguousContainerError` instead, since drawing whichever sorts first is how a figure comes to show one run's experiments against another run's analyses.
+    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. With *planned*, an analysis whose container is not there returns the path the analysis writes instead (:func:`~tvbo.data.dataref.analysis_container_path`, under the results directory the lookup read), so a script generated before the analysis ran reads its container once it is written and a render rule names the file it waits for; an experiment returns ``""`` either way, since its container's name carries its run's entities, which the reference does not give. The drawing of a figure and its rule's inputs pass *planned*; a reader that asks whether the container exists (a caption's number, whether a figure joins a kit's default target, which author path a kit rewrites) does not. A panel without a placeholder gets a named error from :func:`open_container` at render time. Several runs of one experiment raise :class:`~tvbo.data.dataref.AmbiguousContainerError` instead, since drawing whichever sorts first is how a figure comes to show one run's experiments against another run's analyses.
     """
     if not iri:
         return ""
     from tvbo.adapters.bids import entity_value
+    from tvbo.data.dataref import analysis_container_path, iri_scope, locate_analysis_container, locate_exp_container
     from tvbo.data.dataref import experiment_id as _experiment_id
-    from tvbo.data.dataref import iri_scope, locate_analysis_container, locate_exp_container
     from tvbo.utils.study_layout import sibling_study_root, study_path
 
     for direct in (Path(base_dir) / str(iri), Path(str(iri))):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
@@ -2462,7 +2466,9 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str
     try:
         path = locate_exp_container(results, eid) if eid else locate_analysis_container(results, key)
     except FileNotFoundError:
-        return ""
+        if eid or not planned:
+            return ""
+        path = analysis_container_path(results, key)
     return str(Path(path).resolve())
 
 
@@ -2557,7 +2563,7 @@ def _refuse_by_label(used) -> None:
 
 
 def _mesh_container(ref: dict, base_dir) -> str:
-    """The result container a surface's ``used`` binding names, found by the lookup a layer's ``used`` takes.
+    """The result container a surface's ``used`` binding names, found by the lookup a layer's ``used`` takes, or the path its analysis writes while that analysis has not run (:func:`_container_path` with ``planned``).
 
     A mesh is the container's ``vertices`` and ``faces`` together, so the binding says only where the result is: an ``output``, ``sel`` or ``transform`` on it would be accepted and then ignored, and is refused instead, as ``reconcile: by_label`` is on every figure binding (:func:`_refuse_by_label`).
     """
@@ -2568,15 +2574,17 @@ def _mesh_container(ref: dict, base_dir) -> str:
         raise ValueError(
             f"surface panel: the mesh's `used:` names where its result is and nothing else, but states {', '.join(stated)}."
         )
-    return _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get())
+    return _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get(), planned=True)
 
 
-def _resolve_layer(layer, panel_kind, base_dir, animation=None):
+def _resolve_layer(layer, panel_kind, base_dir, animation=None, *, planned=False):
     """Resolve one ``Layer`` into the flat dict the template/callables consume.
 
     Under an ``animation`` the layer also gets its frame role. Undeclared, the role is read off the data: a layer carrying the animated dimension is what moves, one that does not is the fixed backdrop. That inference is the whole reason a two-panel movie needs no per-layer annotation, and a `frame:` on the layer overrides it.
 
     Every layer and annotation binding a figure draws or prints passes through here, so a ``used`` declaring ``reconcile: by_label`` is refused here (:func:`_refuse_by_label`), before anything is opened.
+
+    *planned* is :func:`_container_path`'s: a binding the script draws passes it, so an analysis not yet run is read from the path it writes once it is there; the caption composer does not, since it leaves out the sentence of a placeholder panel whose container is absent.
     """
     used, enc = layer.used, getattr(layer, "encoding", None)
     _refuse_by_label(used)
@@ -2595,7 +2603,7 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     if _fans_by_color or _shades_points:
         kwargs.pop("color", None)  # a per-entry/per-point colour and a layer-wide one collide
     return {
-        "container": _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get()),
+        "container": _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get(), planned=planned),
         "output": used.output,
         "mark": mark,
         "x": getattr(enc, "x", None),
@@ -2806,7 +2814,9 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
     layers = (
         []
         if kind == "grid"
-        else [_resolve_layer(layer, kind, base_dir, animation) for layer in (getattr(panel, "layers", None) or [])]
+        else [
+            _resolve_layer(layer, kind, base_dir, animation, planned=True) for layer in (getattr(panel, "layers", None) or [])
+        ]
     )
     # A callable-drawn kind gets the whole opts dict; grammar panels read the axis subset.
     ctx = (

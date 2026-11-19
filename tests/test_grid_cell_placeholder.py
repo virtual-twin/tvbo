@@ -1,6 +1,6 @@
 """A grid's `placeholder` stands in for the cells whose data is missing, and only for them.
 
-A grid's own axes only frames its cells, so a placeholder drawn there lies under every cell, the ones drawn from data included. Each cell is drawn through the guard a mosaic panel is drawn through instead: a cell whose result container is missing shows the grid's label on a bare frame, and the others draw their data. Without a placeholder a missing container is an error worded the same for every kind, that the container was not on disk when the figure was generated, where a built-in kind opened the empty path as the working directory and failed with ``IsADirectoryError``.
+A grid's own axes only frames its cells, so a placeholder drawn there lies under every cell, the ones drawn from data included. Each cell is drawn through the guard a mosaic panel is drawn through instead: a cell whose result container is missing shows the grid's label on a bare frame, and the others draw their data. Without a placeholder a missing container is an error worded the same for every kind, naming the analysis's container that is not on disk, where a built-in kind opened the empty path as the working directory and failed with ``IsADirectoryError``.
 
 Self-contained: synthetic containers in ``tmp_path``, rendered under Agg with the surface backend's draw stubbed out.
 """
@@ -95,7 +95,7 @@ def test_a_grid_whose_cells_all_have_data_shows_no_placeholder(study):
 
 
 def test_a_missing_cell_container_without_a_placeholder_says_it_was_not_found(study):
-    with pytest.raises(FileNotFoundError, match="not found when the figure was generated"):
+    with pytest.raises(FileNotFoundError, match="ana-absent_result.h5 is not on disk"):
         _grid(study, "surface", ["values", "absent"], **MESH)
 
 
