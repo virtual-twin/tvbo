@@ -150,9 +150,10 @@ def test_a_node_s_declared_state_is_what_the_first_delayed_coupling_reads(backen
 
 @pytest.mark.backend_tvb
 def test_tvb_and_tvboptim_agree_over_the_first_max_delay_window():
-    """Both backends open from the same declared state, so they integrate the same numbers sample for sample, the first 4 ms included."""
+    """Both backends open from the same declared state, so they integrate the same numbers sample for sample on the same clock, the first 4 ms included."""
     spec = _declared_per_node()
     tvb, tvboptim = _trace(spec, "tvb"), _trace(spec, "tvboptim")
+    np.testing.assert_allclose(tvboptim["time"].values, tvb["time"].values)
     np.testing.assert_allclose(tvboptim.values, tvb.values, rtol=1e-8, atol=1e-8)
 
 

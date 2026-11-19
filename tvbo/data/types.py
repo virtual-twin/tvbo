@@ -3090,91 +3090,68 @@ class ExperimentResult:
         )
 
     @classmethod
-    def from_tvb(cls, simulator, result=None, transient_time=0.0):
+    def from_tvb(cls, simulator, result=None, transient_time=0.0, start_step=None):
         """Create an ExperimentResult from a TVB simulator and its run output.
 
         Wraps TVB simulation output into the standard TVBO result structure:
 
         - ``result.integration`` — primary monitor as SimulationResult (xr.DataArray)
-        - ``result.integration.observations['MonitorName']`` — one TimeSeries per
-          additional monitor, keyed by the TVB monitor class name
+        - ``result.integration.observations['MonitorName']`` — one SimulationResult per additional monitor, keyed by the TVB monitor class name
+
+        Every monitor is reported as the run path reports it (`tvb_monitor_results`): on the measurement clock, with its settle on ``.transient``.
 
         Parameters
         ----------
         simulator : tvb.simulator.simulator.Simulator
             A configured TVB simulator.
         result : list of (time_array, data_array) tuples, optional
-            Output of ``simulator.run()``. If *None*, the simulator is
-            run using its ``simulation_length``.
+            Output of ``simulator.run()``. If *None*, the simulator is run using its ``simulation_length``.
         transient_time : float
-            Length of the leading settle inside the run, in the simulator's time unit. TVB
-            integrates it as part of one simulation; it is marked here so the result cuts it at
-            t=0 exactly as every other backend does.
+            Length of the leading settle inside the run, in the simulator's time unit. TVB integrates it as part of one simulation; it is marked here so the result cuts it at t=0 exactly as every other backend does.
+        start_step : int, optional
+            The simulator's ``current_step`` before the run that produced *result*. TVB stamps the sample of step k at ``k * dt``, and a configure on an initial history of H rows has already counted H - 1 steps, so the run opens at ``start_step * dt``. Read from the simulator when *result* is *None*; required with *result*.
 
         Returns:
         -------
         ExperimentResult
         """
         if result is None:
+            start_step = simulator.current_step
             result = simulator.run()
-
-        voi = list(simulator.model.variables_of_interest)
-        region_labels = list(simulator.connectivity.region_labels)
-        base_labels = {"State Variable": voi, "Region": region_labels}
-
-        primary_ts = None
-        primary_tv = None
-        primary_xv = None
-        observations = {}
-
-        for monitor, (tv, xv) in zip(simulator.monitors, result, strict=True):
-            mon_labels = deepcopy(base_labels)
-            if hasattr(monitor, "sensors") and monitor.sensors is not None:
-                mon_labels["Region"] = list(monitor.sensors.labels)
-
-            mon_name = type(monitor).__name__
-
-            ts = TimeSeries(
-                data=xv,
-                time=tv,
-                labels_dimensions=mon_labels,
-                title=mon_name,
-                sample_period=float(monitor.period),
+        elif start_step is None:
+            raise ValueError(
+                "ExperimentResult.from_tvb needs `start_step`, the simulator's `current_step` before the run that produced `result`: TVB stamps each sample by its step count, which an initial history advances before the first step, so the result's own time axis does not say where the run opened."
             )
-
-            if primary_ts is None:
-                primary_ts = ts
-                primary_tv = tv
-                primary_xv = xv
-            else:
-                observations[mon_name] = ts
-
-        # Build xr.DataArray from primary monitor TVB shape: (time, state_variables, nodes, modes) — keep mode dim
-        data_np = np.asarray(primary_xv)
-        dims = ["time", "variable", "node", "mode"][: data_np.ndim]
-        coords = {
-            "time": np.asarray(primary_tv),
-            "variable": voi,
-            "node": region_labels,
-        }
-        if "mode" in dims:
-            coords["mode"] = list(range(data_np.shape[3]))
-        # The settle ends AT t=0 and carries non-positive timestamps, so a TVB run and a tvboptim run of the same recipe report the same window on the same clock. The slack is half a sample, read off the axis rather than from `sample_period` so it survives a series that does not declare one, and it absorbs the float drift between TVB's `step * dt` and a declared settle.
-        _tv = np.asarray(primary_tv)
-        _half_sample = 0.5 * (float(_tv[1] - _tv[0]) if _tv.size > 1 else 0.0)
-        _n_transient = int(np.count_nonzero(_tv <= float(transient_time) + _half_sample)) if transient_time else 0
-        if transient_time:
-            coords["time"] = _tv - float(transient_time)
-        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
-
-        sim_result = SimulationResult(
-            data=da,
-            observations=observations,
-            n_transient=_n_transient,
-        )
-        sim_result._timeseries = primary_ts
-
+        (_, sim_result), *others = tvb_monitor_results(simulator, result, float(transient_time), start_step)
+        sim_result.observations = Bunch({type(monitor).__name__: series for monitor, series in others})
         return cls(integration=sim_result)
+
+
+def tvb_monitor_results(simulator, result, settle: float, start_step: int) -> list:
+    """Each of *simulator*'s monitors paired with its part of *result*, a `SimulationResult` on the measurement clock, in the simulator's order.
+
+    TVB stamps a sample by the step that took it, ``k * dt``, and steps from ``current_step + 1``; *start_step* is the ``current_step`` the run started from, so the run opens at ``start_step * dt`` on TVB's axis. Every monitor is moved from there onto the measurement clock and keeps its samples at or before ``t = 0`` on ``.transient`` (`on_the_measurement_clock`), so no sample of a *settle* ms settle stays in ``.data``.
+
+    Each axis takes the simulator's own labels only where the monitor returned that many of them. A monitor is free to reduce an axis or to replace it: `GlobalAverage` collapses the regions to one signal, a projection monitor reports sensors rather than regions, and `AfferentCoupling` reports the coupled variables rather than all of them. An axis whose width does not match is numbered instead of named, which says what it is rather than mislabelling it.
+    """
+    from tvbo.adapters.base import on_the_measurement_clock
+
+    dt = float(simulator.integrator.dt)
+    labels = {
+        "variable": list(simulator.model.variables_of_interest),
+        "node": [str(r) for r in simulator.connectivity.region_labels],
+    }
+    recorded = []
+    for monitor, (times, values) in zip(simulator.monitors, result, strict=True):
+        data = np.asarray(values)
+        dims = ["time", "variable", "node", "mode"][: data.ndim]
+        coords = {"time": np.asarray(times)}
+        for axis, dim in enumerate(dims[1:], start=1):
+            declared, width = labels.get(dim), data.shape[axis]
+            coords[dim] = declared if declared is not None and len(declared) == width else list(range(width))
+        series, n_settle = on_the_measurement_clock(xr.DataArray(data, dims=dims, coords=coords), settle, dt, start_step * dt)
+        recorded.append((monitor, SimulationResult(data=series, n_transient=n_settle)))
+    return recorded
 
 
 # Time Series Classes

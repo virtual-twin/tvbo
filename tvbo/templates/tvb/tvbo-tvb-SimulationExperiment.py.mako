@@ -66,7 +66,6 @@ def define_simulation(connectivity, simulation_length=${settle['total_duration']
         %endif
         # random_state=self.random_state,
     )
-    simulator.configure()
     return simulator
 
 ######### Connectivity #########
@@ -124,11 +123,12 @@ if __name__ == "__main__":
     sc = load_connectivity(args.fweights, args.flengths)
     sim = define_simulation(sc, simulation_length=args.simulation_length)
     sim.configure()
+    start_step = sim.current_step
     raw = sim.run()
 
     # Wrap in ExperimentResult for consistent access and export
     from tvbo.data.types import ExperimentResult
-    results = ExperimentResult.from_tvb(sim, raw, transient_time=${settle['transient_time']})
+    results = ExperimentResult.from_tvb(sim, raw, transient_time=${settle['transient_time']}, start_step=start_step)
     print(results)
 
     # Export BIDS-compatible output

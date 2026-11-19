@@ -290,13 +290,13 @@ def require_observations(experiment, result, backend: str) -> None:
         refuse_observations(experiment, backend)
 
 
-def on_the_measurement_clock(data, settle: float, step: float):
+def on_the_measurement_clock(data, settle: float, step: float, opening: float = 0.0):
     """*data*, recorded on a run that opens at the start of its settle, moved onto the measurement clock, and how many of its samples are the settle.
 
-    The settle, and an initial state the run recorded, end at ``t = 0``, where the settle ends on every backend; the measured window opens one step later. Half a step of tolerance absorbs a time column's rounding.
+    The settle, and an initial state the run recorded, end at ``t = 0``, where the settle ends on every backend; the measured window opens one step later. *opening* is the time *data*'s own axis gives the run's opening: 0, except on an engine that counts steps it never integrated, as TVB counts the rows of a delay history. A sample counts as settle up to a quarter step after ``t = 0``: that absorbs a time column's rounding, and keeps out a sample stamped at the centre of its averaging window, whose first window inside the measured window is stamped half a step or more after ``t = 0``.
     """
-    shifted = data.assign_coords(time=data.time - settle)
-    return shifted, int((shifted.time <= step / 2).sum())
+    shifted = data.assign_coords(time=data.time - (opening + settle))
+    return shifted, int((shifted.time <= step / 4).sum())
 
 
 def edge_needs(

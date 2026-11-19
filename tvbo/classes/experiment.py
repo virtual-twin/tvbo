@@ -6,6 +6,7 @@
 A `SimulationExperiment` binds local [`Dynamics`](../classes/dynamics.qmd), a [`Network`](../classes/network.qmd), coupling, integration settings, monitors, and stimulation into a single, YAML-round-trippable object. It is the entry point for constructing an experiment (from YAML, a file, the platform, or a TVB simulator), configuring and resolving its coupling/delay metadata, rendering backend code, and running it on any of the supported backends (`tvb`, `tvboptim`, `jax`, `pde`, `cuda`, `python`).
 """
 
+import copy
 import logging
 import os
 import re
@@ -42,7 +43,14 @@ from tvbo.classes.noise import Integrator
 from tvbo.codegen import templater
 from tvbo.data import cohort as _cohort
 from tvbo.data.registry import record_name
-from tvbo.data.types import ExperimentResult, ExplorationResult, SimulationResult, SimulationState, TimeSeries
+from tvbo.data.types import (
+    ExperimentResult,
+    ExplorationResult,
+    SimulationResult,
+    SimulationState,
+    TimeSeries,
+    tvb_monitor_results,
+)
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.dialect import expand_iri
 from tvbo.log import ensure_configured
@@ -1619,37 +1627,20 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 raise ValueError(
                     f"Backend 'tvb' runs no exploration in-process, and {self.label!r} declares {', '.join(declared)}. Emit a workflow kit (`tvbo workflow snakemake|nextflow|slurm --backend tvb`), whose tasks run each cell as a TVB run of its own, or run the sweep on a backend that runs explorations (tvboptim)."
                 )
-            initial_conditions = self.collect_initial_conditions()
+            from tvbo.adapters.base import BaseAdapter
+
             simulator_ = self.execute(rendered_code=rendered_code)
-            simulator_.initial_conditions = initial_conditions.data
-            simulator_.configure()
+            # TVB stamps step k at k * dt, and `execute`'s one configure on a history of H rows counted H - 1 steps before the first.
+            start_step = simulator_.current_step
             simres = simulator_.run(**kwargs)
-
-            sv_names = list(simulator_.model.variables_of_interest)
-            region_labels = [str(r) for r in simulator_.connectivity.region_labels]
-
-            def _monitor_array(times, values):
-                """One monitor's output as a labelled ``(time, variable, node[, mode])`` array.
-
-                Each axis takes the simulator's own labels only where the monitor returned that many of them. A monitor is free to reduce an axis or to replace it: `GlobalAverage` collapses the regions to one signal, a projection monitor reports sensors rather than regions, and `AfferentCoupling` reports the coupled variables rather than all of them. Labelling those axes with the connectome's regions regardless is what raised on the first monitor that reduced one — so an axis whose width does not match is numbered instead of named, which says what it is rather than mislabelling it.
-                """
-                data_np = np.asarray(values)
-                dims = ["time", "variable", "node", "mode"][: data_np.ndim]
-                labels = {"variable": sv_names, "node": region_labels}
-                coords = {"time": np.asarray(times)}
-                for axis, dim in enumerate(dims[1:], start=1):
-                    declared = labels.get(dim)
-                    width = data_np.shape[axis]
-                    coords[dim] = declared if declared is not None and len(declared) == width else list(range(width))
-                return xr.DataArray(data=data_np, dims=dims, coords=coords)
+            settle = float(BaseAdapter.declared_integration(self.integration, "transient_time"))
+            monitors = tvb_monitor_results(simulator_, simres, settle, start_step)
 
             observations = {}
             sim_result = None
             declared = {name for name, _ in keyed_items(self.observations, "observations")}
-            for m, (tv, xv) in zip(simulator_.monitors, simres, strict=True):
+            for m, recorded in monitors:
                 m_name = m.title.split(" ")[0]
-                da = _monitor_array(tv, xv)
-                recorded = SimulationResult(data=da)
                 if m_name == "Raw":
                     sim_result = recorded
                     # The raw trajectory is the integration series, and it is also an observation whenever the experiment asked for one. Recorded only under `.data`, a declared `Raw` is missing from `observations` entirely, so a caller asking each backend by name whether it emitted what was declared is told this one did not — while the template's own default `Raw()`, which no experiment asked for, stays out of `observations` as before.
@@ -1658,9 +1649,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 observations[m_name] = recorded
 
             if sim_result is None:
-                # No Raw monitor: the first one recorded stands as the integration series.
-                (tv, xv) = list(simres)[0]
-                sim_result = SimulationResult(data=_monitor_array(tv, xv))
+                # No Raw monitor: a copy of the first one recorded stands as the integration series.
+                sim_result = copy.copy(monitors[0][1])
 
             # A Bunch so tvb results carry dot-access (result.observations.BOLD_TVB) like the jax/tvboptim backends; assigned after construction, which bypasses SimulationResult's own normalization.
             sim_result.observations = Bunch(observations)
