@@ -27,7 +27,8 @@ model_name = get_func_name(model)
 state_vars = list(model.state_variables.items())
 n_states = len(state_vars)
 _experiment = context.get('experiment', None)
-opening = baked_opening(model, run_seed(_experiment), "rateml-cuda", declared_node_count(getattr(_experiment, 'network', None)))
+seed = run_seed(_experiment)
+opening = baked_opening(model, seed, "rateml-cuda", declared_node_count(getattr(_experiment, 'network', None)))
 
 # Parameters (constants)
 params = list(model.parameters.items()) if model.parameters else []
@@ -127,9 +128,9 @@ extern "C" __global__ void ${model_name}(
     % endfor
 
     % if noisepresent:
-    // Initialize random state for noise
+    // The run's seed, one subsequence per work item, skipped past the draws of every earlier launch (at most two per state per node per step).
     curandState crndst;
-    curand_init(id + (unsigned int) clock64(), 0, 0, &crndst);
+    curand_init(${seed}ULL, id, 2ULL * i_step * n_node * ${n_states}, &crndst);
     % endif
 
     // State variable declarations
