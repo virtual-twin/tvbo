@@ -219,7 +219,9 @@ if noise_cov_fold:
 # Network metadata
 n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
 _cs = getattr(network, 'conduction_speed', None)
-conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
+_cs_value = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
+# The speed as the emitted code spells it: Python prints an infinite one as `inf`, a name the emitted module does not define.
+conduction_speed = 'jnp.inf' if _cs_value == float('inf') else _cs_value
 
 # `transforms:` -> JAX, applied in create_network on the RAW weights, so the kit is self-contained.
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
@@ -4088,10 +4090,11 @@ def run_experiment(
     _SEED_PARAMS = seed_params
 
 % if use_sparse:
-    # A BCOO is the graph's own form; only a dense or scipy input is converted.
+    # A BCOO is the graph's own form; a dense array is converted, and SparseGraph keeps its nonzero entries.
     weights = weights if isinstance(weights, BCOO) else jnp.array(weights)
 % else:
-    weights = jnp.array(weights)
+    # This graph is dense, so a BCOO or scipy matrix is densified: the run path hands a BCOO for a sparse store when the network's delays vanish once bound, after this script was rendered with them.
+    weights = jnp.array(weights.todense() if hasattr(weights, "todense") else weights)
 % endif
     # ``quiet=True`` silences this call whatever the configured level; otherwise the tvbo logger level decides.
     _quiet = kwargs.pop("quiet", False)
