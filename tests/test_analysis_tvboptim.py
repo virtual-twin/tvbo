@@ -14,6 +14,7 @@ import pytest
 import xarray as xr
 
 from tvbo.data.analysis_io import RENDERERS, render_tvboptim
+from tvbo.datamodel.schema import Analysis
 
 
 class _Agg:
@@ -89,6 +90,16 @@ def test_aggregate_sum_and_none():
     np.testing.assert_allclose(total.values, [4.0])
     kept = render_tvboptim(_Analysis(rhs="a", apply_on_dimension="subject", aggregate=_Agg("mode", "none")), {"a": a})
     assert kept.dims == ("subject", "mode")
+
+
+def test_a_declared_analysis_aggregates_over_the_trial_axis():
+    """A trials exploration writes its repetitions along `trial`, so a declared `aggregate: {over: trial}` loads and averages that axis."""
+    analysis = Analysis(name="trial_mean", equation={"rhs": "x"}, aggregate={"over": "trial", "type": "mean"})
+    x = _da([[1.0, 2.0], [3.0, 6.0]], ["trial", "node"], {"node": ["A", "B"]})
+    out = render_tvboptim(analysis, {"x": x})
+    assert out.dims == ("node",)
+    np.testing.assert_allclose(out.values, [2.0, 4.0])
+    np.testing.assert_array_equal(out.coords["node"].values, ["A", "B"])
 
 
 def test_scalar_argument_is_not_treated_as_an_axis():

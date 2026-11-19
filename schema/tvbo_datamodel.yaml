@@ -478,7 +478,9 @@ enums:
             mode:
                 description: "Mode dimension (e.g., coupling modes)"
             sample:
-                description: "Sample/trial/realization dimension"
+                description: "Sample/realization dimension"
+            trial:
+                description: "Trial dimension: the repetitions of an `n_trials` ensemble, the axis an exploration writes its results along"
             batch:
                 description: "Batch dimension (for parallel processing)"
             frequency:
