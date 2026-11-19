@@ -39,7 +39,7 @@ dependencies = [
     "sympy>=1.13.0",
 
     # Visualization
-    "bsplot>=0.0.12",
+    "bsplot>=0.0.13",
     "networkx>=3.4.2",
     "pydot>=3.0.3",
 
