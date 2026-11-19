@@ -252,7 +252,6 @@ accelerator = str(exec_config.accelerator) if exec_config and exec_config.accele
 from tvbo.templates.tvboptim.utils import jax_platform as _jax_platform_of
 jax_platform = _jax_platform_of(accelerator)
 enable_x64 = precision == 'float64'
-random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 settle_seed = getattr(getattr(integration, 'noise', None), 'settle_seed', None)
 
 # experiment.observations minus the ones with their own path: `analysis` diagnostics and cross-trial `reduce: trials` reductions are not raw/network monitors.

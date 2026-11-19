@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import sympy as sp
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import BaseAdapter, run_seed
 from tvbo.parse.expression import parse_eq
 from tvbo.utils import initial_value
 
@@ -78,7 +78,7 @@ class GillespieAdapter(BaseAdapter):
                 "variable."
             )
         omega = float(omega)
-        seed = int(getattr(exe, "random_seed", 0) or 0)
+        seed = run_seed(exp)
 
         activity, sv_names, tau, birth_fn, slow_fns = self._compile(model)
         slow = [n for n in sv_names if n != activity]

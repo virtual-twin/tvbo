@@ -2941,11 +2941,13 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def collect_initial_conditions(self):
         """Build the initial-history `TimeSeries` for the simulation.
 
-        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes, n_modes)` spanning the delay window `[-max_delay, 0]`. A state variable that declares a `distribution` is sampled per node; every other one is seeded from its scalar `initial_value`. A node's own declared state (``nodes: [{state: {theta: {value: 0.8}}}]``) overrides either, through the reader the tvboptim backend uses.
+        Constructs a history buffer of shape `(horizon, n_state_vars, n_nodes, n_modes)` spanning the delay window `[-max_delay, 0]`. A state variable that declares a `distribution` is sampled per node from the seed `resolve_distribution` gives it, its own or the run's (`run_seed`); every other one is seeded from its scalar `initial_value`. A node's own declared state (``nodes: [{state: {theta: {value: 0.8}}}]``) overrides either, through the reader the tvboptim backend uses.
 
         Returns:
             A `TimeSeries` whose time axis is the history window and whose data is the seeded initial state.
         """
+        from tvbo.adapters.base import node_initial_states, run_seed
+
         history = []
         n_modes = getattr(self.dynamics, "number_of_modes", 1) or 1
         n_nodes = getattr(self.network, "number_of_nodes", None) or 1
@@ -2953,14 +2955,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         has_distributions = any(getattr(sv, "distribution", None) for sv in self.dynamics.state_variables.values())
 
         if has_distributions:
-            history.append(self.dynamics.get_initial_values(N=n_nodes))
+            history.append(self.dynamics.get_initial_values(N=n_nodes, seed=run_seed(self)))
         else:
             for sv in self.dynamics.state_variables.values():
                 history.append(np.repeat(initial_value(sv), n_nodes).astype(float))
 
         history = np.vstack(history)
-        from tvbo.adapters.base import node_initial_states
-
         history = node_initial_states(self.network, self.dynamics, history)
         history = np.repeat(history[:, :, None], repeats=n_modes, axis=2)
         # Compute horizon from max delay and dt

@@ -134,6 +134,8 @@ def _render_tvboptim(exp, **kw):
     kw.setdefault("all_couplings", adapter.resolve_couplings())
     # And so is the window it integrates: which part settles and which is measured, in time and in steps. See `_codegen_context`, which hands the same answer to the backends that share it.
     kw.setdefault("settle", adapter.get_integration_info())
+    # And the seed the run draws from (`run_seed`), which the template reads and never resolves itself.
+    kw.setdefault("random_seed", adapter.get_execution_info()["random_seed"])
     # Resolve network- and dataset-sourced observation pointers once, in Python, and hand the {obs_name: measure} mapping to the template (which only emits code). Both bind at run_experiment time via _bind_network_observations.
     measures = dict(exp.network_observation_measures)
     measures.update(exp.dataset_observation_targets)

@@ -1393,7 +1393,7 @@ class DynamicsRuntime(Catalogued, Copyable):
 
         return filename
 
-    def get_initial_values(self, default=0.1, random=False, N=1, **kwargs):
+    def get_initial_values(self, default=0.1, random=False, N=1, seed=0, **kwargs):
         """Build the initial state vector for a simulation.
 
         If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it (Gaussian or uniform over the finite domain bounds); otherwise each variable's `initial_value` (or `default`) is used.
@@ -1402,13 +1402,14 @@ class DynamicsRuntime(Catalogued, Copyable):
             default: Fallback value for variables without an initial value.
             random: Deprecated flag to sample from each variable's domain.
             N: Number of samples per state variable.
+            seed: The run's seed (`run_seed`). A distribution draws from its own `seed` where it declares one, else from this one (`resolve_distribution`), on a generator keyed also by the variable's position among the variables that declare a distribution, as tvboptim folds that position into its key, so two variables under one seed draw independently.
             **kwargs: Ignored extra arguments.
 
         Returns:
-            A NumPy array of initial values. When sampling from a distribution
-            (or `random=True`) the shape is `(n_state_variables, N)`; otherwise
-            it is 1-D with one entry per state variable.
+            A NumPy array of initial values. When sampling from a distribution (or `random=True`) the shape is `(n_state_variables, N)`; otherwise it is 1-D with one entry per state variable.
         """
+        from tvbo.templates.base.utils import resolve_distribution
+
         if random:
             import warnings
 
@@ -1421,9 +1422,12 @@ class DynamicsRuntime(Catalogued, Copyable):
         has_distributions = any(getattr(sv, "distribution", None) for sv in self.state_variables.values())
         if random or has_distributions:
             init = []
+            drawn = 0
             for sv in self.state_variables.values():
                 dist = getattr(sv, "distribution", None)
                 if dist:
+                    rng = np.random.default_rng((resolve_distribution(dist, seed)["seed"], drawn))
+                    drawn += 1
                     # Use distribution.domain, fall back to sv.domain
                     domain = getattr(dist, "domain", None) or getattr(sv, "domain", None)
                     # Guard against non-finite / missing bounds: a distribution without its own domain falls back to sv.domain, which may be a half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
@@ -1433,9 +1437,9 @@ class DynamicsRuntime(Catalogued, Copyable):
                     hi = float(_dhi) if (isinstance(_dhi, (int, float)) and np.isfinite(_dhi)) else 10.0
                     dist_name = str(getattr(dist, "name", "Uniform")).lower()
                     if dist_name in ("gaussian", "normal"):
-                        sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
+                        sv_init = rng.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
                     else:
-                        sv_init = np.random.uniform(lo, hi, size=N)
+                        sv_init = rng.uniform(lo, hi, size=N)
                 elif random:
                     # Legacy fallback: sample from the domain range. The domain may carry a one-sided clamp (e.g. [0, inf) for a firing rate), so guard against non-finite / inverted bounds — uniform(0, inf) would yield inf/NaN initial states.
                     dlo = getattr(sv.domain, "lo", None) if sv.domain else None

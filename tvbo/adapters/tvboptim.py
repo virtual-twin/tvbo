@@ -18,6 +18,7 @@ from tvbo.adapters.base import (
     refuse_observations,
     refuse_parameter_starts,
     require_edge_attributes,
+    run_seed,
 )
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.utils import keyed_items, network_couplings, noise_sigma, normalize_params
@@ -655,9 +656,7 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
 
     # One scan over (-settle, duration] on the measurement clock: the settle ends at t = 0 and `n_transient` cuts it off `.data`.
     simulate, config = prepare(het, solver, t0=-n_transient * dt, t1=window["duration"], dt=dt)
-    if seed is None:
-        seed = getattr(getattr(experiment, "execution", None), "random_seed", None)
-    _seed_group_noise(config, het, 0 if seed is None else seed)
+    _seed_group_noise(config, het, run_seed(experiment) if seed is None else seed)
     sol = simulate(config)
     da = _heterogeneous_solution_to_dataarray(sol, het, network)
     return ExperimentResult(

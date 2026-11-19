@@ -250,6 +250,11 @@ def refuse_second_definition(start: ParameterStart, experiment: Any) -> None:
         )
 
 
+def run_seed(experiment) -> int:
+    """The seed *experiment* runs on: its `execution.random_seed`, 0 where it declares none. A distribution with its own `seed` overrides it (`resolve_distribution`)."""
+    return int(getattr(getattr(experiment, "execution", None), "random_seed", None) or 0)
+
+
 def start_draw(start: ParameterStart, random_seed: int) -> tuple[str, dict[str, Any]]:
     """The family a drawn parameter start draws from and its resolved distribution (`resolve_distribution`), on every backend that draws one.
 
@@ -744,7 +749,7 @@ class BaseAdapter:
         execution = getattr(self.experiment, "execution", None)
         return {
             "find_fixpoint": bool(getattr(execution, "find_fixpoint", False)),
-            "random_seed": int(getattr(execution, "random_seed", None) or 0),
+            "random_seed": run_seed(self.experiment),
         }
 
     # ── Full context for templates ───────────────────────────────────────

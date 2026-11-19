@@ -131,11 +131,12 @@ def settle(experiment, namespace, network):
     import jax
     import jax.numpy as jnp
 
+    from tvbo.adapters.base import run_seed
+
     sim = namespace.run_simulation(network, run_main=False)
     state = sim.state
     if getattr(state, "noise", None) is not None:
-        seed = int(getattr(getattr(experiment, "execution", None), "random_seed", None) or 0)
-        state.noise.key = jax.random.key(jnp.asarray(seed, dtype=jnp.uint32))
+        state.noise.key = jax.random.key(jnp.asarray(run_seed(experiment), dtype=jnp.uint32))
     return sim.model_fn, state
 
 

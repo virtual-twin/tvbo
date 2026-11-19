@@ -33,10 +33,8 @@ else:
     model = context['model']
     _exp_functions = {}
 
-# A distribution's own seed overrides execution.random_seed, which defaults to 0.
-_exec_ctx = getattr(_experiment_ctx, 'execution', None)
-_rs = getattr(_exec_ctx, 'random_seed', None) if _exec_ctx is not None else None
-_random_seed = int(_rs) if _rs is not None else 0
+# The run's seed (`run_seed`), which a distribution's own seed overrides: the experiment render hands it, a model rendered alone runs on 0.
+_random_seed = context.get('random_seed', 0)
 
 # Collect user-defined functions from model.functions and experiment.functions
 # These are functions defined in YAML that need to be recognized by the code printer.
