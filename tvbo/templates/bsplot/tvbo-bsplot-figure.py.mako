@@ -543,6 +543,16 @@ def _apply_axopts(ax, o):
         ax.legend(**_leg)
 
 
+def _scatter_points(ds, da, x, y):
+    """Where a scatter's points sit: the *x* channel against the array's values, or, where *y* names a coordinate or dim of the array, one point per element at its *x* and *y* coordinates, as a heatmap places its cells.
+
+    Each coordinate is spread over the whole array before it is flattened, so two coordinates along different axes, the rows and columns of a heatmap, pair up element by element rather than position by position.
+    """
+    if y and (y in da.coords or y in da.dims):
+        return tuple(np.asarray(da[n].broadcast_like(da).values).ravel() for n in (x, y))
+    return _channel(ds, da, x, 0), np.asarray(da.values).squeeze()
+
+
 def _channel(ds, da, name, axis=0):
     """One 1-D channel of a panel, by NAME: a data_var, a value along a component coord (e.g. select ``E`` along a ``var=[E,x,u]`` dim), or the index if the name is a plain dim.
 
@@ -805,19 +815,19 @@ ${load_layer(L)}\
     if len(_x) == len(_y) and np.array_equal(np.asarray(_x), np.asarray(_y)):
         ax.set_box_aspect(1)   # a matrix over one index set (SC, FC, delays) is drawn square; a declared aspect is applied after and wins
 % elif L['mark'] == 'scatter':
-    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
+    _x, _y = _scatter_points(_ds, _da, ${repr(L['x'])}, ${repr(L['y'])})
 % if L['color']:
     if ${repr(not p['colorbar'])} and _fans(_da, ${repr(L['color'])}):   # an axis of the array with no colour bar to read it off: one cloud per entry, coloured as the line fan over it, so a moving dot matches its trace
         _dim, _labels, _colours = _fan_entries(_ds, _da, ${repr(L['color'])}, ${repr(L['cmap'])}, ${repr(bool(L.get('cmap_declared')))})
         for _i in range(len(_labels)):
             _pts = _da.isel({_dim: _i})
-            ax.scatter(_channel(_ds, _pts, ${repr(L['x'])}, 0), np.asarray(_pts.values).squeeze(), color=_colours[_i], **${repr(L['style'])})
+            ax.scatter(*_scatter_points(_ds, _pts, ${repr(L['x'])}, ${repr(L['y'])}), color=_colours[_i], **${repr(L['style'])})
     else:   # a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against
-        _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
+        _im = ax.scatter(_x, _y,
                          c=_channel(_ds, _da, ${repr(L['color'])}),
                          cmap=${repr(L['cmap'])}, **${repr(L['style'])})
 % else:
-    ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+    ax.scatter(_x, _y, **${repr(L['style'])})
 % endif
 % elif L['mark'] == 'bar':
 % if L['y'] and not L['x']:
