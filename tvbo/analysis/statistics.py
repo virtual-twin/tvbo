@@ -1,6 +1,6 @@
 """Statistics over stored, labelled arrays: the implementations behind the software-based curated functions.
 
-Each function here is named by a record in ``tvbo/database/functions/`` (``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
+Each function here is named by a record in ``tvbo/database/functions/`` (``SpreadBand``, ``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
 """
 
 from __future__ import annotations
@@ -12,6 +12,9 @@ GROUPINGS = ("equal_width", "equal_count")
 
 MIN_POINTS = 3
 """The fewest points a correlation is stated for; two points always correlate perfectly, so their r and p say nothing."""
+
+STATISTICS = ("mean_sd", "median_iqr")
+"""What a spread band draws: the mean with one standard deviation either side, or the median with the 25th and 75th percentiles."""
 
 METHODS = ("bh", "by")
 """The false-discovery procedures: Benjamini-Hochberg, and Benjamini-Yekutieli for tests of arbitrary dependence."""
@@ -70,6 +73,40 @@ def _along(value, dim: str, key: str):
 def _correlates(a: np.ndarray, b: np.ndarray) -> bool:
     """Whether a correlation of the paired *a* and *b* is defined: at least :data:`MIN_POINTS` points and neither side constant."""
     return a.size >= MIN_POINTS and np.ptp(a) > 0 and np.ptp(b) > 0
+
+
+def spread_band(values, dim: str, statistic: str, ddof=None) -> dict:
+    """The centre of *values* along *dim* and a band around it, the pair a ``band`` or ``errorbar`` layer draws.
+
+    ``mean_sd`` is the mean with the band from one standard deviation below it to one above, the squared deviations divided by ``n - ddof`` for the *n* values counted. *ddof* is required with it, since both forms are in use: 0 is the population form :func:`numpy.nanstd` computes by default, 1 the sample form of pandas and seaborn. ``median_iqr`` is the median with the band from the 25th to the 75th percentile, each read at rank ``p (n - 1)`` of the sorted values and interpolated linearly between its two neighbours, numpy's default ``method="linear"``; it refuses a *ddof*. NaN entries are left out, as :func:`numpy.nanmean`, :func:`numpy.nanstd`, :func:`numpy.nanmedian` and :func:`numpy.nanpercentile` leave them out, and a slice with no other entry gives NaN. A bare 1-D *values* runs along *dim*; a labelled one keeps every other dimension with its labels.
+
+    Returns:
+        ``center`` on the other dimensions of *values*, and ``band`` on them and a last dimension ``bound`` labelled ``lower`` and ``upper``, the order in which the ``band`` and ``errorbar`` marks read the two edges.
+    """
+    import warnings
+
+    import xarray as xr
+
+    if statistic not in STATISTICS:
+        raise ValueError(f"statistic must be one of {STATISTICS}, got {statistic!r}.")
+    if statistic == "mean_sd" and ddof is None:
+        raise ValueError(
+            "`mean_sd` needs `ddof`: 0 divides the squared deviations by n, as numpy does, and 1 by n - 1, as pandas and seaborn do."
+        )
+    if statistic == "median_iqr" and ddof is not None:
+        raise ValueError(f"`median_iqr` takes no `ddof`, got {ddof!r}; a percentile has no degrees of freedom.")
+    values = _along(values, dim, "values")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)  # a slice of nothing but NaN gives NaN, not a warning
+        if statistic == "mean_sd":
+            center = values.reduce(np.nanmean, dim)
+            sd = values.reduce(np.nanstd, dim, ddof=ddof)
+            edges = [center - sd, center + sd]
+        else:
+            center = values.reduce(np.nanmedian, dim)
+            edges = [values.reduce(np.nanpercentile, dim, q=q) for q in (25, 75)]
+    band = xr.concat(edges, dim="bound").assign_coords(bound=["lower", "upper"]).transpose(..., "bound")
+    return {"center": center, "band": band}
 
 
 def grouped_correlation(x, y, n_groups: int, dim: str, by=None, grouping: str = "equal_width") -> dict:
