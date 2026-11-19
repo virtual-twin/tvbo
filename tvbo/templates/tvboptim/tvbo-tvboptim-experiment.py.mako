@@ -464,6 +464,17 @@ for opt in optim_list:
         optimization_stages.append(stage_info)
 refuse_initial_value_on_parameter_start(optimization_stages, parameter_start_groups, _parameter_keypath)
 
+# A fitted conduction speed can step below the build speed, so the static history buffer is sized from the slowest speed its domain allows.
+_fitted_speeds = [fp for st in optimization_stages for fp in st['free_parameters'] if _parameter_keypath(free_parameter_ref(fp)) == 'graph.speed']
+for _fp in _fitted_speeds:
+    if not (_fp.get('lower_bound') or 0) > 0:
+        raise ValueError(
+            "free parameter 'network.conduction_speed' needs a domain with a positive `lo`: the history buffer is static and holds the longest delay, "
+            "the longest tract over the slowest speed the fit can reach, and without a positive lower bound there is none to size it from."
+        )
+_speed_floor = min((_fp['lower_bound'] for _fp in _fitted_speeds), default=conduction_speed)
+fitted_max_delay_arg = f"max_delay=float(jnp.max(distances)) / {min(conduction_speed, _speed_floor)!r} * (1.0 + 1e-4), " if _fitted_speeds else ""
+
 # For single-stage or default case, extract settings from first stage
 optimizer_name = optimization_stages[0]['algorithm'] if optimization_stages else 'adam'
 learning_rate = optimization_stages[0]['learning_rate'] if optimization_stages else 0.01
@@ -4114,7 +4125,7 @@ def run_experiment(
 
     % if use_length_graph:
     # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed.
-    network = create_network(weights, distances=distances, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, distances=distances, ${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % elif use_delay_graph:
     # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
     if delays is None:
@@ -4868,7 +4879,7 @@ def run_experiment(
 % else:
             # No depends_on: start from FRESH network (not modified by algorithms)
             % if use_length_graph:
-            opt_network = create_network(weights, distances=distances, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, distances=distances, ${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % elif use_delay_graph:
             opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % else:
