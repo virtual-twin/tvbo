@@ -19,7 +19,8 @@ from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   fan_entries as _fan_entries, open_container as _open_container,
                                   load_scalar as _load_scalar, registered as _registered,
                                   significance_marks as _significance_marks,
-                                  scale_colormap as _scale_cmap, heatmap_orientation as _orient)
+                                  scale_colormap as _scale_cmap, heatmap_orientation as _orient,
+                                  to_display as _display)
 from tvbo.data.dataref import match_output as _match_output, select_labeled as _select
 from tvbo.plot import axis_rule as _axis_rule, field as _field, palette as _palette
 
@@ -741,6 +742,9 @@ ${ind}    fig.set_layout_engine("tight")
 % endif
 % if L['ref_transform']:
     _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
+% endif
+% if L['display']:
+    _da = _display(_da, ${repr(L['display'])})   # the values the axes show; `sel` above read the stored ones
 % endif
 % if animation and L['frame'] not in ('static', 'cursor'):
     _da = _at(_da, ${repr(animation['over'])}, _pos, ${repr(L['frame'] == 'trail')})

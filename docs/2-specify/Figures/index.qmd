@@ -131,6 +131,15 @@ encoding: {x: KuramotoInertia.K, y: delta_omega}
 style: {color: "#1f77b4", opts: {linewidth: 1.3, linestyle: "--"}}
 ```
 
+**A channel shown at a factor: `encoding.display`.** A coupling a paper prints at 1000 times its simulated value can be printed so, and a time stored in ms read off the axis in seconds, without a transform and without touching the result. A `factor` states no unit: a panel that declares no label prints it before the quantity's name, and the unit an axis reads in is named by the label the panel declares. See [`Encoding`](../../datamodel/classes/Encoding.qmd):
+
+```yaml
+- encoding: {x: network.conduction_speed, y: KuramotoCoupling.a, display: {y: {factor: 1000}}}  # 1000 × KuramotoCoupling.a
+- encoding: {x: time, display: {x: {factor: 0.001}}}                                            # 0.001 × time, or the declared xlabel: "Time (s)"
+```
+
+A channel converts the coordinate it names or, where it names none, the layer's own values on the channel that draws them (y of a line, the colour of a heatmap), so a colour bar keying them prints the converted numbers. The conversion happens when the figure is drawn, after the layer's selection: **`sel` selects in the stored values**, as `Animation.window` does, so `sel: {KuramotoCoupling.a: 1.0e-5}` picks the simulated value 1e-5 on an axis that prints it as 0.01. Every number the panel declares about the converted axis (`xlim`, `xticks`, `rules`, `regions`, an annotation in data coordinates, a colour bar's limits and ticks) is in the displayed values, the ones the reader reads, and the theme's tick rule places its ticks on the displayed values. A key other than `x`, `y`, `z` or `color`, a coordinate two channels convert and a factor that is not positive are refused when the figure's script is generated.
+
 **A statistic printed on the panel is bound the same way.** An entry of `annotations:` with a `used:` reads one number from a result and formats it through `text`. Its `significance:` reads a p-value and sets the asterisks a paper prints after the statistic, one per threshold the p-value is below: 0.05, 0.01 and 0.001 unless `levels` names others. See [`Annotation`](../../datamodel/classes/Annotation.qmd):
 
 ```yaml

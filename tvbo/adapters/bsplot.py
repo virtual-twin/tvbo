@@ -2478,7 +2478,7 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None, *, pla
 def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
-    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied, the selection taken as every ``DataRef`` reader takes it (:func:`~tvbo.data.dataref.select_labeled`). A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
+    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform``, ``.sel`` and ``encoding.display`` already applied, the selection taken as every ``DataRef`` reader takes it (:func:`~tvbo.data.dataref.select_labeled`). A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them; the display conversion runs last (:func:`to_display`), so the selection reads the stored values. The shared container cache means opening the same file across panels is free.
 
     Under an animation the emitted script binds ``frame_dim``/``frame_pos`` onto each layer before handing the context over, so a drawer that knows nothing about animation still draws the frame the rest of the figure is at.
     """
@@ -2494,7 +2494,31 @@ def load_layer(layer: dict):
     da = select_labeled(da, layer.get("sel"))
     if ref_fn:
         da = ref_fn(da)
-    return _load_frame(da, layer)
+    return _load_frame(to_display(da, layer.get("display")), layer)
+
+
+def to_display(da, display):
+    """*da* as its axes show it, from a resolved layer's ``display`` (:func:`_resolve_display`) — public API, imported by the emitted plot script.
+
+    Each channel multiplies the coordinate it names by its factor or, where the array has no such coordinate, the layer's own values if that channel draws them. A channel naming neither, or naming a coordinate of labels, is refused, since converting anything else would draw a plausible wrong axis. Callers run it after the layer's ``sel``, so the selection reads the stored values, and nothing is written back to the container.
+    """
+    import numpy as np
+
+    for channel, shown in (display or {}).items():
+        name, factor = shown["name"], shown["factor"]
+        if name is not None and name in da.coords:
+            if not np.issubdtype(da.coords[name].dtype, np.number):
+                raise ValueError(
+                    f"`display.{channel}`: coordinate {name!r} holds labels, not numbers, so there is nothing to convert."
+                )
+            da = da.assign_coords({name: da.coords[name] * factor})
+        elif shown["values"]:
+            da = da * factor
+        else:
+            raise ValueError(
+                f"`display.{channel}`: {name!r} is not a coordinate of the array this layer draws (coordinates {list(da.coords)}), and {channel} does not draw the layer's own values, so there is nothing to convert."
+            )
+    return da
 
 
 def _load_frame(da, layer: dict):
@@ -2585,6 +2609,8 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None, *, planned=False
     Every layer and annotation binding a figure draws or prints passes through here, so a ``used`` declaring ``reconcile: by_label`` is refused here (:func:`_refuse_by_label`), before anything is opened.
 
     *planned* is :func:`_container_path`'s: a binding the script draws passes it, so an analysis not yet run is read from the path it writes once it is there; the caption composer does not, since it leaves out the sentence of a placeholder panel whose container is absent.
+
+    The encoding's ``display`` is resolved here to the factor each converted channel is drawn at (:func:`_resolve_display`), so a malformed conversion is refused before any script is written.
     """
     used, enc = layer.used, getattr(layer, "encoding", None)
     _refuse_by_label(used)
@@ -2618,7 +2644,58 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None, *, planned=False
         "triangle": str(triangle) if triangle else None,
         "style": kwargs,
         "frame": _frame_role(layer, animation),
+        "display": _resolve_display(used, enc, mark, panel_kind),
     }
+
+
+def _resolve_display(used, enc, mark, panel_kind) -> dict:
+    """The encoding's ``display`` as ``{channel: {name, factor, values}}``, what :func:`to_display` converts and a default axis label names: the name the channel encodes, the factor its numbers are drawn at, and whether the channel draws the layer's own values (:func:`_value_channel`).
+
+    Refused, naming the channel: a key that is not ``x``, ``y``, ``z`` or ``color``, a factor that is not positive, a coordinate two channels convert (it would be multiplied twice), and any conversion on a ``stream`` layer, which draws the model's field from the run's sidecar, where the conversion does not reach.
+    """
+    from tvbo.data.dataref import _reference_text
+    from tvbo.utils import keyed_items
+
+    values = _value_channel(mark, panel_kind, enc)
+    out: dict = {}
+    for channel, scale in keyed_items(getattr(enc, "display", None), "display"):
+        channel = str(channel)  # the dataclass form keys by a str subclass, whose repr the emitted script cannot read
+        where = f"`display.{channel}` on the layer reading {_reference_text(used)}"
+        if channel not in ("x", "y", "z", "color"):
+            raise ValueError(f"{where}: {channel!r} is not a channel; a display converts `x`, `y`, `z` or `color`.")
+        if mark == "stream":
+            raise ValueError(
+                f"{where}: a `stream` layer draws the model's field from the run's sidecar, which a display conversion does not reach."
+            )
+        factor = float(scale.factor)
+        if not factor > 0:
+            raise ValueError(
+                f"{where}: factor {scale.factor} is not positive. A display factor rescales an axis; `invert_x` or `invert_y` turns one round."
+            )
+        name = getattr(enc, channel, None)
+        twin = next((c for c, shown in out.items() if name is not None and shown["name"] == name), None)
+        if twin is not None:
+            raise ValueError(f"{where}: {name!r} is converted by `display.{twin}` already; declare its conversion once.")
+        out[channel] = {"name": name, "factor": factor, "values": channel == values}
+    return out
+
+
+def _value_channel(mark, panel_kind, enc) -> str | None:
+    """The channel a layer draws its own values on: the colour of a heatmap or a brain map, x for a vertical rule or a horizontal bar, none on a 3-D panel (whose channels each name a coordinate), and y otherwise."""
+    x, y = getattr(enc, "x", None), getattr(enc, "y", None)
+    if mark == "heatmap" or panel_kind in ("surface", "volume", "network", "colorbar"):
+        return "color"
+    if panel_kind == "line3d":
+        return None
+    if (mark == "rule" and x) or (mark == "bar" and y and not x):
+        return "x"
+    return "y"
+
+
+def _default_label(layer, channel, fallback="") -> str:
+    """The label a panel that declares none prints on *channel*: the name the resolved *layer* encodes there, or *fallback*, with the factor it is displayed at before it (`1000 × K`)."""
+    text, shown = layer[channel] or fallback, layer["display"].get(channel)
+    return f"{shown['factor']:g} × {text}" if text and shown else text
 
 
 def _frame_role(layer, animation) -> str | None:
@@ -2843,15 +2920,15 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
             colorbar_kwargs[kw] = str(opts[name])
     if opts.get("colorbar_aspect"):
         colorbar_kwargs["aspect"] = float(opts["colorbar_aspect"])
-    # Default the axis labels to the first layer's x-dim / output; opts override them.
+    # Default the axis labels to the first layer's x-dim / output and the display it declares; opts override them.
     axopts = _axopts(panel)
     # A DECLARED frame (the paper's own tick marks and ranges) is re-applied after the theme's axis rule has placed everything nobody declared, so intent written in the spec is never replaced by it. A custom panel's declared labels and legend go on then too, because its drawer gets no axis pass of its own and nothing else would apply them.
     post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS or (kind == "custom" and k in _DRAWER_DIRECTIVES)}
     if kind in ("cartesian", "heatmap", "line3d") and layers:
-        axopts.setdefault("xlabel", layers[0]["x"] or "")
-        axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
+        axopts.setdefault("xlabel", _default_label(layers[0], "x"))
+        axopts.setdefault("ylabel", _default_label(layers[0], "y", layers[0]["output"]))
     if kind == "line3d" and layers:
-        axopts.setdefault("zlabel", layers[0]["z"] or "")
+        axopts.setdefault("zlabel", _default_label(layers[0], "z"))
     placeholder = getattr(panel, "placeholder", None)
     # A built-in kind names no `render:` and falls back to the callable core registers.
     render = getattr(panel, "render", None) or (kind if kind in _BUILTIN_PANELS else None)

@@ -856,13 +856,32 @@ classes:
         inlined: true
 
   Encoding:
-    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form."
+    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel's numbers are shown at a factor of the stored values through `display`, which converts what is drawn and never what is stored."
     attributes:
       x: {range: string}
       y: {range: string}
       z: {range: string, description: "Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D kinds."}
       color: {range: string, description: "Dim/coord/var whose values SEPARATE the marks by colour — a field name, never a colour. `color: node` draws one line per node from the cycler; to fix a mark's colour, use `Style.color`."}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
+      display:
+        range: DisplayScale
+        multivalued: true
+        inlined: true
+        description: "The channels whose numbers are shown at a factor of the stored values, keyed by channel: `{y: {factor: 1000}}` prints a coupling at the 1000 times its simulated value a paper prints, `{x: {factor: 0.001}}` a time stored in ms in seconds, under a label the panel declares. A channel converts the coordinate it names, or, where the layer's array has no such coordinate, the layer's own values on the channel that draws them (y of a line, x of a vertical rule or a horizontal bar, the colour of a heatmap or a brain map), so a colour bar keying them prints the converted numbers. The conversion runs when the figure is drawn, after the layer's `sel`, which therefore selects in the stored values, as `Animation.window` does; every number the panel declares about the converted axis (`xlim`, `xticks`, `rules`, `regions`, an annotation in data coordinates, a colour bar's limits and ticks) is in the displayed values, the ones the reader reads, and the theme's tick rule places its ticks on the displayed values. Nothing is written back to the result container. Two layers drawn on one axis each declare the conversion, and a coordinate two channels of one layer name is declared on one of them."
+
+  DisplayScale:
+    description: "How one channel's numbers are shown: at a `factor` of the stored values. A channel other than `x`, `y`, `z` or `color` and a factor that is not positive are refused when the figure's script is generated."
+    attributes:
+      channel:
+        key: true
+        range: string
+        annotations:
+          collection_key: true
+        description: "The channel converted: `x`, `y`, `z` or `color`."
+      factor:
+        range: float
+        required: true
+        description: "The positive number the stored values are multiplied by for display. It states no unit: a panel that declares no label prints it before the quantity's name (`1000 × KuramotoCoupling.a`), and a unit the axis reads in is named by the declared `xlabel` or `ylabel`. An axis runs the other way through `invert_x` or `invert_y`, never through a sign."
 
   Animation:
     description: "A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show."
