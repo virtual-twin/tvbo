@@ -1,6 +1,6 @@
 """Colormaps a figure can name that the plotting stack does not ship.
 
-A replication reproduces a published figure's colour convention, and the convention is usually whatever the authors' tool defaulted to. Where that map exists in matplotlib the spec just names it; where it does not, every study otherwise carries its own copy of the same anchor table — so the tables live here once and :func:`resolve` turns any declared name into something the backend accepts.
+A replication reproduces a published figure's colour convention, and the convention is usually whatever the authors' tool defaulted to. Where that map exists in matplotlib or in bsplot's catalogue (the Scientific Colour Maps, colorcet) the spec just names it; where neither ships it, every study otherwise carries its own copy of the same anchor table — so the tables live here once and :func:`resolve` turns any declared name into something the backend accepts.
 
 Adding a map here is a format-support decision, not a styling one: it makes a NAME resolvable, and which map a figure uses stays entirely in the spec.
 
@@ -82,15 +82,21 @@ _CACHE: dict[str, object] = {}
 
 
 def resolve(name):
-    """A declared colormap name as something the plotting backend accepts (public API).
+    """A declared colormap name as something every plotting call accepts (public API).
 
-    A name the backend already knows is passed through untouched — matplotlib's and bsplot's own catalogues stay authoritative — so this only fills the gaps in :data:`TABLES`. ``None`` passes through as ``None`` (the backend's default).
+    A name matplotlib's registry knows is passed through untouched. A name only bsplot's catalogue knows, such as the Scientific Colour Maps (``batlow``, ``davos``, ``turku``), comes back as the matplotlib colormap bsplot builds for it: the surface renderer looks a string up in bsplot's catalogue, but a matplotlib mark (``pcolormesh``, ``hexbin``) looks it up in matplotlib's registry alone. :data:`TABLES` fills what neither ships. ``None`` and a colormap object pass through as they are.
+
+    Raises:
+        ValueError: If no catalogue knows the name, here rather than at whichever mark first draws with it.
     """
-    if name is None or str(name) not in TABLES:
+    import matplotlib
+
+    if not isinstance(name, str) or (name not in TABLES and name in matplotlib.colormaps):
         return name
-    key = str(name)
-    if key not in _CACHE:
+    if name not in _CACHE:
         import bsplot.colors
 
-        _CACHE[key] = bsplot.colors.Colormap.from_colors(TABLES[key], name=key)
-    return _CACHE[key]
+        _CACHE[name] = (
+            bsplot.colors.Colormap.from_colors(TABLES[name], name=name) if name in TABLES else bsplot.colors.get_cmap(name)
+        )
+    return _CACHE[name]
