@@ -2015,23 +2015,28 @@ def _run_compiled(fn, state):
     return jax.jit(fn)(state)
 
 
-def _history_window(sol, network, dt):
+def _history_window(sol, network, dt, opening=None):
     """The tail of a settle long enough to serve every delay, which is all ``update_history`` reads.
 
-    Delay lookups reach back at most ``network.max_delay`` and the initial condition is the last
-    slot, so a long settle need not be handed over whole. Keeping its tail bounds the stored
-    history at the delay horizon instead of the settle length — a 300 s settle at dt=1 would
-    otherwise park the entire trajectory in the network for the rest of the run.
+    Delay lookups reach back at most ``network.max_delay`` and the initial condition is the last slot, so a long settle need not be handed over whole. Keeping its tail bounds the stored history at the delay horizon instead of the settle length — a 300 s settle at dt=1 would otherwise park the entire trajectory in the network for the rest of the run.
+
+    A solve records the state after each of its steps, never the *opening* it integrated from, and tvboptim pads a stored history that covers less than the longest delay with its first sample (``extract_history_window``). Given the *opening*, a settle handed over whole leads with it, one step before its first recorded sample, so a settle no longer than the longest delay pads the delay lines with the state it started from, as ``_own_settle``'s carry and TVB do; the delay lines of a longer settle never reach back to it, so they read the same rows as without it.
     """
     if sol is None:
         return None
     _md = float(getattr(network, 'max_delay', 0.0) or 0.0)
     _n = (-int(-_md // dt) + 2) if _md > 0 else 2
-    if sol.ys.shape[0] <= _n:
+    if sol.ys.shape[0] > _n:
+        _ts, _ys = sol.ts[-_n:], sol.ys[-_n:]
+    elif opening is None:
         return sol
+    else:
+        _cols = jnp.asarray([sol.variable_names.index(_v) for _v in network.dynamics.STATE_NAMES])
+        _ts = jnp.concatenate([sol.ts[:1] - dt, sol.ts])
+        _ys = jnp.concatenate([sol.ys[:1].at[0, _cols].set(jnp.asarray(opening).astype(sol.ys.dtype)), sol.ys])
     return NativeSolution(
-        ts=sol.ts[-_n:],
-        ys=sol.ys[-_n:],
+        ts=_ts,
+        ys=_ys,
         dt=getattr(sol, 'dt', None),
         variable_names=getattr(sol, 'variable_names', None),
     )
@@ -2115,7 +2120,7 @@ def run_simulation(
         % endif
         result_transient = _run_compiled(_tr_model_fn, _tr_state)
         # Kept whole even when `run_main` is False: the delay horizon is trimmed here, the kernel support by each monitor's own `carry_warmup`, and neither substitutes for the other.
-        network.update_history(_history_window(result_transient, network, dt))
+        network.update_history(_history_window(result_transient, network, dt, opening=_tr_state.initial_state.dynamics))
         _settled = True
     % endif
 
