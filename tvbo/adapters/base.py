@@ -171,7 +171,8 @@ class ParameterStart(NamedTuple):
     @property
     def label(self) -> str:
         """The parameter as a message names it, with what it declares."""
-        declares = "an equation" if self.kind == StartKind.EQUATION else "a distribution sampled over space"
+        sampled = f"a distribution sampled over {'time' if self.per_step else 'space'}"
+        declares = "an equation" if self.kind == StartKind.EQUATION else sampled
         return f"{self.named} ({declares}{', drawn per trial' if self.per_trial else ''})"
 
 
