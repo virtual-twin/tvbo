@@ -1,6 +1,6 @@
 """Statistics over stored, labelled arrays: the implementations behind the software-based curated functions.
 
-Each function here is named by a record in ``tvbo/database/functions/`` (``GroupedCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``) and returns a labelled array or a mapping of them, which a study-level analysis stores one variable per key. Each runs along one named dimension: the correlations and counts keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study, and the phase-synchrony measures pair the nodes of the one other.
+Each function here is named by a record in ``tvbo/database/functions/`` (``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
 """
 
 from __future__ import annotations
@@ -15,6 +15,9 @@ MIN_POINTS = 3
 
 METHODS = ("bh", "by")
 """The false-discovery procedures: Benjamini-Hochberg, and Benjamini-Yekutieli for tests of arbitrary dependence."""
+
+DIRECTIONS = ("max", "min")
+"""Which end of a score its optimum lies at: the largest score or the smallest."""
 
 
 def group_index(values, n_groups: int, grouping: str = "equal_width") -> np.ndarray:
@@ -139,6 +142,65 @@ def grouped_correlation(x, y, n_groups: int, dim: str, by=None, grouping: str = 
     }
 
 
+def concordance_correlation(x, y, dim: str):
+    """Lin's concordance correlation coefficient of *x* and *y* over the units of *dim* (Lin 1989, doi:10.2307/2532051).
+
+    It is ``2 cov(x, y) / (var(x) + var(y) + (mean(x) - mean(y))**2)`` with population moments, numpy's default (``ddof=0``): the Pearson correlation scaled down by how far the two differ in mean and spread, so it is 1 only where *y* equals *x* unit for unit and -1 where *y* is *x* reflected about their common mean. Labelled inputs are paired on the labels of *dim*, which occur once each and which both carry; bare 1-D inputs are paired by position. Every other dimension an input carries is kept, with one coefficient per element of it. A NaN unit makes the coefficient NaN, as it makes numpy's moments NaN.
+
+    Returns:
+        The coefficient, labelled on the inputs' other dimensions.
+    """
+    x, y = _along(x, dim, "x"), _along(y, dim, "y")
+    if dim in x.indexes and dim in y.indexes:
+        _same_labels(x, y, dim, ("x", "y"))
+        y = y.reindex({dim: x.indexes[dim]})
+    mean_x, mean_y = x.mean(dim, skipna=False), y.mean(dim, skipna=False)
+    covariance = ((x - mean_x) * (y - mean_y)).mean(dim, skipna=False)
+    spread = x.var(dim, skipna=False) + y.var(dim, skipna=False) + (mean_x - mean_y) ** 2
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return 2 * covariance / spread
+
+
+def at_optimum(score, value, direction: str) -> dict:
+    """The entry of *value* at the cell where *score* is largest (``max``) or smallest (``min``), with the score there and the cell's coordinates.
+
+    The optimum is searched over every dimension of *score*. *value* carries each of them with the same labels, in any order, and keeps its other dimensions; a dimension without labels is labelled by position, as a reference's ``sel`` reads it (:func:`tvbo.data.dataref.index_bare_axes`). NaN scores are ignored, and a score that is NaN in every cell is refused, naming it. Of several cells with the optimal score the one with the smallest coordinates is taken, compared dimension by dimension in the sorted order of the dimensions' names, so neither the order of the dimensions nor that of the labels along them changes the cell; on a score without NaN whose dimensions are in that order and whose labels ascend, it is the cell :func:`numpy.argmax` or :func:`numpy.argmin` finds first.
+
+    Returns:
+        ``value`` at the optimum, on *value*'s other dimensions; ``score``, the optimal score; and one output per dimension of *score*, named by the dimension, holding its coordinate at the optimum.
+    """
+    import xarray as xr
+
+    from tvbo.data.dataref import index_bare_axes
+
+    if direction not in DIRECTIONS:
+        raise ValueError(f"direction must be one of {DIRECTIONS}, got {direction!r}.")
+    for key, array in (("score", score), ("value", value)):
+        if not isinstance(array, xr.DataArray):
+            raise ValueError(
+                f"`{key}` is a bare array; only a labelled array names the dimensions an optimum is searched over."
+            )
+    taken = [d for d in score.dims if d in ("value", "score")]
+    if taken:
+        raise ValueError(f"`score` runs along {taken}, the name of another output; rename that dimension.")
+    for d in score.dims:
+        _along(score, d, "score")
+        _along(value, d, "value")
+    searched = dict.fromkeys(score.dims)
+    score, value = index_bare_axes(score, searched), index_bare_axes(value, searched)
+    for d in searched:
+        _same_labels(score, value, d, ("score", "value"))
+    scores = np.asarray(score.values, dtype=float)
+    if np.isnan(scores).all():
+        named = f" ({score.name})" if score.name else ""
+        raise ValueError(f"`score`{named} has no cell that is not NaN, so it has no optimum.")
+    best = np.nanmax(scores) if direction == "max" else np.nanmin(scores)
+    cells = ({d: score.indexes[d][i] for d, i in zip(score.dims, cell, strict=True)} for cell in np.argwhere(scores == best))
+    order = sorted(searched)
+    at = min(cells, key=lambda cell: tuple(cell[d] for d in order))
+    return {"value": value.sel(at), "score": score.sel(at), **at}
+
+
 def _rate(q) -> float | None:
     """The false discovery rate *q* as a number, or ``None`` when none is given.
 
@@ -214,6 +276,15 @@ def false_discovery_control(p, q=None, method: str = "bh", dim=None) -> dict:
     return out
 
 
+def _same_labels(first, second, dim: str, names: tuple[str, str]) -> None:
+    """Refuse the labelled *first* and *second*, called *names* in the message, unless they carry the same labels along *dim*, in any order."""
+    unpaired = first.indexes[dim].symmetric_difference(second.indexes[dim])
+    if len(unpaired):
+        raise ValueError(
+            f"`{names[0]}` and `{names[1]}` do not carry the same labels along {dim!r}: {_some(unpaired)} {'is' if len(unpaired) == 1 else 'are'} in only one of them."
+        )
+
+
 def _paired(values, where) -> tuple:
     """The labelled *values* and the labelled mask *where*, entry for entry.
 
@@ -226,11 +297,7 @@ def _paired(values, where) -> tuple:
         raise ValueError(f"`where` runs along {own}, which `values` does not; a mask marks entries of `values`.")
     for d in where.dims:
         if d in values.indexes and d in where.indexes:
-            unpaired = values.indexes[d].symmetric_difference(where.indexes[d])
-            if len(unpaired):
-                raise ValueError(
-                    f"`values` and `where` do not carry the same labels along {d!r}: {_some(unpaired)} {'is' if len(unpaired) == 1 else 'are'} in only one of them."
-                )
+            _same_labels(values, where, d, ("values", "where"))
     return xr.broadcast(values, where.reindex_like(values))
 
 
