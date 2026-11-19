@@ -1049,8 +1049,6 @@ for expl in exploration_list:
             else:
                 _ga[_gpn] = float(_gpv)
         exp_info['ga'] = _ga
-        # Baked as a literal, like the refine stage's n_workers.
-        exp_info['n_workers'] = context.get('n_workers', 1)
     elif exp_info['strategy'] == 'adiabatic_scan':
         # Adiabatic bifurcation scan: one swept axis (from `space`) plus an observed-signal
         # expression and envelope settings carried on Exploration.parameters (Parameter.value
@@ -1287,6 +1285,7 @@ from pymoo.core.problem import Problem as _Problem
 from pymoo.algorithms.moo.nsga2 import NSGA2 as _NSGA2
 from pymoo.optimize import minimize as _pymoo_minimize
 from pymoo.indicators.hv import HV as _HV
+from tvbo.templates.tvboptim.callbacks import device_split   # a declared width → pmap replicas on the devices present × vmap lanes
 % endif
 % if has_warmstart or from_working_point:
 # The shared warm-start primitive, also used by from_working_point to ramp to a working point.
