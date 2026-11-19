@@ -606,8 +606,13 @@ def reconcile_by_label(
 
     Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix. Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every node axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
 
-    A model label a node axis does not carry raises a ``ValueError`` that names the labels, the axis, *what* is being reconciled and the labels the axis offers: all of them on a short axis, the nearest by spelling on a long one (:func:`tvbo.utils.labels_offered`).
+    A model label a node axis does not carry raises a ``ValueError`` that names the labels, the axis, *what* is being reconciled and the labels the axis offers: all of them on a short axis, the nearest by spelling on a long one (:func:`tvbo.utils.labels_offered`). An empty ``model_labels``, a network with no nodes, raises naming *what*, since there is no order to lay anything out on.
     """
+    if len(model_labels) == 0:
+        raise ValueError(
+            f"`reconcile: by_label` on {what or 'an array'} lays it out on the network's node order by label, and the network has no nodes to lay it out against. "
+            "Give the network its `nodes`, or drop `reconcile`."
+        )
     model_set = set(str(m) for m in model_labels)
     for d in node_axes(da):
         if node_dims is not None and d not in node_dims:

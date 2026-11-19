@@ -294,6 +294,14 @@ def test_reconcile_skips_non_node_string_axis():
     np.testing.assert_allclose(out.sel(node="A").values, [0.0, 3.0])
 
 
+@pytest.mark.parametrize("node_dims", [None, ["node"]], ids=["found-node-axes", "named-node-axes"])
+def test_reconcile_on_a_network_with_no_nodes_is_refused_by_name(node_dims):
+    """An empty node order matched no axis, so the array came back in its source's order, or the named axis came back empty, and nothing raised (G210)."""
+    da = xr.DataArray([10.0, 20.0, 30.0], dims=["node"], coords={"node": ["A", "B", "C"]})
+    with pytest.raises(ValueError, match=r"`reconcile: by_label` on the reference to experiment '5'.* has no nodes"):
+        dr.reconcile_by_label(da, {}, [], node_dims=node_dims, what="the reference to experiment '5'")
+
+
 # --------------------------------------------------------------------------- sel/mode helpers
 
 
