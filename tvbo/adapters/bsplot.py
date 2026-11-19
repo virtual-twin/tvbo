@@ -3047,3 +3047,5 @@ def write_caption(figure, out_dir, *, name: str | None = None, base_dir=None) ->
     path = out_dir / f"{stem}.caption.qmd"
     path.write_text(compose_caption(figure, base_dir) + "\n", encoding="utf-8")
     return path
+
+from tvbo.adapters import bsplot_distributions  # noqa: E402,F401  (registers the histogram and joint_density panels)
