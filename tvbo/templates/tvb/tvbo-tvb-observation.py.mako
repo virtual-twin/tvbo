@@ -44,6 +44,7 @@ _CATEGORY_BY_CR = {
 
 _PROJECTION_CATS = {'projection_eeg', 'projection_meg', 'projection_ieeg'}
 _BOLD_CATS       = {'bold', 'bold_roi'}
+_EVERY_STEP_CATS = {'raw', 'raw_voi', 'afferent'}
 
 # HRF kernel class names we know how to construct
 _HRF_CLASSES = {
@@ -239,6 +240,7 @@ if not obs_list:
 # Determine which base-class imports are needed
 needs_projection = any(c in _PROJECTION_CATS for _, _, c in obs_list)
 needs_bold_eq     = any(c in _BOLD_CATS for _, _, c in obs_list)
+needs_run_step = any(c not in _EVERY_STEP_CATS for _, _, c in obs_list)
 needs_sensors = set()
 needs_projections = set()
 for _, obs, cat in obs_list:
@@ -272,6 +274,16 @@ from tvb.simulator.common import numpy_add_at
 % endif
 ##
 ## ── Generated monitor classes ──────────────────────────────────────
+% if needs_run_step:
+
+class _RunStepPhase:
+    """Counts a periodic monitor's sampling grid from the step its run opened at. TVB counts the rows of a delay history as steps already taken (`current_step`), so a period counted on the absolute step would sample a delayed run off the grid an undelayed run samples. The stamps stay on TVB's clock, `step * dt`."""
+
+    def config_for_sim(self, simulator):
+        super().config_for_sim(simulator)
+        self._start_step = simulator.current_step
+
+% endif
 % for obs_name, obs, cat in obs_list:
 <%
     period = getattr(obs, 'period', None)
@@ -309,18 +321,18 @@ class ${class_name}(Monitor):
         return [step * self.dt, state[self.voi]]
 
 % elif cat == 'subsample':
-class ${class_name}(Monitor):
+class ${class_name}(_RunStepPhase, Monitor):
     """Temporal decimation without averaging."""
 % if period is not None:
     period = Float(default=${period})
 % endif
 
     def sample(self, step, state):
-        if step % self.istep == 0:
+        if (step - self._start_step) % self.istep == 0:
             return [step * self.dt, state[self.voi, :]]
 
 % elif cat == 'temporal_average':
-class ${class_name}(Monitor):
+class ${class_name}(_RunStepPhase, Monitor):
     """Running temporal mean over a sliding window."""
 % if period is not None:
     period = Float(default=${period})
@@ -334,14 +346,15 @@ class ${class_name}(Monitor):
         self._stock = numpy.zeros(stock_size)
 
     def sample(self, step, state):
-        self._stock[((step % self.istep) - 1), :] = state[self.voi]
-        if step % self.istep == 0:
+        run_step = step - self._start_step
+        self._stock[((run_step % self.istep) - 1), :] = state[self.voi]
+        if run_step % self.istep == 0:
             avg_stock = numpy.mean(self._stock, axis=0)
             time = (step - self.istep / 2.0) * self.dt
             return [time, avg_stock]
 
 % elif cat == 'spatial_average':
-class ${class_name}(Monitor):
+class ${class_name}(_RunStepPhase, Monitor):
     """Spatial averaging via region assignment matrix."""
 % if period is not None:
     period = Float(default=${period})
@@ -366,20 +379,20 @@ class ${class_name}(Monitor):
         self.spatial_mean = spatial_sum / nodes_per_area
 
     def sample(self, step, state):
-        if step % self.istep == 0:
+        if (step - self._start_step) % self.istep == 0:
             time = step * self.dt
             monitored = numpy.dot(self.spatial_mean, state[self.voi, :])
             return [time, monitored.transpose((1, 0, 2))]
 
 % elif cat == 'global_average':
-class ${class_name}(Monitor):
+class ${class_name}(_RunStepPhase, Monitor):
     """Spatial mean across all network nodes."""
 % if period is not None:
     period = Float(default=${period})
 % endif
 
     def sample(self, step, state):
-        if step % self.istep == 0:
+        if (step - self._start_step) % self.istep == 0:
             time = step * self.dt
             data = numpy.mean(state[self.voi, :], axis=1)[:, numpy.newaxis, :]
             return [time, data]
@@ -391,7 +404,7 @@ class ${class_name}(Monitor):
     sensor_cls, sensor_mod = _SENSOR_INFO[cat]
     proj_cls, proj_mod = _PROJ_INFO[cat]
 %>
-class ${class_name}(Projection):
+class ${class_name}(_RunStepPhase, Projection):
     """Lead-field projection monitor (${cat.replace('projection_', '').upper()})."""
 % if period is not None:
     period = Float(default=${period})
@@ -432,13 +445,17 @@ class ${class_name}(Projection):
         self._ref_vec_mask = numpy.isfinite(self.gain).all(axis=1)
         self._ref_vec = self._ref_vec[self._ref_vec_mask]
 
+% endif
     def sample(self, step, state):
-        maybe = super(${class_name}, self).sample(step, state)
+        maybe = super(${class_name}, self).sample(step - self._start_step, state)
         if maybe is not None:
             time, sample = maybe
+            time += self._start_step * self.dt
+% if cat == 'projection_eeg':
             sample -= self._ref_vec.dot(sample[:, self._ref_vec_mask])[:, numpy.newaxis]
-            return time, sample.reshape((self.voi.size, -1, 1))
+            sample = sample.reshape((self.voi.size, -1, 1))
 % endif
+            return time, sample
 
 % elif cat in _BOLD_CATS:
 <%
@@ -455,7 +472,7 @@ class ${class_name}(Projection):
         bold_period = 2000.0
     bold_period = float(bold_period)
 %>
-class ${class_name}(Monitor):
+class ${class_name}(_RunStepPhase, Monitor):
     """BOLD hemodynamic monitor — two-stage buffered HRF convolution."""
     period = Float(default=${bold_period})
     hrf_length = Float(default=${hrf_length})
@@ -487,18 +504,19 @@ class ${class_name}(Monitor):
         self._stock = numpy.zeros((self._stock_steps,) + sample_shape)
 
     def sample(self, step, state):
+        run_step = step - self._start_step
         # Accumulate into interim buffer at every step
-        self._interim_stock[((step % self._interim_istep) - 1), :] = state[self.voi, :]
+        self._interim_stock[((run_step % self._interim_istep) - 1), :] = state[self.voi, :]
         # At interim period boundary, push temporal average into main circular buffer
-        if step % self._interim_istep == 0:
+        if run_step % self._interim_istep == 0:
             avg = numpy.mean(self._interim_stock, axis=0)
-            self._stock[((step // self._interim_istep % self._stock_steps) - 1), :] = avg
+            self._stock[((run_step // self._interim_istep % self._stock_steps) - 1), :] = avg
         # At monitor period, convolve with HRF and return BOLD signal
-        if step % self.istep == 0:
+        if run_step % self.istep == 0:
             time = step * self.dt
             hrf = numpy.roll(
                 self.hemodynamic_response_function,
-                ((step // self._interim_istep % self._stock_steps) - 1),
+                ((run_step // self._interim_istep % self._stock_steps) - 1),
                 axis=1)
 % if hrf_class_name == 'FirstOrderVolterra':
             k1_V0 = self._hrf_kernel_eq.parameters["k_1"] * self._hrf_kernel_eq.parameters["V_0"]
@@ -549,7 +567,7 @@ class ${class_name}(Monitor):
         return [step * self.dt, node_coupling[self.voi]]
 
 % elif cat == 'afferent_ta':
-class ${class_name}(Monitor):
+class ${class_name}(_RunStepPhase, Monitor):
     """Temporally averaged afferent coupling input."""
 % if period is not None:
     period = Float(default=${period})
@@ -568,8 +586,9 @@ class ${class_name}(Monitor):
         self._stock = numpy.zeros(stock_size)
 
     def sample(self, step, node_coupling):
-        self._stock[((step % self.istep) - 1), :] = node_coupling[self.voi]
-        if step % self.istep == 0:
+        run_step = step - self._start_step
+        self._stock[((run_step % self.istep) - 1), :] = node_coupling[self.voi]
+        if run_step % self.istep == 0:
             avg = numpy.mean(self._stock, axis=0)
             time = (step - self.istep / 2.0) * self.dt
             return [time, avg]
@@ -584,7 +603,7 @@ class ${class_name}(Monitor):
     for obs_name, obs, cat in obs_list:
         safe = obs_name.replace(' ', '_').replace('-', '_')
         cname = safe[0].upper() + safe[1:] if safe else 'GeneratedMonitor'
-        if cat in ('raw', 'raw_voi', 'afferent'):
+        if cat in _EVERY_STEP_CATS:
             monitor_items.append(f'{cname}()')
         elif cat in _PROJECTION_CATS:
             # Projection monitors need sensors in constructor.
