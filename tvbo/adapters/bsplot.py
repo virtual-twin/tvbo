@@ -650,7 +650,7 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     The surface atlas supplies one integer parcel per vertex and the region names those integers stand for; the curated terminology supplies every other name each region answers to. Joining them on the entity key is what places a value by NAME on a mesh, so a parcellated map needs neither a committed ``.annot`` beside the page nor a hand-written abbreviation table.
 
-    Surface atlases spell a parcel three ways: the bare region with the side left to the file (Desikan ``bankssts``, Destrieux ``G_cuneus``), or a name that already carries its side (Schaefer ``7Networks_LH_Vis_1``). A parcel therefore answers to ``ctx-<side>-<region>``, ``ctx_<side>_<region>`` and the bare name, compared without case, so one join serves every atlas templateflow carries.
+    A surface atlas names a region either bare, with the side left to the file (Desikan ``bankssts``, Destrieux ``G_cuneus``), or with its side already in the name (Schaefer ``7Networks_LH_Vis_1``). A parcel therefore answers to three spellings, ``ctx-<side>-<region>``, ``ctx_<side>_<region>`` and the bare name, compared without case, so one join serves every atlas templateflow carries. A spelling two parcels share, such as a bare Desikan name under ``hemi: both``, places no value: an atlas entity keyed by it raises a ``ValueError`` naming the region and the sides that carry it, and a shared spelling no entity is keyed by (``unknown``, the medial wall) is left alone.
 
     Across ``hemi: both`` the surface atlas numbers its parcels from zero again in the right hemisphere, so a bare index says ``lateraloccipital`` without saying whose. The side is folded into the id, which is the difference between a bilateral map and one that paints both hemispheres with the left one's values.
     """
@@ -659,17 +659,27 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     SIDE_STRIDE = 1000
 
-    parts, by_key = [], {}
+    parts, sides_of = [], {}
     for offset, side in enumerate(("lh", "rh") if hemi == "both" else (hemi,)):
         vertex_labels, region_names = bsplot.load_atlas_labels(atlas=surface_atlas, hemi=side, template=template, density=density)
         parts.append(_np.asarray(vertex_labels) + offset * SIDE_STRIDE)
         for index, region in enumerate(region_names):
             for spelling in (f"ctx-{side}-{region}", f"ctx_{side}_{region}", str(region)):
-                by_key[spelling.lower()] = index + offset * SIDE_STRIDE
+                sides_of.setdefault(spelling.lower(), {})[index + offset * SIDE_STRIDE] = side
 
     names, _entities = _atlas_crosswalk(atlas, base_dir)
-    keys = {nm: key.lower() for nm, key in names.items()}
-    return _np.concatenate(parts), {nm: by_key[key] for nm, key in keys.items() if key in by_key}
+    parcel_of = {}
+    for nm, key in names.items():
+        parcels = sides_of.get(key.lower(), {})
+        if len(parcels) > 1:
+            raise ValueError(
+                f"surface panel: atlas {atlas!r} keys the region {key!r}, which {surface_atlas!r} carries as "
+                f"{len(parcels)} parcels (sides {', '.join(sorted(set(parcels.values())))}) under `hemi: {hemi}`. "
+                f"Key the atlas entity by its side (`ctx-lh-{key}`, `ctx-rh-{key}`) so its value lands on one parcel."
+            )
+        if parcels:
+            (parcel_of[nm],) = parcels
+    return _np.concatenate(parts), parcel_of
 
 
 def _check_placeable(labels, table, kind: str, atlas: str) -> None:

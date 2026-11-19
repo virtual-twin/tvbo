@@ -587,10 +587,13 @@ def _channel(ds, da, name, axis=0):
 def _cut_to(arr, coords):
     """*arr* at the plotted array's own place on every axis the two share, so a quantity read beside the plotted one is the one recorded with it.
 
-    A scalar coord (its node, its trial, the frame an animation shows) picks its entry; a 1-D coord of another length than *arr*'s axis picks the entries it holds (the trail of an animation), and one of the same length is taken as aligned. Numeric and time axes take the nearest entry, label axes the exact one."""
+    A scalar coord (its node, its trial, the frame an animation shows) picks its entry, and a 1-D coord picks the entries it holds (the trail of an animation, the same nodes in another order) unless its values are *arr*'s own on that axis, which are already aligned. The ``time`` axis takes the nearest sample within half of *arr*'s widest sampling step, so a frame lands on the sample recorded at it; every other axis takes the exact entry, so a sibling recorded on a subset of nodes, trials or sweep values raises ``KeyError`` rather than pairing with a neighbour."""
     for k, v in coords.items():
-        if k in arr.dims and (v.dims == () or (v.dims == (k,) and v.size != arr.sizes[k])):
-            arr = arr.sel({k: v.values}, method="nearest" if v.dtype.kind in "iufmM" else None)
+        if k not in arr.dims or v.dims not in ((), (k,)) or (v.dims and np.array_equal(v.values, arr[k].values)):
+            continue
+        steps = np.abs(np.diff(arr[k].values)) if k == "time" else []
+        near = {"method": "nearest", "tolerance": steps.max() / 2} if len(steps) else {}
+        arr = arr.sel({k: v.values}, **near)
     return arr
 
 
