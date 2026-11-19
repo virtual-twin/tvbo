@@ -1,6 +1,6 @@
 """Statistics over stored, labelled arrays: the implementations behind the software-based curated functions.
 
-Each function here is named by a record in ``tvbo/database/functions/`` (``SpreadBand``, ``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
+Each function here is named by a record in ``tvbo/database/functions/`` (``SpreadBand``, ``Correlation``, ``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
 """
 
 from __future__ import annotations
@@ -9,6 +9,9 @@ import numpy as np
 
 GROUPINGS = ("equal_width", "equal_count")
 """How units are cut into groups: bins of equal width over the grouping variable's range, or runs of equal size along its order."""
+
+CORRELATIONS = ("pearson", "spearman")
+"""The correlation coefficients: Pearson's over the values, and Spearman's, which is Pearson's over their ranks."""
 
 MIN_POINTS = 3
 """The fewest points a correlation is stated for; two points always correlate perfectly, so their r and p say nothing."""
@@ -68,6 +71,68 @@ def _along(value, dim: str, key: str):
             f"`{key}` is a bare array of rank {array.ndim}; only a labelled array can say which of its axes is {dim!r}."
         )
     return xr.DataArray(array, dims=[dim])
+
+
+def _paired_along(first, second, dim: str, names: tuple[str, str]) -> tuple:
+    """*first* and *second*, called *names* in a refusal, as labelled arrays along *dim* (:func:`_along`), entry for entry.
+
+    Where both label *dim*, *second* is put in the order of *first*'s labels, and a label only one of them carries is refused (:func:`_same_labels`); otherwise the two are paired by position.
+    """
+    first, second = _along(first, dim, names[0]), _along(second, dim, names[1])
+    if dim in first.indexes and dim in second.indexes:
+        _same_labels(first, second, dim, names)
+        second = second.reindex({dim: first.indexes[dim]})
+    return first, second
+
+
+def _average_ranks(values: np.ndarray) -> np.ndarray:
+    """The 1-based rank of each of the 1-D *values*, tied values given the mean of the ranks they span, as :func:`scipy.stats.rankdata` ranks by default (``method="average"``)."""
+    order = np.argsort(values)
+    ordered = values[order]
+    starts = np.flatnonzero(np.r_[True, ordered[1:] != ordered[:-1]])
+    ends = np.r_[starts[1:], values.size]
+    ranks = np.empty(values.size)
+    ranks[order] = np.repeat((starts + 1 + ends) / 2, ends - starts)
+    return ranks
+
+
+def _coefficient(a: np.ndarray, b: np.ndarray, method: str) -> tuple:
+    """``(r, n)`` of the 1-D *a* and *b* over the *n* pairs where both are finite: Pearson's r of the values, or of their average ranks for ``spearman``, NaN where :func:`_correlates` finds no correlation defined."""
+    kept = np.isfinite(a) & np.isfinite(b)
+    a, b = a[kept], b[kept]
+    if not _correlates(a, b):
+        return np.nan, a.size
+    if method == "spearman":
+        a, b = _average_ranks(a), _average_ranks(b)
+    da, db = a - a.mean(), b - b.mean()
+    return np.sum(da * db) / np.sqrt(np.sum(da**2) * np.sum(db**2)), a.size
+
+
+def correlation(x, y, dim: str, method: str) -> dict:
+    """Pearson's or Spearman's correlation coefficient of *x* and *y* over the units of *dim*.
+
+    ``pearson`` correlates the values and ``spearman`` their ranks, tied values given the mean of the ranks they span, so ``spearman`` is the coefficient :func:`scipy.stats.spearmanr` returns, ties included. A unit enters where both *x* and *y* are finite: a NaN on either side drops that pair only, and the ranks are taken over the pairs that enter, where :func:`scipy.stats.spearmanr` and :func:`scipy.stats.pearsonr` at their defaults return NaN for a slice holding any NaN. Labelled inputs are paired on the labels of *dim*, which occur once each and which both carry (:func:`_paired_along`); bare 1-D inputs are paired by position. Every other dimension an input carries is kept, with one coefficient per element of it, computed from that element's own pairs; one that both carry is aligned by xarray's exact join, which refuses labels that differ in content or order. A coefficient is NaN with fewer than :data:`MIN_POINTS` pairs or a constant side, as for every correlation here (:func:`_correlates`), and carries none of the inputs' attributes, such as their units.
+
+    Returns:
+        ``r``, the coefficient, and ``n``, the number of pairs it was computed from, both labelled on the inputs' other dimensions.
+    """
+    import xarray as xr
+
+    if method not in CORRELATIONS:
+        raise ValueError(f"method must be one of {CORRELATIONS}, got {method!r}.")
+    x, y = _paired_along(x, y, dim, ("x", "y"))
+    r, n = xr.apply_ufunc(
+        _coefficient,
+        x,
+        y,
+        kwargs={"method": method},
+        input_core_dims=[[dim], [dim]],
+        output_core_dims=[[], []],
+        vectorize=True,
+        output_dtypes=[float, int],
+        keep_attrs=False,
+    )
+    return {"r": r, "n": n}
 
 
 def _correlates(a: np.ndarray, b: np.ndarray) -> bool:
