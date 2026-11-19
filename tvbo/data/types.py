@@ -440,6 +440,7 @@ def stimulus_waveforms(experiment) -> dict:
     """
     from sympy import Symbol, sympify
 
+    from tvbo.parse.expression import array_syntax
     from tvbo.templates.tvboptim.utils import active_stimulus_events, is_data_driven_event
 
     t = Symbol("t")
@@ -457,7 +458,7 @@ def stimulus_waveforms(experiment) -> dict:
             for k, p in keyed_items(getattr(event, "parameters", None), "parameters")
             if p.value is not None and np.ndim(p.value) == 0
         }
-        expr = sympify(str(rhs), locals={k: Symbol(k) for k in [*values, "t"]}).subs(values)
+        expr = sympify(array_syntax(str(rhs)), locals={k: Symbol(k) for k in [*values, "t"]}).subs(values)
         if not expr.free_symbols - {t}:
             waveforms[str(event.name)] = expr
     return waveforms

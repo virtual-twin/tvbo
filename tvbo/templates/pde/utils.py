@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from tvbo.parse.expression import array_syntax
 from tvbo.utils import as_list
 
 _OPERATOR_NAMES = ("laplacian", "div", "grad", "lap")
@@ -146,7 +147,7 @@ def _sympify(text: str, variables, parameters):
     local.update({v: sp.Symbol(v) for v in variables})
     local.update({p: sp.Symbol(p) for p in parameters})
     try:
-        return sp.sympify(text, locals=local)
+        return sp.sympify(array_syntax(text), locals=local)
     except (sp.SympifyError, SyntaxError, TypeError) as exc:
         raise FieldPlanError(f"cannot parse field equation {text!r}: {exc}") from exc
 
@@ -221,6 +222,9 @@ def _linear_blocks(rhs, row, variables, parameters, field_params):
             continue
         # A per-vertex coefficient cannot collapse to a number; it rides as a named field.
         coeff_fields = sorted({str(s) for s in factor.free_symbols} & field_params)
+        if coeff_fields and term.has(sp.Piecewise):
+            explicit.append(term)  # a field's Piecewise is no coefficient a block can carry
+            continue
         if len(coeff_fields) > 1:
             raise FieldPlanError(f"term {term} multiplies more than one field parameter")
         try:

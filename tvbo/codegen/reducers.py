@@ -13,7 +13,7 @@ from typing import Any
 import sympy as sp
 
 from tvbo.codegen.code import get_printer
-from tvbo.parse.expression import ARRAY_FUNCTIONS
+from tvbo.parse.expression import ARRAY_FUNCTIONS, array_syntax
 
 
 def resolve_streaming_reducer(spec: Any, fmt: str = "jax") -> dict:
@@ -29,7 +29,7 @@ def resolve_streaming_reducer(spec: Any, fmt: str = "jax") -> dict:
     }
 
     def _print(rhs: str) -> str:
-        return printer(sp.sympify(str(rhs), locals=vocab))
+        return printer(sp.sympify(array_syntax(str(rhs)), locals=vocab))
 
     def _block(assignments) -> list:
         out = []

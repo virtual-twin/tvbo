@@ -1606,6 +1606,12 @@ class Brian2Printer(PythonCodePrinter):
         # Brian2 has a native sign().
         return f"sign({self._print(expr.args[0])})"
 
+    def _print_Piecewise(self, expr):
+        """A comparison's 0/1 indicator, ``Piecewise((1, c), (0, True))``, as Brian2's ``int(c)``: its equations have no conditional expression, and ``int`` of a comparison is how they write one as a number. Any other ``Piecewise`` prints as :class:`PythonCodePrinter` prints it."""
+        if len(expr.args) == 2 and expr.args[0].expr == 1 and expr.args[1].expr == 0 and expr.args[1].cond == S.true:
+            return f"int({self._print(expr.args[0].cond)})"
+        return super()._print_Piecewise(expr)
+
 
 class TVBEquationPrinter(NumPyPrinter):
     """Print an expression for TVB's ``Equation.equation`` DSL.

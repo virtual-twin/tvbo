@@ -232,40 +232,45 @@ _ARITHMETIC = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod, ast.P
 """The binary operators that do arithmetic on their operands; ``&`` and ``|`` combine truth values in SymPy, and ``@`` is ``matmul``."""
 
 _EQUALITIES = {ast.Eq: "Eq", ast.NotEq: "Ne"}
-"""The SymPy relation each equality operator names. SymPy reads a bare ``x == y`` as a structural test of the two expressions, ``False`` for two different symbols, so a lowered comparison spells it out."""
+"""The SymPy relation each equality operator names. SymPy reads a bare ``x == y`` as a structural test of the two expressions, ``False`` for two different symbols, so an equality is spelled out wherever it stands, a ``Piecewise`` condition included."""
 
 
 class _ArraySyntax(ast.NodeTransformer):
     """Writes the array syntax a SymPy expression cannot hold in terms it can, and records in ``changed`` whether it wrote anything.
 
-    ``a @ b`` becomes ``matmul(a, b)``, the array product the vocabulary names, since a SymPy symbol has no ``@``. A comparison that arithmetic applies to, the ``p <= alpha`` of ``(p <= alpha) * mask``, becomes ``Piecewise((1, p <= alpha), (0, True))``, 1 where it holds and 0 where not, since a SymPy relational is a truth value and takes no arithmetic. A comparison anywhere else (a ``Piecewise`` condition, an index, an argument of ``any``) is left as it is.
+    ``a @ b`` becomes ``matmul(a, b)``, the array product the vocabulary names, since a SymPy symbol has no ``@``. A comparison that arithmetic applies to, the ``p <= alpha`` of ``(p <= alpha) * mask``, becomes ``Piecewise((1, p <= alpha), (0, True))``, 1 where it holds and 0 where not, since a SymPy relational is a truth value and takes no arithmetic. A comparison anywhere else (a ``Piecewise`` condition, an index, an argument of ``any``) stays a comparison. Wherever it stands, ``==`` becomes ``Eq`` and ``!=`` becomes ``Ne`` (:data:`_EQUALITIES`).
     """
 
     changed = False
 
     def visit_BinOp(self, node):
+        if isinstance(node.op, _ARITHMETIC):
+            node.left, node.right = self._indicator(node.left), self._indicator(node.right)
         self.generic_visit(node)
         if isinstance(node.op, ast.MatMult):
             self.changed = True
             return ast.Call(func=ast.Name("matmul", ast.Load()), args=[node.left, node.right], keywords=[])
-        if isinstance(node.op, _ARITHMETIC):
-            node.left, node.right = self._indicator(node.left), self._indicator(node.right)
         return node
 
     def visit_UnaryOp(self, node):
-        self.generic_visit(node)
         if isinstance(node.op, (ast.UAdd, ast.USub)):
             node.operand = self._indicator(node.operand)
+        self.generic_visit(node)
         return node
 
+    def visit_Compare(self, node):
+        self.generic_visit(node)
+        relation = _EQUALITIES.get(type(node.ops[0])) if len(node.ops) == 1 else None
+        if relation is None:
+            return node
+        self.changed = True
+        return ast.Call(func=ast.Name(relation, ast.Load()), args=[node.left, node.comparators[0]], keywords=[])
+
     def _indicator(self, node):
-        """*node* as the 0/1 ``Piecewise`` of the comparison it is, ``==`` and ``!=`` as ``Eq`` and ``Ne`` (:data:`_EQUALITIES`), or as it is when it is no comparison."""
+        """*node* as the 0/1 ``Piecewise`` of the comparison it is, or as it is when it is no comparison."""
         if not isinstance(node, ast.Compare):
             return node
         self.changed = True
-        relation = _EQUALITIES.get(type(node.ops[0])) if len(node.ops) == 1 else None
-        if relation is not None:
-            node = ast.Call(func=ast.Name(relation, ast.Load()), args=[node.left, node.comparators[0]], keywords=[])
         branches = [
             ast.Tuple([ast.Constant(1), node], ast.Load()),
             ast.Tuple([ast.Constant(0), ast.Constant(True)], ast.Load()),
@@ -276,7 +281,7 @@ class _ArraySyntax(ast.NodeTransformer):
 def array_syntax(expression: str) -> str:
     """*expression* as the SymPy parser can read it (:class:`_ArraySyntax`), or unchanged when it holds nothing to rewrite or is not Python syntax (implicit multiplication, ``2x``, which only the SymPy parser reads).
 
-    Every reader of a declared array expression calls it: :func:`parse_eq`, and the observer and analysis readers that parse against their own vocabularies with ``sympy.sympify``, so the one equation reads alike wherever it is declared.
+    Every reader of a declared expression calls it: :func:`parse_eq`, and the readers that parse against their own vocabularies with ``sympy.sympify`` (an observer's equations and function bodies, an analysis ``equation:``, a streaming reducer's recipe, a field equation, a Brian2 synapse, a stimulus waveform, the schematic, the Python backend's integration scheme and the ontology's model equations), so the one equation reads alike wherever it is declared.
     """
     if not any(mark in expression for mark in "@<>="):
         return expression

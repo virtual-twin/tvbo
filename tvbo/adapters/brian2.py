@@ -182,7 +182,9 @@ def _parse(rhs, syms):
     """A declared right-hand side as a SymPy expression, its names bound to *syms* rather than to SymPy built-ins."""
     import sympy as sp
 
-    return sp.sympify(str(rhs), locals=syms)
+    from tvbo.parse.expression import array_syntax
+
+    return sp.sympify(array_syntax(str(rhs)), locals=syms)
 
 
 def _inline_derived(dvs, syms):

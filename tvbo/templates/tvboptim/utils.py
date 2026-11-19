@@ -2396,7 +2396,11 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         fargs = [str(get_attr(a, "name", a)) for a in as_list(get_attr(fn, "arguments"))]
         frhs = get_attr(feq, "rhs") if feq is not None else None
         loc[str(fname)] = sp.Function(str(fname))
-        fexpr = sp.sympify(str(frhs), locals={**{a: sp.Symbol(a) for a in fargs}, "pi": sp.pi}) if frhs is not None else None
+        fexpr = (
+            sp.sympify(array_syntax(str(frhs)), locals={**{a: sp.Symbol(a) for a in fargs}, "pi": sp.pi})
+            if frhs is not None
+            else None
+        )
         functions[str(fname)] = {"args": fargs, "expr": fexpr}
 
     def _parse(rhs_str: str, where: str):
