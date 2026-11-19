@@ -388,6 +388,7 @@ def surface_panel(fig, ax, ctx):
         vmin=vmin,
         vmax=vmax,
         color=opts.get("color"),
+        transparency=float(opts.get("opacity", 1.0)),
         faces_kwargs=edges,
     )
     ax.set_aspect("equal")  # a surface's frame is anatomy, not a coordinate system
@@ -456,6 +457,8 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     The surface atlas supplies one integer parcel per vertex and the region names those integers stand for; the curated terminology supplies every other name each region answers to. Joining them on the entity key is what places a value by NAME on a mesh, so a parcellated map needs neither a committed ``.annot`` beside the page nor a hand-written abbreviation table.
 
+    Surface atlases spell a parcel three ways: the bare region with the side left to the file (Desikan ``bankssts``, Destrieux ``G_cuneus``), or a name that already carries its side (Schaefer ``7Networks_LH_Vis_1``). A parcel therefore answers to ``ctx-<side>-<region>``, ``ctx_<side>_<region>`` and the bare name, compared without case, so one join serves every atlas templateflow carries.
+
     Across ``hemi: both`` the surface atlas numbers its parcels from zero again in the right hemisphere, so a bare index says ``lateraloccipital`` without saying whose. The side is folded into the id, which is the difference between a bilateral map and one that paints both hemispheres with the left one's values.
     """
     import bsplot
@@ -463,25 +466,17 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     SIDE_STRIDE = 1000
 
-    def _load(h):
-        return bsplot.load_atlas_labels(atlas=surface_atlas, hemi=h, template=template, density=density)
-
-    if hemi == "both":
-        left, region_names = _load("lh")
-        right, _ = _load("rh")
-        labels = _np.concatenate([_np.asarray(left), _np.asarray(right) + SIDE_STRIDE])
-        sides = ("lh", "rh")
-    else:
-        labels, region_names = _load(hemi)
-        labels = _np.asarray(labels)
-        sides = (hemi,)
+    parts, by_key = [], {}
+    for offset, side in enumerate(("lh", "rh") if hemi == "both" else (hemi,)):
+        vertex_labels, region_names = bsplot.load_atlas_labels(atlas=surface_atlas, hemi=side, template=template, density=density)
+        parts.append(_np.asarray(vertex_labels) + offset * SIDE_STRIDE)
+        for index, region in enumerate(region_names):
+            for spelling in (f"ctx-{side}-{region}", f"ctx_{side}_{region}", str(region)):
+                by_key[spelling.lower()] = index + offset * SIDE_STRIDE
 
     names, _entities = _atlas_crosswalk(atlas, base_dir)
-    by_key = {}
-    for offset, side in enumerate(sides):
-        for index, region in enumerate(region_names):
-            by_key[f"ctx-{side}-{str(region)}"] = index + offset * SIDE_STRIDE
-    return labels, {nm: by_key[key] for nm, key in names.items() if key in by_key}
+    keys = {nm: key.lower() for nm, key in names.items()}
+    return _np.concatenate(parts), {nm: by_key[key] for nm, key in keys.items() if key in by_key}
 
 
 def _check_placeable(labels, table, kind: str, atlas: str) -> None:
@@ -669,7 +664,7 @@ def network_panel(fig, ax, ctx):
 
     The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``. It is drawn the way bsplot draws a brain network: the graph is bsplot's ``create_network``, and ``plot_network_on_surface`` renders the region spheres and connection tubes depth-sorted with a translucent ``plot_surf`` cortex (fsaverage, both hemispheres), so the network panels and the surface panels of a figure share one camera and one shading.
 
-    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute. What is only true here: the connectome is the one ``network:`` names, or else the network the layer's experiment ran on, read from the copy the run froze beside its result; ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` picks the camera (axial from above, coronal from the front, sagittal from the left) and defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. A layer with one value per region colours the spheres; one with a value per pair of regions colours the tubes kept by ``edge_percentile`` on the panel's colour scale, and the spheres take ``color``. Tube radii grow with the weight from ``edge_width``, so a strong connection reads as strong. Sizes are in millimetres of the brain. With no layer the panel draws the bare graph in ``color`` and ``edge_color``.
+    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute. What is only true here: the connectome is the one ``network:`` names, or else the network the layer's experiment ran on, read from the copy the run froze beside its result; ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` picks the camera (axial from above, coronal from the front, sagittal from the left) and defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. A layer with one value per region colours the spheres; one with a value per pair of regions colours the tubes kept by ``edge_percentile`` on the panel's colour scale, and the spheres take ``color``. Tube radii grow with the weight from ``edge_width``, so a strong connection reads as strong; a tube ends at the surfaces of the two spheres it joins and is built in sections, so it is drawn behind a node that lies in front of it. Sizes are in millimetres of the brain. With no layer the panel draws the bare graph in ``color`` and ``edge_color``.
     """
     import numpy as _np
     from bsplot.graph import create_network, plot_network_on_surface
@@ -717,7 +712,17 @@ def network_panel(fig, ax, ctx):
 
     shaded = {"color": "auto", "cmap": cmap, "data_key": "value", "vmin": vmin, "vmax": vmax}
     node_kw = shaded if node_values is not None else {"color": resolve_color(opts.get("color", "palette.0"))}
-    edge_kw = shaded if edge_values is not None else {"color": resolve_color(opts.get("edge_color", "base"))}
+    if edge_values is not None:
+        edge_kw = shaded
+    elif opts.get("edge_color") == "weight":
+        from matplotlib.colors import LinearSegmentedColormap, to_rgb
+
+        faint = 0.6 * _np.array(fig.get_facecolor()[:3]) + 0.4 * _np.array(to_rgb(resolve_color("base")))
+        ramp = LinearSegmentedColormap.from_list("weight", [faint, resolve_color("ink")])
+        edge_kw = {"color": "auto", "cmap": ramp, "data_key": "weight", "vmin": 0.0}
+    else:
+        edge_kw = {"color": resolve_color(opts.get("edge_color", "base"))}
+    node_radius = float(opts.get("node_size", 2.5))
     plot_network_on_surface(
         graph,
         ax=ax,
@@ -727,9 +732,13 @@ def network_panel(fig, ax, ctx):
         color=resolve_color(opts.get("surface_color", "base")),
         surface_alpha=float(opts.get("surface_alpha", 0.12)),
         nodes=labels,
-        node_radius=float(opts.get("node_size", 2.5)),
+        node_radius=node_radius,
+        node_resolution=32,
         show_edges=graph.number_of_edges() > 0,
         edge_radius=float(opts.get("edge_linewidth", 0.35)),
+        edge_resolution=16,
+        edge_segments=12,
+        edge_trim=0.9 * node_radius,
         edge_scale={"weight": 3.0},
         edge_alpha=float(opts.get("edge_alpha", 1.0)),
         **{f"node_{k}": v for k, v in node_kw.items()},

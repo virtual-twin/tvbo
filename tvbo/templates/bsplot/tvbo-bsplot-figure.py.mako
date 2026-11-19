@@ -565,22 +565,31 @@ def _channel(ds, da, name, axis=0):
     if dim is not None:
         return np.asarray(da.sel({dim: name}).values).squeeze()
     try:                              # a sibling variable, under whatever prefix it is stored
-        return np.asarray(_var(ds, name).values).squeeze()
+        sibling = _var(ds, name)
     except KeyError:
         pass
+    else:
+        return np.asarray(_cut_to(sibling, coords).values).squeeze()
     for sibling in ds.data_vars.values():   # a component of a sibling's coord: the x of a phase plane whose y was selected out of the same array
         dim = _component_dim(sibling, name)
         if dim is None:
             continue
-        component = sibling.sel({dim: name})
-        for k, v in coords.items():   # the plotted line's own position on every other axis (its node, its trial, the stretch of time an animation shows), so the component is the one it was recorded with
-            if k in component.dims and v.dims in ((), (k,)):
-                component = component.sel({k: v.values})
+        component = _cut_to(sibling.sel({dim: name}), coords)
         if component.shape == da.shape:   # a sibling of another shape (a sweep's results beside the run) was not recorded with this line
             return np.asarray(component.values).squeeze()
     if str(name) not in [str(d) for d in getattr(da, "dims", ())]:
         raise KeyError(f"encoding {name!r} names neither a coordinate, a dimension, a component of a coordinate, nor a variable of this container. Falling back to a positional index here would draw a plausible line against the wrong abscissa: available variables are {sorted(getattr(ds, 'data_vars', {}))}, dims {list(getattr(da, 'dims', ()))}.")
     return _coord(da, name, axis)
+
+
+def _cut_to(arr, coords):
+    """*arr* at the plotted array's own place on every axis the two share, so a quantity read beside the plotted one is the one recorded with it.
+
+    A scalar coord (its node, its trial, the frame an animation shows) picks its entry; a 1-D coord of another length than *arr*'s axis picks the entries it holds (the trail of an animation), and one of the same length is taken as aligned. Numeric and time axes take the nearest entry, label axes the exact one."""
+    for k, v in coords.items():
+        if k in arr.dims and (v.dims == () or (v.dims == (k,) and v.size != arr.sizes[k])):
+            arr = arr.sel({k: v.values}, method="nearest" if v.dtype.kind in "iufmM" else None)
+    return arr
 
 
 def _component_dim(arr, name):

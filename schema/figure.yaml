@@ -1389,7 +1389,7 @@ classes:
         description: "Radius of each region's sphere in millimetres of the brain; unset is 2.5."
       edge_color:
         range: string
-        description: "Colour of the connections that survive `edge_percentile`, when no per-edge layer colours them."
+        description: "Colour of the connections that survive `edge_percentile`, when no per-edge layer colours them; `weight` shades every connection by its weight on a ramp from a faint `base` to the theme's `ink`."
       edge_alpha:
         range: float
         description: "Opacity of those connections."
