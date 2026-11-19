@@ -2190,9 +2190,7 @@ def run_simulation(
         state=state,
         result=result,
         result_transient=result_transient,
-% if has_transient and (has_explorations or has_algorithms):
         opening=(_tr_state if _settled else state).initial_state.dynamics,   # the declared initial condition, before any settle
-% endif
         observations=observations,
 % if _base_stream:
         stream_fn=_stream_fn,   # re-fold a caller's own state without materialising
@@ -4424,9 +4422,8 @@ def run_experiment(
                 algo_model_fn, algo_state = prepare(network, get_solver(), t1=${float(algo_sim_period)}, dt=${dt})
 
 % if _pp_names and has_transient:
-                # The evaluation is the experiment at the tuned values: it opens at the declared initial condition and runs the declared settle under them, and the fold is prepared per call because a kernel's ring opens on that settle.
+                # The evaluation runs the declared settle under the tuned values, and the fold is prepared per call because a kernel's ring opens on that settle.
                 _, post_state = prepare(network, get_solver(block_size=${_pp_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt})
-                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
                 # A single long fold outside any vmap, so progress streams live from inside the scan.
                 post_model_fn = _settled_fold(network, _own_settle(network, result_transient), ${repr(_pp_names)}, ${_pp_bs}, progress=True)
 % elif _pp_names:
@@ -4441,11 +4438,13 @@ def run_experiment(
                 # (needed for full-length BOLD simulation for FC computation)
                 post_model_fn, post_state = prepare(network, get_solver(block_size=${solver_block}), t0=${scan_t0}, t1=${t1_default}, dt=${dt})
 % if has_transient:
-                # The evaluation is the experiment at the tuned values: it opens at the declared initial condition and runs the declared settle under them before its measured window.
-                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
+                # The evaluation runs the declared settle under the tuned values before its measured window.
                 post_model_fn = _settled_first(_own_settle(network, result_transient), post_model_fn)
 % endif
 % endif
+                # The evaluation is the experiment at the tuned values, so it opens at the experiment's own opening with its delay lines filled from it; a declared settle then refills them itself.
+                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
+                post_state = _refill_history(post_state)
 
                 # Determine source state: depends_on result or initial_state
 % if has_deps:
