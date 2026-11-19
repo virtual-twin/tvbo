@@ -24,7 +24,7 @@ from tvbo.templates.tvboptim.utils import (
     graph_selection, observation_dims, trajectory_dims, parameter_keypath,
     has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
     analysis_settings, set_literal,
-    resolve_distribution, distribution_family, draw_expression, initial_condition_draw,
+    resolve_distribution, distribution_family, draw_expression, initial_condition_draw, initial_state_distribution,
     stochastic_moments, resolve_parameter_starts, refuse_axis_on_parameter_start, refuse_initial_value_on_parameter_start, free_parameter_ref,
     refuse_seed_outside_key_range, refuse_trial_starts_under_algorithms,
 )
@@ -346,9 +346,8 @@ sv_distribution_info = {}
 for sv_name, sv in model.state_variables.items():
     dist = getattr(sv, 'distribution', None)
     if dist:
-        # Fallback chain for the bounds: distribution.domain → sv.domain → [-1, 1].
         sv_distribution_info[sv_name] = {
-            **resolve_distribution(dist, random_seed, fallback_domain=getattr(sv, 'domain', None), bounds=(-1.0, 1.0)),
+            **initial_state_distribution(sv, random_seed),
             'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
         }
 

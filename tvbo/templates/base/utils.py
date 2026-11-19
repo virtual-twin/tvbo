@@ -4,6 +4,7 @@ Extracts Python logic from Mako templates for cleaner, testable code.
 """
 
 import keyword
+import math
 from typing import Any
 
 from tvbo.utils import as_list, keyed_items
@@ -350,6 +351,36 @@ def resolve_distribution(
         "own_seed": own_seed is not None,
         "seed": int(own_seed) if own_seed is not None else random_seed,
     }
+
+
+def initial_state_distribution(sv: Any, random_seed: int) -> dict[str, Any]:
+    """How a state variable's declared `distribution` draws its initial state, the one definition the tvb, jax and tvboptim draws read.
+
+    The bounds are the distribution's own `domain`, else the state variable's, else (-1, 1) (`resolve_distribution`). A normal (`distribution_family`) is centred between them with a spread of a quarter of their width, ``{"family": "normal", "loc", "scale"}``; a uniform draws between them, ``{"family": "uniform", "lo", "hi"}``. ``seed`` is the seed `resolve_distribution` keys the draw with, the distribution's own or *random_seed*, the run's.
+
+    Raises:
+        ValueError: Naming the variable, where the declaration says something this draw would not do: a family other than uniform or normal, a `mean` or `std` the bounds stand in for, or bounds that are not finite or not in order, from which a draw would be infinite or empty.
+    """
+    spec = resolve_distribution(sv.distribution, random_seed, fallback_domain=getattr(sv, "domain", None), bounds=(-1.0, 1.0))
+    family = distribution_family(spec["dist"])
+    if family not in ("uniform", "normal"):
+        raise ValueError(
+            f"{sv.name}: an initial-state distribution draws uniform or normal; `{sv.distribution.name}` is not drawn here."
+        )
+    if spec["mean"] is not None or spec["std"] is not None:
+        raise ValueError(
+            f"{sv.name}: an initial-state distribution draws from its bounds; `mean`/`std` are not read here; declare `domain`."
+        )
+    lo, hi = spec["lo"], spec["hi"]
+    if not (math.isfinite(lo) and math.isfinite(hi) and lo <= hi):
+        raise ValueError(
+            f"{sv.name}: its distribution draws the initial state between {lo} and {hi}, from "
+            f"{'its own domain' if getattr(sv.distribution, 'domain', None) else 'the state variable domain'}, which is not a finite interval in order. "
+            "Declare `distribution.domain` with finite bounds, lo not above hi."
+        )
+    if family == "normal":
+        return {"family": "normal", "loc": (lo + hi) / 2, "scale": (hi - lo) / 4.0, "seed": spec["seed"]}
+    return {"family": "uniform", "lo": lo, "hi": hi, "seed": spec["seed"]}
 
 
 def collect_sv_distributions(model):

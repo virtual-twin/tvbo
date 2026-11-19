@@ -28,6 +28,7 @@ from typing import Any
 from tvbo.export.registry import StartKind
 from tvbo.templates.base.utils import (  # noqa: F401  re-exported for the mako templates
     distribution_family,
+    initial_state_distribution,
     referenced,
     resolve_distribution,
     samples_over_time,
@@ -255,9 +256,9 @@ def draw_expression(
 
 
 def initial_condition_draw(info: Mapping[str, Any], key: str, shape: str) -> str:
-    """JAX source drawing one state variable's initial condition from its resolved distribution *info*: a normal around the middle of its bounds with a quarter of their width as spread, and uniform between the bounds for every other declared name."""
-    if distribution_family(info["dist"]) == "normal":
-        return draw_expression("normal", key, shape, mean=(info["lo"] + info["hi"]) / 2, std=(info["hi"] - info["lo"]) / 4.0)
+    """JAX source drawing one state variable's initial condition from *info*, its `initial_state_distribution`."""
+    if info["family"] == "normal":
+        return draw_expression("normal", key, shape, mean=info["loc"], std=info["scale"])
     return draw_expression("uniform", key, shape, lo=info["lo"], hi=info["hi"])
 
 
