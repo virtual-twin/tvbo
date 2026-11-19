@@ -97,10 +97,10 @@ def _exp_key_of(iri, keys) -> str | None:
 
 
 def _panel_bindings(panel) -> list:
-    """Every ``DataRef`` a panel's render opens: each layer's ``used``, and each annotation's ``used``, ``significance.used`` and ``tail_used``."""
+    """Every ``DataRef`` a panel's render opens: each layer's ``used``, each annotation's ``used``, ``significance.used`` and ``tail_used``, and the ``used`` naming a surface's mesh."""
     layers = getattr(panel, "layers", None) or []
     annotations = getattr(panel, "annotations", None) or []
-    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations)]
+    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations, getattr(panel, "surface", None))]
     refs += [getattr(getattr(a, "significance", None), "used", None) for a in annotations]
     refs += [getattr(a, "tail_used", None) for a in annotations]
     return [ref for ref in refs if ref is not None]

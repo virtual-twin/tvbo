@@ -1293,15 +1293,20 @@ classes:
         description: "Pin the map's neutral colour to this value and truncate the map to the half-range the data reaches, keeping the data's own limits: a unit of change is the same colour distance either side, and the bar shows no colour the field never takes."
 
   Surface:
-    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
+    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the four mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, the result of the analysis that derived it, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
     is_a: ColorScale
     attributes:
       connectome:
         range: string
         description: "A tvbo `Network` whose companion carries a mesh group. Geometry belongs to the network, so a study that has one needs no mesh file beside it."
+      used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        description: "The result whose `vertices` (V, 3) and `faces` (F, 3) are the mesh, for one an analysis derived (a parcel mesh, a reconstructed surface), bound as a layer is bound to its data rather than written out to a file by hand. It names only where the result is, since a mesh is both arrays together. When the vertices carry a label coordinate, a layer's values are placed on them by label, and a vertex the layer holds no value for is drawn as missing."
       mesh:
         range: string
-        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces` for a mesh an analysis derived rather than measured."
+        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces`."
       mesh_format:
         range: string
         description: "The mesh file's format, where the extension does not say."

@@ -13,6 +13,7 @@ import re
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
+from types import SimpleNamespace
 
 from tvbo.adapters.base import dense_matrix
 from tvbo.templates import lookup
@@ -216,12 +217,52 @@ def _read_mesh(path: str, kind: str, mesh_format):
     return vertices.copy(), faces.copy()
 
 
+@functools.cache
+def _result_mesh(path: str):
+    """``(vertices, faces, labels)`` of a mesh an analysis derived, read once from its result container.
+
+    The container holds ``vertices`` (V, 3) and ``faces`` (F, 3), the faces indexing the vertices in the order they are stored. ``labels`` names each vertex when the vertices carry a label coordinate (a parcel mesh's regions) and is ``None`` when they do not.
+
+    Raises:
+        ValueError: If the container lacks either array or they are not a triangulation of the vertices.
+    """
+    import numpy as _np
+
+    from tvbo.data.dataref import match_output
+
+    ds = _open_ds(path)
+    try:
+        vertices, faces = (ds[match_output(ds.data_vars, name)] for name in ("vertices", "faces"))
+    except KeyError as missing:
+        raise ValueError(f"surface panel: the mesh's result {path!r} needs `vertices` and `faces`: {missing}") from None
+    v, f = _np.asarray(vertices.values, dtype=float), _np.asarray(faces.values)
+    if v.ndim != 2 or v.shape[1] != 3 or f.ndim != 2 or f.shape[1] != 3 or f.min() < 0 or f.max() >= len(v):
+        raise ValueError(
+            f"surface panel: the mesh's result {path!r} holds vertices of shape {v.shape} and faces of shape {f.shape} "
+            f"reaching index {int(f.max())}; a mesh is (V, 3) coordinates and (F, 3) indices into them."
+        )
+    return v, f.astype(int), _region_labels(vertices)
+
+
+def _derived_mesh(opts):
+    """``(vertices, faces)`` of the mesh a surface's ``used`` binding names, each caller getting its own arrays as from :func:`_read_mesh`."""
+    others = [f"`{_RETIRED_BY_KIND['surface'][k]}:`" for k in ("network", "mesh", "template") if opts.get(k)]
+    if others:
+        raise ValueError(f"surface panel: `used:` names the mesh, so {' and '.join(others)} cannot name another one.")
+    if not opts["mesh_result"]:
+        raise ValueError("surface panel: no result holds the mesh its `used:` names; run the analysis that derives it first.")
+    vertices, faces, _labels = _result_mesh(str(opts["mesh_result"]))
+    return vertices.copy(), faces.copy()
+
+
 def _surface_mesh(ctx):
     """``(vertices, faces)`` for a ``surface`` panel, from whichever source it declares.
 
-    Four tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured), or a named ``template:`` surface, fetched rather than committed so a parcellated map needs no mesh checked in beside the page.
+    Five tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), the result container of the analysis that derived the mesh, named by ``used:`` as a layer names its data, a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — an ``.npz`` holding ``vertices``/``faces``, or a named ``template:`` surface, fetched rather than committed so a parcellated map needs no mesh checked in beside the page.
     """
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
+    if "mesh_result" in opts:
+        return _derived_mesh(opts)
     net_path, mesh_path = opts.get("network"), opts.get("mesh")
     if net_path:
         return _read_mesh(str(resolve_path(net_path, base)), "network", None)
@@ -241,16 +282,14 @@ def _surface_mesh(ctx):
         return _np.vstack([lv, rv]), _np.vstack([lf, rf + len(lv)])
     raise ValueError(
         "surface panel: declare where the mesh comes from — `network:` (a tvbo Network whose "
-        "companion carries a mesh group), `mesh:` (a GIFTI/VTK/FreeSurfer surface, or an "
-        "npz with `vertices`/`faces`), or `template:` (a named surface such as fsaverage)."
+        "companion carries a mesh group), `used:` (the result of the analysis that derived it), "
+        "`mesh:` (a GIFTI/VTK/FreeSurfer surface, or an npz with `vertices`/`faces`), or "
+        "`template:` (a named surface such as fsaverage)."
     )
 
 
-def _vertex_values(da, n_vertices):
-    """A layer's values on the FULL mesh, placed BY LABEL from a vertex-subset array.
-
-    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial wall cut away — returns fewer values than the mesh has vertices and carries the kept indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on its own vertex and leaves the rest NaN, which renders grey; placing them positionally would silently rotate the map into a plausible-looking wrong one.
-    """
+def _one_map(da):
+    """A layer's values as one value per vertex, refusing a layer that still holds several maps."""
     import numpy as _np
 
     values = _np.asarray(da.values, dtype=float).squeeze()
@@ -260,6 +299,41 @@ def _vertex_values(da, n_vertices):
             f"dims {tuple(da.dims)}. Add a `sel:` to the layer picking a single map "
             "(e.g. `sel: {mode: 1}`)."
         )
+    return values
+
+
+def _labelled_vertex_values(da, vertex_labels):
+    """A layer's values on a mesh whose vertices are named, each placed on the vertex of its own name.
+
+    A derived mesh's vertices can be regions — a parcel mesh has one vertex per parcel — and a layer over those regions may be stored in any order, so position says nothing about which vertex a value belongs to. A vertex the layer holds no value for stays NaN and is drawn as missing, which is how a layer over fewer regions than the mesh is placed; a value whose name is no vertex has nowhere to go and is refused.
+    """
+    import numpy as _np
+
+    values, names = _one_map(da), _region_labels(da)
+    if names is None:
+        raise ValueError(
+            "surface panel: the mesh's vertices are named, but the layer carries no region-label coordinate to place its values by."
+        )
+    index = {name: i for i, name in enumerate(vertex_labels)}
+    unknown = [name for name in names if name not in index]
+    if unknown:
+        raise ValueError(
+            f"surface panel: {len(unknown)} of the layer's {len(names)} labels name no vertex of the mesh: {unknown[:5]}"
+            f"{' …' if len(unknown) > 5 else ''}."
+        )
+    full = _np.full(len(vertex_labels), _np.nan)
+    full[[index[name] for name in names]] = values
+    return full
+
+
+def _vertex_values(da, n_vertices):
+    """A layer's values on the FULL mesh, placed BY LABEL from a vertex-subset array.
+
+    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial wall cut away — returns fewer values than the mesh has vertices and carries the kept indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on its own vertex and leaves the rest NaN, which renders grey; placing them positionally would silently rotate the map into a plausible-looking wrong one.
+    """
+    import numpy as _np
+
+    values = _one_map(da)
     if values.size == n_vertices:
         return values
     idx = da.coords["vertex"].values if "vertex" in da.coords else None
@@ -291,7 +365,7 @@ def surface_panel(fig, ax, ctx):
 
     A spec declares all of this as ``surface:`` — the `Surface` class names and documents every attribute, and ``_KIND_RENAMES`` says where one reaches this callable under a different word. What is only true here:
 
-    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`). With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one.
+    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``used`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`); on a mesh whose vertices are named, which a ``used`` result can carry, the layer's values are placed on them by label. With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one.
     """
     import bsplot
     import numpy as _np
@@ -300,6 +374,7 @@ def surface_panel(fig, ax, ctx):
 
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
     verts, faces = _surface_mesh(ctx)
+    vertex_labels = _result_mesh(str(opts["mesh_result"]))[2] if opts.get("mesh_result") else None
     layers = ctx.get("layers") or []
     geometry = bool(opts.get("geometry", False))
     if not layers and not (opts.get("color") or opts.get("edgecolor")):
@@ -355,6 +430,10 @@ def surface_panel(fig, ax, ctx):
                 f"{opts.get('surface_atlas', 'Desikan2006')!r} through atlas {str(opts['atlas'])!r} "
                 f"({labels[:5]}{' …' if len(labels) > 5 else ''}). The panel would draw an empty mesh."
             )
+    elif layers and vertex_labels is not None:
+        values = _labelled_vertex_values(load_layer(layers[0]), vertex_labels)
+        if opts.get("missing_color"):
+            grey = _np.isnan(values)
     elif layers:
         values = _vertex_values(load_layer(layers[0]), len(verts))
         if opts.get("mask"):
@@ -1635,6 +1714,7 @@ _KIND_ATTRS = {
     "surface": (
         *_SCALE_ATTRS,
         "connectome",
+        "used",
         "mesh",
         "mesh_format",
         "template",
@@ -1716,7 +1796,13 @@ _KIND_ATTRS = {
 """Every attribute of the object each built-in kind's loose options became, in the schema's own words. The one list per kind: what a panel may declare, what the drawing code is handed, and what the retired spelling was are all read off it below."""
 
 _KIND_RENAMES = {
-    "surface": {"connectome": "network", "colormap": "cmap", "edge_color": "edgecolor", "edge_width": "edge_linewidth"},
+    "surface": {
+        "connectome": "network",
+        "used": "mesh_result",
+        "colormap": "cmap",
+        "edge_color": "edgecolor",
+        "edge_width": "edge_linewidth",
+    },
     "volume": {"image": "volume", "colormap": "cmap"},
     "network": {
         "connectome": "network",
@@ -1805,6 +1891,8 @@ def _declared_kind(panel) -> dict:
                 value = [_plain(v) for v in raw]
             elif isinstance(raw, (bool, int, float)):
                 value = raw
+            elif attr == "used":
+                value = _plain(raw)  # a binding: _resolve_drawable finds its container, knowing the study
             else:
                 value = _enum_value(raw)  # an enum member, whichever of the two loaders produced it
             out[renames.get(attr, attr)] = HEMISPHERES.get(value, value) if attr == "hemi" else value
@@ -2328,6 +2416,19 @@ def _used_ref(used):
     return str(ana) if ana is not None else None
 
 
+def _mesh_container(ref: dict, base_dir) -> str:
+    """The result container a surface's ``used`` binding names, found by the lookup a layer's ``used`` takes.
+
+    A mesh is the container's ``vertices`` and ``faces`` together, so the binding says only where the result is: an ``output``, ``sel`` or ``transform`` on it would be accepted and then ignored, and is refused instead.
+    """
+    stated = sorted(name for name in ("output", "sel", "transform") if ref.get(name))
+    if stated:
+        raise ValueError(
+            f"surface panel: the mesh's `used:` names where its result is and nothing else, but states {', '.join(stated)}."
+        )
+    return _container_path(_used_ref(SimpleNamespace(**ref)), base_dir, _RESULTS_DIR.get())
+
+
 def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     """Resolve one ``Layer`` into the flat dict the template/callables consume.
 
@@ -2553,6 +2654,8 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
     """
     kind = str(panel.kind)  # datamodel enum -> plain string (flavor-agnostic)
     opts = _panel_opts(panel)
+    if opts.get("mesh_result") is not None:
+        opts["mesh_result"] = _mesh_container(opts["mesh_result"], base_dir)
     # A grid's `layers:` belong to its cells, so they are not also drawn on the host axes.
     cells, cell_labels = _grid_cells(panel, key, base_dir, opts) if kind == "grid" else ([], [])
     layers = (
