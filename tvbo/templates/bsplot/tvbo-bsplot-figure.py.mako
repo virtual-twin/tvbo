@@ -21,7 +21,7 @@ from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   significance_marks as _significance_marks,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient,
                                   to_display as _display)
-from tvbo.data.dataref import match_output as _match_output, select_labeled as _select
+from tvbo.data.dataref import match_output as _match_output, output_array as _output_array, select_labeled as _select
 from tvbo.plot import axis_rule as _axis_rule, field as _field, palette as _palette
 
 _RULE = ${repr(rule)}   # the axis rule this figure's theme declares; empty moves no tick, limit or spine
@@ -39,7 +39,7 @@ _open = functools.lru_cache(maxsize=None)(_open_container)   # a run's result co
 
 
 def _var(ds, output):
-    """The data-variable a layer's ``output`` names, via the shared ``DataRef`` rule.
+    """The data-variable a channel names in *ds*, via the shared ``DataRef`` rule.
 
     A recorded state variable is stored under its own name, while an observation, an analysis result or an estimate carries an ``observation__``/``estimate__`` prefix. A figure names the quantity, not the storage convention, so both resolve — through the one matcher every other consumer uses, not a copy of it.
     """
@@ -229,7 +229,7 @@ def _frame_positions(sources, dim, frames, window=None):
     lengths, coord = set(), None
     for container, output in sources:
         ds = _open(container)
-        da = _var(ds, output)
+        da = _output_array(ds, container, output)
         if dim in da.dims:
             lengths.add(int(da.sizes[dim]))
             if coord is None and (dim in da.coords or dim in ds.coords):
@@ -736,7 +736,7 @@ ${ind}    fig.set_layout_engine("tight")
 </%def>\
 <%def name="load_layer(L)">\
     _ds = _open(${repr(L['container'])})
-    _da = _var(_ds, ${repr(L['output'])})
+    _da = _output_array(_ds, ${repr(L['container'])}, ${repr(L['output'])})
 % if L['transform']:
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif

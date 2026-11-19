@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
@@ -254,6 +255,26 @@ def source_producers(container) -> list[str]:
     return [str(n) for n in reversed(names) if n]
 
 
+@lru_cache(maxsize=64)
+def run_dynamics(container: str) -> dict:
+    """The ``dynamics`` entry of the provenance sidecar beside *container* (:func:`sidecar_path`), the model its run was integrated with; parsed once per container, so a caller that changes it works on a copy.
+
+    Raises:
+        ValueError: If the container has no sidecar or the sidecar records no dynamics, which is the case for an analysis result.
+    """
+    import yaml
+
+    sidecar = sidecar_path(container)
+    if not sidecar.is_file():
+        raise ValueError(
+            f"{Path(container).name} has no provenance sidecar {sidecar.name}, so the model it was run with is unknown."
+        )
+    record = yaml.safe_load(sidecar.read_text(encoding="utf-8"))
+    if not isinstance(record, dict) or not record.get("dynamics"):
+        raise ValueError(f"{sidecar.name} records no dynamics: only an experiment's result carries the model it was run with.")
+    return record["dynamics"]
+
+
 _TRANSIENT: dict[tuple[str, str], Path] = {}
 """The containers of this process's transient analyses (``persist: false``), by (study results root, analysis name), consulted before that root by the in-process ``used:`` resolver."""
 
@@ -472,6 +493,81 @@ def match_output(keys: Iterable[str], output: str, prefer: Iterable[str] = ()) -
     )
 
 
+def output_array(ds, container, output):
+    """The array ``output`` names in the result container at *container*, open as *ds*: the one reading of a reference's WHICH that :func:`resolve_dataref`, a figure layer and a custom panel's ``load_layer`` share.
+
+    ``network.<name>`` and ``dynamics.<name>`` read what the run used from what it wrote beside its container, never by building it again: the network it froze (:func:`_run_network`) and a parameter value its recipe declares (:func:`_run_parameter`). Any other name is a data-variable of *ds*, found by :func:`match_output`.
+    """
+    text = str(output)
+    if text.startswith("network."):
+        return _run_network(container, text.removeprefix("network."))
+    if text.startswith("dynamics."):
+        return _run_parameter(container, ds, text.removeprefix("dynamics."))
+    return ds[match_output(ds.data_vars, output)]
+
+
+def _frozen_network(container):
+    """The network the run that wrote *container* froze beside it (:func:`network_companion_path`), loaded where it stands."""
+    from tvbo.data.network_io import load_network
+
+    companion = network_companion_path(container)
+    if not companion.is_file():
+        raise ValueError(
+            f"{Path(container).name}: its run wrote no network beside it ({companion.name}), so a `network.` output has nothing to read. A single-node run writes none, an analysis result is no run, and a run written before its network was frozen under that name gains one when it runs again."
+        )
+    return load_network(companion)
+
+
+def _run_network(container, name: str):
+    """``network.<name>`` of the run that wrote *container*: what the network it froze (:func:`_frozen_network`) delivers as *name* (:func:`tvbo.data.cohort.network_array`), such as ``weight``, ``positions``, ``instrength`` or ``nodes.<attribute>``.
+
+    A network that takes a layer or a transform argument through a ``used:`` reference is frozen with the reference, not with what the run read, so it is refused: reading it would read that source as it is now.
+    """
+    from tvbo.data.cohort import network_array
+
+    net, companion = _frozen_network(container), network_companion_path(container).name
+    references = net.declared_references()
+    if references:
+        raise ValueError(
+            f"{companion}: the network its run froze takes {'; '.join(map(_reference_text, references))} when it is bound to a run, and keeps the reference rather than what the run read, so `network.{name}` is not read from it; read that source where it is kept."
+        )
+    return network_array(net, name, companion)
+
+
+def _run_parameter(container, ds, name: str):
+    """``dynamics.<name>`` of the run that wrote *container*, open as *ds*: the value its recipe declares for parameter *name* (:func:`run_dynamics`), as a 0-d ``DataArray``.
+
+    Only a value the run held is answered. A parameter the run varied is refused, naming where its values are: under a name of its own in *ds* (an axis or coordinate a sweep or a continuation ran along, named ``<Model>.<name>`` or ``<name>``, an ``estimate__`` an algorithm tuned, an optimization's ``__fitted__`` value), a ``distribution`` it is drawn from, or the nodes of the network the run froze (``network.nodes.<name>``).
+    """
+    import xarray as xr
+
+    from tvbo.data.param_io import resolve_network_node
+    from tvbo.utils import normalize_params
+
+    where = Path(container).name
+    declared = normalize_params(run_dynamics(str(container)).get("parameters"))
+    if name not in declared:
+        raise KeyError(f"{where}: the run's dynamics declares no parameter {name!r}; it declares {sorted(declared)}.")
+    record = declared[name]
+    fits = [k for k in ds.data_vars if str(k).startswith("estimate__") or "__fitted__" in str(k)]
+    recorded = sorted(
+        {str(k) for k in [*ds.sizes, *ds.coords, *fits] if str(k).rsplit("__", 1)[-1].rsplit(".", 1)[-1] == name}
+    )
+    varied = [f"`{k}`" for k in recorded]
+    if record.get("distribution") is not None:
+        varied.append("its `distribution`")
+    if network_companion_path(container).is_file() and resolve_network_node(_frozen_network(container), name) is not None:
+        varied.append(f"`network.nodes.{name}`")
+    if varied:
+        raise ValueError(
+            f"{where}: the run did not hold {name!r} at the one value its recipe declares; its values are in {', '.join(varied)}."
+        )
+    value = record.get("value")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{where}: the run's recipe declares {value!r} for {name!r}, not one number.")
+    return xr.DataArray(float(value), name=name)
+
+
 # --------------------------------------------------------------------------- SLICE
 
 
@@ -680,6 +776,8 @@ def resolve_dataref(
 
     A reference whose ``iri`` names a network (:func:`network_file`) reads ``output`` as that network delivers it, an edge layer with its declared transforms applied or a per-node quantity, and follows the cohort rule when the network itself reads per subject (:func:`tvbo.data.cohort.read_network`).
 
+    An ``output`` under ``network.`` or ``dynamics.`` reads what the run of an experiment used, from what it wrote beside its container (:func:`output_array`), and a per-subject cohort's from beside each shard.
+
     An analysis reference reads a transient analysis this process computed (:func:`locate_analysis_container`) unless *transient* is False, which a reader of kept results (a report's number) passes to be refused it by name.
 
     A *local* reference (no WHERE) raises, as it does in :func:`locate_container`; callers test :func:`is_local_ref` first and route those to the in-run resolver.
@@ -743,7 +841,7 @@ def _read_one(xr, path, ref, *, stacking=False):
     try:
         output = getattr(ref, "output", None)
         try:
-            da = ds[match_output(ds.data_vars, output)]
+            da = output_array(ds, path, output)
         except KeyError:
             table = as_table(ds, output)
             if table is None:

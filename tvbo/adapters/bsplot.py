@@ -2496,9 +2496,9 @@ def load_layer(layer: dict):
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
     ref_fn = registered(TRANSFORMS, ref_name, "transform") if ref_name else None
     ds = _open_ds(layer["container"])
-    from tvbo.data.dataref import match_output, select_labeled
+    from tvbo.data.dataref import output_array, select_labeled
 
-    da = ds[match_output(ds.data_vars, layer["output"])]
+    da = output_array(ds, layer["container"], layer["output"])
     if fn:
         da = fn(da)
     da = select_labeled(da, layer.get("sel"))

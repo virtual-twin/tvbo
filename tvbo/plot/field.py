@@ -10,28 +10,12 @@ from __future__ import annotations
 
 import copy
 import functools
-from pathlib import Path
 
 import numpy as np
-import yaml
-
-
-@functools.lru_cache(maxsize=64)
-def _dynamics_record(container: str) -> dict:
-    """The ``dynamics`` entry of the provenance sidecar beside *container*, parsed once per container."""
-    from tvbo.data.dataref import sidecar_path
-
-    sidecar = sidecar_path(container)
-    if not sidecar.is_file():
-        raise ValueError(f"{Path(container).name} has no provenance sidecar {sidecar.name}, so the model it was run with is unknown.")
-    record = yaml.safe_load(sidecar.read_text())
-    if not isinstance(record, dict) or not record.get("dynamics"):
-        raise ValueError(f"{sidecar.name} records no dynamics: only an experiment's result carries the model a vector field is drawn from.")
-    return record["dynamics"]
 
 
 def dynamics_of(container) -> object:
-    """The `Dynamics` an experiment result was integrated with, read from the provenance sidecar beside its container (`tvbo.data.dataref.sidecar_path`).
+    """The `Dynamics` an experiment result was integrated with, read from the provenance sidecar beside its container (`tvbo.data.dataref.run_dynamics`).
 
     The sidecar is parsed once per container, and every call builds a fresh `Dynamics` from it, so a caller that sets parameters on the model (`with_parameters`) changes no other caller's.
 
@@ -42,8 +26,9 @@ def dynamics_of(container) -> object:
         ValueError: If the container has no sidecar or the sidecar records no dynamics, which is the case for an analysis result.
     """
     from tvbo import Dynamics
+    from tvbo.data.dataref import run_dynamics
 
-    return Dynamics(**copy.deepcopy(_dynamics_record(str(container))))
+    return Dynamics(**copy.deepcopy(run_dynamics(str(container))))
 
 
 def cell_key(cell: dict | None) -> tuple:
