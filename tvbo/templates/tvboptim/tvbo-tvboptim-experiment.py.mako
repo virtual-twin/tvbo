@@ -2458,11 +2458,15 @@ def _settled_fold(network, own, names, block_size, progress=False):
     """The streamed observations *names* of a run that settles under its own values, in that order: folded in-carry over the measured window that follows the settle *own* gives its state, so the run holds no trajectory.
 
     The fold is prepared per call, because a kernel's ring opens on the settle of the run it measures. *block_size* is a multiple of every reducer's period, so each sampling boundary falls on a block boundary.
+
+    It is prepared on the network before any settle, built once here outside the trace. The run's delay lines are the ones its own settle wrote, which its state carries, so a history the network holds would be read only to be discarded, and tvboptim reads a stored history through Python branches on its time stamps, which raise inside a traced call, where those time stamps are tracers.
     """
+    _unsettled = _rebuilt_on(network, network.graph, history=None)
+
     def _run(s):
         s, _settle = own(s)
         _fold_fn, _ = prepare(
-            network, get_solver(block_size=block_size), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
+            _unsettled, get_solver(block_size=block_size), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
             reduce=_stream_reduction(names, ${dt}, settle=_settle_rows(_settle), progress=progress),
         )
         return _fold_fn(s)
