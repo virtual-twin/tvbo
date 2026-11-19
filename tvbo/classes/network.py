@@ -318,6 +318,21 @@ def _merge_partial_node(node, spec: dict, *, override: bool) -> None:
             setattr(node, field, copy.deepcopy(value) if field == "subnetwork" else value)
 
 
+def _generated_positions(positions, n_nodes: int) -> list:
+    """The ``Coordinate`` of each of *n_nodes* generated nodes, from a graph builder's ``node_positions``: an ``(n_nodes, 2)`` or ``(n_nodes, 3)`` array in the network's ``distance_unit``, row ``i`` the position of the node whose weights are row ``i``. A 2-D position lies at ``z`` = 0, so every reader of ``Node.position`` (:meth:`Network.node_positions`, :meth:`Network.get_centers`, the companion's ``nodes/coordinates``) finds three numbers. Any other number of rows or columns is refused, naming ``node_positions``."""
+    arr = np.asarray(positions, dtype=float)
+    if arr.shape[:1] != (n_nodes,):
+        raise ValueError(
+            f"graph_generator returned node_positions of shape {arr.shape} for a {n_nodes}-node weight matrix; one position per node is required."
+        )
+    if arr.shape[1:] not in ((2,), (3,)):
+        raise ValueError(
+            f"graph_generator returned node_positions of shape {arr.shape}; each position is (x, y) or (x, y, z), 2 or 3 columns."
+        )
+    xyz = arr if arr.shape[1] == 3 else np.column_stack([arr, np.zeros(n_nodes)])
+    return [tvbo_datamodel.Coordinate(x=float(x), y=float(y), z=float(z)) for x, y, z in xyz]
+
+
 def _edge_name(key: str) -> str | None:
     """The edge a companion path names, or ``None`` where it names something else — the inverse of :func:`_array_key`.
 
@@ -1239,10 +1254,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         * **`bindings.python.callable`** — the library-wrapper / documented escape hatch for constructions the primitive set cannot express.
         * **`bindings.networkx`** — a library generator (Cycle, Watts–Strogatz, …), built by `tvbo.graph_generators.catalog.library_weights`, the construction every backend integrates.
 
-        Each route yields a `Network`, a dict with at least a `weights` key, or a tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
+        Each route yields a `Network`, a dict with a `weights` key and optionally `lengths`, `node_parameters`, `node_labels` and `node_positions`, or a tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
         `source_dir` is forwarded so Python builders can load companion artefacts.
 
-        The generator supplies the connectome, never the nodes a recipe declares: declared nodes keep their dynamics, parameters and labels, a builder's `node_labels` fills only a label a declared node leaves unset, and its per-node parameters only those a node does not declare. Without declared nodes, a generated node keeps a positional label (`node_<i>`) unless the builder names it through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC pair) has to be able to say so: every keyed selection downstream — an observation's node coord, a figure's `sel: {node: ...}` — resolves against these labels, and `node_0` forces the reader back to binding by index.
+        The generator supplies the connectome, never the nodes a recipe declares: declared nodes keep their dynamics, parameters, labels and positions, a builder's `node_labels` fills only a label a declared node leaves unset, its `node_positions` only a position, and its per-node parameters only those a node does not declare. `node_positions` is an `(n_nodes, 2)` or `(n_nodes, 3)` array in the network's `distance_unit`, row `i` the position of the node whose weights are row `i`; a 2-D position lies at `z` = 0, and any other shape is refused (:func:`_generated_positions`). Without declared nodes, a generated node keeps a positional label (`node_<i>`) unless the builder names it through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC pair) has to be able to say so: every keyed selection downstream — an observation's node coord, a figure's `sel: {node: ...}` — resolves against these labels, and `node_0` forces the reader back to binding by index.
         """
         from tvbo.graph_generators.catalog import declared_defaults, library_weights
 
@@ -1339,8 +1354,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 self._store = store
             self._get_arrays().update(result._get_arrays())
         else:
-            # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`), or tuple `(weights, lengths[, node_params])`.
-            node_labels = None
+            # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`, `node_positions`), or tuple `(weights, lengths[, node_params])`.
+            node_labels = node_positions = None
             if isinstance(result, dict):
                 if "weights" not in result:
                     raise TypeError("graph_generator materialiser dict must include a `weights` key.")
@@ -1350,6 +1365,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 node_labels = result.get("node_labels")
                 if node_labels is not None and len(node_labels) == 0:  # emptiness by length: a label array has no truth value
                     node_labels = None
+                node_positions = result.get("node_positions")
             elif isinstance(result, tuple) and len(result) in (2, 3):
                 weights = _resident_form(result[0])
                 lengths = _resident_form(result[1]) if result[1] is not None else None
@@ -1367,6 +1383,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     f"graph_generator returned {len(node_labels)} node_labels for a "
                     f"{n_nodes}-node weight matrix; one label per node is required."
                 )
+            positions = None if node_positions is None else _generated_positions(node_positions, n_nodes)
             labels = [str(lbl) for lbl in node_labels] if node_labels is not None else [f"node_{i}" for i in range(n_nodes)]
             authored = [] if getattr(self, "_placeholder_nodes", False) else list(self.nodes or [])
             if authored and len(authored) != n_nodes:
@@ -1377,6 +1394,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 if node.label is None and node_labels is not None:
                     node.label = label
             self.nodes = authored or [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
+            if positions is not None:
+                for node, position in zip(self.nodes, positions, strict=True):
+                    if node.position is None:
+                        node.position = position
             # The generator supplies the internal weight matrix only. Preserve any declared edges (e.g. cross-layer routing edges on a subnetwork); only default to empty when none were authored.
             if not getattr(self, "edges", None):
                 self.edges = []
