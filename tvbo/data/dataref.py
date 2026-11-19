@@ -321,7 +321,7 @@ def is_local_ref(ref) -> bool:
     Such a reference names one of *this* experiment's own outputs (the local end of the reference spectrum, subsuming an ``Argument.value: "observations.x"``); it is resolved by the in-run observation machinery, not by opening a sibling container.
     Consumers test this to route a local reference to the right resolver.
     """
-    return not any(getattr(ref, w, None) for w in ("experiment", "analysis", "cohort", "iri"))
+    return all(getattr(ref, w, None) is None for w in ("experiment", "analysis", "cohort", "iri"))
 
 
 def _where(ref, results_root=None, fallback_experiment=None) -> tuple:

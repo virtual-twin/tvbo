@@ -117,6 +117,11 @@ def test_is_local_ref():
     assert not dr.is_local_ref(_ref(iri="tvbo:exp/S/exp-1"))
 
 
+def test_experiment_zero_is_a_where_not_a_local_reference():
+    """Experiment id 0 names an experiment; read by truthiness it read as no WHERE, and the reference fell out of plans and kits (G208)."""
+    assert not dr.is_local_ref(_ref(experiment=0))
+
+
 def test_skip_network_sidecar(tmp_path):
     """The frozen connectome companion shares the directory and must never be opened as the result."""
     (tmp_path / "exp-7_model-M_network.h5").write_bytes(b"")
