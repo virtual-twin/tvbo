@@ -30,6 +30,7 @@ def rng():
 
 
 SOFTWARE_BASED = [
+    "ConsistencyThreshold",
     "FalseDiscoveryControl",
     "GroupedCorrelation",
     "Histogram",
@@ -37,7 +38,7 @@ SOFTWARE_BASED = [
     "NodePermutations",
     "SpinPermutations",
 ]
-"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py``, ``tests/test_mesh_operators.py`` and ``tests/test_resampling_tables.py`` check what they compute."""
+"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py``, ``tests/test_curated_connectome.py``, ``tests/test_mesh_operators.py`` and ``tests/test_resampling_tables.py`` check what they compute."""
 
 
 def test_every_curated_function_resolves_by_iri():
