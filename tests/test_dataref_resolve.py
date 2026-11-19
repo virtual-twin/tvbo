@@ -327,6 +327,19 @@ def test_resolve_dataref_with_reconcile(vec_h5):
     assert list(out.coords["node"].values) == ["C", "A", "B"]
 
 
+def test_by_label_with_no_node_order_to_lay_out_on_is_refused_by_name(vec_h5):
+    """Given no network's order, a `by_label` reference came back in its source's order as if aligned (G207)."""
+    root, _ = vec_h5
+    with pytest.raises(ValueError, match=r"`reconcile: by_label` on the reference to experiment '5', output 'g'"):
+        dr.resolve_dataref(_ref(experiment="5", output="g", reconcile="by_label"), results_root=root)
+
+
+def test_a_caller_that_lays_out_by_label_itself_gets_the_source_order(vec_h5):
+    root, _ = vec_h5
+    out = dr.resolve_dataref(_ref(experiment="5", output="g", reconcile="by_label"), results_root=root, reconcile=False)
+    assert list(out.coords["node"].values) == ["A", "B", "C"]
+
+
 # --------------------------------------------------------------------------- transform
 
 

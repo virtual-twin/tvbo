@@ -66,7 +66,7 @@ used: {iri: spec/desc-ruled_network.yaml, output: weight}  # a layer of a networ
 | `output` | **Which** array: a recorded state variable, an observation, or an analysis key. |
 | `sel` | **Slice** it, by label, keyed by dimension, exactly as an xarray `.sel` does. |
 | `transform` | A registered reduction applied after `sel`. |
-| `reconcile` | Align nodes to the consuming network `by_label`, or take them as-is. |
+| `reconcile` | `none`, the default, takes the array in its stored node order; `by_label` matches its nodes by label. Under a network (its layers and transform arguments, a parameter's or a producer's argument) the array is laid out on the network's node order, through its region aliases. On an analysis argument it matches the analysis's `by_label` arguments to each other, labels compared as written: they are laid out on the node order they all carry, else on their labels sorted. A lone `by_label` argument is refused, and so is any other argument that shares their node axis once they move. |
 
 ::: {.callout-important}
 ## `sel` is label-based, and that is not a detail

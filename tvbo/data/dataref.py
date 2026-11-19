@@ -590,6 +590,11 @@ def _reference_text(ref) -> str:
     return f"the reference to {where}" + (f", output {str(output)!r}" if output else "") if where else "a reference"
 
 
+def node_axes(da) -> list:
+    """The axes of ``da`` that can carry node labels: every dimension with string coordinates, except the one a whole cohort is stacked along (:data:`SUBJECT_DIM`), whose labels are member identifiers even where they coincide with node labels."""
+    return [d for d in da.dims if d != SUBJECT_DIM and d in da.coords and da.coords[d].dtype.kind in "USO"]
+
+
 def reconcile_by_label(
     da,
     alias_map: Mapping[str, str],
@@ -597,29 +602,20 @@ def reconcile_by_label(
     node_dims: Sequence[str] | None = None,
     what: str | None = None,
 ):
-    """Align every labelled node axis of ``da`` to the model's node order, by label.
+    """Align every labelled node axis of ``da`` (:func:`node_axes`) to the model's node order, by label.
 
-    A node axis is any dimension carrying string coordinates, except the one a whole cohort is stacked along (:data:`SUBJECT_DIM`), whose labels are member identifiers even where they coincide with node labels. Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix.
-    Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every such axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
+    Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix. Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every node axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
 
     A model label a node axis does not carry raises a ``ValueError`` that names the labels, the axis, *what* is being reconciled and the labels the axis offers: all of them on a short axis, the nearest by spelling on a long one (:func:`tvbo.utils.labels_offered`).
     """
-    import numpy as np
-
     model_set = set(str(m) for m in model_labels)
-    for d in list(da.dims):
+    for d in node_axes(da):
         if node_dims is not None and d not in node_dims:
             continue
-        if d not in da.coords:
-            continue
-        vals = np.asarray(da.coords[d].values)
-        if vals.dtype.kind not in ("U", "S", "O"):
-            continue
-        mapped = [alias_map.get(str(v), str(v)) for v in vals]
+        mapped = [alias_map.get(str(v), str(v)) for v in da.coords[d].values]
         offered = set(mapped)
-        # Only a real node axis, one with overlapping labels that no cohort is stacked along; forcing another through .sel raises.
-        if node_dims is None and (d == SUBJECT_DIM or not (model_set & offered)):
-            continue
+        if node_dims is None and not (model_set & offered):
+            continue  # an axis sharing no label with the model is not a node axis, and forcing it through .sel raises
         absent = [str(m) for m in model_labels if str(m) not in offered]
         if absent:
             from tvbo.utils import labels_offered
@@ -673,10 +669,11 @@ def resolve_dataref(
     datasets=None,
     source_dir=None,
     transient: bool = True,
+    reconcile: bool = True,
 ):
     """Resolve a container-backed ``DataRef`` to a labelled :class:`xarray.DataArray`.
 
-    Runs the four steps in order — WHERE (:func:`locate_container`), WHICH (:func:`match_output`), SLICE (:func:`select_labeled`), RECONCILE (:func:`reconcile_by_label`, only when the reference asks for ``by_label`` and a network context is supplied) — and returns the array detached from the source file. ``alias_map`` / ``model_labels`` are the consuming network's ``region_alias_map()`` and node order, injected so this stays network-agnostic.
+    Runs the four steps in order — WHERE (:func:`locate_container`), WHICH (:func:`match_output`), SLICE (:func:`select_labeled`), RECONCILE (:func:`reconcile_by_label`, only when the reference asks for ``by_label``) — and returns the array detached from the source file. ``alias_map`` / ``model_labels`` are the consuming network's ``region_alias_map()`` and node order, injected so this stays network-agnostic. A ``by_label`` reference resolved without them raises, naming it, since returning it in its source's order would pass for an alignment that never happened; *reconcile* False leaves the step to a caller that lays several references out on one node order itself, as a study analysis does with its ``by_label`` arguments (:mod:`tvbo.data.analysis_io`).
 
     An ``output`` naming a DataFrame-backed container as a whole returns the frame instead (:func:`as_table`). SLICE and RECONCILE do not apply to a table, so a reference that declares one of them against that shape raises rather than returning something the directive was never applied to.
 
@@ -701,7 +698,7 @@ def resolve_dataref(
         sel = sel_dict(ref)
         sel.pop(SUBJECT_DIM, None)  # the members a `sel` names are the ones `read_cohort` reads
         da = select_labeled(read_cohort(ref, datasets, subject=subject, source_dir=source_dir), sel)
-        return _finish(da, ref, alias_map, model_labels)
+        return _finish(da, ref, alias_map, model_labels, reconcile)
 
     network = names_a_network(ref, source_dir)
     if network is not None:
@@ -710,7 +707,7 @@ def resolve_dataref(
         sel = sel_dict(ref)
         sel.pop(SUBJECT_DIM, None)  # the members a `sel` names are the ones `read_network` reads
         da = read_network(ref, network, subject=subject, datasets=datasets, results_root=results_root, source_dir=source_dir)
-        return _finish(select_labeled(da, sel), ref, alias_map, model_labels)
+        return _finish(select_labeled(da, sel), ref, alias_map, model_labels, reconcile)
 
     where = _where(ref, results_root, fallback_experiment)
     candidates = _exp_candidates(where[1], where[2]) if where[0] == "exp" else None
@@ -719,20 +716,25 @@ def resolve_dataref(
         parts = [_read_one(xr, path, ref, stacking=True) for path in shards.values()]
         da = xr.concat(parts, dim=SUBJECT_DIM, coords="minimal", compat="override", join="outer")
         da = da.assign_coords({SUBJECT_DIM: list(shards)})
-        return _finish(da, ref, alias_map, model_labels)
+        return _finish(da, ref, alias_map, model_labels, reconcile)
 
     out = _read_one(xr, _container_at(where, subject, candidates, transient=transient), ref)
     if not isinstance(out, xr.DataArray):
         return out
-    return _finish(out, ref, alias_map, model_labels)
+    return _finish(out, ref, alias_map, model_labels, reconcile)
 
 
-def _finish(da, ref, alias_map, model_labels):
-    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container. RECONCILE lays out the node axes only, so a stacked cohort keeps its members in their order (:func:`reconcile_by_label`)."""
+def _finish(da, ref, alias_map, model_labels, reconcile=True):
+    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container. RECONCILE runs when *reconcile* is set and lays out the node axes only, so a stacked cohort keeps its members in their order (:func:`reconcile_by_label`); a ``by_label`` reference given no node order to lay out on is refused by name."""
     da = apply_transform(da, getattr(ref, "transform", None))
-    if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
-        da = reconcile_by_label(da, alias_map, model_labels, what=_reference_text(ref))
-    return da
+    if not reconcile or reconcile_mode(ref) != "by_label":
+        return da
+    if alias_map is None or model_labels is None:
+        raise ValueError(
+            f"`reconcile: by_label` on {_reference_text(ref)} lays it out on a node order by label, and nothing gave it one, so it would come back in its source's order. "
+            "A network gives one to its layers and transform arguments and to a parameter's, producer's or exploration builder's argument, and a study analysis lays its `by_label` arguments out on one order between them; anywhere else, drop `reconcile`."
+        )
+    return reconcile_by_label(da, alias_map, model_labels, what=_reference_text(ref))
 
 
 def _read_one(xr, path, ref, *, stacking=False):
