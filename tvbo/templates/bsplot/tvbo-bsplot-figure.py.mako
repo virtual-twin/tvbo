@@ -8,7 +8,6 @@ from __future__ import annotations
 import functools
 
 import numpy as np
-import xarray as xr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -17,7 +16,7 @@ import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   at_frame as _at, expand_bare_axes as _expand_bare_axes,
-                                  fan_entries as _fan_entries,
+                                  fan_entries as _fan_entries, open_container as _open_container,
                                   load_scalar as _load_scalar, registered as _registered,
                                   significance_marks as _significance_marks,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient)
@@ -35,15 +34,7 @@ _importlib.import_module("${m}")  # registers this study's panels/transforms int
 % endfor
 
 
-@functools.lru_cache(maxsize=None)
-def _open(path):
-    """Open a run's result container once per distinct path (xarray).
-
-    An empty path means the layer's container was not on disk when this script was generated. A panel declaring a ``placeholder`` catches this and draws the label; one that does not gets the reason rather than a bare open failure.
-    """
-    if not path:
-        raise FileNotFoundError("this layer's result container was not found when the figure was generated. Run the study so the source is on disk, then re-render.")
-    return xr.open_dataset(path, engine="h5netcdf")
+_open = functools.lru_cache(maxsize=None)(_open_container)   # a run's result container, opened once per distinct path in this script
 
 
 def _var(ds, output):
@@ -917,6 +908,17 @@ ${colorbar(p)}\
 % endif
 % endfor
 </%def>\
+<%def name="guarded(d, target, fn)">\
+% if d['placeholder'] and not d['placeholder_only']:
+    try:                                            # data declared but may be absent: fall back to the label
+        ${target} = ${fn}(fig, ${target}, _pos)
+    except Exception as _e:
+        print("panel ${d['key']}: placeholder ({}: {})".format(type(_e).__name__, _e))
+        _placeholder(${target}, ${repr(d['placeholder'])})
+% else:
+    ${target} = ${fn}(fig, ${target}, _pos)
+% endif
+</%def>\
 <%def name="emit(d, name, what)">\
 % for ins in d['insets']:
 ${emit(ins, '_' + str(ins['key']), 'Sub-axes')}\
@@ -926,7 +928,7 @@ def ${name}(fig, ax, _pos=None):
 ${draw(d)}\
 % for ins in d['insets']:
     _iax = ax.inset_axes(${repr(ins['bounds'])})   # drawn after the body, over it
-    _${ins['key']}(fig, _iax, _pos)
+${guarded(ins, '_iax', '_' + str(ins['key']))}\
 % if ins['post_axopts']:
     _INSET_POST.append((_SCALE_AXES.get(${repr(ins['key'])}, _iax), ${repr(ins['post_axopts'])}))   # re-applied after the axis rule
 % endif
@@ -941,15 +943,7 @@ ${emit(p, '_panel_' + str(p['key']), 'Panel')}\
 def _draw_panels(fig, axd, _pos=None):
     """Draw every panel into *axd* at position ``_pos`` along the animated dimension, without the figure-wide passes."""
 % for p in panels:
-% if p['placeholder'] and not p['placeholder_only']:
-    try:                                            # data declared but may be absent: fall back to the label
-        axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
-    except Exception as _e:
-        print("panel ${p['key']}: placeholder ({}: {})".format(type(_e).__name__, _e))
-        _placeholder(axd[${repr(p['key'])}], ${repr(p['placeholder'])})
-% else:
-    axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
-% endif
+${guarded(p, 'axd[' + repr(p['key']) + ']', '_panel_' + str(p['key']))}\
 % endfor
 
 
@@ -1008,7 +1002,8 @@ def _compose(fig, axd, _pos=None, _pinned=None):
     _axis_rule.place(fig, _RULE, skip=_exempt, names={id(_a): _k for _k, _a in axd.items()},
                      shared={_n: [[axd[_k] for _k in _g if _k in axd] for _g in _gs] for _n, _gs in ${repr(shared_scales)}.items()})
     for _iax, _iopts in _INSET_POST:                        # an inset's declared frame, same rule as a panel's
-        _apply_axopts(_iax, _iopts)
+        if _iax not in _PLACEHOLDER_AXES:                   # a cell that fell back to a placeholder stays bare
+            _apply_axopts(_iax, _iopts)
     for _cbar, _dec, _declared in _COLORBAR_POST:
         _format_colorbar(_cbar, _dec, _declared)
     _format_stray_colorbars(fig, _bars)

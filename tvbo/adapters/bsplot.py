@@ -20,12 +20,22 @@ from tvbo.templates import lookup
 from tvbo.utils import as_list
 
 
-@functools.cache
-def _open_ds(path):
-    """Open a result container once per distinct path (shared by the adapter's custom panels)."""
+def open_container(path):
+    """Open a result container with xarray — public API, the opener of the emitted plot script and of the adapter's own panels alike.
+
+    An empty path means the layer's container was not on disk when the script was generated. A panel declaring a ``placeholder`` catches this and draws the label; one that does not gets the reason, where xarray would open the empty path as the working directory and fail on a directory.
+    """
     import xarray as xr
 
+    if not path:
+        raise FileNotFoundError(
+            "this layer's result container was not found when the figure was generated. Run the study so the source is on disk, then re-render."
+        )
     return xr.open_dataset(path, engine="h5netcdf")
+
+
+_open_ds = functools.cache(open_container)
+""":func:`open_container` once per distinct path, for the adapter's custom and built-in panels."""
 
 
 _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
@@ -2621,13 +2631,13 @@ _BUILTIN_PANELS = {"surface", "volume", "network", "colorbar", "legend", "spring
 class _GridCell:
     """One cell of a ``grid`` panel: the shared ``cell:`` template with this cell's overrides.
 
-    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is how the two would drift apart.
+    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is how the two would drift apart. It carries the grid's ``placeholder``, so a cell whose data is missing falls back to the grid's label as a mosaic panel falls back to its own, and a cell drawn from data shows none.
     """
 
     opts_are_resolved = True
     """Its ``opts`` are the directives the template's and the cell's declared slots resolved to, not what anyone wrote."""
 
-    def __init__(self, template, cell, layers, opts):
+    def __init__(self, template, cell, layers, opts, placeholder):
         self.kind = getattr(cell, "kind", None) or getattr(template, "kind", None)
         self.render = getattr(cell, "render", None) or getattr(template, "render", None)
         self.path = getattr(cell, "path", None) or getattr(template, "path", None)
@@ -2636,7 +2646,8 @@ class _GridCell:
         self.opts = opts
         self.annotations = getattr(cell, "annotations", None)
         self.legend = getattr(cell, "legend", None)
-        self.placeholder = self.number = self.number_loc = self.insets = None
+        self.placeholder = placeholder
+        self.number = self.number_loc = self.insets = None
 
 
 def _grid_geometry(opts, n_cells):
@@ -2754,7 +2765,7 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
         cell = item if declared else None
         merged.update(_panel_opts(cell) if cell is not None else {})
         cell_layers = list(getattr(cell, "layers", None) or []) if declared else [item]
-        cells.append(_GridCell(template, cell, cell_layers, merged))
+        cells.append(_GridCell(template, cell, cell_layers, merged, getattr(panel, "placeholder", None)))
 
     boxes, labels = _grid_geometry(opts, len(cells))
     resolved = [
@@ -2830,6 +2841,8 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
     # A built-in kind names no `render:` and falls back to the callable core registers.
     render = getattr(panel, "render", None) or (kind if kind in _BUILTIN_PANELS else None)
     path = resolve_path(getattr(panel, "path", None), base_dir)
+    # Nothing to draw at all, not even a grid's cells: the placeholder IS the panel, not a fallback. Without this the guarded draw succeeds silently (no layer raises) and the slot renders as an empty 0-1 axes instead of the honest label.
+    placeholder_only = bool(placeholder) and not (layers or cells or render or path)
     source = getattr(panel, "source", None)
     if kind == "image" and source and path:
         # The panel draws a file; with a `source` it is a build product, re-rendered here so the figure cannot go out with a stale screenshot of a page that has since changed.
@@ -2847,8 +2860,7 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         "path": path,
         "render": render,
         "placeholder": placeholder,
-        # Nothing to draw at all: the placeholder IS the panel, not a fallback. Without this the guarded draw succeeds silently (no layer raises) and the slot renders as an empty 0-1 axes instead of the honest label.
-        "placeholder_only": bool(placeholder) and not layers and not render and not path,
+        "placeholder_only": placeholder_only,
         "layers": layers,
         "colorbar": colorbar,
         "colorbar_kwargs": colorbar_kwargs,
@@ -2860,7 +2872,7 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         # Cells of blank band between two triangle layers, so the halves read as two quantities rather than one field (the paper's own `extra_diagonal`).
         "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
         "axopts": axopts,
-        "post_axopts": {} if (placeholder and not layers and not render and not path) else post,
+        "post_axopts": {} if placeholder_only else post,
         "ctx": ctx,
         "annotations": _annotations(panel, base_dir) + cell_labels,
         "groups": [g for g in (_group_axis(opts, "x"), _group_axis(opts, "y")) if g],
