@@ -2385,7 +2385,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     loc: dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
     # setdefault, so a declared symbol of the same name still wins over the primitive.
-    from tvbo.parse.expression import ARRAY_FUNCTIONS
+    from tvbo.parse.expression import ARRAY_FUNCTIONS, array_syntax
 
     for _afn in ARRAY_FUNCTIONS:
         loc.setdefault(str(_afn), sp.Function(str(_afn)))
@@ -2400,7 +2400,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         functions[str(fname)] = {"args": fargs, "expr": fexpr}
 
     def _parse(rhs_str: str, where: str):
-        expr = sp.sympify(rhs_str, locals=loc)
+        expr = sp.sympify(array_syntax(rhs_str), locals=loc)
         unknown = {str(s) for s in expr.free_symbols} - allowed
         if unknown:
             raise ValueError(

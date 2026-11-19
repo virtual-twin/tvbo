@@ -528,3 +528,27 @@ def test_accelerator_that_cannot_be_applied_is_reported(caplog):
     with caplog.at_level("WARNING", logger="tvbo.run"):
         render_tvboptim(_Analysis(rhs="a * 2", execution=_Execution(accelerator="tpu")), {"a": _da([1.0], ["mode"])})
     assert "cannot be applied" in caplog.text and "JAX_PLATFORMS=tpu" in caplog.text
+
+
+# -------------------------- what an observer's chain prints, the host analysis prints too
+
+
+def test_a_comparison_times_a_mask_is_the_elementwise_masked_indicator():
+    p = _da([0.01, 0.2, 0.04, 0.5], ["node"])
+    mask = _da([1.0, 1.0, 0.0, 1.0], ["node"])
+    out = render_tvboptim(_Analysis(rhs="(p <= alpha) * mask"), {"p": p, "alpha": 0.05, "mask": mask})
+    np.testing.assert_array_equal(out.values, [1.0, 0.0, 0.0, 0.0])
+
+
+def test_a_masked_rank_correlation_per_subject_is_scipys_over_the_kept_nodes():
+    """`spearman` lowers to the one expansion the observer printers emit, so a host correlation and an in-loop one cannot differ."""
+    from scipy.stats import spearmanr
+
+    rng = np.random.default_rng(4)
+    x = rng.integers(0, 5, (3, 12)).astype(float)
+    y = x + rng.integers(0, 3, (3, 12))
+    keep = rng.random((3, 12)) < 0.75
+    args = {name: _da(v, ["subject", "node"]) for name, v in (("x", x), ("y", y), ("keep", keep))}
+    out = render_tvboptim(_Analysis(rhs="spearman(x, y, keep)", apply_on_dimension="subject", dims=["subject"]), args)
+    expected = [spearmanr(x[s][keep[s]], y[s][keep[s]]).statistic for s in range(3)]
+    np.testing.assert_allclose(out.values, expected, atol=1e-6)

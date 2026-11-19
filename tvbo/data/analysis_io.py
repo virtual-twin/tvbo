@@ -365,7 +365,7 @@ def _expression_fn(analysis, names, fmt="jax"):
     import sympy as sp
 
     from tvbo.codegen.code import get_printer
-    from tvbo.parse.expression import ARRAY_FUNCTIONS
+    from tvbo.parse.expression import ARRAY_FUNCTIONS, array_syntax
 
     name = analysis_name(analysis)
     rhs = _slot(_slot(analysis, "equation"), "rhs")
@@ -378,7 +378,7 @@ def _expression_fn(analysis, names, fmt="jax"):
             "bindings alongside it, or render the analysis on a backend that is."
         )
     vocab = {**ARRAY_FUNCTIONS, "pi": sp.pi, **{n: sp.Symbol(n) for n in names}}
-    src = get_printer(fmt).doprint(sp.sympify(str(rhs), locals=vocab))
+    src = get_printer(fmt).doprint(sp.sympify(array_syntax(str(rhs)), locals=vocab))
 
     ns: dict = {}
     exec(f"def _analysis({', '.join(names)}):\n    return {src}\n", _EXPRESSION_NAMESPACES[str(fmt)](), ns)
