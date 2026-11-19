@@ -6,15 +6,10 @@ A parameter says where its value comes from in exactly one of three ways, and th
     A YAML literal. Returned as-is; codegen inlines it.
 
 ``source:`` (+ ``measure:``)
-    WHERE existing bytes live — a curated entity's IRI, or a path resolved against
-    the declaring spec's directory. ``measure`` selects one array out of a source
-    holding several; its address space is the source's own (an HDF5/Zarr dataset
-    key, a Network's per-node measure name).
+    WHERE existing bytes live — a curated entity's IRI, or a path resolved against the declaring spec's directory. ``measure`` selects one array out of a source holding several; its address space is the source's own (an HDF5/Zarr dataset key, a Network's per-node measure name).
 
 ``producer:``
-    HOW derived bytes are made — a :class:`FunctionCall` naming the callable, its
-    arguments, and (via ``output``) which entry to take from a callable returning
-    several named arrays.
+    HOW derived bytes are made — a :class:`FunctionCall` naming the callable, its arguments, and (via ``output``) which entry to take from a callable returning several named arrays.
 
 Sourced and produced values are **never materialised into ``Parameter.value``**, so loading a spec stays cheap no matter how large the array is, and a dumper never sees bytes it would try to serialise back into YAML. Resolution happens here, on demand, and the result is cached in this module — the ``Parameter`` object is never mutated.
 
@@ -315,16 +310,53 @@ def read_artifact(path: Any, key: str | None = None) -> Any:
 # ------------------------------------------------------------------------- producers
 
 
+def _reference_context(context: Any, ref: Any, where: str) -> dict:
+    """What the producer argument reference *ref* resolves against, as keyword arguments of :func:`tvbo.data.dataref.resolve_dataref`.
+
+    An experiment states its run's subject, datasets and directory (:meth:`SimulationExperiment._reference_context`), and a network what it was bound to (:meth:`Network.bind_references`). Containers are read from the results directory the network was bound to, else from the one the study layout gives that directory, where a kit's staging reads them too. ``reconcile: by_label`` lays the array out on the network's own node order. Two references are refused, *where* naming the argument: one with no WHERE, which names an output of a run a producer is computed before, and ``by_label`` without a network.
+    """
+    from tvbo.data import dataref
+
+    if dataref.is_local_ref(ref):
+        raise ValueError(
+            f"{where}: its `used:` names no `experiment`, `analysis`, `cohort` or `iri`, and a producer, computed before the run, has no output of the run to read."
+        )
+    net = context.network if hasattr(context, "network") else context
+    is_network = hasattr(net, "reference_results_root")
+    if hasattr(context, "_reference_context"):
+        refs = context._reference_context()
+    else:
+        binding = net._binding() if is_network else {}
+        refs = {"subject": binding.get("subject"), "datasets": binding.get("datasets")}
+        refs["source_dir"] = binding.get("source_dir") or getattr(net, "_source_dir", None)
+    if is_network:
+        refs["results_root"] = net.reference_results_root(source_dir=refs["source_dir"])
+    else:
+        refs["results_root"] = dataref.reference_results_root(source_dir=refs["source_dir"])
+    if dataref.reconcile_mode(ref) == "by_label":
+        if not is_network:
+            raise ValueError(
+                f"{where}: `reconcile: by_label` lays the array out on a network's node order, and the producer was given no network."
+            )
+        refs.update(alias_map=net.region_alias_map(), model_labels=net.node_labels)
+    return refs
+
+
 def _argument_values(producer: Any, context: Any, where: str) -> dict:
     """The producer's arguments as plain kwargs, entity references resolved.
 
-    A `network.*` value is resolved against the context; everything else is a literal.
-    Same rule as a pipeline step's arguments, so a producer reads no differently.
+    A `network.*` value is resolved against the context, as a pipeline step's is. A `used:` reference is read as an analysis's argument is (:func:`tvbo.data.analysis_io.argument_value`), against what :func:`_reference_context` gives, and handed over as its plain array, as a `network.*` array is. Everything else is a literal. An argument whose reference cannot be read is refused, naming the producer and the argument.
     """
+    from tvbo.data.analysis_io import argument_value
     from tvbo.utils import keyed_items
 
     out = {}
     for k, a in keyed_items(_slot(producer, "arguments", None), "arguments"):
+        used = _slot(a, "used")
+        if used is not None:
+            named = f"{where}, argument {str(k)!r}"
+            out[str(k)] = np.asarray(argument_value(a, named, **_reference_context(context, used, named)))
+            continue
         value = _slot(a, "value", a)
         out[str(k)] = _resolve_ref(value, context, where) if is_reference(value) else value
     return out
@@ -557,8 +589,7 @@ def _declared_producers(root: Any, _seen: set | None = None):
 def live_artifacts(root: Any, cache_dir: Path | None = None) -> tuple[set, set]:
     """``(paths, producers)`` this study still reaches in the produced-constant store.
 
-    *producers* is every ``module.function`` whose liveness could be decided; a producer
-    whose arguments cannot be resolved is left out of BOTH sets, so its artifacts are never judged dead on the strength of a failure to look at them.
+    *producers* is every ``module.function`` whose liveness could be decided; a producer whose arguments cannot be resolved is left out of BOTH sets, so its artifacts are never judged dead on the strength of a failure to look at them.
     """
     paths, producers = set(), set()
     for owner in _declared_producers(root):

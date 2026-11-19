@@ -247,6 +247,88 @@ def test_an_unsupported_reference_lists_the_supported_forms(producer_module):
         param_io.resolve(p, context=_network())
 
 
+# ---------------------------------------------- container references in producer args
+
+
+def _mesh():
+    """Stands in for a study analysis a producer reads: a parcel mesh's vertices."""
+    return {"vertices": np.arange(9.0).reshape(3, 3)}
+
+
+def _strength():
+    """Stands in for a per-node analysis stored in another node order than the network's."""
+    import xarray as xr
+
+    return {"strength": xr.DataArray([30.0, 20.0, 10.0], dims=["node"], coords={"node": ["n2", "n1", "n0"]})}
+
+
+def _ran(tmp_path, name):
+    """The results directory a study run leaves after running analysis *name*, whose callable is this module's ``_<name>``."""
+    from tvbo.data import analysis_io
+    from tvbo.datamodel.schema import Analysis
+
+    results = tmp_path / "results"
+    analysis_io.run_analysis(Analysis(name=name, callable={"name": f"_{name}", "module": __name__}), results)
+    return results
+
+
+def _used_producer(used, value=None):
+    """`_echo_positions` with its `positions` read through a `used:` reference."""
+    return FunctionCall(
+        callable=Callable(name="_echo_positions", module=__name__),
+        arguments={
+            "positions": {"name": "positions", "used": used, "value": value},
+            "hemi": {"name": "hemi", "value": "lh"},
+        },
+        output="pos",
+    )
+
+
+def test_a_producer_argument_may_read_an_analysis(producer_module, tmp_path):
+    """`used: {analysis: mesh}` arrives as the analysis's array, read where the network's references are, not as the argument's empty `value`."""
+    p = Parameter(name="ops", producer=_used_producer({"analysis": "mesh", "output": "vertices"}))
+
+    got = param_io.resolve(p, context=_network(3).bind_references(results_root=_ran(tmp_path, "mesh")))
+
+    np.testing.assert_array_equal(got, _mesh()["vertices"])
+
+
+def test_a_producer_argument_read_by_label_takes_the_networks_node_order(producer_module, tmp_path):
+    """`reconcile: by_label` lays a per-node array out on the network's nodes, as it does for a network layer."""
+    used = {"analysis": "strength", "output": "strength", "reconcile": "by_label"}
+    p = Parameter(name="ops", producer=_used_producer(used))
+
+    got = param_io.resolve(p, context=_network(3).bind_references(results_root=_ran(tmp_path, "strength")))
+
+    np.testing.assert_array_equal(got, [10.0, 20.0, 30.0])
+
+
+def test_a_producer_argument_naming_an_analysis_not_yet_run_is_refused_by_name(producer_module, tmp_path):
+    p = Parameter(name="ops", producer=_used_producer({"analysis": "mesh", "output": "vertices"}))
+
+    with pytest.raises(
+        FileNotFoundError, match="Parameter 'ops' producer, argument 'positions': .*no saved result for analysis 'mesh'"
+    ):
+        param_io.resolve(p, context=_network(3).bind_references(results_root=tmp_path / "results"))
+
+
+@pytest.mark.parametrize(
+    ("used", "value", "reason"),
+    [
+        ({"analysis": "mesh", "output": "vertices"}, 1.0, "`value` and `used` are mutually exclusive"),
+        ({"output": "vertices"}, None, "names no `experiment`, `analysis`, `cohort` or `iri`"),
+        ({"analysis": "mesh", "output": "vertices", "reconcile": "by_label"}, None, "given no network"),
+    ],
+    ids=["value-and-used", "local-reference", "by-label-without-a-network"],
+)
+def test_a_producer_argument_it_cannot_read_is_refused_by_name(producer_module, used, value, reason):
+    """Refused before the producer is called, naming the producer and the argument."""
+    p = Parameter(name="ops", producer=_used_producer(used, value))
+
+    with pytest.raises(ValueError, match=f"Parameter 'ops' producer, argument 'positions': .*{reason}"):
+        param_io.resolve(p)
+
+
 # ------------------------------------------------------------- shared-array immutability
 
 

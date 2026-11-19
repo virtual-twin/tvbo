@@ -28,6 +28,7 @@ __all__ = [
     "RENDERERS",
     "analysis_closure",
     "analysis_name",
+    "argument_value",
     "container_path",
     "dependencies",
     "dependents_of",
@@ -352,10 +353,7 @@ _EXPRESSION_NAMESPACES = {
 }
 """Backend name -> the module bindings its printer's output expects at call time.
 
-A printer and the namespace its code runs in are one choice, not two: printing
-``numpy.tanh`` into a scope holding only ``jnp`` compiles fine and raises ``NameError``
-on the first call, so the pair is registered together and an unknown *fmt* is refused
-here rather than at the call site.
+A printer and the namespace its code runs in are one choice, not two: printing ``numpy.tanh`` into a scope holding only ``jnp`` compiles fine and raises ``NameError`` on the first call, so the pair is registered together and an unknown *fmt* is refused here rather than at the call site.
 """
 
 
@@ -652,10 +650,7 @@ def render_tvboptim(analysis, kwargs):
 RENDERERS = {"inprocess": render_inprocess, "tvboptim": render_tvboptim}
 """Backend name -> renderer ``fn(analysis, kwargs) -> produced``.
 
-``Analysis.execution.backend`` selects one, exactly as it selects an experiment's
-engine. A backend that renders experiments does not automatically render analyses:
-this registry is what makes the difference explicit, so an unrendered backend raises
-instead of being silently run by another.
+``Analysis.execution.backend`` selects one, exactly as it selects an experiment's engine. A backend that renders experiments does not automatically render analyses: this registry is what makes the difference explicit, so an unrendered backend raises instead of being silently run by another.
 """
 
 _DEFAULT_RENDERER = "inprocess"
@@ -676,29 +671,36 @@ def _render(analysis, kwargs):
     return renderer(analysis, kwargs)
 
 
+def argument_value(arg, where: str, **refs):
+    """One declared argument's value: its literal ``value`` as written, or the labelled array its ``used:`` reference names (:func:`tvbo.data.dataref.resolve_dataref`, given *refs*).
+
+    The one reading of an argument that an analysis and a parameter producer share, *where* naming the argument when it declares both or its container cannot be found.
+    """
+    used = _slot(arg, "used")
+    value = _slot(arg, "value")
+    if used is not None and value is not None:
+        raise ValueError(
+            f"{where}: `value` and `used` are mutually exclusive — an argument is either a literal or a sourced array."
+        )
+    if used is None:
+        return value
+    try:
+        return _dref.resolve_dataref(used, **refs)
+    except (FileNotFoundError, _dref.AmbiguousContainerError) as e:
+        raise type(e)(f"{where}: {e}") from e
+
+
 def _kwargs_of(analysis, results_root, datasets=None, source_dir=None) -> dict:
-    """The analysis's arguments as kwargs — literals as written, ``used:`` refs resolved.
+    """The analysis's arguments as kwargs — literals as written, ``used:`` refs resolved (:func:`argument_value`).
 
     A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced and reconciled by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the callable selects by name. *datasets* are the study's, where a ``cohort`` reference finds its members, and *source_dir* resolves a relative ``bids_root``.
     """
     name = analysis_name(analysis)
-    out: dict = {}
-    for key, arg in _arg_items(_slot(analysis, "arguments")):
-        used = _slot(arg, "used")
-        value = _slot(arg, "value")
-        if used is not None and value is not None:
-            raise ValueError(
-                f"analysis {name!r}, argument {key!r}: `value` and `used` are mutually "
-                "exclusive — an argument is either a literal or a sourced array."
-            )
-        if used is None:
-            out[key] = value
-            continue
-        try:
-            out[key] = _dref.resolve_dataref(used, results_root=results_root, datasets=datasets, source_dir=source_dir)
-        except (FileNotFoundError, _dref.AmbiguousContainerError) as e:
-            raise type(e)(f"analysis {name!r}, argument {key!r}: {e}") from e
-    return out
+    refs = {"results_root": results_root, "datasets": datasets, "source_dir": source_dir}
+    return {
+        key: argument_value(arg, f"analysis {name!r}, argument {key!r}", **refs)
+        for key, arg in _arg_items(_slot(analysis, "arguments"))
+    }
 
 
 def _as_dataset(name: str, produced, dims=None):
