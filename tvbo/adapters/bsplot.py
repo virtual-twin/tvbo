@@ -1098,7 +1098,7 @@ def colorbar_panel(fig, ax, ctx):
 
     Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
 
-    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. ``ticklabels`` without ``ticks`` are spread evenly from the bar's lower end to its upper end, so ``[low, high]`` labels a quantity in arbitrary units at its two ends rather than with numbers that mean nothing; with ``ticks`` they name those ticks one to one, and lists of different lengths are refused.
+    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound, an end the bar does not declare is read from the data by the rule the surface, volume and network kinds follow (:func:`_colour_limits`): ``symmetric`` centres the scale on zero, ``percentile`` clips it, and without either it spans the data, so the bar cannot drift from what it describes. ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. ``decimals`` writes every tick number to that many places. ``ticklabels`` without ``ticks`` are spread evenly from the bar's lower end to its upper end, so ``[low, high]`` labels a quantity in arbitrary units at its two ends rather than with numbers that mean nothing; with ``ticks`` they name those ticks one to one, and lists of different lengths are refused, as is ``decimals`` beside them, since the labels replace the numbers it would write.
 
     Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
     """
@@ -1111,6 +1111,7 @@ def colorbar_panel(fig, ax, ctx):
     layers = ctx.get("layers") or []
     if (vmin is None or vmax is None) and layers:
         values = _np.asarray(load_layer(layers[0]).values, dtype=float)
+        vmin, vmax = _colour_limits(values, opts, False)
         finite = values[_np.isfinite(values)]
         if finite.size:
             vmin = float(finite.min()) if vmin is None else vmin
@@ -1123,7 +1124,17 @@ def colorbar_panel(fig, ax, ctx):
     lo, hi = float(vmin if vmin is not None else 0.0), float(vmax if vmax is not None else 1.0)
     norm = mpl.colors.Normalize(vmin=lo, vmax=hi)
     mappable = mpl.cm.ScalarMappable(norm=norm, cmap=scale_colormap(opts.get("cmap"), lo, hi, opts.get("center")))
-    cb = fig.colorbar(mappable, cax=ax.inset_axes(box), orientation="vertical" if vertical else "horizontal")
+    decimals = opts.get("decimals")
+    if decimals is not None and opts.get("ticklabels") is not None:
+        raise ValueError(
+            "colorbar panel: `decimals` writes the tick numbers and `ticklabels` replaces them with text; declare one of the two."
+        )
+    cb = fig.colorbar(
+        mappable,
+        cax=ax.inset_axes(box),
+        orientation="vertical" if vertical else "horizontal",
+        format=None if decimals is None else f"{{x:z.{int(decimals)}f}}",  # z: a tick that rounds to zero prints 0, not -0
+    )
     cb.outline.set_linewidth(0.6)
     cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
     ticks, ticklabels = opts.get("ticks"), opts.get("ticklabels")
