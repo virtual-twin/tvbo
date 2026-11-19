@@ -28,7 +28,7 @@ dynamics:
                 rhs: "c_flow"
             initial_value: 0.0
             distribution:
-                name: SquaredGaussian
+                name: Uniform
                 seed: 1
                 domain: { lo: -3.0, hi: 3.0 }
             coupling_variable: true
@@ -42,7 +42,7 @@ dynamics:
             distribution:
                 name: Gaussian
                 seed: 1
-                domain: { lo: -3.0, hi: 3.0 }
+                domain: { lo: -2.0, hi: 2.0 }
             coupling_variable: true
             variable_of_interest: true
 

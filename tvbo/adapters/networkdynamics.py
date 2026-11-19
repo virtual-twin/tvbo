@@ -159,6 +159,24 @@ def _is_julia_body(text: str) -> bool:
     return "\n" in text.strip() or "e_dst[" in text or "obsout[" in text
 
 
+def initial_state_draws(model, seed: int) -> dict[str, str]:
+    """Julia drawing one node's initial value of each state variable of *model* that declares a distribution, from the module's `rng`, keyed by *seed*, by `initial_state_distribution`: a normal as ``loc .+ scale .* randn(rng)``, a uniform as ``lo .+ (hi - lo) .* rand(rng)``.
+
+    Raises:
+        ValueError: Where `initial_state_distribution` refuses a declaration, naming the variable.
+    """
+    from tvbo.templates.base.utils import collect_sv_distributions, initial_state_distribution
+
+    draws = {}
+    for _, sv, _ in collect_sv_distributions(model):
+        spec = initial_state_distribution(sv, seed)
+        if spec["family"] == "normal":
+            draws[sv.name] = f"{spec['loc']} .+ {spec['scale']} .* randn(rng)"
+        else:
+            draws[sv.name] = f"{spec['lo']} .+ ({spec['hi']} - {spec['lo']}) .* rand(rng)"
+    return draws
+
+
 def vertex_outputs(model, coupling) -> list[str]:
     """The states a vertex of *model* outputs, in the order every edge reads them.
 
@@ -631,6 +649,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         ``node_overrides`` holds the ``(row, name, value)`` triples, rows 1-based, a homogeneous network sets over its model's defaults and samples: under ``states`` each node's declared initial values, under ``parameters`` its declared parameter values, each restricted to the names the model declares, as on tvboptim.
 
+        ``initial_draws`` holds, per dynamics, the Julia that draws each state variable declaring a distribution (`initial_state_draws`), so an initial state is drawn by `initial_state_distribution`, the one definition of that draw, and refused where it refuses.
+
         ``dealias`` is set wherever the template gives one component a value the others do not carry as a model default: per-node dynamics, events, and every ``set_default!`` a fixpoint search is seeded with. A stochastic network's ``solver_method`` is the StochasticDiffEq.jl solver of its declared method (`julia_sde_solver`), which refuses a method with no stochastic counterpart.
         """
         from tvbo.adapters.julia_model import julia_sde_solver
@@ -639,6 +659,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         model = ctx["model"]
         if ctx["is_stochastic"]:
             ctx["solver_method"] = julia_sde_solver(self.declared_integration(self.experiment.integration, "method"))
+        ctx["initial_draws"] = {name: initial_state_draws(dyn, ctx["dist_seed"]) for name, dyn in ctx["dynamics_dict"].items()}
         ctx["coupling_splits"] = {key: coupling_split(c, model) for key, c in ctx["all_couplings"].items()}
         split = ctx["edge_split"] = next(iter(ctx["coupling_splits"].values()), None)
         if split is not None:
@@ -707,6 +728,22 @@ class NetworkDynamicsAdapter(BaseAdapter):
                 "Integrate the network, or run the experiment on tvboptim."
             )
 
+    def refuse_draws_over_time(self) -> None:
+        """Raise where a dynamics parameter declares a distribution over time (`samples_over_time`), a stochastic input the template would draw once per node when it sets the initial state and never per step."""
+        from tvbo.templates.base.utils import samples_over_time
+
+        drawn = [
+            f"parameter {p_name!r} of dynamics {name!r}"
+            for name, dyn in self.build_dynamics_dict().items()
+            for p_name, p in (dyn.parameters or {}).items()
+            if samples_over_time(getattr(p, "distribution", None))
+        ]
+        if drawn:
+            raise NotImplementedError(
+                f"the NetworkDynamics.jl templates draw a parameter's distribution once per node and never per step, so {', '.join(drawn)}, declared with `axis: time`, would hold one draw for the whole run. "
+                "Declare `axis: space` for one draw per node, or run the experiment on tvboptim."
+            )
+
     def refuse_seed_mismatch(self) -> None:
         """Raise where two distributions the emitted Julia draws resolve to different seeds.
 
@@ -744,6 +781,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
             )
         refuse_observations(self.experiment, "NetworkDynamics.jl")
         self.refuse_undrawn_starts()
+        self.refuse_draws_over_time()
         self.refuse_seed_mismatch()
         if self.get_execution_info()["find_fixpoint"] and self.holds_coupling():
             raise NotImplementedError(

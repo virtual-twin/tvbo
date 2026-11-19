@@ -354,7 +354,7 @@ def resolve_distribution(
 
 
 def initial_state_distribution(sv: Any, random_seed: int) -> dict[str, Any]:
-    """How a state variable's declared `distribution` draws its initial state, the one definition the tvb, jax and tvboptim draws read.
+    """How a state variable's declared `distribution` draws its initial state, the one definition read by every backend that draws an initial state.
 
     The bounds are the distribution's own `domain`, else the state variable's, else (-1, 1) (`resolve_distribution`). A normal (`distribution_family`) is centred between them with a spread of a quarter of their width, ``{"family": "normal", "loc", "scale"}``; a uniform draws between them, ``{"family": "uniform", "lo", "hi"}``. ``seed`` is the seed `resolve_distribution` keys the draw with, the distribution's own or *random_seed*, the run's.
 
@@ -384,14 +384,14 @@ def initial_state_distribution(sv: Any, random_seed: int) -> dict[str, Any]:
 
 
 def collect_sv_distributions(model):
-    """Collect state variables that have a distribution for random ICs.
+    """Every state variable that declares a distribution, from which `initial_state_distribution` draws its initial state, whether or not the distribution has a `domain` of its own.
 
     Returns list of (index, StateVariable, Distribution).
     """
     result = []
     for i, sv in enumerate(model.state_variables.values()):
         d = getattr(sv, "distribution", None)
-        if d and getattr(d, "domain", None):
+        if d:
             result.append((i, sv, d))
     return result
 
@@ -426,67 +426,10 @@ def get_distribution_seed(model, default=0):
     return default
 
 
-def _dist_params(dist):
-    """Extract mean/std from distribution parameters dict."""
-    params = getattr(dist, "parameters", None) or {}
-    mu = sigma = None
-    for p in params.values() if hasattr(params, "values") else params:
-        name = str(getattr(p, "name", ""))
-        val = getattr(p, "value", None)
-        if name == "mean" and val is not None:
-            mu = float(val)
-        elif name == "std" and val is not None:
-            sigma = float(val)
-    return mu, sigma
-
-
-def sample_expression(dist, backend="julia"):
-    """Generate a sampling expression string for a Distribution.
-
-    Args:
-        dist: Distribution object with .name, .domain, .parameters
-        backend: 'julia', 'numpy', or 'jax'
-
-    Returns:
-        str: code expression that samples one value from the distribution.
-    """
-    name = str(dist.name) if dist.name else "Uniform"
-    lo = dist.domain.lo
-    hi = dist.domain.hi
-
-    if backend == "julia":
-        return _sample_julia(name, lo, hi, dist)
-    elif backend in ("numpy", "jax"):
-        mod = "jnp" if backend == "jax" else "np"
-        return _sample_numpy(name, lo, hi, dist, mod)
-    else:
-        return _sample_numpy(name, lo, hi, dist, "np")
-
-
-def _sample_julia(name, lo, hi, dist):
-    if name == "Uniform":
-        return f"{lo} .+ ({hi} - {lo}) .* rand(rng)"
-    elif name == "Gaussian":
-        mu, sigma = _dist_params(dist)
-        if mu is None:
-            mu = f"({lo} + {hi}) / 2"
-        if sigma is None:
-            sigma = f"({hi} - {lo}) / 6"
-        return f"{mu} .+ {sigma} .* randn(rng)"
+def sample_expression(dist):
+    """Julia drawing one value of a per-node parameter uniform on its *dist*'s `domain` from the NetworkDynamics.jl module's `rng`, the one parameter draw that backend makes: another family is refused (`refuse_undrawn_starts`), and so is a draw over time (`refuse_draws_over_time`)."""
+    lo, hi = dist.domain.lo, dist.domain.hi
     return f"{lo} .+ ({hi} - {lo}) .* rand(rng)"
-
-
-def _sample_numpy(name, lo, hi, dist, mod="np"):
-    if name == "Uniform":
-        return f"rng.uniform({lo}, {hi}, size=n_nodes)"
-    elif name == "Gaussian":
-        mu, sigma = _dist_params(dist)
-        if mu is None:
-            mu = f"({lo} + {hi}) / 2"
-        if sigma is None:
-            sigma = f"({hi} - {lo}) / 6"
-        return f"rng.normal({mu}, {sigma}, size=n_nodes)"
-    return f"rng.uniform({lo}, {hi}, size=n_nodes)"
 
 
 # ── Graph generator utilities: dispatch is database-driven, one YAML per generator type ──

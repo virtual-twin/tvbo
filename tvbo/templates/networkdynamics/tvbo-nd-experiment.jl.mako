@@ -32,7 +32,7 @@ coupling_splits, edge_split, graph_form, graph_edges, edge_weights, edge_paramet
 vertex_layouts, node_states, node_overrides, hold_coupling, hold_rows, held_inputs, \
 sv_names, n_sv, is_heterogeneous, is_stochastic, \
 dt, duration, solver_method, solve_kwargs, needs_stiff, \
-dist_info, needs_random, dist_seed, \
+dist_info, needs_random, dist_seed, initial_draws, \
 all_events, has_events, coupling_observed, find_fixpoint, \
 is_static, parse_node_parameters, get_noise_sigmas"/>
 <%!
@@ -203,14 +203,13 @@ rng = MersenneTwister(${dist_seed})
 %>
 % for sv in (dyn.state_variables or {}).values():
 <%
-    d = getattr(sv, 'distribution', None)
-    has_dist = d and getattr(d, 'domain', None)
+    draw = initial_draws[dyn_name].get(sv.name)
     init_val = node_states[node.id].get(sv.name)
 %>
 % if init_val is not None:
 s.v[${node_idx}, :${sv.name}] = ${init_val}
-% elif has_dist:
-s.v[${node_idx}, :${sv.name}] = ${sample_expression(d, 'julia')}
+% elif draw:
+s.v[${node_idx}, :${sv.name}] = ${draw}
 % else:
 s.v[${node_idx}, :${sv.name}] = ${_initial_value(sv)}
 % endif
@@ -226,7 +225,7 @@ s.p.v[${node_idx}, :${p_name}] = ${p_val}
 % endfor
 % for p_name, p_obj, d in dist_info.get(dyn_name, {}).get('param', []):
 % if p_name not in node_params:
-s.p.v[${node_idx}, :${p_name}] = ${sample_expression(d, 'julia')}
+s.p.v[${node_idx}, :${p_name}] = ${sample_expression(d)}
 % endif
 % endfor
 % endif
@@ -235,12 +234,11 @@ s.p.v[${node_idx}, :${p_name}] = ${sample_expression(d, 'julia')}
 ## Homogeneous initial conditions
 % for i, sv in enumerate(model.state_variables.values()):
 <%
-    d = getattr(sv, 'distribution', None)
-    has_dist = d and getattr(d, 'domain', None)
+    draw = initial_draws[model.name].get(sv.name)
 %>
-% if has_dist:
+% if draw:
 for node in 1:nv(g)
-    s.v[node, :${sv.name}] = ${sample_expression(d, 'julia')}
+    s.v[node, :${sv.name}] = ${draw}
 end
 % else:
 s.v[1:nv(g), :${sv.name}] .= ${_initial_value(sv)}
@@ -248,7 +246,7 @@ s.v[1:nv(g), :${sv.name}] .= ${_initial_value(sv)}
 % endfor
 % for p_name, p_obj, d in collect_param_distributions(model):
 for node in 1:nv(g)
-    s.p.v[node, :${p_name}] = ${sample_expression(d, 'julia')}
+    s.p.v[node, :${p_name}] = ${sample_expression(d)}
 end
 % endfor
 ## Each node's declared initial values and parameters, over the model's defaults and samples

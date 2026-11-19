@@ -1,4 +1,4 @@
-"""A declared initial-state distribution draws by one definition of its family, spread and bounds on tvb, jax and tvboptim.
+"""A declared initial-state distribution draws by one definition of its family, spread and bounds on every backend that draws an initial state.
 
 The host draw that opens a tvb or jax run (`collect_initial_conditions`) and the draw the tvboptim module emits (`initial_condition_draw`) read the same declaration: a normal centred between the bounds with a quarter of their width as spread or a uniform between them, the bounds the distribution's own `domain`, else the state variable's, else (-1, 1). They read it through `initial_state_distribution`, which refuses by name what neither draw would honour: another family, a declared `mean` or `std`, and bounds that are not finite or not in order.
 """

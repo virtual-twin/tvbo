@@ -1396,7 +1396,7 @@ class DynamicsRuntime(Catalogued, Copyable):
     def get_initial_values(self, default=0.1, random=False, N=1, seed=0, **kwargs):
         """Build the initial state vector for a simulation.
 
-        If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it, by the family, spread and bounds `initial_state_distribution` gives the tvb, jax and tvboptim draws; otherwise each variable's `initial_value` (or `default`) is used.
+        If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it, by the family, spread and bounds `initial_state_distribution` gives every backend that draws an initial state; otherwise each variable's `initial_value` (or `default`) is used.
 
         Args:
             default: Fallback value for variables without an initial value.
