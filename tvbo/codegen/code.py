@@ -248,14 +248,14 @@ def _afp_window_mean(p, expr):
 
 
 def _afp_subsample(p, expr):
-    """Strided slice of the leading (time) axis.
+    """Strided slice of the leading (time) axis, taking the last sample of each stride.
 
-    ``subsample(x, step)``        -> ``x[::step]`` ``subsample(x, start, step)`` -> ``x[start::step]`` The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
+    ``subsample(x, step)`` -> ``x[step - 1::step]``, ``subsample(x, start, step)`` -> ``x[start::step]``. A sample row is the state after its step, so the two-argument form keeps the samples at ``step, 2 step, ...`` steps into the series: the grid TVB's periodic monitors, tvboptim's ``SubSampling``, the streamed stride reducer and the period-end stamp of an observation all use. The three-argument form states another phase.
     """
     a = expr.args
     if len(a) >= 3:
         return p._render_index(a[0], [(a[1], None, a[2])])
-    return p._render_index(a[0], [(None, None, a[1])])
+    return p._render_index(a[0], [(a[1] - 1, None, a[1])])
 
 
 def _afp_slice_axis(p, expr):
