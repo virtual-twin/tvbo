@@ -1,6 +1,6 @@
 """Statistics over stored, labelled arrays: the implementations behind the software-based curated functions.
 
-Each function here is named by a record in ``tvbo/database/functions/`` (``GroupedCorrelation``, ``FalseDiscoveryControl``, ``Histogram``) and returns a mapping of labelled arrays, which a study-level analysis stores one variable per key. Each runs along one named dimension and keeps every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study.
+Each function here is named by a record in ``tvbo/database/functions/`` (``GroupedCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``) and returns a labelled array or a mapping of them, which a study-level analysis stores one variable per key. Each runs along one named dimension: the correlations and counts keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study, and the phase-synchrony measures pair the nodes of the one other.
 """
 
 from __future__ import annotations
@@ -259,3 +259,57 @@ def histogram(values, n_bins: int, lower: float, upper: float, where=None) -> di
         "width": float(edges[1] - edges[0]),
         "n": int(count.sum()),
     }
+
+
+def _phase_series(phase, dim: str):
+    """*phase* as a labelled array along *dim* and one node dimension, in that order; a bare 2-D array runs along *dim* first and ``node`` second."""
+    import xarray as xr
+
+    if not isinstance(phase, xr.DataArray):
+        array = np.asarray(phase, dtype=float)
+        if array.ndim != 2:
+            raise ValueError(
+                f"`phase` is a bare array of rank {array.ndim}; a bare phase is 2-D, along {dim!r} first and its nodes second."
+            )
+        phase = xr.DataArray(array, dims=[dim, "node"])
+    nodes = [d for d in phase.dims if d != dim]
+    if dim not in phase.dims or len(nodes) != 1:
+        raise ValueError(f"`phase` runs along {list(phase.dims)}; it must run along {dim!r} and one node dimension.")
+    return phase.transpose(dim, nodes[0])
+
+
+def _node_pairs(value, phase):
+    """*value*, one entry per two nodes of the ``(dim, node)`` *phase*, on the node dimension and the same name with ``_j`` appended, both labelled as *phase*'s nodes are."""
+    import xarray as xr
+
+    node = phase.dims[1]
+    labels = phase.indexes.get(node)
+    coords = {} if labels is None else {node: labels.values, f"{node}_j": labels.values}
+    return xr.DataArray(value, dims=[node, f"{node}_j"], coords=coords)
+
+
+def phase_locking_value(phase, dim: str = "time"):
+    """The phase locking value of every two nodes: the modulus of the mean over *dim* of ``exp(i (phase_j - phase_k))``.
+
+    It is 1 for two nodes whose phase difference stays constant, near 0 for one spread evenly over the circle, and 1 on the diagonal. *phase* is in radians, along *dim* and one node dimension; a bare 2-D array is read with *dim* first. Folded over a run, the same quantity is the ``phase_locking_value`` reducer recipe.
+
+    Returns:
+        The node-by-node matrix, labelled as :func:`_node_pairs` labels it.
+    """
+    phase = _phase_series(phase, dim)
+    unit = np.exp(1j * phase.values)
+    return _node_pairs(np.abs(unit.T @ unit.conj()) / unit.shape[0], phase)
+
+
+def phase_lag_index(phase, dim: str = "time"):
+    """The phase lag index of every two nodes: the modulus of the mean over *dim* of ``sign(sin(phase_j - phase_k))``.
+
+    It is 1 for two nodes whose phase difference stays strictly inside (0, pi) or strictly inside (-pi, 0), 0 for a zero difference and on the diagonal, and near 0 for a difference spread evenly over the circle. *phase* is read as :func:`phase_locking_value` reads it. One node's row is formed at a time, so the memory is one array of the phase's size rather than one per pair of nodes. Folded over a run, the same quantity is the ``phase_lag_index`` reducer recipe.
+
+    Returns:
+        The node-by-node matrix, labelled as :func:`_node_pairs` labels it.
+    """
+    phase = _phase_series(phase, dim)
+    angles = phase.values
+    rows = [np.abs(np.mean(np.sign(np.sin(angles[:, [j]] - angles)), axis=0)) for j in range(angles.shape[1])]
+    return _node_pairs(np.stack(rows), phase)

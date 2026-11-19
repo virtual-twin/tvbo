@@ -38,9 +38,11 @@ SOFTWARE_BASED = [
     "NodePermutations",
     "NonnegativeFactorization",
     "NonnegativeFactorizationCrossValidation",
+    "PhaseLagIndex",
+    "PhaseLockingValue",
     "SpinPermutations",
 ]
-"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py``, ``tests/test_curated_connectome.py``, ``tests/test_mesh_operators.py``, ``tests/test_resampling_tables.py`` and ``tests/test_curated_connectome_factorization.py`` check what they compute."""
+"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py``, ``tests/test_curated_connectome.py``, ``tests/test_mesh_operators.py``, ``tests/test_resampling_tables.py``, ``tests/test_curated_connectome_factorization.py`` and ``tests/test_phase_synchrony_reducers.py`` check what they compute."""
 
 
 def test_every_curated_function_resolves_by_iri():

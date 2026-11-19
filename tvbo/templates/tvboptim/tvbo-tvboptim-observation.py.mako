@@ -469,6 +469,8 @@ ${render_convolution_reduction(red, name, s_idx, dt)}\
 ${render_stride_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'comoment':
 ${render_comoment_reduction(red, name, s_idx, dt)}\
+% elif red.get('kind') == 'run':
+${render_run_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'wave':
 ${render_wave_reduction(red, name, s_idx, dt)}\
 % else:
@@ -516,6 +518,36 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
     def _finalize(acc):
         ${_acc}, _gstep = acc
         return ${_emit}
+    return (_init, _update, _finalize)
+</%def>\
+<%def name="render_run_reduction(red, name, s_idx, dt)">\
+<%doc>
+    A reducer recipe read out once over the run (`emit_kind: run`, utils._resolve_run_stream), such as the phase locking value. Its `add` folds one sample of the source at a time, every sample from the transient `skip` on, and its `emit` is read out at finalize, so the carry is the recipe's state and never a trajectory. Every state starts at zero in the shape `add` gives it from a zero scalar, which `jax.eval_shape` finds without computing anything, so a node-by-node accumulator needs no declared shape.
+</%doc>\
+<%
+    _acc = ", ".join(red['states'])
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
+    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
+    def _add(${_acc}, v):
+% for _lhs, _rhs in red['add']:
+        ${_lhs} = ${_rhs}
+% endfor
+        return (${_acc},)
+    def _init(template, n_steps):
+        _zero = jnp.zeros((), template.dtype)
+        _shapes = jax.eval_shape(_add, *[_zero] * ${len(red['states'])}, template[s_var])
+        return (*[jnp.zeros(_s.shape, _s.dtype) for _s in _shapes], jnp.array(0))
+    def _update(carry, block):
+        def _step(state, row):
+            *_folded, _gstep = state
+            _added = _add(*_folded, row[s_var])
+            _folded = [jnp.where(_gstep >= skip, _new, _old) for _new, _old in zip(_added, _folded)]
+            return (*_folded, _gstep + 1), None
+        return jax.lax.scan(_step, carry, block)[0]
+    def _finalize(carry):
+        ${_acc}, _gstep = carry
+        return ${red['emit']}
     return (_init, _update, _finalize)
 </%def>\
 <%def name="render_convolution_reduction(red, name, s_idx, dt)">\

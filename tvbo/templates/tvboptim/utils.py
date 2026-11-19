@@ -1862,6 +1862,15 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     }
 
 
+def _step_recipe(step: Any, emit_kind: str):
+    """The reducer recipe registered for the callable a pipeline *step* names, when its ``emit_kind`` is *emit_kind*, else ``None``."""
+    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
+
+    call = get_attr(step, "callable")
+    spec = lookup_streaming_reducer("tvboptim", str(get_attr(call, "module", "") or ""), str(get_attr(call, "name", "") or ""))
+    return spec if spec is not None and spec.emit_kind == emit_kind else None
+
+
 def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
     """Lift a cumulative co-moment FC reducer from a ``compute_fc`` pipeline marked ``reduce: streaming``.
 
@@ -1870,7 +1879,6 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
     The reducer's assignments are lowered to backend source here (via the shared :func:`tvbo.codegen.reducers.resolve_streaming_reducer`) so the render partial emits from clean context; the dict is tagged ``kind: 'comoment'`` for the matrix-state render branch. Returns ``None`` when the pipeline's first reducer has no registered ``window`` streaming form (so the caller falls through to the BOLD path). Takes no ``experiment`` — side-effect-free, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
     """
     from tvbo.codegen.reducers import resolve_streaming_reducer
-    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 
     name = str(get_attr(obs, "name", "observation"))
     source = obs_source(obs)
@@ -1878,13 +1886,9 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
         raise ValueError(
             f"Observation {name!r} declares a compute_fc pipeline + reduce: streaming but has no source to reduce over."
         )
-    pipeline = as_list(get_attr(obs, "pipeline"))
-    step = pipeline[0]
-    call = get_attr(step, "callable")
-    mod = str(get_attr(call, "module", "") or "")
-    fname = str(get_attr(call, "name", "") or "")
-    spec = lookup_streaming_reducer("tvboptim", mod, fname)
-    if spec is None or spec.emit_kind != "window":
+    step = as_list(get_attr(obs, "pipeline"))[0]
+    spec = _step_recipe(step, "window")
+    if spec is None:
         return None
 
     # compute_fc `skip_t` (initial samples dropped before correlating), read off the step arguments (dict-keyed or a legacy list of named args).
@@ -1906,6 +1910,26 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
         "skip_t": int(skip_t),
         "statistic": "mean",
         "windowed": False,
+    }
+
+
+def _resolve_run_stream(obs: Any) -> dict[str, Any] | None:
+    """Lift a reducer recipe read out once over the run (``emit_kind: run``) from the pipeline step it replaces, on an observation marked ``reduce: streaming``.
+
+    The recipe is registered for the step's callable, as ``windowed_fc`` is for ``compute_fc``, so a step naming ``tvbo:functions/PhaseLockingValue`` streams through the ``phase_locking_value`` recipe. Its ``add`` folds every sample after the transient into its state and its ``emit`` is read out once at finalize, so no trajectory is held. The assignments are lowered here (:func:`tvbo.codegen.reducers.resolve_streaming_reducer`) and the dict is tagged ``kind: 'run'`` for the observation template's ``render_run_reduction``. No kind names the emitted value's axes, so the observation declares them with ``dims:``. Returns ``None`` when the step's callable has no such recipe. Takes no ``experiment``, so the bare ``resolve_reduction(obs)`` streaming predicate stays side-effect-free.
+    """
+    from tvbo.codegen.reducers import resolve_streaming_reducer
+
+    spec = _step_recipe(as_list(get_attr(obs, "pipeline"))[0], "run")
+    if spec is None:
+        return None
+    lowered = resolve_streaming_reducer(spec, "jax")
+    return {
+        "kind": "run",
+        "source": obs_source(obs),
+        "states": list(spec.state),
+        "add": lowered["add"],
+        "emit": lowered["emit"],
     }
 
 
@@ -2333,11 +2357,14 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         _pipe = as_list(get_attr(obs, "pipeline"))
         if not _pipe and _agg in {"mean", "std", "variance", "last", "first_passage"}:
             return _resolve_stat_stream(obs)
-        # A compute_fc (windowed-correlation) pipeline streams as a cumulative co-moment FC reducer (add-only Welford), NOT the HRF/BOLD convolution reducer; fall through to the BOLD path only when the pipeline is not a registered windowed reducer.
+        # A step whose callable a recipe replaces streams through it (a `window` recipe as a cumulative co-moment FC, a `run` recipe as a fold over the run), a subsampling step as a stride, and any other pipeline as the HRF/BOLD convolution reducer.
         if _pipe:
             _fc = _resolve_fc_stream(obs)
             if _fc is not None:
                 return _fc
+            _run = _resolve_run_stream(obs)
+            if _run is not None:
+                return _run
             _sub = _resolve_subsample_stream(obs, experiment)
             if _sub is not None:
                 return _sub

@@ -508,7 +508,7 @@ enums:
         permissible_values:
             streaming:
                 description: >-
-                    Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, and a matrix co-moment FC (compute_fc as a running covariance).
+                    Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, a matrix co-moment FC (compute_fc as a running covariance), and a pipeline step whose callable a curated reducer recipe with `emit_kind: run` replaces (the phase locking value and phase lag index).
             trials:
                 description: >-
                     Evaluate the pipeline across the trial ensemble rather than per solve: the (single) source observation is computed per trial as usual, and after the trial map this observation's (single) pipeline stage runs host-side on the trial-stacked source (n_trials, ...) — e.g. a pattern-entropy over an ensemble of per-trial evoked patterns. Requires a trial-only exploration (n_trials without parameter axes).
@@ -521,6 +521,8 @@ enums:
                 description: "Emit every step, over the current window (a sliding FC)."
             stride:
                 description: "Emit once per stride, at the window boundary (dFC / FCD)."
+            run:
+                description: "Emit once, at the end of the run, over every sample after the transient (a phase locking value). Every state starts at zero in the shape `add` gives it; `evict` and `resync` are not read."
 
     ContinuationAlgorithm:
         description: >-
@@ -1956,7 +1958,7 @@ classes:
             reduce:
                 range: ObservationReductionMode
                 description: >-
-                    Opt into streaming evaluation of this observation: fold it into the integrator carry as an (init, update, finalize) reducer via prepare(reduce=...) instead of computing it post-scan from a materialised trajectory. Byte-identical to the pipeline value (to f64 rounding) but with O(block) instead of O(n_time) peak memory, so a fit whose per-stage simulation is too long to hold the trajectory (e.g. the Schirner 2023 group fit) can still evaluate it. Supported for the HRF-Volterra BOLD pipeline (the resolver lifts the HRF kernel, downsample stride, TR stride and Volterra k_1/V_0 from the declared pipeline), for cumulative mean/std/variance aggregations, and for a matrix co-moment FC (compute_fc as a running covariance emitted at finalize, never a trajectory). Byte-identical holds noise-off; with a per-block noise draw the realization shifts with block size (ergodically vanishing). Absent (the default) keeps the post-scan pipeline unchanged — no other observation or experiment is affected.
+                    Opt into streaming evaluation of this observation: fold it into the integrator carry as an (init, update, finalize) reducer via prepare(reduce=...) instead of computing it post-scan from a materialised trajectory. Byte-identical to the pipeline value (to f64 rounding) but with O(block) instead of O(n_time) peak memory, so a fit whose per-stage simulation is too long to hold the trajectory (e.g. the Schirner 2023 group fit) can still evaluate it. Supported for the HRF-Volterra BOLD pipeline (the resolver lifts the HRF kernel, downsample stride, TR stride and Volterra k_1/V_0 from the declared pipeline), for cumulative mean/std/variance aggregations, for a matrix co-moment FC (compute_fc as a running covariance emitted at finalize, never a trajectory), and for a pipeline step whose callable a curated reducer recipe with `emit_kind: run` replaces (the phase locking value and phase lag index, folded over the run and emitted at finalize). Byte-identical holds noise-off; with a per-block noise draw the realization shifts with block size (ergodically vanishing). Absent (the default) keeps the post-scan pipeline unchanged — no other observation or experiment is affected.
 
             # Direct class reference (alternative to pipeline)
             class_reference:
@@ -4776,7 +4778,7 @@ classes:
             emit_kind:
                 range: ReducerEmitKind
                 ifabsent: string(window)
-                description: "Whether the reduced value is read out every step or every stride."
+                description: "Whether the reduced value is read out every step, every stride, or once at the end of the run."
             state:
                 range: string
                 multivalued: true
