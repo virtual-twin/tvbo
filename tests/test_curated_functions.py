@@ -29,8 +29,15 @@ def rng():
     return np.random.default_rng(0)
 
 
-SOFTWARE_BASED = ["FalseDiscoveryControl", "GroupedCorrelation", "Histogram", "MeshOperators"]
-"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py`` and ``tests/test_mesh_operators.py`` check what they compute."""
+SOFTWARE_BASED = [
+    "FalseDiscoveryControl",
+    "GroupedCorrelation",
+    "Histogram",
+    "MeshOperators",
+    "NodePermutations",
+    "SpinPermutations",
+]
+"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py``, ``tests/test_mesh_operators.py`` and ``tests/test_resampling_tables.py`` check what they compute."""
 
 
 def test_every_curated_function_resolves_by_iri():

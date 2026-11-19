@@ -1,0 +1,10 @@
+name: NodePermutations
+label: Uniform permutations of network nodes within groups
+description: A table of n uniform random permutations of the network nodes, each row permuting the nodes of every group (a hemisphere) among themselves and never across groups, the null family of the travelling-wave test of Koller et al. (2024, doi:10.1038/s41467-024-47860-x), who permutes each hemisphere's phases. The table is in gather form and indexes network nodes, so a node field permuted by row r is the field at index[r]. Each group draws from its own stream, keyed by the seed and its label, and permutes its nodes in label order, so no order of the nodes or the groups changes the table. It returns index, the n by N table, and group, the group label of each node in network order.
+outputs: [index, group]
+arguments:
+  node_labels: {description: 'The labels of the network nodes in network order, network.labels.'}
+  groups: {description: 'The group of each node, labelled on `node` or in network order, or one label for all nodes. A node without a group and a group of one node are refused.'}
+  n: {description: 'The number of permutations, the rows of the table, at least 1.'}
+  seed: {description: 'The seed the table is drawn from; the same seed, nodes and groups give the same table.'}
+callable: {name: node_permutations, module: tvbo.analysis.mesh}

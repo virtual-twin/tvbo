@@ -1,6 +1,8 @@
-"""The fixed operators of a triangulated mesh that a travelling-wave detector reads, per group of its vertices: the implementation behind the curated ``tvbo:functions/MeshOperators``.
+"""The fixed arrays a travelling-wave detector on a triangulated mesh reads: the operators of the mesh, per group of its vertices, and the resampling tables of its two tests, the implementations behind the curated ``tvbo:functions/MeshOperators``, ``tvbo:functions/NodePermutations`` and ``tvbo:functions/SpinPermutations``.
 
 They follow the detector of Koller et al. (2024, doi:10.1038/s41467-024-47860-x), which compares each face's phase gradient with the ideal divergent field around every vertex and takes the curl-free Helmholtz-Hodge potential of the unit gradient field. Each operator is laid out in gather form, a table indexed by face, corner or vertex, so that a frame's chain is a few takes and sums and one matrix product, and every group (a hemisphere) is padded to the largest, so that one chain runs over all of them. libigl and potpourri3d build them once, where the producer runs, and come with the optional extra ``tvbo[mesh]``.
+
+The resampling tables index network nodes, not mesh vertices, so they need no mesh and neither library: each row moves the nodes of every group among themselves, by a uniform permutation or by a rotation of their positions on a sphere, and never into another group.
 """
 
 from __future__ import annotations
@@ -240,3 +242,105 @@ def _aligned(values, labels: list, what: str) -> np.ndarray:
             f"{what} has {len(values)} entries for {len(labels)} labels; label it on `node` or give one entry per label, in order."
         )
     return values
+
+
+def node_permutations(node_labels, groups, n: int, seed: int) -> dict:
+    """A table of *n* uniform random permutations of the network nodes within each group: the implementation behind the curated ``tvbo:functions/NodePermutations``.
+
+    Each row permutes the nodes of every group among themselves and never moves a node into another group, as Koller permutes each hemisphere's phases with one ``rng.permutation`` per surrogate (``scripts/analysis/wave_detection_cortical.py``, ``40_analysis.py``, ``50_analysis.py``; one group on the sheet, ``wave_detection_2d.py``). Each group draws its rows from its own ``numpy.random.default_rng`` stream, keyed by the seed and the group's label, and permutes its nodes in label order, so no order of the nodes or the groups, and no other group, changes its rows.
+
+    Args:
+        node_labels: The network's node labels, in network order (``network.labels``).
+        groups: The group of each node, labelled on ``node`` or in network order, or one label for all nodes.
+        n: The number of permutations, the rows of the table.
+        seed: The seed every group's stream is keyed by.
+
+    Returns:
+        A mapping of two arrays:
+
+        - ``index`` (n, N): row r names, for each node, the node it takes its value from, so a node field ``x`` permuted by row r is ``x[index[r]]``.
+        - ``group`` (N,): each node's group label, in network order, as text in HDF5's variable-length string type.
+
+    Raises:
+        ValueError: No *n* or *seed*, or *n* below 1; a node label that repeats; a node without a group; a group of one node.
+    """
+    labels = list(_label_index(node_labels, "node_labels"))
+    node_group, members = _resampling_groups(labels, groups, n, seed)
+    index = np.empty((n, len(labels)), dtype=np.int64)
+    for label, nodes in members.items():
+        rng = np.random.default_rng([seed, *label.encode()])
+        index[:, nodes] = nodes[np.stack([rng.permutation(len(nodes)) for _ in range(n)])]
+    return _table(index, node_group)
+
+
+def spin_permutations(sphere, node_labels, groups, n: int, seed: int) -> dict:
+    """A table of *n* spin permutations of the network nodes within each group (Alexander-Bloch et al. 2018, doi:10.1016/j.neuroimage.2018.05.070): the implementation behind the curated ``tvbo:functions/SpinPermutations``.
+
+    Row r turns every node's position on the sphere by the r-th of *n* random rotations, and each node takes the node of its own group nearest to where it was turned to. This is BrainSpace's ``SpinPermutations`` (``null_models/spin.py`` of v0.1.4, the version Koller pins), fitted once per group with the same ``random_state``. The rotations are drawn as BrainSpace draws them, from ``numpy.random.RandomState(seed)``, so they are uniform over rotations, and the same rotations turn every group. The reassignment is BrainSpace's default (``unique=False``): a row may give two nodes one source and leave another node out, and an exact tie goes to the first node by label.
+
+    The groups decide which nodes compete for one reassignment. A group per hemisphere is how Koller's directed-wave test fits the spins (``scripts/analysis/40_analysis_potentials.py``, ``flow_analysis_cortical.py``); one group holding both hemispheres is how his whole-brain ``correlation_spin_permutation_testing`` fits them (``modules/helpers.py``), and a node may then take a node of the other hemisphere.
+
+    Args:
+        sphere: Each node's position on a sphere centred at the origin, (N, 3), labelled on ``node`` or in network order, turned as given.
+        node_labels: The network's node labels, in network order (``network.labels``).
+        groups: The group of each node, labelled on ``node`` or in network order, or one label for all nodes; a node is reassigned only to nodes of its own group.
+        n: The number of rotations, the rows of the table.
+        seed: The seed of the rotations.
+
+    Returns:
+        The mapping :func:`node_permutations` returns, row r of ``index`` naming each node's source under the r-th rotation.
+
+    Raises:
+        ValueError: As :func:`node_permutations`, and a sphere without three coordinates for every node.
+    """
+    labels = list(_label_index(node_labels, "node_labels"))
+    node_group, members = _resampling_groups(labels, groups, n, seed)
+    points = np.asarray(_aligned(sphere, labels, "sphere"), dtype=float)
+    if points.ndim != 2 or points.shape[1] != 3:
+        raise ValueError(f"sphere must hold three coordinates for each node, got shape {points.shape}.")
+    rotations = _rotations(n, seed)
+    index = np.empty((n, len(labels)), dtype=np.int64)
+    for nodes in members.values():
+        index[:, nodes] = nodes[_nearest(points[nodes], rotations)]
+    return _table(index, node_group)
+
+
+def _resampling_groups(labels: list, groups, n, seed) -> tuple[np.ndarray, dict]:
+    """Each node's group label in the order of *labels*, and per group label the positions of its nodes in label order: the layout a resampling table of *n* rows drawn from *seed* is built on. A missing count or seed, a count below 1, a node without a group and a group of one node are refused."""
+    if n is None or seed is None or n < 1:
+        raise ValueError(
+            f"A resampling table needs a declared seed and a declared number of rows n of at least 1; got n={n!r}, seed={seed!r}."
+        )
+    node_group = np.full(len(labels), str(groups)) if np.ndim(groups) == 0 else _aligned(groups, labels, "groups").astype(str)
+    order = np.argsort(labels)
+    members = {}
+    for label in sorted(set(node_group.tolist())):
+        nodes = order[node_group[order] == label]
+        if len(nodes) < 2:
+            raise ValueError(
+                f"group {label!r} holds the one node {labels[nodes[0]]!r}, which has no other node to trade places with."
+            )
+        members[label] = nodes
+    return node_group, members
+
+
+def _rotations(n: int, seed: int) -> np.ndarray:
+    """*n* rotations (n, 3, 3) acting on row vectors, ``points @ rotation``, drawn as BrainSpace's ``_generate_spins`` draws them: the Q factor of a standard normal matrix from ``RandomState(seed)`` with each column signed by R's diagonal entry, which makes it uniform over the orthogonal matrices, and its first column flipped where that leaves a reflection."""
+    q, r = np.linalg.qr(np.random.RandomState(seed).normal(size=(n, 3, 3)))
+    q *= np.sign(np.diagonal(r, axis1=1, axis2=2))[:, None, :]
+    q[:, :, 0] *= np.sign(np.linalg.det(q))[:, None]
+    return q
+
+
+def _nearest(points: np.ndarray, rotations: np.ndarray) -> np.ndarray:
+    """(n, V): for each rotation, the row of *points* nearest to each turned row, ``points @ rotation``, as BrainSpace's ``cKDTree(points).query(points @ rotation, k=1)`` finds it; an exact tie goes to the first row."""
+    from scipy.spatial.distance import cdist
+
+    return np.stack([cdist(points @ rotation, points).argmin(axis=1) for rotation in rotations])
+
+
+def _table(index: np.ndarray, node_group: np.ndarray) -> dict:
+    """A resampling table's two outputs, the group labels as text the produced-constant store writes and reads back as text."""
+    import h5py
+
+    return {"index": index, "group": np.array(node_group.tolist(), dtype=h5py.string_dtype())}
