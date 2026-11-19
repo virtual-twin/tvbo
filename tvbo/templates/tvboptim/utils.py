@@ -2586,6 +2586,13 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     # `period` makes the observer a MONITOR: its output is emitted every period into a time series, instead of collapsing time into one value per node at the final step. That is the declared contract of Observation.dynamics ("read at the final step for a reduction ... or, when `period` is set, sub-sampled over time for a monitor"). The period is resolved against the integration grid, so it needs the experiment; the bare predicate call ("is this a reduction?") only asks whether the observer exists.
     _period = get_attr(obs, "period")
     _period = float(to_numeric(_period)) if _period is not None else None
+    _aggregation = get_attr(obs, "aggregation", None)
+    if _period is not None and _aggregation is not None:
+        raise ValueError(
+            f"Observation {get_attr(obs, 'name', None)!r} declares both `period` and `aggregation: {getattr(_aggregation, 'value', _aggregation)}`. "
+            "An observer with a period emits its output as a time series and reduces nothing, and a median observer reduces every step and ignores the period, "
+            "so the pair has no defined meaning: declare `period` for a monitor, or `aggregation` for one value per node over the whole run."
+        )
     _dt = _integration_dt(experiment)
     period_steps = None
     if _period and experiment is not None:
