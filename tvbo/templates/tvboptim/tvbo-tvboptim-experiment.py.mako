@@ -83,10 +83,12 @@ has_model_output = bool(model_output_vars)
 # Each declared output resolves to its channel in the recorded ordering, so the position follows the layout rather than the kind.
 from tvbo.templates.tvboptim.utils import (
     resolve_model_output_indices, format_channel_index, get_recorded_variable_names,
-    state_only_recorded_aux, state_only_derived_var_names,
+    state_only_recorded_aux, state_only_derived_var_names, get_output_channels,
 )
 model_output_indices, model_output_names = resolve_model_output_indices(model, experiment)
 _, _, _recorded_var_names = get_recorded_variable_names(model, experiment)
+# The record=True channels a single run presents, which a sweep cell without an output returns under the same names.
+_output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 # State-only recorded derived variables to realign post-solve (single-mode only).
 _state_only_aux = state_only_recorded_aux(model, experiment) if n_modes == 1 else []
 # Bound as locals in the realign, in dependency order, so a recorded auxiliary can reach the intermediates it is built from.
@@ -3031,6 +3033,8 @@ def run_optimization(
     )
     # Every path returns a Bunch, so both must be unpacked at packaging time rather than passed as a raw array.
     returns_bunch = bundles_observations or bool(expl.get('record'))
+    # With no observable, output or observation a cell returns the channels a single run presents, so the grid names them as that run does.
+    returns_trajectory = obs_type != 'function_call' and not obs_name and not returns_bunch and not has_model_output
     # When every recorded observable is a dynamics observer they fold into the integrator carry, dropping peak memory from O(batch·n_time·n_node) to O(batch·block·n_node); an element-slot axis, injected noise or a wired algorithm forces the post-scan path.
     _rec_stream = [r for r in expl['record'] if r not in analysis_observation_names]
     _all_recorded_streaming = bool(_rec_stream) and all(
@@ -3445,11 +3449,15 @@ ${folded_cells(_base_stream_names, _base_bs)}
         result, _ = _expl_cell(s)
         return result.data[:, ${model_output_channel_index}, ...]
 % else:
-    # No observable specified, no model output, no observations — return full simulation data
+    # No observable, model output or observation: the cell returns the record=True channels a single run presents, a list index keeping the variable dim.
     @jax.jit
     def observable_fn(s):
         result, _ = _expl_cell(s)
+% if _record_subset:
+        return result.data[:, ${_output_idx}]
+% else:
         return result.data
+% endif
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
@@ -4024,7 +4032,7 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
         dt=${dt},
         # A swept cell integrates the measured window alone, so these results are the analogue of `.data`, not `.full`, opening at t=0 like every other measured window.
         transient_time=0.0,
-        output_names=${model_output_names if has_model_output and not obs_name else []},
+        output_names=${model_output_names if has_model_output and not obs_name else _output_names if returns_trajectory else []},
         observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
         n_trials=${expl['n_trials']},
@@ -4237,15 +4245,9 @@ def run_experiment(
 % endif
 
 <%
-    # Result labels + record=True output channels are resolved in Python (the
-    # tvboptim utils layer), not here — the template only emits from clean context.
-    # The solver records ALL states (VARIABLES_OF_INTEREST); the user-facing result
-    # presents only sv.record=True states (+ recorded aux), matching the tvb backend.
-    # The full trajectory is kept intact above for observations and the warmup; the
-    # record filter is applied as a channel slice on the presented result only.
-    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn, get_output_channels
+    # The solver records every state and the presented result keeps the record=True channels resolved at the top (`_output_idx`), matching the tvb backend; the full trajectory above stays intact for observations and the warmup.
+    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
     _, _requested_aux, result_var_names = _grvn(model, experiment)
-    _output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 %>
     % if _record_subset:
     # sv.record filters the presented channels; the scan's full channel set is kept intact above for observations. Rebuild the NativeSolution on the record=True channels (preserving its time axis), or slice a raw array.
