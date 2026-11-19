@@ -5,6 +5,7 @@
 import numpy as np
 from tvbo.codegen.templater import time_dependent_equations
 from tvbo.templates.base.utils import docstring_text, get_func_name, is_local_coupling, referenced_parameters
+from tvbo.templates.tvboptim.utils import get_mode_layout, get_recorded_variable_names, state_only_derived_var_names
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
     standalone = False
@@ -107,20 +108,14 @@ sv_boundaries = tvb_state_variable_boundaries(model)
 % endif
 ########## Variables Of Interest ##########
     <%
-    # Recorded outputs. `record` is the canonical selector — state variables
-    # default to record=true, derived variables to record=false — superseding the
-    # deprecated `variable_of_interest` slot and the legacy `output` list.
+    # The channels tvboptim presents (`get_output_channels`): the states `record` keeps, in state order, then the derived variables tvboptim records, each once.
+    output_keys = tuple(get_recorded_variable_names(model, None if standalone else context['experiment'])[1])
     recorded_states = tuple(sv.name for sv in model.state_variables.values() if getattr(sv, 'record', True))
-    recorded_derived = tuple(dv.name for dv in model.in_dependency_order('derived_variables').values() if getattr(dv, 'record', False))
-    if isinstance(model.output, dict):
-        legacy_output = tuple(model.output.keys())
-    elif model.output:
-        legacy_output = tuple(model.output)
-    else:
-        legacy_output = ()
-    output_keys = recorded_derived + tuple(k for k in legacy_output if k not in recorded_derived)
     choices = tuple(model.state_variables.keys()) + output_keys
     variables_of_interest = recorded_states + output_keys
+    # As tvboptim records them: an output the state alone determines is computed from the recorded state on a single-mode model, any other is kept from the step's first dfun evaluation, which TVB's observer, seeing only the state, cannot repeat.
+    recomputable = state_only_derived_var_names(model) if output_keys and get_mode_layout(model)[0] == 1 else ()
+    stepped_outputs = tuple(name for name in output_keys if name not in recomputable)
     %>
 
     variables_of_interest = List(
@@ -156,6 +151,9 @@ sv_boundaries = tvb_state_variable_boundaries(model)
     _R = None
     _stimulus = 0.0
     use_numba = False
+% if stepped_outputs:
+    _first_evaluation = None
+% endif
 
 ########## DerivedParameter ##########
 % if model.derived_parameters:
@@ -175,12 +173,14 @@ sv_boundaries = tvb_state_variable_boundaries(model)
     def _build_observer(self):
         template = ("def observe(state):\n"
                     "    {svars} = state\n"
-                    % for var_name in output_keys:
-<%
-    _dv = model.derived_variables.get(var_name)
-    _ot = model.output.get(var_name) if isinstance(model.output, dict) else None
-%>\
-                    "    ${var_name} = ${render(_dv) if _dv else (render(_ot) if _ot else var_name)}\n"
+                    % if stepped_outputs:
+                    "    ${', '.join(stepped_outputs)}, = model._first_evaluation\n"
+                    "    model._first_evaluation = None\n"
+                    % endif
+                    % for dv in model.in_dependency_order('derived_variables').values():
+                    % if dv.name in output_keys and dv.name not in stepped_outputs:
+                    "    ${dv.name} = ${render(dv)}\n"
+                    % endif
                     % endfor
                     "    return numpy.array([{voi_names}])")
         svars = ','.join(self.state_variables)
@@ -192,6 +192,9 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         )
         namespace = {'numpy': np, 'np': np, 'pi':np.pi, 'sin':np.sin}
         namespace.update(self.__dict__)
+% if stepped_outputs:
+        namespace['model'] = self
+% endif
         self.log.debug('building observer with code:\n%s', code)
         exec(code, namespace)
         self.observe = namespace['observe']
@@ -236,6 +239,10 @@ ${indented_fndef}
 % for k,v in model.in_dependency_order('derived_variables').items():
         self.${k} = ${k} = ${render(v)}
 % endfor
+% if stepped_outputs:
+        if self._first_evaluation is None:
+            self._first_evaluation = (${', '.join(stepped_outputs)},)
+% endif
 
 ## State-Equations
         # Time Derivatives
