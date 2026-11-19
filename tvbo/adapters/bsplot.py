@@ -2542,25 +2542,44 @@ def _used_ref(used):
     return str(ana) if ana is not None else None
 
 
+def _refuse_by_label(used) -> None:
+    """Refuse a figure binding that declares ``reconcile: by_label``, naming it.
+
+    A figure draws what a binding reads in its container's order and lays nothing out on another node order, so the directive would pass for an alignment that never happened. Every binding a figure opens is checked here before its container is looked up: by :func:`_resolve_layer` a layer of any panel, inset or grid cell and an annotation's ``used``, ``tail_used`` and ``significance``, and by :func:`_mesh_container` a surface's mesh. The slot defaults to ``none``, so only a declared ``by_label`` is refused.
+    """
+    from tvbo.data.dataref import _reference_text, reconcile_mode
+
+    if reconcile_mode(used) == "by_label":
+        raise ValueError(
+            f"`reconcile: by_label` on {_reference_text(used)} lays it out on a node order by label, and a figure draws what it reads in its container's order, so it would pass for an alignment that never happened. "
+            "A `surface`, `volume` or `network` panel places a per-node layer on its nodes by label without it; on a figure's bindings, drop `reconcile`."
+        )
+
+
 def _mesh_container(ref: dict, base_dir) -> str:
     """The result container a surface's ``used`` binding names, found by the lookup a layer's ``used`` takes.
 
-    A mesh is the container's ``vertices`` and ``faces`` together, so the binding says only where the result is: an ``output``, ``sel`` or ``transform`` on it would be accepted and then ignored, and is refused instead.
+    A mesh is the container's ``vertices`` and ``faces`` together, so the binding says only where the result is: an ``output``, ``sel`` or ``transform`` on it would be accepted and then ignored, and is refused instead, as ``reconcile: by_label`` is on every figure binding (:func:`_refuse_by_label`).
     """
+    used = SimpleNamespace(**ref)
+    _refuse_by_label(used)
     stated = sorted(name for name in ("output", "sel", "transform") if ref.get(name))
     if stated:
         raise ValueError(
             f"surface panel: the mesh's `used:` names where its result is and nothing else, but states {', '.join(stated)}."
         )
-    return _container_path(_used_ref(SimpleNamespace(**ref)), base_dir, _RESULTS_DIR.get())
+    return _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get())
 
 
 def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     """Resolve one ``Layer`` into the flat dict the template/callables consume.
 
     Under an ``animation`` the layer also gets its frame role. Undeclared, the role is read off the data: a layer carrying the animated dimension is what moves, one that does not is the fixed backdrop. That inference is the whole reason a two-panel movie needs no per-layer annotation, and a `frame:` on the layer overrides it.
+
+    Every layer and annotation binding a figure draws or prints passes through here, so a ``used`` declaring ``reconcile: by_label`` is refused here (:func:`_refuse_by_label`), before anything is opened.
     """
     used, enc = layer.used, getattr(layer, "encoding", None)
+    _refuse_by_label(used)
     # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
     mark = str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line")
     style = getattr(layer, "style", None)
