@@ -1620,6 +1620,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
 
         lower(self)
         _export.refuse_unlowered_parameter_starts(self, format)
+        _export.refuse_undeclared_events(self, format)
 
         if format.lower() == "tvb":
             declared = [str(name) for name, _ in keyed_items(self.explorations, "explorations")]

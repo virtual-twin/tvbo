@@ -13,6 +13,7 @@ from .registry import (  # noqa: F401
     list_format_dicts,
     list_formats,
     load,
+    refuse_undeclared_events,
     refuse_unlowered_parameter_starts,
     register,
     render,

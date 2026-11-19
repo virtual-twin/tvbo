@@ -276,10 +276,13 @@ _BUILTINS = [
         _render_neuroml,
         aliases=("nml",),
         language="xml",
+        events="integrated",
     ),
-    ExportFormat("lems", "LEMS (custom components)", ".xml", "application/xml", _render_lems, language="xml"),
+    ExportFormat(
+        "lems", "LEMS (custom components)", ".xml", "application/xml", _render_lems, language="xml", events="integrated"
+    ),
     # code: python
-    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python"),
+    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python", events="integrated"),
     ExportFormat(
         "tvboptim",
         "tvboptim Python",
@@ -289,13 +292,30 @@ _BUILTINS = [
         aliases=("tvb-optim",),
         language="python",
         parameter_starts=tuple(k for k in StartKind if k not in (StartKind.COUPLING_TIME, StartKind.EVENT_TIME)),
-    ),
-    ExportFormat("jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python"),
-    ExportFormat(
-        "pde", "PDE-FEM Python", ".py", "text/x-python", _render_pde, aliases=("pde-fem", "pde-python"), language="python"
+        events="integrated",
     ),
     ExportFormat(
-        "brian2", "Brian2 Python (spiking)", ".py", "text/x-python", _render_brian2, aliases=("brian",), language="python"
+        "jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python", events="integrated"
+    ),
+    ExportFormat(
+        "pde",
+        "PDE-FEM Python",
+        ".py",
+        "text/x-python",
+        _render_pde,
+        aliases=("pde-fem", "pde-python"),
+        language="python",
+        events="integrated",
+    ),
+    ExportFormat(
+        "brian2",
+        "Brian2 Python (spiking)",
+        ".py",
+        "text/x-python",
+        _render_brian2,
+        aliases=("brian",),
+        language="python",
+        events="integrated",
     ),
     # code: julia
     ExportFormat(
@@ -316,6 +336,7 @@ _BUILTINS = [
         aliases=("nd", "networkdynamics.jl"),
         language="julia",
         parameter_starts=(StartKind.NODE,),
+        events="integrated",
     ),
     ExportFormat(
         "modelingtoolkit",
@@ -334,6 +355,7 @@ _BUILTINS = [
         _render_bifurcationkit,
         aliases=("bifurcationkit.jl", "bifurcation", "bifurcation-julia"),
         language="julia",
+        events="continuation",
     ),
     ExportFormat(
         "pyrates-bifurcation",
@@ -343,6 +365,7 @@ _BUILTINS = [
         _render_pyrates_bifurcation,
         aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates"),
         language="python",
+        events="continuation",
     ),
     ExportFormat(
         "numcont",
@@ -351,6 +374,7 @@ _BUILTINS = [
         "text/x-fortran",
         _render_numcont,
         aliases=("auto", "auto-07p", "auto07p", "bifurcation-auto7p", "bifurcation-numcont"),
+        events="continuation",
     ),
     # code: rateml
     ExportFormat(

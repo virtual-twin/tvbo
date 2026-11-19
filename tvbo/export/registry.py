@@ -57,6 +57,8 @@ class ExportFormat:
     language: str = ""
     # The `StartKind`s this backend honours, every other one refused by name before rendering; None for a format that integrates nothing and writes the declaration out.
     parameter_starts: tuple[str, ...] | None = ()
+    # How this backend treats an event the experiment declares (`EVENT_HANDLING`).
+    events: str = "dropped"
 
     def to_public_dict(self) -> dict[str, Any]:
         """Serialisable view (without the renderer callable)."""
@@ -141,6 +143,34 @@ def refuse_unlowered_parameter_starts(experiment, key: str) -> None:
         refuse_parameter_starts(experiment, key if fmt is None else fmt.key, lowered)
 
 
+#: What a backend does with an event the experiment declares, each value refused by name but the first: "integrated", "dropped" for a backend with no stimulus path, "continuation" for one that continues an equilibrium.
+EVENT_HANDLING = {
+    "dropped": "has no stimulus path, so it would run the unstimulated model",
+    "continuation": "continues an equilibrium, where a stimulus has no place",
+}
+#: `ExportFormat.events` for the run-only backends, which no format registers: python and pyrates evaluate a stimulus, gillespie none.
+RUN_ONLY_EVENTS = {"python": "integrated", "pyrates": "integrated", "gillespie": "dropped", "ssa": "dropped"}
+
+
+def refuse_undeclared_events(experiment, key: str) -> None:
+    """Raise where the backend *key* would drop an event *experiment* declares, in whatever form it is declared, named under its `events` or read by an equation: the one check `render` and the run path share.
+
+    A run-only key reads `RUN_ONLY_EVENTS`, any other key no format registers integrates no event, and a format whose ``parameter_starts`` is None integrates nothing and is not checked. A model rendered on its own carries only its own events, a spike's reset among them, which are part of the model and not checked here.
+    """
+    from tvbo.utils import keyed_items
+
+    fmt = _REGISTRY.get(key.lower())
+    if (fmt is not None and fmt.parameter_starts is None) or not hasattr(experiment, "dynamics"):
+        return
+    handling = RUN_ONLY_EVENTS.get(key.lower(), "dropped") if fmt is None else fmt.events
+    declared = [str(name) for name, _ in keyed_items(getattr(experiment, "events", None), "events")]
+    if declared and handling != "integrated":
+        raise NotImplementedError(
+            f"the {key if fmt is None else fmt.key} backend {EVENT_HANDLING[handling]}, and the experiment declares event {', '.join(map(repr, declared))}. "
+            "Run the experiment on a backend that integrates a stimulus (tvboptim, tvb, jax), or remove the event."
+        )
+
+
 def render(experiment, fmt_key: str, **kwargs) -> str:
     """Resolve *fmt_key*, lower *experiment* (:func:`tvbo.multiscale.lower`) for a format that integrates, invoke its renderer, prune its dead imports, and format it.
 
@@ -152,6 +182,7 @@ def render(experiment, fmt_key: str, **kwargs) -> str:
 
         experiment = lower(experiment)
     refuse_unlowered_parameter_starts(experiment, fmt.key)
+    refuse_undeclared_events(experiment, fmt.key)
     rendered = fmt.renderer(experiment, **kwargs)
     if not fmt.language:
         return rendered
