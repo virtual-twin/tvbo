@@ -1845,7 +1845,7 @@ MAIN_BLOCK_EXPERIMENT = {"jax": "ThreeNode_JansenRit1995_Parity", "tvb": "ThreeN
 def test_python_experiment_script_has_main_block(fmt):
     """All Python backends that emit a full experiment script must be runnable.
 
-    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block. jax and tvb render an experiment whose every observation they can compute: JR_MEG's pipeline steps read arguments jax is never given, and its observations include ones no tvb monitor computes, which each backend refuses by name.
+    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block. jax and tvb render an experiment whose every observation they can compute: JR_MEG's pipeline steps read arguments jax is never given, and its observations include several no tvb monitor computes, which each backend refuses by name, tvb all of them in one refusal.
     """
     from tvbo import SimulationExperiment
 
@@ -1859,7 +1859,8 @@ def test_python_experiment_script_has_main_block(fmt):
             SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("jax")
     if fmt == "tvb":
         with pytest.raises(
-            NotImplementedError, match=r"the tvb backend has no monitor for the observation '\w+', which declares"
+            NotImplementedError,
+            match=r"the tvb backend has no monitor for the observation '\w+', which declares .+; for the observation '\w+', which declares",
         ):
             SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("tvb")
 

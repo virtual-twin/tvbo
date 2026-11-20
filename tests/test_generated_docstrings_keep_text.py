@@ -48,7 +48,6 @@ functions:
     arguments:
       data: {{}}
 observations:
-  mean_x: {{label: {prose}, description: {prose}, source: [x], aggregation: mean}}
   thinned:
     label: {prose}
     description: {prose}

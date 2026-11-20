@@ -15,13 +15,8 @@ experiment : object with .observations dict
 """
 import os as _os
 
-from tvbo.codegen.templater import is_derived as _is_derived
-_all_observations = getattr(experiment, 'observations', None) or {}
-# Drop derived observations — they are not per-step monitor candidates.
-if hasattr(_all_observations, 'items'):
-    observations = {n: o for n, o in _all_observations.items() if not _is_derived(o, experiment)}
-else:
-    observations = _all_observations
+from tvbo.codegen.templater import source_observations as _source_observations
+observations = getattr(experiment, 'observations', None) or {}
 
 # ── classification helpers ──────────────────────────────────────────
 
@@ -89,10 +84,20 @@ def _step_label(step):
     return str(getattr(step, 'function', None) or getattr(step, 'name', None)
                or getattr(getattr(step, 'callable', None), 'name', None) or getattr(step, 'output', None))
 
+def _aggregation(obs):
+    """The aggregation over time *obs* declares, or None where it declares none."""
+    aggregation = getattr(obs, 'aggregation', None)
+    return None if aggregation is None or str(aggregation) == 'none' else str(aggregation)
+
 def _computation(obs):
-    """What *obs* declares for a backend to compute, one phrase each: its pipeline's steps, its analysis, its imaging modality, its dynamics and its class reference."""
+    """What *obs* declares for a backend to compute, one phrase each: the observations it is derived from, its aggregation, its pipeline's steps, its analysis, its imaging modality, its dynamics and its class reference."""
+    derived = sorted(_source_observations(obs, experiment))
+    phrases = [f"the source observation{'s' if len(derived) > 1 else ''} {', '.join(derived)}"] if derived else []
+    if _aggregation(obs) is not None:
+        phrases.append(f"the aggregation {_aggregation(obs)}")
     steps = [_step_label(step) for step in (getattr(obs, 'pipeline', None) or [])]
-    phrases = ['the pipeline ' + ', '.join(steps)] if steps else []
+    if steps:
+        phrases.append('the pipeline ' + ', '.join(steps))
     analysis = getattr(obs, 'analysis', None)
     if analysis is not None:
         phrases.append(f"the analysis {getattr(analysis, 'type', analysis)}")
@@ -109,21 +114,31 @@ def _projection_category(obs):
     im = str(getattr(obs, 'imaging_modality', None) or '').upper()
     return {'SEEG': 'projection_ieeg', 'MEG': 'projection_meg'}.get(im, 'projection_eeg')
 
-def _refuse(obs, name, detail=''):
-    """Raise the refusal for the observation *name*, whose declared computation (`_computation`) no tvb monitor computes in full; *detail* names the steps the nearest monitor leaves out."""
-    raise NotImplementedError(
-        f"the tvb backend has no monitor for the observation {name!r}, which declares {' and '.join(_computation(obs))}{detail}, so tvb would record a different quantity under its name. "
-        "Run it on tvboptim or jax, or declare a curated monitor."
+class _NoMonitor(Exception):
+    """*obs* declares a computation no tvb monitor computes in full; the message is what it declares (`_computation`)."""
+
+def _refuse(obs, detail=''):
+    """Raise `_NoMonitor` for *obs*, naming what it declares; *detail* names the steps the nearest monitor leaves out."""
+    raise _NoMonitor(' and '.join(_computation(obs)) + detail)
+
+def _refusal(refused):
+    """The refusal of every observation in *refused*, a mapping of name to what it declares, in sorted order."""
+    named = '; for '.join(f"the observation {name!r}, which declares {what}" for name, what in sorted(refused.items()))
+    return (
+        f"the tvb backend has no monitor for {named}. tvb records what a per-step monitor computes, so it would record a different quantity under each name, or none. "
+        "Run the experiment on tvboptim or jax, or declare a curated monitor."
     )
 
-def _classify(obs, name):
-    """The monitor category of the observation *name*.
+def _classify(obs):
+    """The monitor category of *obs*.
 
-    A curated class reference names its category. A declared pipeline is filed under the first category in `_PIPELINE_CATEGORIES` whose key step it holds and whose monitor computes every step it declares. An observation that declares nothing to compute (`_computation`) falls back to its source or period, else to ``raw``.
+    An observation derived from other observations or aggregated over time is computed after the run, which no tvb monitor does. A curated class reference names its category. A declared pipeline is filed under the first category in `_PIPELINE_CATEGORIES` whose key step it holds and whose monitor computes every step it declares. An observation that declares nothing to compute (`_computation`) falls back to its source or period, else to ``raw``.
 
     Raises:
-        NotImplementedError: If *obs* declares a computation that no tvb monitor computes in full: a pipeline with a step outside every matching category's monitor, or an analysis, imaging modality, dynamics or class reference without a pipeline tvb covers.
+        _NoMonitor: If *obs* declares a computation that no tvb monitor computes in full: source observations, an aggregation, a pipeline with a step outside every matching category's monitor, or an analysis, imaging modality, dynamics or class reference without a pipeline tvb covers.
     """
+    if _source_observations(obs, experiment) or _aggregation(obs) is not None:
+        _refuse(obs)
     cr = getattr(obs, 'class_reference', None)
     if cr is not None and str(cr.name) in _CATEGORY_BY_CR:
         return _CATEGORY_BY_CR[str(cr.name)]
@@ -138,10 +153,10 @@ def _classify(obs, name):
         if matching:
             cat, covered = matching[0]
             missing = [_step_label(step) for step, names in zip(pipeline, declared) if not names & covered]
-            _refuse(obs, name, f"; the tvb {cat.replace('_', ' ')} monitor does not compute {', '.join(missing)}")
-        _refuse(obs, name)
+            _refuse(obs, f"; the tvb {cat.replace('_', ' ')} monitor does not compute {', '.join(missing)}")
+        _refuse(obs)
     if _computation(obs):
-        _refuse(obs, name)
+        _refuse(obs)
 
     src = getattr(obs, 'source', None)
     if src is not None and str(src) == 'coupling':
@@ -243,6 +258,7 @@ def _get_sensor_file(obs):
 # ── Classify all observations ──────────────────────────────────────
 
 obs_list = []   # (obs_name, obs, category)
+refused = {}    # obs_name -> what it declares
 
 def _source_strings(o):
     src = getattr(o, 'source', None)
@@ -254,10 +270,12 @@ def _source_strings(o):
 for obs_name, obs in (observations.items() if hasattr(observations, 'items') else []):
     if any(s.startswith('network.') for s in _source_strings(obs)):
         continue  # static data, not a monitor
-    cat = _classify(obs, str(obs_name))
-    if getattr(obs, 'aggregation', None) is not None and cat == 'raw':
-        continue  # batch aggregation, not a per-step monitor
-    obs_list.append((str(obs_name), obs, cat))
+    try:
+        obs_list.append((str(obs_name), obs, _classify(obs)))
+    except _NoMonitor as declared:
+        refused[str(obs_name)] = str(declared)
+if refused:
+    raise NotImplementedError(_refusal(refused))
 
 # Default to raw passthrough if no monitor-capable observations
 if not obs_list:
