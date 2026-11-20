@@ -50,6 +50,7 @@ from tvbo.data.types import (
     SimulationState,
     TimeSeries,
     tvb_monitor_results,
+    tvb_observation_name,
 )
 from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.datamodel.dialect import expand_iri
@@ -1648,13 +1649,13 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             sim_result = None
             declared = {name for name, _ in keyed_items(self.observations, "observations")}
             for m, recorded in monitors:
-                m_name = m.title.split(" ")[0]
-                if m_name == "Raw":
+                name = tvb_observation_name(m)
+                if type(m).__name__ == "Raw":
                     sim_result = recorded
-                    # The raw trajectory is the integration series, and it is also an observation whenever the experiment asked for one. Recorded only under `.data`, a declared `Raw` is missing from `observations` entirely, so a caller asking each backend by name whether it emitted what was declared is told this one did not — while the template's own default `Raw()`, which no experiment asked for, stays out of `observations` as before.
-                    if m_name not in declared:
+                    # The raw trajectory is the integration series, and it is also an observation whenever the experiment asked for one. Recorded only under `.data`, a declared raw observation is missing from `observations` entirely, so a caller asking each backend by name whether it emitted what was declared is told this one did not — while the template's own default `Raw()`, which no experiment asked for, stays out of `observations`.
+                    if name not in declared:
                         continue
-                observations[m_name] = recorded
+                observations[name] = recorded
 
             if sim_result is None:
                 # No Raw monitor: a copy of the first one recorded stands as the integration series.

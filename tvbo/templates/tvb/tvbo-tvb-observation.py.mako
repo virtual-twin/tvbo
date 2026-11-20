@@ -622,6 +622,9 @@ class ${class_name}(_RunStepPhase, Monitor):
             return [time, avg]
 
 % endif
+## The declared name, which `tvb_observation_name` keys this monitor's results by where the class name capitalises it.
+${class_name}.observation_name = ${repr(obs_name)}
+
 % endfor
 ##
 ## ── monitors list ──────────────────────────────────────────────────

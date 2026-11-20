@@ -35,8 +35,8 @@ INLINE = {
 }
 """``y`` decimated by a declared pipeline, with no class reference for a backend to substitute its own monitor for. ``step`` is declared as the curated ``SubSample`` declares it: tvboptim binds an equation's constants from ``equation.parameters``, and jax supplies a sampling argument by its name."""
 
-NAME = "Observed"
-"""The observation's name, capitalised: tvb keys an observation by its generated monitor class (``m.title``), which capitalises the first letter, where tvboptim and jax key it by the declared name."""
+NAME = "observed"
+"""The observation's name, which every backend keys it by; tvb's generated monitor class capitalises it (``Observed``)."""
 
 CURATED = {"iri": "tvbo:observation_models/subsample", "period": PERIOD}
 """The curated ``SubSample``: tvb runs its generated monitor, tvboptim its own ``SubSampling``, jax the curated pipeline ``subsample(X, step)``."""

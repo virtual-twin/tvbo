@@ -3097,7 +3097,7 @@ class ExperimentResult:
         Wraps TVB simulation output into the standard TVBO result structure:
 
         - ``result.integration`` — primary monitor as SimulationResult (xr.DataArray)
-        - ``result.integration.observations['MonitorName']`` — one SimulationResult per additional monitor, keyed by the TVB monitor class name
+        - ``result.integration.observations['name']`` — one SimulationResult per additional monitor, keyed by `tvb_observation_name`: the declared name of a monitor tvbo generated, the class name of any other
 
         Every monitor is reported as the run path reports it (`tvb_monitor_results`): on the measurement clock, with its settle on ``.transient``.
 
@@ -3124,8 +3124,13 @@ class ExperimentResult:
                 "ExperimentResult.from_tvb needs `start_step`, the simulator's `current_step` before the run that produced `result`: TVB stamps each sample by its step count, which an initial history advances before the first step, so the result's own time axis does not say where the run opened."
             )
         (_, sim_result), *others = tvb_monitor_results(simulator, result, float(transient_time), start_step)
-        sim_result.observations = Bunch({type(monitor).__name__: series for monitor, series in others})
+        sim_result.observations = Bunch({tvb_observation_name(monitor): series for monitor, series in others})
         return cls(integration=sim_result)
+
+
+def tvb_observation_name(monitor) -> str:
+    """The name *monitor*'s results are keyed by: the declared name of the observation tvbo generated it for (its class's ``observation_name``), else, for a monitor tvbo did not generate, its class name."""
+    return getattr(monitor, "observation_name", None) or type(monitor).__name__
 
 
 def tvb_monitor_results(simulator, result, settle: float, start_step: int) -> list:

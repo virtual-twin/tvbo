@@ -20,9 +20,9 @@ PERIOD = 3 * DT
 
 OBSERVATION = {
     "Raw": {"iri": "tvbo:observation_models/raw"},
-    "Spatial": {"iri": "tvbo:observation_models/spatial_average", "period": PERIOD},
+    "spatial": {"iri": "tvbo:observation_models/spatial_average", "period": PERIOD},
 }
-"""The curated spatial average, named so that tvb's generated monitor class is ``Spatial``, beside the curated raw, so that the average is a keyed observation on the run path and through ``from_tvb``, which takes the first monitor as the integration series."""
+"""The curated spatial average, declared as ``spatial`` (tvb generates its monitor as the class ``Spatial``), beside the curated raw, so that the average is a keyed observation on the run path and through ``from_tvb``, which takes the first monitor as the integration series."""
 
 AREAS = {
     "unset": (None, [[0, 1]]),
@@ -41,7 +41,7 @@ def _spec():
 
 def _assert_area_means(spec, result, areas):
     """*result* of *spec* is sampled at 3, 6, 9 and 12 ms and holds, per area of *areas* in area order, the mean ``y`` of its nodes."""
-    data = result.integration.observations["Spatial"].data
+    data = result.integration.observations["spatial"].data
     if "variable" in data.dims:
         data = data.sel(variable="y")
     stamps = PERIOD * np.arange(1, int(DURATION / PERIOD) + 1)
