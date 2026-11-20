@@ -572,9 +572,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[lis
     The generated dynamics class declares ``VARIABLES_OF_INTEREST = state_names + recorded_aux`` where ``recorded_aux`` is the union of:
       * derived variables with ``record: true``,
       * model.output entries that are derived (auxiliary) variables, and
-      * derived variables referenced as the ``source`` of any experiment observation
-        (so observations of auxiliaries work without requiring users to also list them
-        in ``model.output``).
+      * derived variables referenced as the ``source`` of any experiment observation (so observations of auxiliaries work without requiring users to also list them in ``model.output``).
 
     Returns ``(state_names, recorded_aux, all_var_names)`` where ``all_var_names`` is the runtime ordering on axis 1 of ``solution.ys`` / ``result.data`` and matches ``solution.variable_names`` produced by tvboptim >= 0.2.7.
 
@@ -711,9 +709,7 @@ def get_output_channels(model: Any, experiment: Any = None) -> tuple[list[int], 
 def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[list[int], list[str]]:
     """Resolve ``model.output`` entries to channel indices in the recorded ordering.
 
-    ``model.output`` may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:`get_recorded_variable_names`), so an output's position cannot be inferred from its kind — a state output sits
-    *before* the auxiliaries, not after them. Multi-mode state variables expand to
-    all of their ``v__mode{m}`` slots.
+    ``model.output`` may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:`get_recorded_variable_names`), so an output's position cannot be inferred from its kind — a state output sits *before* the auxiliaries, not after them. Multi-mode state variables expand to all of their ``v__mode{m}`` slots.
 
     Returns ``(indices, names)`` in the declared output order, so the emitted channel order and the reported ``output_names`` always agree.
 
@@ -722,11 +718,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[li
         experiment: Optional SimulationExperiment, forwarded to the layout resolver.
 
     Raises:
-        ValueError: if an output names neither a recorded state nor a recorded
-            auxiliary. Model construction already rejects unknown output names and
-            every listed auxiliary is recorded by construction, so this guards the
-            invariant against future changes to the recorded layout rather than a
-            reachable input.
+        ValueError: if an output names neither a recorded state nor a recorded auxiliary. Model construction already rejects unknown output names and every listed auxiliary is recorded by construction, so this guards the invariant against future changes to the recorded layout rather than a reachable input.
     """
     _, _, all_var_names = get_recorded_variable_names(model, experiment)
     n_modes, _, _ = get_mode_layout(model)
@@ -757,8 +749,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[li
 def format_channel_index(indices: list[int], n_channels: int) -> str:
     """Render axis-1 channel indices as the narrowest correct index expression.
 
-    A single channel yields a scalar index (dropping the variable dimension);
-    a contiguous run yields a slice, so the common all-auxiliaries case emits the same ``n_states:`` slice as before; anything else yields an explicit index list, which preserves the declared output order under advanced indexing. An empty selection yields ``:`` (all channels) rather than raising.
+    A single channel yields a scalar index (dropping the variable dimension); a contiguous run yields a slice, so the common all-auxiliaries case emits the same ``n_states:`` slice as before; anything else yields an explicit index list, which preserves the declared output order under advanced indexing. An empty selection yields ``:`` (all channels) rather than raising.
     """
     if not indices:
         return ":"
@@ -807,10 +798,8 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
 
     Returns ``(use_length_graph, use_delay_graph)``:
 
-    - **tract lengths present** → ``DenseLengthGraph`` (delays = lengths /
-      conduction_speed, so the conduction speed is a live, sweepable and differentiable graph leaf) → ``(True, False)``.
-    - **only explicit per-edge ``delay`` attributes** (no lengths) →
-      ``DenseDelayGraph`` over those delays → ``(False, True)``.
+    - **tract lengths present** → ``DenseLengthGraph`` (delays = lengths / conduction_speed, so the conduction speed is a live, sweepable and differentiable graph leaf) → ``(True, False)``.
+    - **only explicit per-edge ``delay`` attributes** (no lengths) → ``DenseDelayGraph`` over those delays → ``(False, True)``.
     - **no delays** (``has_delay`` False) → ``DenseGraph`` → ``(False, False)``.
 
     Lengths win over edge delays: a network that measures tract lengths derives its delays from the swept/optimised conduction speed.
@@ -992,6 +981,8 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
 
     return {
         "n_output": n_output,
+        # The class's N_OUTPUT_STATES: pre()'s leading axis, so a factored pre that post() recombines (n_pre > 1, n_output == 1) reduces over n_pre.
+        "n_output_states": n_pre if (n_pre > 1 and n_output == 1) else n_output,
         "has_delay": has_delay,
         "param_names": param_names,
         "param_defaults": param_defaults,
@@ -1025,9 +1016,7 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
 def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
     """Map coupling-input names to coupling functions for the tvboptim network dict.
 
-    tvboptim keys coupling by coupling-input name; the schema keys by function name.
-    Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g.
-    ``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
+    tvboptim keys coupling by coupling-input name; the schema keys by function name. Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g. ``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
 
     Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it (for state-access translation).
     """
@@ -1070,6 +1059,53 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
                 ci_coupling_map.pop(ci_name, None)
 
     return ci_coupling_map, func_to_first_ci
+
+
+def coupling_inputs_info(model) -> dict[str, dict[str, Any]]:
+    """``{name: {"dimension": int, "keys": list | None}}`` for each coupling input *model* declares."""
+    info = {}
+    for ci_key, ci in (getattr(model, "coupling_inputs", None) or {}).items():
+        keys = getattr(ci, "keys", None)
+        info[ci_key] = {"dimension": getattr(ci, "dimension", 1) or 1, "keys": list(keys) if keys else None}
+    return info
+
+
+def coupling_function_inputs(model, inputs_info, all_couplings) -> dict[str, str]:
+    """Map each coupling function to the coupling input whose dimension and keys its class is rendered with.
+
+    Resolution order: (1) an explicit ``CouplingInput.source`` naming the function, (2) the same name, (3) the remaining functions and inputs zip positionally when their counts match.
+    """
+    func_to_ci = {}
+    if not (inputs_info and all_couplings):
+        return func_to_ci
+    for ci_key, ci in (getattr(model, "coupling_inputs", None) or {}).items():
+        src = getattr(ci, "source", None)
+        if src and src in all_couplings:
+            func_to_ci[src] = ci_key
+    for fn in all_couplings:
+        if fn not in func_to_ci and fn in inputs_info:
+            func_to_ci[fn] = fn
+    unmapped_funcs = [f for f in all_couplings if f not in func_to_ci]
+    unmapped_cis = [c for c in inputs_info if c not in func_to_ci.values()]
+    if len(unmapped_funcs) == len(unmapped_cis):
+        for ci_key, fn in zip(unmapped_cis, unmapped_funcs, strict=True):
+            func_to_ci.setdefault(fn, ci_key)
+    return func_to_ci
+
+
+def coupling_input_channels(model, all_couplings) -> dict[str, int]:
+    """The channel count the generated dynamics declares for each coupling input of *model* (its ``COUPLING_INPUTS``).
+
+    An input the network wires a coupling to (`resolve_coupling_input_map`) receives that coupling's ``N_OUTPUT_STATES``, one channel per mode under the mode fold, which tvboptim checks against the declaration when it builds the network; an input no coupling feeds receives zeros of its declared ``dimension``.
+    """
+    info = coupling_inputs_info(model)
+    channels = {name: ci["dimension"] for name, ci in info.items()}
+    func_to_ci = coupling_function_inputs(model, info, all_couplings)
+    n_modes = get_mode_layout(model)[0]
+    wired, _ = resolve_coupling_input_map(model, all_couplings, channels)
+    for ci_name, (func_name, coupling) in wired.items():
+        channels[ci_name] = resolve_coupling_spec(coupling, func_name, model, info, func_to_ci, n_modes)["n_output_states"]
+    return channels
 
 
 def get_node_state_overrides(
@@ -1328,8 +1364,7 @@ def to_numeric(val: Any) -> int | float | Any:
 def normalize_coupling_aliases(all_couplings: dict[str, Any], model: Any = None) -> dict[str, Any]:
     """Collapse duplicate keys that point to the same coupling object.
 
-    tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source.
-    tvboptim only needs one key per distinct object, so prefer stable, user-meaningful aliases before attempting input-to-coupling mapping.
+    tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source. tvboptim only needs one key per distinct object, so prefer stable, user-meaningful aliases before attempting input-to-coupling mapping.
     """
     if not all_couplings:
         return {}
@@ -2933,9 +2968,7 @@ def _adapt_tvb_bold_reference(class_info: dict[str, Any], obs: Any, dt: float) -
 def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
     """Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g. ``"grad_horizon=100, block_size=50"``).
 
-    ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time;
-    the native JAX solver counts integration steps, so they are converted with ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``.
-    Shared by the experiment and solver templates so the mapping lives in one place rather than being duplicated in both mako blocks.
+    ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time; the native JAX solver counts integration steps, so they are converted with ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``. Shared by the experiment and solver templates so the mapping lives in one place rather than being duplicated in both mako blocks.
     """
     if integration is None or is_diffrax:
         return ""
@@ -3138,8 +3171,7 @@ def render_analysis_observations(
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
-    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends;
-    the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
+    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends; the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
     """
     # The same window the run measures. The settle is its own scan and reaches this network through `update_history`, so an analysis opens at t=0 on a settled network — and a gradient diagnostic differentiates the measured window alone, which is what the fit it diagnoses does.
     window = f"t0=0.0, t1={t1_default}, dt={dt}"
@@ -3452,13 +3484,10 @@ def get_noise_covariance(model: Any, experiment: Any = None) -> dict[str, Any] |
 
     Args:
         model: Dynamics instance with ``.state_variables``.
-        experiment: The declaring experiment, used to ground a relative source path and
-            to resolve a producer's arguments. Without it a lazy covariance stays
-            deferred, so calling this as a cheap predicate has no side effects.
+        experiment: The declaring experiment, used to ground a relative source path and to resolve a producer's arguments. Without it a lazy covariance stays deferred, so calling this as a cheap predicate has no side effects.
 
     Returns:
-        ``{"axis": str, "value": [[...]] | None, "lazy": (path, key) | None}``, or None
-        when no covariance is declared.
+        ``{"axis": str, "value": [[...]] | None, "lazy": (path, key) | None}``, or None when no covariance is declared.
     """
     from pathlib import Path
 
@@ -3977,8 +4006,7 @@ def get_domain_bounds(param_name: str, model: Any, all_couplings: dict) -> tuple
             param: A schema parameter whose optional `domain` carries `lo`/`hi`.
 
         Returns:
-            A `(lo, hi)` tuple of floats; either is `None` when unset or when the
-            bound is not numeric.
+            A `(lo, hi)` tuple of floats; either is `None` when unset or when the bound is not numeric.
         """
         domain = getattr(param, "domain", None)
         if not domain:
@@ -4201,9 +4229,7 @@ def normalize_n_parallel(expl: Any):
     ``"auto"`` (the schema default) defers the vmap chunk width to runtime, where the grid size is known — the generated script resolves it via :func:`tvbo.templates.tvboptim.callbacks.resolve_n_vmap`. An explicit integer is passed through unchanged (``1`` = fully sequential).
 
     Raises:
-        ValueError: if ``n_parallel`` is a non-numeric string other than ``"auto"``
-            (the schema allows any string, so a typo like ``"sequential"`` reaches
-            here — fail with a clear message rather than a bare ``int()`` error).
+        ValueError: if ``n_parallel`` is a non-numeric string other than ``"auto"`` (the schema allows any string, so a typo like ``"sequential"`` reaches here — fail with a clear message rather than a bare ``int()`` error).
     """
     v = getattr(expl, "n_parallel", None)
     if v is None:
@@ -4501,9 +4527,7 @@ def network_axis_leaf(ref: Any) -> str | None:
     Accepts the canonical ``network.edges.<label>`` form and the ``network.weight`` and ``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
-        ValueError: the reference is ``network.``-scoped but names an attribute
-            with no live graph leaf to sweep — failing at codegen rather than
-            silently writing the axis into the wrong scope.
+        ValueError: the reference is ``network.``-scoped but names an attribute with no live graph leaf to sweep — failing at codegen rather than silently writing the axis into the wrong scope.
     """
     if not isinstance(ref, str) or not ref.startswith(_NETWORK_SCOPE):
         return None
@@ -4543,9 +4567,7 @@ def noise_axis_param(ref: Any) -> str | None:
     Returns the bare parameter name; None for a reference outside the ``noise.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
-        ValueError: the reference is ``noise.``-scoped but names no sweepable noise
-            parameter — failing at codegen rather than silently writing the axis into the
-            dynamics scope, where it would sweep nothing.
+        ValueError: the reference is ``noise.``-scoped but names no sweepable noise parameter — failing at codegen rather than silently writing the axis into the dynamics scope, where it would sweep nothing.
     """
     if not isinstance(ref, str) or not ref.startswith(_NOISE_SCOPE):
         return None
@@ -4590,9 +4612,7 @@ def initial_conditions_axis_sv(ref: Any) -> str | None:
     ``initial_conditions.<state_var>`` sweeps the *initial value* of one state variable across grid cells — a deterministic initial-condition ensemble (one trajectory per swept value), as opposed to the stochastic ``n_trials`` + ``StateVariable.distribution`` ensemble. Returns the bare ``<state_var>`` name; None for a reference outside the ``initial_conditions.`` scope, which callers route through the dynamics/coupling path. The name is validated against the model's state variables at codegen, where they are known.
 
     Raises:
-        ValueError: the reference is ``initial_conditions.``-scoped but does not
-            name a single state variable (empty, or a further-dotted path) —
-            failing at codegen rather than sweeping nothing.
+        ValueError: the reference is ``initial_conditions.``-scoped but does not name a single state variable (empty, or a further-dotted path) — failing at codegen rather than sweeping nothing.
     """
     if not isinstance(ref, str) or not ref.startswith(_INITIAL_CONDITIONS_SCOPE):
         return None
@@ -4615,21 +4635,16 @@ def parameter_keypath(ref: Any, *, couplings: Any = (), coupling_key: Any = None
     ONE resolution of WHERE a declared parameter lives, for every consumer holding the reference as a STRING rather than as a classified axis: the NSGA-II search axes, the fitted free parameters, the marked optimizer parameters, the ``initial_state`` working-point ramp, an analysis ``wrt`` and an inference prior. Each grew its own prefix ladder and they disagreed — the ramp knew no scope at all and hard-prefixed ``dynamics.``, two knew ``noise.`` but not ``network.``, and the ``wrt``/prior grammar knew ``external.`` that none of the others did. Every disagreement is silent: the reference resolves to a same-named model parameter, or to nothing, and the run still completes with a plausible answer. Write paths are where this family hides — the state is a permissive container, so assigning to a mis-resolved keypath INVENTS the leaf instead of raising, and the optimiser then fits a slot no dfun reads; a read path at least fails with an AttributeError unless the wrong scope happens to declare the same name. The ``initial_conditions.`` and ``execution.random_seed`` scopes resolve to the dummy ``dynamics`` slots a wrapper reads per cell, which is where codegen binds them. :func:`axis_keypath` is the counterpart for an exploration axis, whose reference the classifier has already split into scope flags; it must answer alike for the same reference, and a test pins that.
 
     Args:
-        ref: Dotted reference as declared, e.g. ``noise.sigma``, ``network.conduction_speed``,
-            ``ReducedWongWang.w``, or a bare parameter name.
-        couplings: Coupling keys this experiment declares; a matching prefix routes to that
-            coupling instance.
-        coupling_key: Optional callable mapping a coupling name to its state key (the
-            coupling-input spelling). Identity when omitted.
-        external: External-input event names (the keys of the network's ``external_input``);
-            a matching prefix routes to that event's parameters.
+        ref: Dotted reference as declared, e.g. ``noise.sigma``, ``network.conduction_speed``, ``ReducedWongWang.w``, or a bare parameter name.
+        couplings: Coupling keys this experiment declares; a matching prefix routes to that coupling instance.
+        coupling_key: Optional callable mapping a coupling name to its state key (the coupling-input spelling). Identity when omitted.
+        external: External-input event names (the keys of the network's ``external_input``); a matching prefix routes to that event's parameters.
 
     Returns:
         The keypath, e.g. ``noise.sigma``, ``graph.speed``, ``coupling.<key>.a``, ``dynamics.w``.
 
     Raises:
-        ValueError: the reference is in a reserved scope but names nothing bindable there,
-            raised by that scope's own resolver.
+        ValueError: the reference is in a reserved scope but names nothing bindable there, raised by that scope's own resolver.
     """
     text = str(ref)
     if "." not in text:

@@ -15,20 +15,13 @@ Output:
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.base.utils import referenced
-from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements, coupling_inputs_info as _coupling_inputs_info, coupling_function_inputs
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
     network = experiment.network
     model = experiment.dynamics
-
-    # Build coupling_inputs lookup: key -> {dimension, keys}
-    coupling_inputs_info = {}
-    if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
-        for ci_key, ci in model.coupling_inputs.items():
-            dim = getattr(ci, 'dimension', 1) or 1
-            keys = getattr(ci, 'keys', None)
-            coupling_inputs_info[ci_key] = {'dimension': dim, 'keys': list(keys) if keys else None}
+    coupling_inputs_info = _coupling_inputs_info(model)
 
     # Resolved by TvboptimAdapter.resolve_couplings — see tvbo/adapters/tvboptim.py.
     from tvbo.adapters.tvboptim import TvboptimAdapter
@@ -49,38 +42,7 @@ else:
 # output per mode (each mode coupled independently across nodes via the existing
 # 2-D matmul), so n_output == n_modes and the cvar resolves to its mode slots.
 n_modes, _mode_slot_names, _var_slots = get_mode_layout(model) if model is not None else (1, [], {})
-
-# Build func_name -> ci_name mapping.
-# Resolution order:
-#   1. Explicit source on CouplingInput (ci.source == func_name)
-#   2. Same name (ci_name == func_name)
-#   3. Single CI + single func → auto-map
-#   4. Same count → positional zip
-_func_to_ci = {}
-if coupling_inputs_info and all_couplings:
-    _funcs = list(all_couplings.keys())
-    _ci_names = list(coupling_inputs_info.keys())
-
-    # 1. Explicit source attribute
-    if hasattr(model, 'coupling_inputs') and model is not None and model.coupling_inputs:
-        for ci_key, ci in model.coupling_inputs.items():
-            src = getattr(ci, 'source', None)
-            if src and src in all_couplings:
-                _func_to_ci[src] = ci_key
-
-    # 2. Same name match
-    for fn in _funcs:
-        if fn not in _func_to_ci and fn in coupling_inputs_info:
-            _func_to_ci[fn] = fn
-
-    # 3/4. Fallback for remaining unmapped functions
-    _unmapped_funcs = [f for f in _funcs if f not in _func_to_ci]
-    _unmapped_cis = [c for c in _ci_names if c not in _func_to_ci.values()]
-    if len(_unmapped_funcs) == 1 and len(_unmapped_cis) == 1:
-        _func_to_ci[_unmapped_funcs[0]] = _unmapped_cis[0]
-    elif len(_unmapped_funcs) == len(_unmapped_cis):
-        for _ci, _fn in zip(_unmapped_cis, _unmapped_funcs):
-            _func_to_ci.setdefault(_fn, _ci)
+_func_to_ci = coupling_function_inputs(model, coupling_inputs_info, all_couplings)
 %>
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>
 % if any(getattr(_c, 'delayed', False) for _c in all_couplings.values()):
@@ -119,8 +81,7 @@ ${compact.render_compact_delayed_coupling()}
     description = spec['description']
     jaxcode = lambda expr: render_expression(expr, format='jax', parameters=all_symbols)
     _uses_local = spec['uses_local']    # pre() reads a target-local state (resolved in resolve_coupling_spec)
-    # N_OUTPUT_STATES tracks pre()'s leading axis, so a factored pre that post() recombines (n_pre > 1, n_output == 1) reduces over n_pre.
-    n_output_states = n_pre if (n_pre > 1 and n_output == 1) else n_output
+    n_output_states = spec['n_output_states']
 %>
 
 class ${class_name}(${base_class}):
