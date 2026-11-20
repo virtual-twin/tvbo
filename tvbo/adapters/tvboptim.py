@@ -17,6 +17,7 @@ from tvbo.adapters.base import (
     edge_needs,
     refuse_observations,
     refuse_parameter_starts,
+    refuse_trial_network,
     require_edge_attributes,
     run_seed,
 )
@@ -632,6 +633,7 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
 
     refuse_observations(experiment, "heterogeneous tvboptim")
     refuse_parameter_starts(experiment, "heterogeneous tvboptim")
+    refuse_trial_network(experiment, "heterogeneous tvboptim")
     adapter = TvboptimAdapter(experiment)
     network = experiment.network
     lib = dynamics_lib if dynamics_lib is not None else adapter.build_dynamics_dict()

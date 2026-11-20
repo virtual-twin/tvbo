@@ -493,14 +493,14 @@ def match_output(keys: Iterable[str], output: str, prefer: Iterable[str] = ()) -
     )
 
 
-def output_array(ds, container, output):
+def output_array(ds, container, output, trial=None):
     """The array ``output`` names in the result container at *container*, open as *ds*: the one reading of a reference's WHICH that :func:`resolve_dataref`, a figure layer and a custom panel's ``load_layer`` share.
 
-    ``network.<name>`` and ``dynamics.<name>`` read what the run used from what it wrote beside its container, never by building it again: the network it froze (:func:`_run_network`) and a parameter value its recipe declares (:func:`_run_parameter`). Any other name is a data-variable of *ds*, found by :func:`match_output`.
+    ``network.<name>`` and ``dynamics.<name>`` read what the run used from what it wrote beside its container, never by building it again: the network it froze (:func:`_run_network`) and a parameter value its recipe declares (:func:`_run_parameter`). Any other name is a data-variable of *ds*, found by :func:`match_output`. *trial* is the trial a reference's `sel` names for a ``network.`` output, which :func:`_run_network` checks against the trial the frozen network holds.
     """
     text = str(output)
     if text.startswith("network."):
-        return _run_network(container, text.removeprefix("network."))
+        return _run_network(container, text.removeprefix("network."), trial)
     if text.startswith("dynamics."):
         return _run_parameter(container, ds, text.removeprefix("dynamics."))
     return ds[match_output(ds.data_vars, output)]
@@ -518,12 +518,13 @@ def _frozen_network(container):
     return load_network(companion)
 
 
-def _run_network(container, name: str):
+def _run_network(container, name: str, trial=None):
     """``network.<name>`` of the run that wrote *container*: what the network it froze (:func:`_frozen_network`) delivers as *name* (:func:`tvbo.data.cohort.network_array`), such as ``weight``, ``positions``, ``instrength`` or ``nodes.<attribute>``.
 
-    A network that takes a layer or a transform argument through a ``used:`` reference is frozen with the reference, not with what the run read, so it is refused: reading it would read that source as it is now.
+    A network that takes a layer or a transform argument through a ``used:`` reference is frozen with the reference, not with what the run read, so it is refused: reading it would read that source as it is now. On a network realised anew for each trial the companion holds trial 0's realisation, so what can differ from trial to trial, the weights, the tract lengths and the in-strength, is served only to a read whose *trial* is the one it holds and refused otherwise (:func:`tvbo.data.param_io.refuse_per_trial_read`); the node data every trial shares is served.
     """
     from tvbo.data.cohort import network_array
+    from tvbo.data.param_io import refuse_per_trial_read
 
     net, companion = _frozen_network(container), network_companion_path(container).name
     references = net.declared_references()
@@ -531,6 +532,7 @@ def _run_network(container, name: str):
         raise ValueError(
             f"{companion}: the network its run froze takes {'; '.join(map(_reference_text, references))} when it is bound to a run, and keeps the reference rather than what the run read, so `network.{name}` is not read from it; read that source where it is kept."
         )
+    refuse_per_trial_read(net, name, companion, trial)
     return network_array(net, name, companion)
 
 
@@ -835,13 +837,15 @@ def _finish(da, ref, alias_map, model_labels, reconcile=True):
 def _read_one(xr, path, ref, *, stacking=False):
     """WHICH and SLICE on one container: the selected array loaded and detached, or a whole table.
 
-    A table cannot be stacked into a cohort, so a cohort read that meets one raises rather than returning one subject's table.
+    A table cannot be stacked into a cohort, so a cohort read that meets one raises rather than returning one subject's table. The `trial` a reference's `sel` names for a ``network.`` output goes to the per-trial check (:func:`output_array`) rather than to the selection, since the network a run froze has no trial axis.
     """
     ds = xr.open_dataset(path, engine="h5netcdf")
     try:
         output = getattr(ref, "output", None)
+        sel = sel_dict(ref)
+        trial = sel.pop("trial", None) if str(output).startswith("network.") else None
         try:
-            da = output_array(ds, path, output)
+            da = output_array(ds, path, output, trial)
         except KeyError:
             table = as_table(ds, output)
             if table is None:
@@ -862,7 +866,7 @@ def _read_one(xr, path, ref, *, stacking=False):
                     "consuming callable."
                 ) from None
             return table
-        da = select_labeled(da, sel_dict(ref))
+        da = select_labeled(da, sel)
         return da.load()
     finally:
         ds.close()

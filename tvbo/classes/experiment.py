@@ -1761,6 +1761,10 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             if _ndata:
                 kwargs.setdefault("network_data", _ndata)
 
+            _lanes = self.network_realisations()
+            if _lanes is not None:
+                kwargs.setdefault("network_realisations", _lanes)
+
             # Run the experiment with optional per-step timing
             if benchmark:
                 # Run with detailed timing
@@ -2223,12 +2227,15 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         """Render a self-contained spec YAML with the connectome frozen alongside.
 
         When the experiment has a resolved multi-node network, its matrices are written as an HDF5 companion (``<network_stem>.h5`` + ``.yaml`` sidecar) in *out_dir* and the returned YAML references them via ``network.data_file`` (inline coupling / transforms / parameters preserved). This makes the spec reproducible on reload without the original data sources — the same mechanism the workflow emitter uses. Without such a network the plain metadata YAML already round-trips and is returned unchanged.
+
+        On a network realised per trial (``realisation: trial``) the companion holds trial 0's realisation, the network that trial integrates, and its sidecar records it as ``realised_trial``: trial 0 of the experiment's largest ``n_trials`` ensemble. Trial 0 is the same network in every ensemble, since a trial's seeds depend on the declared ones and the trial alone.
         """
         from pathlib import Path as _Path
 
         import numpy as _np
 
         from tvbo.classes.network import Network as _Network
+        from tvbo.classes.network import realised_per_trial
 
         net = getattr(self, "network", None)
 
@@ -2247,7 +2254,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             net.__class__ = _Network
         self.bake_real_node_labels()
         sidecar = out_dir / f"{network_stem}.yaml"
-        net.save(sidecar, binary_format="h5")
+        if realised_per_trial(net):
+            net.realised_trial = tvbo_datamodel.TrialRealisation(trial=0, n_trials=self._largest_n_trials())
+        try:
+            net.save(sidecar, binary_format="h5")
+        finally:
+            net.realised_trial = None  # the sidecar records which draw it holds; the recipe does not
         # The network sidecar goes through a different serializer; strip the same private runtime keys so the frozen connectome round-trips on reload.
         sidecar.write_text(_strip_private_yaml_keys(sidecar.read_text()), encoding="utf-8")
 
@@ -2276,6 +2288,22 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         The result's own stem with ``_network`` in place of ``_result``: one suffix, which is all BIDS allows. The companion was previously ``<stem>_result_network``, two suffixes and no legal reading.
         """
         return f"{self.get_result_stem().rsplit('_', 1)[0]}_network"
+
+    def _largest_n_trials(self) -> int:
+        """The largest ``n_trials`` any exploration of this experiment runs, 1 when none runs more than one trial."""
+        return max(
+            (int(getattr(e, "n_trials", None) or 1) for _, e in keyed_items(self.explorations, "explorations")), default=1
+        )
+
+    def network_realisations(self) -> dict[str, np.ndarray | None] | None:
+        """The weights and tract lengths of this experiment's network as realised for each trial of its largest ``n_trials`` ensemble (:meth:`tvbo.classes.network.Network.trial_realisations`), which the run hands the generated module as ``network_realisations``; None when the network is built once per run or no exploration runs more than one trial. A network that keeps a random subset of its source's nodes draws it from ``execution.random_seed`` in every realisation, as its build did."""
+        from tvbo.classes.network import drawing_from, realised_per_trial
+
+        n_trials = self._largest_n_trials()
+        if not realised_per_trial(self.network) or n_trials < 2:
+            return None
+        with drawing_from(_stated_seed(self.execution)):
+            return self.network.trial_realisations(n_trials)
 
     @property
     def max_delay(self) -> float:

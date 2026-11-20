@@ -356,6 +356,13 @@ enums:
                 description: "Resample every integration timestep (stochastic time-varying input)."
             trial:
                 description: "Sample over space once per trial of an `n_trials` ensemble: each trial starts from its own draw, keyed as the run's draw with the trial index folded in. Outside an ensemble it is the run's draw, as under `space`."
+    NetworkRealisation:
+        description: "How often a network's random construction is drawn."
+        permissible_values:
+            run:
+                description: "Once per run: every trial of an `n_trials` ensemble integrates the network the run built."
+            trial:
+                description: "Once per trial of an `n_trials` ensemble: trial k integrates the network its seeded parts build under seeds derived from their declared seeds and k. Outside an ensemble, the base run included, the network is trial 0's realisation."
     NoiseType:
         permissible_values:
             gaussian:
@@ -1468,6 +1475,28 @@ classes:
                 inlined: true
                 description: >
                     Graph generator specification.  When set, overrides explicit edges/nodes for graph construction.  The type field is a free string; StandardGraphType lists well-known types that get automatic code generation across backends.
+            realisation:
+                range: NetworkRealisation
+                description: >-
+                    How often the network's random construction is drawn. Absent, or `run`, the network is built once and every trial of an `n_trials` ensemble integrates it. `trial` builds it anew for each trial: the graph generator when it declares a `seed`, and every callable transform with a `seed` argument, are called again for trial k with the seed `tvbo.classes.network.trial_seed` derives from the declared seed and k alone, so a trial's network does not depend on how many trials run or in what order. The realisations vary the weights and tract lengths only: one that changes a node's label, position or parameters is refused, and so is a constant a producer computes from the weights, the tract lengths or the in-strength. Outside an ensemble, the base run included, the network is trial 0's realisation, and that realisation is the network a result or a kit freezes beside its spec, the result's sidecar recording it in `realised_trial`; the frozen spec keeps the generator, so a kit draws the realisations the recipe does. A backend that builds one network per run refuses it.
+            realised_trial:
+                range: TrialRealisation
+                inlined: true
+                description: >-
+                    Which realisation of a network realised per trial (`realisation: trial`) this one holds, written into the sidecar of the network frozen beside a result: trial 0 of the experiment's largest `n_trials` ensemble, the network that trial integrates. A recipe does not declare it.
+
+    TrialRealisation:
+        class_uri: tvbo:TrialRealisation
+        description: "One realisation of a network built anew for each trial (`realisation: trial`): trial `trial` of an ensemble of `n_trials`."
+        attributes:
+            trial:
+                range: integer
+                required: true
+                description: "The trial index, counted from 0."
+            n_trials:
+                range: integer
+                required: true
+                description: "The number of trials in the ensemble."
 
     GraphGenerator:
         class_uri: tvbo:GraphGenerator

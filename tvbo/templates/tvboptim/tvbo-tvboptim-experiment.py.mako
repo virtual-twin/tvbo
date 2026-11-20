@@ -1128,6 +1128,27 @@ for expl in exploration_list:
         exp_info['warmstart_analysis'] = _b_analysis
     explorations.append(exp_info)
 
+# A network built anew for each trial gives every trial of an ensemble its own weights, and its own tract lengths where they vary, which the run stacks on the host (SimulationExperiment.network_realisations).
+from tvbo.classes.network import realised_per_trial as _realised_per_trial
+trial_network = _realised_per_trial(network) and any(_x['n_trials'] > 1 for _x in explorations)
+if trial_network and use_sparse:
+    raise ValueError(
+        "network.realisation: trial runs every trial on a dense graph: each trial's weights replace the graph's on one set of edges, which a sparse graph stores once. "
+        "Drop `graph_representation: sparse`."
+    )
+for _x in explorations if trial_network else []:
+    if _x['n_trials'] > 1 and _x['algorithms']:
+        raise ValueError(
+            f"exploration {_x['name']!r} wires an algorithm into an ensemble whose network is built anew for each trial (`realisation: trial`), and the algorithm tunes each cell once on one network. "
+            "Run the ensemble without the algorithm, or build the network once per run."
+        )
+    _replaced = [ax.get('label', ax['name']) for ax in _x['axes'] if ax.get('is_network') and ax.get('graph_leaf') in ('weights', 'lengths')]
+    if _x['n_trials'] > 1 and _replaced:
+        raise ValueError(
+            f"exploration {_x['name']!r} sweeps {_replaced} on a network built anew for each trial (`realisation: trial`), whose trials each replace the weights and tract lengths with their own. "
+            "Sweep the generator's or the transform's parameters in experiments of their own, or build the network once per run."
+        )
+
 # Optimizations that depend on an Exploration front → per-seed parallel refinement.
 # Build the refine metadata (seed axes from the exploration, free-param paths from the
 # optimization) so render_refine can emit the ParallelExecution-over-the-front body.
@@ -1907,6 +1928,46 @@ def _network_datum(name):
             f"resolves it and passes it as run_experiment(network_data={{{name!r}: array}})."
         )
     return jnp.asarray(_NETWORK_DATA[name])
+% endif
+% if trial_network:
+
+
+# Each trial's realisation of the network, stacked on a leading trial axis by the run (SimulationExperiment.network_realisations); injected by the caller, never inlined.
+_NETWORK_REALISATIONS = None
+_TRIAL_LEAVES = ${('weights', 'lengths') if use_length_graph else ('weights',)}
+"""The graph leaves a trial's realisation replaces: the weights, and the tract lengths on a graph that derives its delays from them."""
+
+
+def _trial_network_lanes(n_trials, exploration):
+    """The realisations of the network for trials ``0 .. n_trials - 1``, as handed to run_experiment(network_realisations=...), keyed by the graph leaf each replaces; tract lengths the realisations share with the run's network are not handed over."""
+    if _NETWORK_REALISATIONS is None or len(_NETWORK_REALISATIONS["weights"]) < n_trials:
+        raise ValueError(
+            f"{exploration}: the network is built anew for each of its {n_trials} trials, which Experiment.run builds on the host and passes as "
+            "run_experiment(network_realisations={'weights': (n_trials, n, n), 'lengths': (n_trials, n, n) or None})."
+        )
+    return {_leaf: jnp.asarray(_NETWORK_REALISATIONS[_leaf][:n_trials]) for _leaf in _TRIAL_LEAVES if _NETWORK_REALISATIONS.get(_leaf) is not None}
+
+
+def _union_graph(graph, lanes):
+    """*graph* rebuilt to carry every realisation in *lanes*: weights nonzero on every edge any realisation has, so a coupling compacted on them keeps each trial's edges${', and tract lengths at their longest over the realisations, so the static history buffer holds the longest delay any trial asks for' if use_length_graph else ''}. Each trial writes its own leaves over these (`_on_trial_network`)."""
+    weights = jnp.any(lanes["weights"] != 0, axis=0).astype(lanes["weights"].dtype)
+% if use_length_graph:
+    lengths = jnp.max(lanes["lengths"], axis=0) if "lengths" in lanes else graph.lengths
+    # Elementwise then max, as DenseLengthGraph measures it, with the headroom every rebuild here takes.
+    _max_delay_bound = float(jnp.max(lengths / ${conduction_speed})) * (1.0 + 1e-4) if ${conduction_speed} > 0 else 0.0
+    return DenseLengthGraph(weights, lengths, speed=${conduction_speed}, region_labels=graph.region_labels, max_delay_bound=_max_delay_bound)
+% elif use_delay_graph:
+    return DenseDelayGraph(weights, graph.delays, region_labels=graph.region_labels)
+% else:
+    return DenseGraph(weights, region_labels=graph.region_labels)
+% endif
+
+
+def _on_trial_network(state, trial):
+    """Write the graph leaves of the network as realised for *trial* onto *state*, from the stacks its exploration keeps in the state's dynamics as ``_network_<leaf>``."""
+    for _leaf in _TRIAL_LEAVES:
+        if f"_network_{_leaf}" in state.dynamics:
+            setattr(state.graph, _leaf, state.dynamics[f"_network_{_leaf}"][trial])
 % endif
 <%
     _seed_coupling_home = coupling_param_keys(all_couplings, _to_ci_key)
@@ -3075,6 +3136,8 @@ def run_optimization(
     _speed_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'speed']
     _length_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'lengths']
     _delay_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'delays']
+    # Every trial of the ensemble integrates its own realisation of the network.
+    _trial_cell_network = trial_network and expl.get('n_trials', 1) > 1
 
     def _swept_bound(axes, base):
         """Largest value a per-edge leaf reaches over the sweep, as the emitted expression.
@@ -3126,6 +3189,13 @@ def ${expl['name']}(state, model_fn, settle=None${', opening=None' if has_transi
     _axisvals_${_lax['name']} = jnp.asarray(${_lax['builder_expr']})
 % endif
 % endfor
+% if _trial_cell_network:
+    if _network is None:
+        raise ValueError("${expl['name']}: every trial integrates its own realisation of the network, which takes the network to rebuild (run_experiment passes network=...)")
+    # Prepared once, outside jit, on the union of the trials' realisations; each trial then writes its own leaves over it.
+    _lanes = _trial_network_lanes(${expl['n_trials']}, '${expl['name']}')
+    _network = _rebuilt_on(_network, _union_graph(_network.graph, _lanes))
+% endif
 % if _speed_axes or _length_axes:
     if _network is not None and hasattr(_network.graph, 'lengths'):
         # Rebuilt once outside jit/vmap so the buffer covers the longest delay any cell can reach - the longest swept tract over the slowest swept speed; the axes then sweep the live `speed` / `lengths` leaves, which prepare() no longer re-reads.
@@ -3186,6 +3256,11 @@ def ${expl['name']}(state, model_fn, settle=None${', opening=None' if has_transi
         _expl_state = state
 % if has_transient:
         _own = lambda s: (s, settle)   # a passed-in model carries no network to settle again, so its cells keep the base run's
+% endif
+% if _trial_cell_network:
+    # The stacks ride in the state, like the other per-cell slots, where each trial indexes its own.
+    for _leaf, _lane in _lanes.items():
+        _expl_state.dynamics[f'_network_{_leaf}'] = _lane
 % endif
 
 % if expl['strategy'] == 'nsga2':
@@ -3550,8 +3625,8 @@ ${folded_cells(_base_stream_names, _base_bs)}
     _trial_cell_starts = trial_parameter_starts and expl.get('n_trials', 1) > 1
     if _trial_cell_starts and expl['algorithms']:
         refuse_trial_starts_under_algorithms(expl['name'], parameter_start_groups)
-    _trial_index = ['_ti'] if _trial_cell_starts else []
-    _trial_indices = ['jnp.arange(_n_trials)'] if _trial_cell_starts else []
+    _trial_index = ['_ti'] if _trial_cell_starts or _trial_cell_network else []
+    _trial_indices = ['jnp.arange(_n_trials)'] if _trial_cell_starts or _trial_cell_network else []
     # Each trial draws its starts under its cell's seed: the swept one on a seed axis, else the run's.
     _trial_starts = f"_apply_parameter_starts(s, {'s.dynamics._noise_seed' if any(ax.get('is_seed') for ax in expl['axes']) else '_run_seed'}, _start_n, _start_edges, trial=_ti)"
 %>\
@@ -3607,6 +3682,9 @@ ${folded_cells(_base_stream_names, _base_bs)}
     % if _trial_cell_starts:
             ${_trial_starts}
     % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
+    % endif
     % for _sp_name in _sp_names:
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
     % endfor
@@ -3619,6 +3697,9 @@ ${folded_cells(_base_stream_names, _base_bs)}
         def _run_trial(${', '.join(_trial_index + [f'_tn_{sp}' for sp in _sp_names])}):
     % if _trial_cell_starts:
             ${_trial_starts}
+    % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
     % endif
     % for _sp_name in _sp_names:
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
@@ -3661,6 +3742,9 @@ ${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
     % if _trial_cell_starts:
             ${_trial_starts}
     % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
+    % endif
             s.initial_state.dynamics = ic
             return _base_ic_observable(_refill_history(s))
         _trial_outs = [_run_trial(${', '.join(_trial_index + ['_trial_ics[_ti]'])}) for _ti in range(_n_trials)]
@@ -3671,6 +3755,9 @@ ${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
         def _run_trial(${', '.join(_trial_index + ['ic'])}):
     % if _trial_cell_starts:
             ${_trial_starts}
+    % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
     % endif
             s.initial_state.dynamics = ic
             return _base_ic_observable(_refill_history(s))
@@ -3693,7 +3780,7 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
             f"as a trial-only exploration (n_trials over solver noise) instead."
         )
 %>\
-% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events or _trial_cell_starts):
+% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events or _trial_cell_starts or _trial_cell_network):
     # ${expl['n_trials']} trials differing through live state leaves, run host-side because a per-trial observable may end in numpy, each solve still jitted.
     _n_trials = ${expl['n_trials']}
 
@@ -3712,6 +3799,9 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
             % endfor
             % if _trial_cell_starts:
             ${_trial_starts}
+            % endif
+            % if _trial_cell_network:
+            _on_trial_network(s, _ti)
             % endif
             return _base_trial_observable(s)
         # Runs OUTSIDE jit, so it writes the caller's live state: restore the leaves or the next cell's ensemble folds on top of trial n-1's key.
@@ -4095,6 +4185,10 @@ def run_experiment(
 % if weight_transform_reads_run_data:
     global _NETWORK_DATA
     _NETWORK_DATA = kwargs.pop("network_data", None)
+% endif
+% if trial_network:
+    global _NETWORK_REALISATIONS
+    _NETWORK_REALISATIONS = kwargs.pop("network_realisations", None)
 % endif
     _SEED_DYNAMICS = seed_dynamics
     _BRANCH_SEED = branch_seed

@@ -270,6 +270,17 @@ def refuse_parameter_starts(experiment, backend: str, lowered: tuple[str, ...] =
         )
 
 
+def refuse_trial_network(experiment, backend: str, lowered: tuple[str, ...] = ()) -> None:
+    """Raise where *backend*, which builds one network per run, would run every trial of an ensemble on the one realisation of a network declared ``realisation: trial``; a backend honours it by listing `StartKind.TRIAL` in *lowered*, as it does for a parameter start drawn per trial."""
+    from tvbo.classes.network import realised_per_trial
+
+    if StartKind.TRIAL not in lowered and realised_per_trial(getattr(experiment, "network", None)):
+        raise NotImplementedError(
+            f"the {backend} backend builds one network per run, so `network.realisation: trial` would run every trial of an ensemble on one realisation. "
+            "Run the experiment on tvboptim, which builds the network for each trial, or drop `realisation: trial`."
+        )
+
+
 def node_declared_parameters(network) -> set[str]:
     """The names of the dynamics parameters any declared node of *network* sets to a value, the dynamics' own value included: each pins the parameter on that node."""
     nodes = getattr(network, "nodes", None) or []

@@ -4729,7 +4729,7 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
     """Embed per-node vectors referenced by observations as ``{measure: nested list}``.
 
     Scans every observation's ``source``, its pipeline-step arguments, AND its observer (``dynamics``) parameters for a ``network.positions`` / ``network.instrength`` reference, resolving each once against the network:
-    ``positions`` → ``Network.node_positions()``; ``instrength`` → the weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention, ``koller2024_networks.instrength_normalize``). Raises if a referenced vector cannot be built.
+    ``positions`` → ``Network.node_positions()``; ``instrength`` → the weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention, ``koller2024_networks.instrength_normalize``). Raises if a referenced vector cannot be built, or if it differs from trial to trial on a network realised per trial (:func:`tvbo.data.param_io.refuse_per_trial_read`), where one embedded vector would hold trial 0's in every trial.
     """
     from tvbo.data import param_io
 
@@ -4744,6 +4744,7 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
         lab = node_label(name)
         if not lab or lab in arrays:
             return
+        param_io.refuse_per_trial_read(net, lab, "An observation")
         vec = _resolve(lab)
         if vec is None:
             raise ValueError(

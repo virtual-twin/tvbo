@@ -131,16 +131,18 @@ def keys() -> Iterable[str]:
 
 
 def refuse_unlowered_parameter_starts(experiment, key: str) -> None:
-    """Raise where the backend *key* would integrate a parameter start it does not lower at one constant: the one check `render` and the run path share.
+    """Raise where the backend *key* would integrate a parameter start it does not lower at one constant, or run every trial on one realisation of a network built per trial: the one check `render` and the run path share.
 
-    A key no format registers lowers nothing, so every start is refused; a format whose ``parameter_starts`` is None integrates nothing and is not checked.
+    A key no format registers lowers nothing, so every start and a network built per trial are refused; a format whose ``parameter_starts`` is None integrates nothing and is not checked.
     """
     fmt = _REGISTRY.get(key.lower())
     lowered = () if fmt is None else fmt.parameter_starts
     if lowered is not None:
-        from tvbo.adapters.base import refuse_parameter_starts
+        from tvbo.adapters.base import refuse_parameter_starts, refuse_trial_network
 
-        refuse_parameter_starts(experiment, key if fmt is None else fmt.key, lowered)
+        backend = key if fmt is None else fmt.key
+        refuse_parameter_starts(experiment, backend, lowered)
+        refuse_trial_network(experiment, backend, lowered)
 
 
 #: What a backend does with an event the experiment declares, each value refused by name but the first: "integrated", "dropped" for a backend with no stimulus path, "continuation" for one that continues an equilibrium.

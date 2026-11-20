@@ -192,6 +192,26 @@ def _node_values(value) -> np.ndarray:
     return value if value.dtype.kind in "OSU" else value.astype(float)
 
 
+def refuse_per_trial_read(net: Any, measure: str, where: str, trial: Any = None) -> None:
+    """Raise where *where* would read ``network.<measure>`` as one value and it can differ from trial to trial (:meth:`tvbo.classes.network.Network.varies_per_trial`), so every trial would get trial 0's: a constant a producer or an observation computes from the network, and a read of the network a run froze beside its result, which holds trial 0's realisation.
+
+    The frozen network serves it to a read whose *trial*, the one a reference's ``sel: {trial: k}`` names, is the trial its ``realised_trial`` records. A read of any other trial is refused, since nothing rebuilds a realisation at read time, and a read that selects no trial is refused naming the selection that would serve it.
+    """
+    if not (hasattr(net, "varies_per_trial") and net.varies_per_trial(measure)):
+        return
+    held = getattr(getattr(net, "realised_trial", None), "trial", None)
+    if trial is not None and held is not None and str(trial) == str(held):
+        return
+    if trial is not None:
+        raise ValueError(
+            f"{where}: `sel: {{trial: {trial}}}` selects a realisation of 'network.{measure}' that this network does not hold: it holds {'no recorded trial' if held is None else f'trial {held}'} alone (`realised_trial`), and nothing rebuilds another trial's realisation at read time. Select the trial it holds, or read the node data, which every trial shares."
+        )
+    remedy = "Read" if held is None else f"Select `sel: {{trial: {held}}}` to read the realisation it holds, read"
+    raise ValueError(
+        f"{where}: 'network.{measure}' can differ from trial to trial on a network realised anew for each trial (`realisation: trial`), and one value read from it is trial 0's alone. {remedy} the node data, which every trial shares, or build the network once per run."
+    )
+
+
 def is_reference(value: Any) -> bool:
     """True when an argument value points at an entity rather than being a literal."""
     return isinstance(value, str) and value.startswith(_REF_PREFIX)
@@ -212,6 +232,7 @@ def _resolve_ref(ref: str, context: Any, where: str) -> Any:
     rest = ref[len(_REF_PREFIX) :]
     if rest == "nodes.position":
         rest = "positions"  # legacy spelling of network.positions
+    refuse_per_trial_read(net, rest, where)
     if rest.startswith("nodes."):
         # Resolved before the bare-name fallback below, so an edge alias of the same name can never shadow it.
         attr = rest.split("nodes.", 1)[1]
