@@ -1,7 +1,7 @@
 <%!
     import numpy as np
     from tvbo.codegen import render_expression
-    from tvbo.templates.base.utils import docstring_text, referenced
+    from tvbo.templates.base.utils import coupling_bindings, docstring_text, referenced
 
     # Generic pycode - pass parameters on each call. Use the 'numpy' format: TVB coupling
     # pre/post operate on ARRAYS (history states), so functions must be numpy (np.sin), not
@@ -23,11 +23,22 @@ if _has_coupling:
         base_class = 'Coupling'
 
     pre_expr = pycode(coupling.pre_expression.rhs, parameters=coupling_param_names)
-    if '[0]' in pre_expr:
+    # TVB hands pre() the gathered states (model.cvar, the coupling's incoming_states) on axis 1 of a dense history and axis 0 of a sparse one.
+    _row = (lambda k: f'[{k}]') if coupling.sparse else (lambda k: f'[:, {k}]')
+    _b = coupling_bindings(context['experiment'].dynamics if 'experiment' in context.keys() else context.get('model'), coupling)
+    rows_j = [(s, _b['cvar_index'][s]) for s in _b['bare']] + _b['pre_j']
+    rows_i = [(alias, _b['cvar_index'].get(alias[:-2])) for alias, _ in _b['pre_i']]
+    for alias, k in rows_i:
+        if k is None:
+            raise NotImplementedError(
+                f"coupling {coupling.name!r} reads the target's own {alias[:-2]!r} as `{alias}`, and the tvb backend hands a coupling only "
+                f"the gathered states {_b['cvar_names']}, so it has no row for it. List {alias[:-2]!r} in the coupling's incoming_states, "
+                "or run it on tvboptim or jax."
+            )
+    indexes_rows = '[0]' in pre_expr
+    if indexes_rows and not coupling.sparse:
         pre_expr = pre_expr.replace('[', '[:, ')
-        return_new_axis = "[:, np.newaxis]"
-    else:
-        return_new_axis = ""
+    return_new_axis = ('[np.newaxis]' if coupling.sparse else '[:, np.newaxis]') if (indexes_rows or rows_j or rows_i) else ''
 
     post_expr = pycode(coupling.post_expression.rhs, parameters=['gx'] + coupling_param_names)
 %>
@@ -61,18 +72,12 @@ class ${coupling.name}(${base_class}):
         % for param in referenced(coupling.parameters, pre_expr):
         ${param} = self.${param}
         % endfor
-<%
-    _loc = getattr(coupling, 'local_states', None) or []
-    _loc = [_loc] if isinstance(_loc, str) else list(_loc)
-    _inc = getattr(coupling, 'incoming_states', None) or []
-    _inc = [_inc] if isinstance(_inc, str) else list(_inc)
-%>\
-        ## Bind state-variable symbols (e.g. theta_i/theta_j) to TVB's generic x_i (local) / x_j (incoming)
-        % for st in referenced([f'{s}_i' for s in _loc], pre_expr):
-        ${st} = x_i
+        ## Each source state, bare or as <s>_j, reads its own gathered row of x_j, and each <s>_i the target's row of x_i.
+        % for name, k in rows_j:
+        ${name} = x_j${_row(k)}
         % endfor
-        % for st in referenced([f'{s}_j' for s in _inc], pre_expr):
-        ${st} = x_j
+        % for name, k in rows_i:
+        ${name} = x_i${_row(k)}
         % endfor
 
         pre = ${pre_expr}

@@ -80,16 +80,18 @@ def gathered_states(model, coupling=None):
     The delay history, the ``x_j`` gather and the history write-back must all agree on this one order, so all three read it from here. Disagreeing would not raise: a delayed source would silently be read from another state's row.
 
     Args:
-        model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states.
+        model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states, or ``None`` for a coupling rendered on its own, whose ``incoming_states`` are then taken as declared.
         coupling: The coupling whose ``incoming_states`` overrides the default, or ``None`` to use the model's ``coupling_variable`` states.
 
     Returns:
         list[str]: State-variable names, ordered as the gathered rows are.
     """
-    names = list(model.state_variables.keys())
     declared = as_list(getattr(coupling, "incoming_states", None))
-    declared = [s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared]
-    declared = [s for s in dict.fromkeys(declared) if s in names]
+    declared = list(dict.fromkeys(s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared))
+    if model is None:
+        return declared
+    names = list(model.state_variables.keys())
+    declared = [s for s in declared if s in names]
     if declared:
         return declared
     return [n for n, sv in model.state_variables.items() if sv.coupling_variable]
@@ -197,7 +199,7 @@ def coupling_bindings(model, coupling):
     A difference coupling (``u_j - u_i``) needs the last two together, which is why the bare name cannot stand in for either. Word-boundary matching keeps the three apart: ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` / ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
 
     Args:
-        model: The dynamics declaring the state variables.
+        model: The dynamics declaring the state variables, or ``None`` for a coupling rendered on its own, whose declared incoming and local states stand for them.
         coupling: The coupling whose expressions are being emitted; its ``incoming_states`` and ``local_states`` declare the source and target-local state names.
 
     Returns:
@@ -210,7 +212,7 @@ def coupling_bindings(model, coupling):
 
     incoming = as_list(getattr(coupling, "incoming_states", None))
     local = as_list(getattr(coupling, "local_states", None))
-    states = list(model.state_variables.keys())
+    states = list(model.state_variables.keys()) if model is not None else list(dict.fromkeys(incoming + local))
     sv_index = {name: i for i, name in enumerate(states)}
     cvar_names = gathered_states(model, coupling)
     cvar_index = {name: i for i, name in enumerate(cvar_names)}

@@ -143,7 +143,7 @@ class CouplingBehaviour(Catalogued):
 
         Args:
             format: Target backend (case-insensitive). One of `"tvb"`, `"autodiff"`/`"jax"`, `"tvboptim"`/`"tvb-optim"`, or `"python"`.
-            model: Model context passed to the JAX template when relevant.
+            model: The dynamics the coupling acts on, which the TVB and JAX templates read its gathered states from.
             alt_label: Alternative label accepted for signature compatibility; not used directly by this method.
             **kwargs: Additional arguments forwarded to the selected template.
 
@@ -159,7 +159,7 @@ class CouplingBehaviour(Catalogued):
         self.fill_post_expression()
         fmt = format.lower()
         if fmt == "tvb":
-            rendered_code = templates.lookup.get_template("tvbo-tvb-coupling.py.mako").render(coupling=self)
+            rendered_code = templates.lookup.get_template("tvbo-tvb-coupling.py.mako").render(coupling=self, model=model)
 
         elif fmt in ("autodiff", "jax"):
             template = templates.lookup.get_template("tvbo-jax-coupling.py.mako")

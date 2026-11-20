@@ -4,7 +4,7 @@
 <%
 import numpy as np
 from tvbo.codegen.templater import time_dependent_equations
-from tvbo.templates.base.utils import docstring_text, get_func_name, is_local_coupling, referenced_parameters
+from tvbo.templates.base.utils import docstring_text, gathered_state_indices, get_func_name, is_local_coupling, referenced_parameters
 from tvbo.templates.tvboptim.utils import get_mode_layout, get_recorded_variable_names, state_only_dependencies, state_only_derived_var_names
 if 'experiment' in context.keys():
     model = context['experiment'].dynamics
@@ -143,7 +143,7 @@ sv_boundaries = tvb_state_variable_boundaries(model)
         },
     )
 
-    cvar = np.array(${[i for i, sv in enumerate(model.state_variables.values()) if sv.coupling_variable]}, dtype=np.int32)
+    cvar = np.array(${gathered_state_indices(model, context.get("coupling"))}, dtype=np.int32)
 
     coupling_terms = Final(
         label="Coupling terms",
