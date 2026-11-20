@@ -1,6 +1,6 @@
 """Chained tvboptim solves carry their delay history, so a TR-by-TR loop integrates the same network as one continuous run.
 
-A fitting loop (FIC, FIC/EIB) runs its prepared solve once per TR and hands the final state to the next call. The delayed couplings' history buffers live in ``initial_state.coupling`` and are not returned by the solve, so the generated experiment rebuilds them from the trajectory with ``_carry_delay_history``. These tests run that helper, taken verbatim from the experiment template, on the stock tvboptim DelayedCoupling and on tvbo's CompactDelayedCoupling, through a roll and a circular history buffer named by ``buffer_strategy`` (both tvboptim 0.4.0 and the development line take it), and check a whole fic_eib run changes once the history is carried and ends on the same bits through either buffer.
+A fitting loop (FIC, FIC/EIB) runs its prepared solve once per TR and hands the final state to the next call. The delayed couplings' history buffers live in ``initial_state.coupling`` and are not returned by the solve, so the generated experiment rebuilds them from the trajectory with ``_carry_delay_history``. These tests run that helper, rendered from the template def the experiment template emits it from, on the stock tvboptim DelayedCoupling and on tvbo's CompactDelayedCoupling, through a roll and a circular history buffer named by ``buffer_strategy`` (both tvboptim 0.4.0 and the development line take it), and check a whole fic_eib run changes once the history is carried and ends on the same bits through either buffer.
 """
 
 from __future__ import annotations
@@ -27,17 +27,14 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 from tvboptim.experimental.network_dynamics.solvers import BoundedSolver, Euler
 
-EXPERIMENT_TEMPLATE = "tvbo/templates/tvboptim/tvbo-tvboptim-experiment.py.mako"
 CARRY_CALL = "state = _carry_delay_history("
 
 
 def _template_namespace() -> dict:
-    """``_carry_delay_history`` and its registry exactly as the experiment template emits them, plus the emitted CompactDelayedCoupling; the registry is the last top-level ``_DELAY`` name above the carry, whatever the template calls it."""
-    source = open(EXPERIMENT_TEMPLATE).read()
-    carry = source.index("def _carry_delay_history(")
-    helper = source[source.rindex("\n_DELAY", 0, carry) + 1 : source.index("def create_network(")]
+    """``_carry_delay_history``, ``_refill_history`` and their registry, and the CompactDelayedCoupling, each rendered from its template def as the experiment template emits it."""
     namespace = {"jax": jax, "jnp": jnp, "eqx": eqx, "Bunch": Bunch, "DelayedCoupling": DelayedCoupling}
-    exec(compile(helper, "<carry_delay_history>", "exec"), namespace)
+    carry = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-delay-carry.py.mako")
+    exec(compile(carry.get_def("render_delay_history_carry").render(), "<delay_history_carry>", "exec"), namespace)
     compact = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-compact-coupling.py.mako")
     exec(compile(compact.get_def("render_compact_delayed_coupling").render(), "<compact_coupling>", "exec"), namespace)
     return namespace
