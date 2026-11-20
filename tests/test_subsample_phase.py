@@ -41,9 +41,6 @@ NAME = "Observed"
 CURATED = {"iri": "tvbo:observation_models/subsample", "period": PERIOD}
 """The curated ``SubSample``: tvb runs its generated monitor, tvboptim its own ``SubSampling``, jax the curated pipeline ``subsample(X, step)``."""
 
-TOLERANCE = {**RTOL, "jax": RTOL["tvboptim"]}
-"""The closed form's tolerance per backend; jax integrates the probe in float64, as tvboptim does."""
-
 OPENINGS = {"undelayed": _undelayed, "delayed": lambda: _settled(0.0)}
 BACKENDS = [
     pytest.param("tvb", marks=pytest.mark.backend_tvb),
@@ -85,9 +82,7 @@ def _assert_samples_whole_periods(spec, observation, backend):
     stamps, y, opening = _observed_y(spec, observation, backend)
     expected = PERIOD * np.arange(1, int(DURATION / PERIOD) + 1)
     np.testing.assert_allclose(stamps, expected, rtol=0, atol=1e-9)
-    np.testing.assert_allclose(
-        y, expected[:, None] * A * (W @ opening)[None, :], rtol=TOLERANCE[backend], atol=TOLERANCE[backend]
-    )
+    np.testing.assert_allclose(y, expected[:, None] * A * (W @ opening)[None, :], rtol=RTOL, atol=RTOL)
 
 
 @pytest.mark.parametrize("backend", BACKENDS)

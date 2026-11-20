@@ -11,7 +11,7 @@ pytest.importorskip("tvb")
 
 from tvbo import SimulationExperiment
 
-from .test_delay_history_from_opening import DT, RTOL, _assert_reads_its_opening
+from .test_delay_history_from_opening import DT, _assert_reads_its_opening
 from .test_tvb_delayed_clock import SETTLES, _assert_on_the_measurement_clock, _settled, _undelayed
 
 pytestmark = pytest.mark.backend_tvb
@@ -47,7 +47,7 @@ def _observed(spec, monitor, settle):
 def test_a_delayed_run_s_monitor_samples_the_run_s_grid(monitor, settle):
     """Counted from the step the run opened at, the delayed probe's 3 ms monitor samples at 3, 6, 9 and 12 ms, after a settle at -3 and 0 ms, and each sample reads the closed form at its stamp, an average half a step after it."""
     x, y, t = _observed(_settled(settle), monitor, settle)
-    _assert_reads_its_opening(x, y, t, settle, RTOL["tvb"])
+    _assert_reads_its_opening(x, y, t, settle)
 
 
 @EACH_MONITOR
@@ -56,4 +56,4 @@ def test_an_undelayed_run_s_monitor_keeps_its_grid(monitor):
     spec = _undelayed()
     assert SimulationExperiment(**spec).execute("tvb").current_step == 0
     x, y, t = _observed(spec, monitor, 0.0)
-    _assert_reads_its_opening(x, y, t, 0.0, RTOL["tvb"])
+    _assert_reads_its_opening(x, y, t, 0.0)
