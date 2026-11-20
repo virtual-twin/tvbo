@@ -1676,6 +1676,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         elif format.lower() in ["tvboptim", "tvb-optim"]:
             # Heterogeneous networks (different dynamics per node) run in process through the tvboptim HeterogeneousNetwork engine rather than the homogeneous codegen path below.
             from tvbo.adapters.tvboptim import (
+                handed_network,
                 is_heterogeneous,
                 run_heterogeneous_tvboptim,
                 solver_weights,
@@ -1763,6 +1764,8 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             _lanes = self.network_realisations()
             if _lanes is not None:
                 kwargs.setdefault("network_realisations", _lanes)
+
+            kwargs = {**handed_network(ns, self.network), **kwargs}
 
             # Run the experiment with optional per-step timing
             if benchmark:

@@ -1231,7 +1231,7 @@ refused at render time rather than emitted as a name the kit lacks.
 """
 
 
-def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str], bool]:
+def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str], bool, bool]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
     A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the very expression the runtime evaluates (`Network.transform_expression`, which folds any mask into the reductions it scopes), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.
@@ -1240,10 +1240,10 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         network: The `Network` whose transforms are being lowered.
 
     Returns:
-        A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from the current `weights`, so a chain composes. `const_env` binds everything bound once — other edge matrices, per-node parameter vectors, imported callables, and each argument declared with `used:`, which the script reads by name from the arrays its run hands it (`run_experiment(network_data=...)`) rather than embedding. `needs_lengths` reports whether `create_network` has to be handed real lengths.
+        A `(transforms, const_env, needs_lengths, needs_network)` tuple. `transforms` is a list of `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from the current `weights`, so a chain composes. `const_env` binds everything bound once — other edge matrices, per-node parameter vectors, imported callables, and each argument declared with `used:`, which the script reads by name from the arrays its run hands it (`run_experiment(network_data=...)`) rather than embedding. `needs_lengths` reports whether `create_network` has to be handed real lengths. `needs_network` reports whether it has to be handed the run's `Network` as `transform_network`: a callable that takes the `network` the runtime injects is called with that object, which the run passes in (`run_experiment(transform_network=...)`) rather than the script rebuilding one of its own.
 
     Raises:
-        ValueError: If a transform equation names a symbol that is neither an edge attribute this kit holds, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster. Also if a callable transform takes the `network` the runtime injects, which a kit has no object to supply.
+        ValueError: If a transform equation names a symbol that is neither an edge attribute this kit holds, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster.
     """
     import numpy as np
 
@@ -1266,6 +1266,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
     const_env: list[str] = []
     const_seen: set[str] = set()
     labels_used: set[str] = set()
+    needs_network = False
 
     def _add_const(name: str, line: str) -> None:
         if name not in const_seen:
@@ -1323,11 +1324,8 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
                 for n, a in keyed_items(getattr(t, "arguments", None), "arguments")
             )
             if _callable_wants(c, "network", _source_dir):
-                raise ValueError(
-                    f"weight transform callable {c.module}.{c.name} takes a `network` argument, "
-                    f"which the runtime injects but a self-contained kit has no object to supply. "
-                    f"Give it a signature over the matrix (and `L`) alone."
-                )
+                needs_network = True
+                args += ", network=transform_network"
             if _callable_wants(c, "L", _source_dir):
                 labels_used.add("length")
                 _add_const("L", f"L = {_KIT_EDGE_ARRAYS['length']}")
@@ -1346,7 +1344,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
         transforms.append((expr, chained + mask_lines))
-    return transforms, const_env, "length" in labels_used
+    return transforms, const_env, "length" in labels_used, needs_network
 
 
 def to_numeric(val: Any) -> int | float | Any:

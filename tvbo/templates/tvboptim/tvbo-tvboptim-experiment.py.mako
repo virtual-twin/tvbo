@@ -227,9 +227,10 @@ conduction_speed = 'jnp.inf' if _cs_value == float('inf') else _cs_value
 
 # `transforms:` -> JAX, applied in create_network on the RAW weights, so the kit is self-contained.
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
-weight_transform_jax, weight_transform_const_env, weight_transform_needs_lengths = _weight_transform_codegen(network)
+weight_transform_jax, weight_transform_const_env, weight_transform_needs_lengths, weight_transform_needs_network = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
 weight_transform_distances_arg = "distances=distances, " if weight_transform_needs_lengths else ""
+weight_transform_network_arg = "transform_network=transform_network, " if weight_transform_needs_network else ""
 weight_transform_reads_run_data = bool(network.sourced_transform_arguments("weight")) if hasattr(network, "sourced_transform_arguments") else False
 
 # Simulation parameters
@@ -1537,6 +1538,12 @@ def _apply_parameter_starts(state, seed, n_nodes, edges${', trial=None' if trial
 % endif
 % endif
 ${delay_carry.render_delay_history_carry()}
+% if weight_transform_needs_network:
+
+_HANDED_NETWORK = "this script's weight transform reads the network; run it through `tvbo run`, which hands it the frozen network"
+"""Why the script stops without the tvbo Network its weight transform callable takes: it cannot rebuild that network itself."""
+
+% endif
 
 def create_network(
     weights: jnp.ndarray,
@@ -1545,6 +1552,9 @@ def create_network(
     % endif
     % if use_delay_graph and not use_length_graph:
     delays: jnp.ndarray = None,
+    % endif
+    % if weight_transform_needs_network:
+    transform_network: Any = None,
     % endif
     region_labels: list = None,
     dynamics_params: dict = None,
@@ -1563,6 +1573,10 @@ def create_network(
     if distances is None:
         # Zero-filling here would silently normalise by the wrong denominator.
         raise ValueError("a declared weight transform reads the tract lengths L; pass distances= to create_network")
+% endif
+% if weight_transform_needs_network:
+    if transform_network is None:
+        raise ValueError(f"{_HANDED_NETWORK}, or pass the tvbo Network as create_network(transform_network=...)")
 % endif
 % for _line in weight_transform_const_env:
     ${_line}
@@ -4162,6 +4176,10 @@ def run_experiment(
     global _NETWORK_REALISATIONS
     _NETWORK_REALISATIONS = kwargs.pop("network_realisations", None)
 % endif
+% if weight_transform_needs_network:
+    # The tvbo Network a weight transform callable takes as `network`, the object the runtime hands it; injected by the caller, never rebuilt here.
+    transform_network = kwargs.pop("transform_network", None)
+% endif
     _SEED_DYNAMICS = seed_dynamics
     _BRANCH_SEED = branch_seed
     _SEED_PARAMS = seed_params
@@ -4191,16 +4209,16 @@ def run_experiment(
 
     % if use_length_graph:
     # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed.
-    network = create_network(weights, distances=distances, ${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, distances=distances, ${weight_transform_network_arg}${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % elif use_delay_graph:
     # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
     if delays is None:
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, ${weight_transform_distances_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Whether the base forward-sim is materialised at all. Algorithm/optimization/exploration modes run their own simulations, so the base trajectory is prepared but never integrated.
@@ -4945,11 +4963,11 @@ def run_experiment(
 % else:
             # No depends_on: start from FRESH network (not modified by algorithms)
             % if use_length_graph:
-            opt_network = create_network(weights, distances=distances, ${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, distances=distances, ${weight_transform_network_arg}${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % elif use_delay_graph:
-            opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % else:
-            opt_network = create_network(weights, ${weight_transform_distances_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % endif
             # This network is fresh, so it settles its own: `run_simulation` runs the settle, warm-starts through `update_history` and hands back the measured-window model, without materialising a base trajectory nobody reads.
             _opt_sim = run_simulation(opt_network, t1=${opt_t1}, dt=${opt_dt}, t_transient=${transient_time}, run_main=False, random_seed=kwargs.get('random_seed'))
@@ -5183,6 +5201,9 @@ observational_measures = list(network.observational_measures) if network.observa
 %>
 
 if __name__ == "__main__":
+% if weight_transform_needs_network:
+    raise SystemExit(_HANDED_NETWORK)
+% endif
     import pickle
     from pathlib import Path
     from tvbo.data.types import ExperimentResult

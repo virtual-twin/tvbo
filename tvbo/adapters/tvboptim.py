@@ -98,6 +98,24 @@ def solver_weights(network, apply_transforms: bool = False, delayed: bool | None
     return jnp.asarray(matrix.toarray() if sparse.issparse(matrix) else matrix, dtype=float)
 
 
+def handed_network(namespace, network) -> dict:
+    """The network argument the generated module's `create_network` takes, as every caller of the module hands it over.
+
+    A weight transform whose callable takes `network` is called in process with the network it transforms (`Network._apply_transform`); the module's `create_network` then takes that object as `transform_network`, and it is decided by the module's own signature, so a frozen script decides what it is handed.
+
+    Args:
+        namespace: The executed tvboptim module.
+        network: The experiment's `Network`.
+
+    Returns:
+        `{"transform_network": network}` when `create_network` takes it, an empty dict otherwise.
+    """
+    import inspect
+
+    takes = "transform_network" in inspect.signature(namespace.create_network).parameters
+    return {"transform_network": network} if takes else {}
+
+
 def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):
     """Build a tvboptim graph from a tvbo Network, by what the network measures.
 
