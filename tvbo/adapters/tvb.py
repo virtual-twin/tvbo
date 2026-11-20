@@ -741,6 +741,15 @@ def from_tvb_zip(zip_path):
     return net
 
 
+TVB_NODE_FIELDS = {
+    "cortical": ("cortical", bool),
+    "area": ("areas", float),
+    "hemisphere": ("hemispheres", bool),
+    "orientation": ("orientations", float),
+}
+"""Per node parameter that `from_tvb` stores and `to_tvb` writes back: the TVB ``Connectivity`` field it holds and that field's dtype. ``orientation`` is a node's unit vector, three numbers, where the others are one."""
+
+
 def from_tvb(connectivity):
     """Import a live TVB Connectivity object into a tvbo Network.
 
@@ -776,21 +785,10 @@ def from_tvb(connectivity):
                 z=float(centres[i, 2]),
             ),
         )
-        if conn.cortical is not None and len(conn.cortical) == n:
-            node.parameters["cortical"] = tvbo_datamodel.Parameter(
-                name="cortical",
-                value=float(conn.cortical[i]),
-            )
-        if conn.areas is not None and len(conn.areas) == n:
-            node.parameters["area"] = tvbo_datamodel.Parameter(
-                name="area",
-                value=float(conn.areas[i]),
-            )
-        if conn.hemispheres is not None and len(conn.hemispheres) == n:
-            node.parameters["hemisphere"] = tvbo_datamodel.Parameter(
-                name="hemisphere",
-                value=float(conn.hemispheres[i]),
-            )
+        for name, (field, _) in TVB_NODE_FIELDS.items():
+            values = getattr(conn, field)
+            if values is not None and len(values) == n:
+                node.parameters[name] = tvbo_datamodel.Parameter(name=name, value=np.asarray(values[i], dtype=float).tolist())
         nodes.append(node)
 
     net = Network(nodes=nodes, edges=[], number_of_nodes=n)
@@ -798,9 +796,6 @@ def from_tvb(connectivity):
     net.set_matrix("length", lengths)
     net.label = getattr(conn, "title", None) or "TVB Connectivity"
     net.descriptor = "SC"
-
-    if conn.orientations is not None and len(conn.orientations) == n:
-        object.__setattr__(net, "_orientations", np.asarray(conn.orientations))
 
     speed = np.asarray(conn.speed).ravel()
     cs_val = float(speed[0]) if len(speed) > 0 else 3.0
@@ -891,6 +886,8 @@ def from_tvb_surface(connectivity, surface, region_mapping):
 def to_tvb(network):
     """Export a tvbo Network to a TVB Connectivity object.
 
+    The ``cortical`` flags, ``areas``, ``hemispheres`` and ``orientations`` are written from the node parameters ``cortical``, ``area``, ``hemisphere`` and ``orientation`` (`TVB_NODE_FIELDS`), as `from_tvb` stores them, where every node carries the parameter; otherwise the field is left to TVB, which leaves `cortical`, `areas` and `orientations` unset and guesses `hemispheres` from the region labels.
+
     Parameters
     ----------
     network : Network
@@ -920,6 +917,7 @@ def to_tvb(network):
     if not _labels or len(_labels) != _weights.shape[0]:
         _labels = list(network.atlas.region_labels)
     _region_labels = np.asarray(_labels)
+    _node_vectors = network.node_parameter_vectors
 
     tvb_conn = Connectivity(
         weights=_weights,
@@ -927,6 +925,11 @@ def to_tvb(network):
         centres=_centres,
         region_labels=_region_labels,
         speed=_speed,
+        **{
+            field: _node_vectors[name].astype(dtype)
+            for name, (field, dtype) in TVB_NODE_FIELDS.items()
+            if name in _node_vectors
+        },
     )
     tvb_conn.configure()
     return tvb_conn

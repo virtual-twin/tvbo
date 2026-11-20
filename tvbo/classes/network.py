@@ -3442,7 +3442,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
     @property
     def node_parameter_vectors(self) -> dict[str, np.ndarray]:
-        """Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order.
+        """Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order; a parameter whose value on each node is a vector of ``k`` numbers, such as the ``orientation`` `from_tvb` stores, is an ``(n_nodes, k)`` array.
 
         Only parameters that *every* node declares are returned (a partial vector has no well-defined value for the gaps). Consumed by symbolic weight/length transforms, which expose each as an ``(n, 1)`` column so an expression like ``W / roi_size`` normalises per target region.
         """
@@ -3454,7 +3454,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         for name in names:
             vals = [getattr(nd.parameters[name], "value", None) for nd in nodes]
             if all(v is not None for v in vals):
-                out[str(name)] = np.asarray([float(v) for v in vals], dtype=np.float64)
+                out[str(name)] = np.asarray(vals, dtype=np.float64)
         return out
 
     def node_positions(self) -> np.ndarray:

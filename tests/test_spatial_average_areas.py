@@ -1,6 +1,6 @@
 """A spatial average reports one mean per area, its areas numbered from 0 whatever labels the mask uses.
 
-tvb's generated ``SpatialAverage`` builds its mask from the connectivity's ``cortical`` flags, which tvbo leaves unset (``None``), and every node then counts as cortical. An all-cortical mask is all 1s: one area labelled 1, which must be column 0 of a one-column assignment matrix, not column 1. The probe of ``test_delay_history_from_opening`` reads the result in closed form: ``y(t) = t a W x(0)`` per node at the sample stamped ``t``, and an area holds the mean of its nodes' ``y``. jax computes the curated pipeline ``spatial_mean @ X``, in which nothing supplies ``spatial_mean``; the step is refused by name.
+tvb's generated ``SpatialAverage`` builds its mask from the connectivity's ``cortical`` flags, which tvbo leaves unset (``None``) on a network whose nodes carry none, and every node then counts as cortical. An all-cortical mask is all 1s: one area labelled 1, which must be column 0 of a one-column assignment matrix, not column 1. The probe of ``test_delay_history_from_opening`` reads the result in closed form: ``y(t) = t a W x(0)`` per node at the sample stamped ``t``, and an area holds the mean of its nodes' ``y``. jax computes the curated pipeline ``spatial_mean @ X``, in which nothing supplies ``spatial_mean``; the step is refused by name.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ AREAS = {
     "all-cortical": ([True, True], [[0, 1]]),
     "two-area": ([True, False], [[1], [0]]),
 }
-"""Per network, the ``cortical`` flags it carries (None: tvbo's, unset) and the nodes of each area in area order: one area of both nodes, or the non-cortical node 1 as area 0 and the cortical node 0 as area 1."""
+"""Per network, the ``cortical`` flags it carries (None: unset, as tvbo leaves them for nodes that carry none) and the nodes of each area in area order: one area of both nodes, or the non-cortical node 1 as area 0 and the cortical node 0 as area 1."""
 
 
 def _spec():
@@ -39,18 +39,8 @@ def _spec():
     return spec
 
 
-@pytest.mark.backend_tvb
-@pytest.mark.parametrize("network", list(AREAS))
-def test_a_spatial_average_holds_each_area_s_mean(network):
-    """Sampled at 3, 6, 9 and 12 ms, each area holds the mean ``y`` of its nodes, on an all-cortical network and on one of two areas."""
-    pytest.importorskip("tvb")
-    cortical, areas = AREAS[network]
-    spec = _spec()
-    sim = SimulationExperiment(**spec).execute("tvb")
-    if cortical is not None:
-        sim.connectivity.cortical = np.array(cortical)
-        next(m for m in sim.monitors if type(m).__name__ == "Spatial").config_for_sim(sim)
-    result = ExperimentResult.from_tvb(sim, transient_time=0.0)
+def _assert_area_means(spec, result, areas):
+    """*result* of *spec* is sampled at 3, 6, 9 and 12 ms and holds, per area of *areas* in area order, the mean ``y`` of its nodes."""
     data = result.integration.observations["Spatial"].data
     if "variable" in data.dims:
         data = data.sel(variable="y")
@@ -61,6 +51,20 @@ def test_a_spatial_average_holds_each_area_s_mean(network):
     expected = np.stack([per_node[:, nodes].mean(axis=1) for nodes in areas], axis=1)
     values = data.transpose("time", ...).values.reshape(len(stamps), -1)
     np.testing.assert_allclose(values, expected, rtol=RTOL, atol=RTOL)
+
+
+@pytest.mark.backend_tvb
+@pytest.mark.parametrize("network", list(AREAS))
+def test_a_spatial_average_holds_each_area_s_mean(network):
+    """Each area holds the mean ``y`` of its nodes, on an all-cortical network and on one of two areas."""
+    pytest.importorskip("tvb")
+    cortical, areas = AREAS[network]
+    spec = _spec()
+    sim = SimulationExperiment(**spec).execute("tvb")
+    if cortical is not None:
+        sim.connectivity.cortical = np.array(cortical)
+        next(m for m in sim.monitors if type(m).__name__ == "Spatial").config_for_sim(sim)
+    _assert_area_means(spec, ExperimentResult.from_tvb(sim, transient_time=0.0), areas)
 
 
 @pytest.mark.backend_jax

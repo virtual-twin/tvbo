@@ -38,6 +38,7 @@ from tvbo.utils import (  # noqa: F401  re-exported for the mako templates
     _NETWORK_EDGE_ALIASES,
     as_list,
     edge_label,
+    is_array_valued,
     keyed_items,
 )
 
@@ -1115,7 +1116,7 @@ def get_node_state_overrides(
 def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dict[str, float]) -> dict[str, list[float]]:
     """Scan network.nodes for per-node parameter overrides.
 
-    When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned. Entry ``k`` is the ``k``-th declared node's, the connectome matrices' row order (`Network.node_index_map`), whatever ``id`` the node carries.
+    When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned. Entry ``k`` is the ``k``-th declared node's, the connectome matrices' row order (`Network.node_index_map`), whatever ``id`` the node carries. A parameter whose value is a vector (`is_array_valued`), such as the ``orientation`` `from_tvb` stores, holds no per-node scalar and is skipped.
 
     Args:
         network: Network object with .nodes list
@@ -1132,7 +1133,7 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dic
     if len(nodes) != n_nodes:
         return {}
 
-    # Collect per-node values for all parameters defined on any node
+    # Collect per-node values for every scalar parameter defined on any node
     node_params = {}  # param_name -> {row: value}
     for row, node in enumerate(nodes):
         if not getattr(node, "parameters", None):
@@ -1141,10 +1142,8 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dic
         if hasattr(params, "values"):
             params = params.values()
         for p in params:
-            pname = str(p.name)
-            val = float(p.value) if p.value is not None else None
-            if val is not None:
-                node_params.setdefault(pname, {})[row] = val
+            if p.value is not None and not is_array_valued(p.value):
+                node_params.setdefault(str(p.name), {})[row] = float(p.value)
 
     # Build per-node arrays using dynamics defaults as base
     overrides = {}
