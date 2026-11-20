@@ -21,7 +21,14 @@ import warnings
 from fractions import Fraction
 from typing import TYPE_CHECKING, NamedTuple
 
-from tvbo.adapters.base import BaseAdapter, baked_opening, refuse_state_distribution, run_seed
+from tvbo.adapters.base import (
+    BaseAdapter,
+    affect_assignments,
+    baked_opening,
+    pure_resets,
+    refuse_state_distribution,
+    run_seed,
+)
 from tvbo.adapters.smallscale.lowering import (
     CURRENT_INPUT_TYPES,
     EVENT_SOURCE_TYPES,
@@ -392,8 +399,7 @@ def _build_regime_data(events):
             'condition':  str,          # e.g. "v > thresh" 'assignments': [(lhs, rhs), ...],  # parsed affect assignments 'reset_vars': set,          # SVs clamped in refractory (no TD)
         }
 
-    A variable is "clamped" (excluded from refractory TimeDerivatives) when the assignment is a pure reset (``v = reset``, LHS absent from RHS).
-    A variable that receives a bump (``w = w + b``, LHS appears in RHS) still evolves via its TimeDerivative in the refractory regime.
+    A variable is "clamped" (excluded from refractory TimeDerivatives) when the assignment is a pure reset (`pure_resets`: ``v = reset``, LHS absent from RHS). A variable that receives a bump (``w = w + b``, LHS appears in RHS) still evolves via its TimeDerivative in the refractory regime.
     """
     for ev in (events or {}).values():
         cond = getattr(ev, "condition", None)
@@ -404,23 +410,11 @@ def _build_regime_data(events):
         if not (cond_rhs and affect_rhs):
             continue
 
-        assignments = []
-        reset_vars = set()
-        for piece in str(affect_rhs).split(";"):
-            piece = piece.strip()
-            if "=" not in piece:
-                continue
-            lhs, rhs_val = piece.split("=", 1)
-            lhs, rhs_val = lhs.strip(), rhs_val.strip()
-            assignments.append((lhs, rhs_val))
-            # If LHS doesn't appear in RHS → it's a reset / clamp
-            if not re.search(r"\b" + re.escape(lhs) + r"\b", rhs_val):
-                reset_vars.add(lhs)
-
+        assignments = affect_assignments(ev)
         return {
             "condition": str(cond_rhs),
             "assignments": assignments,
-            "reset_vars": reset_vars,
+            "reset_vars": pure_resets(assignments),
         }
     return None
 

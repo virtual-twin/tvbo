@@ -29,7 +29,7 @@ from tvbo.templates.base.utils import (
     samples_over_time,
     samples_per_trial,
 )
-from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma
+from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma, normalize_params
 
 
 def dense_matrix(network, name: str, dtype=float) -> np.ndarray | None:
@@ -338,6 +338,84 @@ def refuse_state_distribution(state_variables, backend: str, reason: str) -> Non
         raise NotImplementedError(
             f"the {backend} backend {reason}, so the initial-state distribution declared on {', '.join(map(repr, drawn))} cannot reach the run. "
             "Run the experiment on a backend that draws it for each node (tvb, jax, tvboptim), or declare an initial value instead."
+        )
+
+
+def affect_assignments(event) -> list[tuple[str, str]]:
+    """The ``(lhs, rhs)`` assignments the affect of *event* makes, in declared order, each side stripped: ``v = c; u = u + d`` gives ``[("v", "c"), ("u", "u + d")]``."""
+    affect = getattr(getattr(event, "affect", None), "rhs", None)
+    pieces = (piece.split("=", 1) for piece in str(affect or "").split(";") if "=" in piece)
+    return [(lhs.strip(), rhs.strip()) for lhs, rhs in pieces]
+
+
+def pure_resets(assignments) -> set[str]:
+    """The variables *assignments* set without reading them (``v = reset``, not ``w = w + b``): the ones a refractory period holds."""
+    return {lhs for lhs, rhs in assignments if not re.search(r"\b" + re.escape(lhs) + r"\b", rhs)}
+
+
+class ModelReset(NamedTuple):
+    """One event of a model as a backend applies it after an integration step: its name, its condition and its assignments in declared order."""
+
+    name: str
+    condition: str
+    assignments: list[tuple[str, str]]
+
+
+def _unapplied_reason(event, assignments, states, readable) -> str | None:
+    """Why a backend that applies events after each step cannot apply *event*, or None where it can."""
+    import sympy as sp
+
+    condition = getattr(getattr(event, "condition", None), "rhs", None)
+    if not condition:
+        return "it declares no condition"
+    parsed = sp.sympify(str(condition), locals=readable)
+    if not isinstance(parsed, sp.core.relational.Relational):
+        return f"its condition {condition} is not a comparison"
+    if getattr(getattr(event, "affect_negative", None), "rhs", None):
+        return "it declares an affect_negative, a down-crossing a step has no point for"
+    unassignable = [lhs for lhs, _ in assignments if lhs not in states]
+    if unassignable:
+        return f"it assigns {', '.join(unassignable)}, which is not a state variable"
+    read = parsed.free_symbols.union(*(sp.sympify(rhs, locals=readable).free_symbols for _, rhs in assignments))
+    unread = sorted({s.name for s in read} - set(readable))
+    if unread:
+        return f"it reads {', '.join(unread)}, which is neither a state variable nor a parameter"
+    return None
+
+
+def post_step_resets(dynamics, backend: str) -> list[ModelReset]:
+    """The events of *dynamics* that carry an affect, read as a *backend* that applies them after each integration step reads them, or raise naming the event it cannot apply.
+
+    Such a backend tests the condition on the stepped state and, where it holds, makes the assignments in declared order. It applies an event whose condition is a comparison, which declares no ``affect_negative``, and whose assignments set state variables of *dynamics* from its state variables and parameters. Any other event is refused by its declaration, under whatever name the model carries, and so is any such event of a model with more than one mode.
+    """
+    import sympy as sp
+
+    states = list(getattr(dynamics, "state_variables", None) or {})
+    readable = {name: sp.Symbol(name) for name in [*states, *normalize_params(getattr(dynamics, "parameters", None))]}
+    resets = []
+    for name, event in keyed_items(getattr(dynamics, "events", None), "events"):
+        assignments = affect_assignments(event)
+        if not assignments:
+            continue
+        reason = _unapplied_reason(event, assignments, states, readable)
+        if reason:
+            raise NotImplementedError(
+                f"the {backend} backend applies a model's event where its condition holds after an integration step, and cannot apply event {str(name)!r}, which sets {event.affect.rhs}: {reason}."
+            )
+        resets.append(ModelReset(str(name), str(event.condition.rhs), assignments))
+    modes = int(getattr(dynamics, "number_of_modes", None) or 1)
+    if modes > 1:
+        refuse_model_events(
+            resets, backend, f"its model has {modes} modes, and a mode axis gives the condition no one value per node"
+        )
+    return resets
+
+
+def refuse_model_events(resets, backend: str, why: str) -> None:
+    """Raise naming the first of *resets* where *backend*, in the setting *why* describes, cannot apply events after each step."""
+    if resets:
+        raise NotImplementedError(
+            f"the {backend} backend cannot apply event {resets[0].name!r} ({resets[0].condition}): {why}."
         )
 
 

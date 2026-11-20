@@ -144,12 +144,10 @@ def noise_mixer(factor, axis: str = "node"):
 
     Args:
         factor: The ``L`` from :func:`covariance_factor`.
-        axis: Which axis of a ``[..., n_noise_states, n_nodes]`` block the covariance
-            indexes — a `DimensionType` name.
+        axis: Which axis of a ``[..., n_noise_states, n_nodes]`` block the covariance indexes — a `DimensionType` name.
 
     Returns:
-        A callable mixing the trailing ``[n_noise_states, n_nodes]`` block of an array
-        whose leading axes (time, blocks) are left untouched.
+        A callable mixing the trailing ``[n_noise_states, n_nodes]`` block of an array whose leading axes (time, blocks) are left untouched.
     """
     axis_pos = _axis_position(axis)
 
@@ -162,50 +160,26 @@ def noise_mixer(factor, axis: str = "node"):
 def CorrelatedNoiseSolver(base_solver, factor, axis: str = "node"):
     """Wrap a native solver so its Wiener increment carries a declared covariance.
 
-    tvboptim owns the integration step; this is tvbo's concrete solver against that abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then transform — here the increment on the way in rather than the state on the way out).
-    Wrapping is the one place that works for every network shape, because the grouped and ungrouped scans both hand their increment to `solver.step`.
+    tvboptim owns the integration step; this is tvbo's concrete solver against that abstract contract, mirroring the backend's own `BoundedSolver` (delegate, then transform — here the increment on the way in rather than the state on the way out), on the delegating base all of tvbo's solver wrappers share (`delegating_solver`). Wrapping is the one place that works for every network shape, because the grouped and ungrouped scans both hand their increment to `solver.step`.
 
     Args:
         base_solver: The native solver to wrap.
-        factor: A single ``L`` applied to every group's increment, or a mapping from
-            group name to ``L`` so a heterogeneous network can drive different groups
-            with different processes. A group absent from the mapping keeps its
-            independent increment.
+        factor: A single ``L`` applied to every group's increment, or a mapping from group name to ``L`` so a heterogeneous network can drive different groups with different processes. A group absent from the mapping keeps its independent increment.
         axis: The `correlated_over` axis name.
 
     Returns:
         A solver instance delegating to `base_solver`.
     """
-    from tvboptim.experimental.network_dynamics.solvers import NativeSolver
+    from tvbo.classes.solver_wrappers import delegating_solver
 
     axis_pos = _axis_position(axis)
 
-    class _CorrelatedNoiseSolver(NativeSolver):
+    class _CorrelatedNoiseSolver(delegating_solver()):
         """A native solver that mixes the noise increment before delegating."""
 
         def __init__(self, base_solver, factor):
-            """Wrap `base_solver`, delegating its scan settings via the properties below.
-
-            Skips `NativeSolver.__init__` so wrapping cannot silently drop a block size or gradient horizon — the idiom `BoundedSolver` uses.
-            """
-            self.base_solver = base_solver
+            super().__init__(base_solver)
             self.factor = factor
-
-        @property
-        def block_size(self):
-            return self.base_solver.block_size
-
-        @property
-        def recompute_coupling_per_stage(self):
-            return self.base_solver.recompute_coupling_per_stage
-
-        @property
-        def grad_horizon(self):
-            return self.base_solver.grad_horizon
-
-        @property
-        def stage_time_centroid(self):
-            return self.base_solver.stage_time_centroid
 
         def _mix(self, noise_sample):
             if not isinstance(self.factor, Mapping):

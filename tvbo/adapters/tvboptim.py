@@ -15,6 +15,8 @@ from tvbo.adapters.base import (
     BaseAdapter,
     dense_matrix,
     edge_needs,
+    post_step_resets,
+    refuse_model_events,
     refuse_observations,
     refuse_parameter_starts,
     refuse_trial_network,
@@ -50,6 +52,16 @@ def solver_class(method) -> str:
             f"integration method {method!r} ({canonical}) has no tvboptim solver; it integrates by one of {sorted(SOLVER_MAP)}"
         )
     return SOLVER_MAP[canonical]
+
+
+def model_event_resets(model, *solver_classes: str) -> list:
+    """The events of *model* that `ModelEventSolver` applies after each step of the solvers named *solver_classes*, refused naming the event where one is a Diffrax solver, which steps inside diffrax where no wrapper reaches the state."""
+    resets = post_step_resets(model, "tvboptim")
+    if "DiffraxSolver" in solver_classes:
+        refuse_model_events(
+            resets, "tvboptim", "an adaptive Diffrax solver steps inside diffrax, where no per-step wrapper reaches the state"
+        )
+    return resets
 
 
 class TvboptimAdapter(BaseAdapter):
@@ -637,6 +649,12 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
     adapter = TvboptimAdapter(experiment)
     network = experiment.network
     lib = dynamics_lib if dynamics_lib is not None else adapter.build_dynamics_dict()
+    for dynamics in lib.values():
+        refuse_model_events(
+            post_step_resets(dynamics, "heterogeneous tvboptim"),
+            "heterogeneous tvboptim",
+            "a grouped network steps one state per group, and the per-step event wrapper applies one model's events to one state",
+        )
     default_dyn = next(iter(lib), None) if dynamics_lib is None else None
     het = to_heterogeneous_network(network, dynamics_lib=lib, default_dynamics=default_dyn)
 

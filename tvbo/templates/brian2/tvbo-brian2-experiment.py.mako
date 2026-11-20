@@ -2,11 +2,6 @@
 from tvbo.adapters.brian2 import _brian2_const, _dict_literal, _monitor_literal, _ns_literal, assemble_eqs, reset_code
 
 
-def _init_v(pop):
-    v0 = pop["cell_params"].get("v0") or pop["cell_params"].get("EL") or (-70.0, "mV")
-    return _brian2_const(*v0)
-
-
 def _refract(pop):
     return _brian2_const(*pop["cell_params"].get("refract", (0.0, "ms")))
 
@@ -41,11 +36,13 @@ ${assemble_eqs(pop)}
 """
 ${name} = NeuronGroup(
     ${pop["size"]}, ${name}_eqs,
-    threshold="v > thresh", reset="${reset_code(pop)}",
+    threshold="${pop["threshold"]}", reset="${reset_code(pop)}",
     refractory=${_refract(pop)}, method="euler",
     namespace=${_ns_literal({**pop["cell_params"], **pop["namespace"]})}, name="${name}",
 )
-${name}.v = ${_init_v(pop)}
+% for sv, (value, unit) in pop["init"].items():
+${name}.${sv} = ${_brian2_const(value, unit)}
+% endfor
 % for mvar, frac in pop["masks"].items():
 ${name}.${mvar} = "rand() < ${frac}"
 % endfor

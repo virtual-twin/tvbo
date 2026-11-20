@@ -200,7 +200,7 @@ def test_a_declared_time_unit_scales_the_emitted_clock(tmp_path):
 
 
 def test_a_declared_initial_distribution_is_refused(tmp_path):
-    """Each cell opens at its `v0` parameter, else `EL`, which has no place for a draw, so a distribution declared on the excitatory cells' `v` is refused, naming it, rather than dropped."""
+    """Each cell opens at the initial value each state variable declares, which has no place for a draw, so a distribution declared on the excitatory cells' `v` is refused, naming it, rather than dropped."""
     membrane = 'v: {equation: {rhs: "(gL * (EL - v) + iSyn) / C"}, initial_value: -70.0, unit: mV, record: true'
     path = tmp_path / "drawn.yaml"
     path.write_text(
@@ -208,7 +208,8 @@ def test_a_declared_initial_distribution_is_refused(tmp_path):
     )
 
     with pytest.raises(
-        NotImplementedError, match="the brian2 backend opens each cell at its v0 parameter, else EL, .* declared on 'v'"
+        NotImplementedError,
+        match="the brian2 backend opens each cell and each synapse at the initial value each of its state variables declares.* declared on 'v'",
     ):
         SimulationExperiment.from_file(str(path)).render("brian2")
 

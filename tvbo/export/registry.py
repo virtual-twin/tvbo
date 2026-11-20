@@ -59,6 +59,8 @@ class ExportFormat:
     parameter_starts: tuple[str, ...] | None = ()
     # How this backend treats an event the experiment declares (`EVENT_HANDLING`).
     events: str = "dropped"
+    # Whether this backend applies the affect of an event a model declares, such as a spike's reset (`refuse_unapplied_model_events`).
+    model_events: bool = False
 
     def to_public_dict(self) -> dict[str, Any]:
         """Serialisable view (without the renderer callable)."""
@@ -173,6 +175,31 @@ def refuse_undeclared_events(experiment, key: str) -> None:
         )
 
 
+def refuse_unapplied_model_events(experiment, key: str) -> None:
+    """Raise where the backend *key* has no path for the affect of an event a model of *experiment* declares, such as a spike's reset, and would integrate the model without it: the one check `render` and the run path share.
+
+    The refusal reads the declaration alone, each event that carries an affect and what it sets, so a model is refused by what it declares under whatever name. An event without an affect, a condition that only marks a spike or the name of an experiment event an equation reads, changes no trajectory and passes. A key no format registers applies no affect, and a format whose ``parameter_starts`` is None integrates nothing and is not checked.
+    """
+    from tvbo.adapters.base import dynamics_library
+    from tvbo.utils import keyed_items
+
+    fmt = _REGISTRY.get(key.lower())
+    if fmt is not None and (fmt.parameter_starts is None or fmt.model_events):
+        return
+    unapplied = [
+        f"event {str(name)!r} sets {event.affect.rhs}"
+        for model in dynamics_library(experiment).values()
+        for name, event in keyed_items(getattr(model, "events", None), "events")
+        if getattr(getattr(event, "affect", None), "rhs", None)
+    ]
+    if unapplied:
+        applying = ", ".join(sorted(f.key for f in list_formats() if f.model_events))
+        raise NotImplementedError(
+            f"the {key if fmt is None else fmt.key} backend has no path for the affect of an event a model declares, so it would integrate the model without it: {' and '.join(unapplied)}. "
+            f"Run the experiment on a backend that applies a model's events ({applying}), or remove the event."
+        )
+
+
 def render(experiment, fmt_key: str, **kwargs) -> str:
     """Resolve *fmt_key*, lower *experiment* (:func:`tvbo.multiscale.lower`) for a format that integrates, invoke its renderer, prune its dead imports, and format it.
 
@@ -185,6 +212,7 @@ def render(experiment, fmt_key: str, **kwargs) -> str:
         experiment = lower(experiment)
     refuse_unlowered_parameter_starts(experiment, fmt.key)
     refuse_undeclared_events(experiment, fmt.key)
+    refuse_unapplied_model_events(experiment, fmt.key)
     rendered = fmt.renderer(experiment, **kwargs)
     if not fmt.language:
         return rendered

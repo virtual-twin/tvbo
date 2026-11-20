@@ -6,6 +6,7 @@
 <%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>
 <%namespace name="lyap" file="tvbo-tvboptim-lyapunov.py.mako"/>\
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>\
+<%namespace name="events" file="/base/model-events.mako"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.classes.optimization import fitted_parameters as _fitted_parameters
@@ -500,6 +501,10 @@ if optim_list and optim_list[0].integration:
     opt_solver_class = _solver_class(opt_method)
     opt_dt = float(opt_integration.step_size) if opt_integration.step_size else dt
     opt_t1 = float(opt_integration.duration) if opt_integration.duration else t1_default
+
+# The model's events act after each step of every solve through ModelEventSolver in get_solver().
+from tvbo.adapters.tvboptim import model_event_resets
+model_resets = model_event_resets(model, solver_class, opt_solver_class)
 
 # Check if optimization depends on an algorithm (copy that algorithm's result state)
 # If no depends_on, optimization starts from FRESH network defaults (not algorithm results)
@@ -1291,6 +1296,9 @@ from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
 % if noise_cov:
 from tvbo.classes.correlated_noise import CorrelatedNoiseSolver, covariance_factor, fold_amplitudes
 % endif
+% if model_resets:
+from tvbo.classes.solver_wrappers import ModelEventSolver
+% endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
@@ -1415,8 +1423,12 @@ def _load_param(path, key, device=True):
 
 
 % endif
+% if model_resets:
+${events.apply_model_events(model, model_resets)}
+
+% endif
 def get_solver(block_size=None, solver_kwargs=None):
-    """Configured solver, wrapped as every solve of this experiment needs it (a declared clamp, a noise covariance). ``block_size`` (native solvers only) sets the nested-block-scan granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable in-carry instead of materializing the trajectory; ``None`` keeps the single scan. ``solver_kwargs`` replaces the run's own integrator settings, for a sweep or analysis solve that drops the differentiation window."""
+    """Configured solver, wrapped as every solve of this experiment needs it (a declared clamp, the model's events, a noise covariance). ``block_size`` (native solvers only) sets the nested-block-scan granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable in-carry instead of materializing the trajectory; ``None`` keeps the single scan. ``solver_kwargs`` replaces the run's own integrator settings, for a sweep or analysis solve that drops the differentiation window."""
     _solver_kwargs = dict(${solver_kwargs_str}) if solver_kwargs is None else dict(solver_kwargs)
     if block_size is not None:
         _solver_kwargs['block_size'] = block_size
@@ -1429,6 +1441,9 @@ def get_solver(block_size=None, solver_kwargs=None):
     )
 % else:
     solver = base_solver
+% endif
+% if model_resets:
+    solver = ModelEventSolver(solver, _apply_model_events)
 % endif
 % if noise_cov:
     # Factorise the declared covariance (correlated_over: ${noise_cov['axis']}) once here, not per step.

@@ -277,9 +277,17 @@ _BUILTINS = [
         aliases=("nml",),
         language="xml",
         events="integrated",
+        model_events=True,
     ),
     ExportFormat(
-        "lems", "LEMS (custom components)", ".xml", "application/xml", _render_lems, language="xml", events="integrated"
+        "lems",
+        "LEMS (custom components)",
+        ".xml",
+        "application/xml",
+        _render_lems,
+        language="xml",
+        events="integrated",
+        model_events=True,
     ),
     # code: python
     ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python", events="integrated"),
@@ -293,9 +301,18 @@ _BUILTINS = [
         language="python",
         parameter_starts=tuple(k for k in StartKind if k not in (StartKind.COUPLING_TIME, StartKind.EVENT_TIME)),
         events="integrated",
+        model_events=True,
     ),
     ExportFormat(
-        "jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python", events="integrated"
+        "jax",
+        "JAX Python",
+        ".py",
+        "text/x-python",
+        _render_jax,
+        aliases=("autodiff",),
+        language="python",
+        events="integrated",
+        model_events=True,
     ),
     ExportFormat(
         "pde",
@@ -316,6 +333,7 @@ _BUILTINS = [
         aliases=("brian",),
         language="python",
         events="integrated",
+        model_events=True,
     ),
     # code: julia
     ExportFormat(
