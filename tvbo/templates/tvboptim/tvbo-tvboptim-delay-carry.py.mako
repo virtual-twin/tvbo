@@ -1,7 +1,5 @@
 <%doc>
-Delay-history carry: the registry of delayed couplings, `_carry_delay_history` and `_refill_history`, emitted once into every generated tvboptim experiment module, where the experiment template places them before `create_network`.
-
-Its own def, as the compact coupling is, so a test executes it as a generated module defines it (`Template(...).get_def("render_delay_history_carry").render()`) rather than slicing template text.
+Delay-history carry: the registry of delayed couplings, `_carry_delay_history` and `_refill_history`, emitted once into every generated tvboptim experiment module, where the experiment template places them before `create_network`. `render_delay_history_carry()` renders them on their own, as `render_compact_delayed_coupling()` renders the compact coupling.
 </%doc>
 <%def name="render_delay_history_carry()">\
 _DELAY_LINES = {}
