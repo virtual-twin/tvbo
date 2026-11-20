@@ -2281,7 +2281,7 @@ def run_simulation(
         state=state,
         result=result,
         result_transient=result_transient,
-        opening=(_tr_state if _settled else state).initial_state.dynamics,   # the declared initial condition, before any settle
+        opening=${'(_tr_state if _settled else state)' if has_transient else 'state'}.initial_state.dynamics,   # the state the run opens on, before any settle
         observations=observations,
 % if _base_stream:
         stream_fn=_stream_fn,   # re-fold a caller's own state without materialising
