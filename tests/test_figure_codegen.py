@@ -1723,7 +1723,7 @@ def _frame_positions_fn(code: str):
     source = code[code.index("def _frame_positions(") :]
     source = source[: source.index("\ndef ")]
     da = xr.DataArray(np.zeros((21, 2)), dims=("time", "node"), coords={"time": np.arange(21) * 0.5})
-    namespace = {"np": np, "_open": lambda container: None, "_var": lambda ds, output: da}
+    namespace = {"np": np, "_open": lambda container: None, "_output_array": lambda ds, container, output: da}
     exec(source, namespace)
     return namespace["_frame_positions"]
 
