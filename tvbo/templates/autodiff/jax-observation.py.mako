@@ -1,4 +1,5 @@
 <%!
+from tvbo.adapters.observation_sampling import sampling_kind
 from tvbo.codegen import render_expression
 
 def get_callable_info(func):
@@ -65,21 +66,6 @@ def get_equation_rhs(func):
 _SAMPLING_ARG_NAMES = ('stepsize', 'step', 'window_size', 'window')
 
 
-def _sampling_kind(func):
-    """Classify a pipeline step as a temporal-sampling stage.
-
-    Returns ``'window'`` for an averaging window (``window_mean``),
-    ``'subsample'`` for a decimation (``subsample``), else ``None``.
-    """
-    equation = getattr(func, 'equation', None)
-    rhs = str(getattr(equation, 'rhs', '') or '')
-    if 'window_mean(' in rhs:
-        return 'window'
-    if 'subsample(' in rhs:
-        return 'subsample'
-    return None
-
-
 def _sampling_arg_names(func):
     """Names of the step-size arguments on a sampling step."""
     args = getattr(func, 'arguments', None) or {}
@@ -106,7 +92,7 @@ def build_sampling_overrides(resolved_pipeline, sampling):
     if sampling is None:
         return {}
 
-    stages = [(func, _sampling_kind(func)) for func in resolved_pipeline]
+    stages = [(func, sampling_kind(getattr(getattr(func, 'equation', None), 'rhs', None))) for func in resolved_pipeline]
     stages = [(func, kind) for func, kind in stages if kind is not None]
     has_window = any(kind == 'window' for _, kind in stages)
     has_subsample = any(kind == 'subsample' for _, kind in stages)

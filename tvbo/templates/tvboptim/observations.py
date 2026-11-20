@@ -13,7 +13,7 @@ from tvbo.adapters.observation_sampling import _tvb_iround
 
 
 class TVBTemporalAverage(AbstractMonitor):
-    """Temporal average with TVB monitor window indexing."""
+    """Temporal average with TVB monitor window indexing, each window's mean stamped at the mean time of the samples it averages, as tvboptim's ``TemporalAverage`` labels it."""
 
     period: float = eqx.field(static=True)
 
@@ -32,7 +32,7 @@ class TVBTemporalAverage(AbstractMonitor):
 
         t0 = float(np.asarray(sol.ts)[0]) - dt
         step_numbers = np.arange(1, window_count + 1) * step_count
-        times = t0 + (step_numbers - step_count / 2.0) * dt
+        times = t0 + (step_numbers - (step_count - 1) / 2.0) * dt
         return NativeSolution(
             ts=times,
             ys=averaged,

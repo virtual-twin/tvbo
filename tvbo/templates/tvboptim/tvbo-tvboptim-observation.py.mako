@@ -3,7 +3,7 @@
 <%page args="reductions=None"/>\
 <%
 from tvbo.codegen import render_expression
-from tvbo.adapters.observation_sampling import tvb_iround as _tvb_iround
+from tvbo.adapters.observation_sampling import last_sampling_kind, tvb_iround as _tvb_iround
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
@@ -1721,6 +1721,7 @@ class ${class_name}(AbstractMonitor):
         _decl_period = float(_decl_period)
     except (TypeError, ValueError):
         _decl_period = None
+    _window_stamped = last_sampling_kind(step['equation'] for step in pipeline) == 'window'
 %>
 % if tail_samples and not (_decl_period and _decl_period > float(dt)):
         elif _time is not None and len(_time) > len(_final) > 1:
@@ -1732,6 +1733,10 @@ class ${class_name}(AbstractMonitor):
         elif _time is not None and len(_time) > len(_final) > 1:
             # A sample that reports a period covers it, so it is stamped at the END of the period it covers: the first lands one whole period into the measured window, not on its first step. Verified against where a delta actually moves the output, not read off the emitting code.
             _ts = _time[0] - self.dt + (jnp.arange(len(_final)) + 1) * ${_decl_period}
+% if _window_stamped:
+## A window's mean is stamped instead at the mean time of the samples it averages, as tvboptim's TemporalAverage labels it.
+            _ts = _ts - (${_decl_period} - self.dt) / 2
+% endif
             _out_dt = ${_decl_period}
 % else:
         elif _time is not None and len(_time) > len(_final) > 1:
