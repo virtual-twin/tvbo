@@ -16,6 +16,7 @@ experiment : object with .observations dict
 import os as _os
 
 from tvbo.codegen.templater import source_observations as _source_observations
+from tvbo.templates.tvboptim.utils import is_network_observation as _is_network_observation
 observations = getattr(experiment, 'observations', None) or {}
 
 # ── classification helpers ──────────────────────────────────────────
@@ -89,10 +90,24 @@ def _aggregation(obs):
     aggregation = getattr(obs, 'aggregation', None)
     return None if aggregation is None or str(aggregation) == 'none' else str(aggregation)
 
+def _source_strings(o):
+    """Each source *o* names, as written."""
+    src = getattr(o, 'source', None)
+    if not src:
+        return []
+    items = src if isinstance(src, (list, tuple)) else [src]
+    return [str(getattr(i, 'name', None) or i) for i in items]
+
+def _data_sources(obs):
+    """The sources *obs* reads from the network or a dataset rather than the states, sorted."""
+    return sorted(s for s in _source_strings(obs) if s.startswith(('network.', 'dataset.')))
+
 def _computation(obs):
-    """What *obs* declares for a backend to compute, one phrase each: the observations it is derived from, its aggregation, its pipeline's steps, its analysis, its imaging modality, its dynamics and its class reference."""
+    """What *obs* declares for a backend to compute, one phrase each: the observations it is derived from, the data it reads, its aggregation, its pipeline's steps, its analysis, its imaging modality, its dynamics and its class reference."""
     derived = sorted(_source_observations(obs, experiment))
     phrases = [f"the source observation{'s' if len(derived) > 1 else ''} {', '.join(derived)}"] if derived else []
+    if _data_sources(obs):
+        phrases.append(f"the source {', '.join(_data_sources(obs))}")
     if _aggregation(obs) is not None:
         phrases.append(f"the aggregation {_aggregation(obs)}")
     steps = [_step_label(step) for step in (getattr(obs, 'pipeline', None) or [])]
@@ -132,12 +147,12 @@ def _refusal(refused):
 def _classify(obs):
     """The monitor category of *obs*.
 
-    An observation derived from other observations or aggregated over time is computed after the run, which no tvb monitor does. A curated class reference names its category. A declared pipeline is filed under the first category in `_PIPELINE_CATEGORIES` whose key step it holds and whose monitor computes every step it declares. An observation that declares nothing to compute (`_computation`) falls back to its source or period, else to ``raw``.
+    An observation derived from other observations or aggregated over time is computed after the run, and one that computes over the network's or a dataset's data computes over no state, neither of which a tvb monitor does. A curated class reference names its category. A declared pipeline is filed under the first category in `_PIPELINE_CATEGORIES` whose key step it holds and whose monitor computes every step it declares. An observation that declares nothing to compute (`_computation`) falls back to its source or period, else to ``raw``.
 
     Raises:
-        _NoMonitor: If *obs* declares a computation that no tvb monitor computes in full: source observations, an aggregation, a pipeline with a step outside every matching category's monitor, or an analysis, imaging modality, dynamics or class reference without a pipeline tvb covers.
+        _NoMonitor: If *obs* declares a computation that no tvb monitor computes in full: source observations, a network or dataset source, an aggregation, a pipeline with a step outside every matching category's monitor, or an analysis, imaging modality, dynamics or class reference without a pipeline tvb covers.
     """
-    if _source_observations(obs, experiment) or _aggregation(obs) is not None:
+    if _source_observations(obs, experiment) or _data_sources(obs) or _aggregation(obs) is not None:
         _refuse(obs)
     cr = getattr(obs, 'class_reference', None)
     if cr is not None and str(cr.name) in _CATEGORY_BY_CR:
@@ -260,16 +275,9 @@ def _get_sensor_file(obs):
 obs_list = []   # (obs_name, obs, category)
 refused = {}    # obs_name -> what it declares
 
-def _source_strings(o):
-    src = getattr(o, 'source', None)
-    if not src:
-        return []
-    items = src if isinstance(src, (list, tuple)) else [src]
-    return [str(getattr(i, 'name', None) or i) for i in items]
-
 for obs_name, obs in (observations.items() if hasattr(observations, 'items') else []):
-    if any(s.startswith('network.') for s in _source_strings(obs)):
-        continue  # static data, not a monitor
+    if _is_network_observation(obs):
+        continue  # bound from data on the host (`SimulationExperiment._host_observations`), not a monitor
     try:
         obs_list.append((str(obs_name), obs, _classify(obs)))
     except _NoMonitor as declared:

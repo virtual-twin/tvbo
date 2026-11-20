@@ -49,6 +49,7 @@ from tvbo.data.types import (
     SimulationResult,
     SimulationState,
     TimeSeries,
+    _observation_dataarray,
     tvb_monitor_results,
     tvb_observation_name,
 )
@@ -57,7 +58,7 @@ from tvbo.datamodel.dialect import expand_iri
 from tvbo.log import ensure_configured
 from tvbo.parse.symbols import assumptions_of, symbol_in
 from tvbo.run.graph import GraphRunner as _Network
-from tvbo.utils import Bunch, as_list, initial_value, keyed_items, network_couplings, traverse_metadata
+from tvbo.utils import Bunch, as_list, edge_label, initial_value, keyed_items, network_couplings, traverse_metadata
 from tvbo.utils.source import current_source_file
 
 sessionid = 1
@@ -1638,6 +1639,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 )
             from tvbo.adapters.base import BaseAdapter
 
+            host = self._host_observations()  # read before the run, so a missing subject is refused before it
             simulator_ = self.execute(rendered_code=rendered_code)
             # TVB stamps step k at k * dt, and `execute`'s one configure on a history of H rows counted H - 1 steps before the first.
             start_step = simulator_.current_step
@@ -1656,6 +1658,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     if name not in declared:
                         continue
                 observations[name] = recorded
+            observations.update(host)
 
             if sim_result is None:
                 # No Raw monitor: a copy of the first one recorded stands as the integration series.
@@ -1721,17 +1724,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             any_delayed = any(getattr(coup, "delayed", False) for coup in network_couplings(self.network).values())
             delay_matrix = self.network.calculate_delays() if any_delayed else None
 
-            net_obs = self.resolve_network_observations()
-            if getattr(self, "_active_subject", None):
-                for obs_name, da in self.resolve_dataset_observations(self._active_subject).items():
-                    net_obs = dict(net_obs or {})
-                    net_obs[obs_name] = np.asarray(da.values)
-            elif self.dataset_on_device():
+            net_obs = self.bound_observations()
+            if not getattr(self, "_active_subject", None) and self.dataset_on_device():
                 # On-device cohort: stack the whole cohort into a leading subject axis (B, ...) so the generated vmap driver maps one lane per subject, instead of one workflow job per subject.
                 _batched, _subj_ids = self.resolve_dataset_observations_batched()
-                for obs_name, arr in _batched.items():
-                    net_obs = dict(net_obs or {})
-                    net_obs[obs_name] = arr
+                net_obs.update(_batched)
                 self._cohort_subject_ids = _subj_ids
             if net_obs:
                 kwargs.setdefault("network_observations", net_obs)
@@ -2380,6 +2377,62 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                 )
             resolved[name] = available[measure]
         return resolved
+
+    def bound_observations(self) -> dict:
+        """The value of each observation a run binds from data rather than simulates, by name.
+
+        The network's measures (:meth:`resolve_network_observations`) and, while a subject is active, that subject's dataset targets (:meth:`resolve_dataset_observations`) as arrays: what tvboptim's run hands its generated code as ``network_observations``.
+        """
+        bound = dict(self.resolve_network_observations())
+        subject = getattr(self, "_active_subject", None)
+        if subject:
+            bound.update({name: np.asarray(da.values) for name, da in self.resolve_dataset_observations(subject).items()})
+        return bound
+
+    def connectome_observations(self) -> dict:
+        """The dense connectome matrix each pipeline-less observation of ``network.weight`` or ``network.length`` names, by observation name.
+
+        It is the matrix tvboptim embeds for the observation (:func:`tvbo.templates.tvboptim.utils.collect_network_edge_arrays`). A ``network.edges.<label>`` source is one of the network's measures (:attr:`network_observation_measures`), which :meth:`bound_observations` binds as tvboptim's run binds it.
+
+        Raises:
+            ValueError: If the network has no matrix by the label an observation names.
+        """
+        measures = self.network_observation_measures
+        matrices = {}
+        for name, obs in keyed_items(self.observations, "observations"):
+            if name in measures or getattr(obs, "pipeline", None):
+                continue
+            sources = [str(getattr(s, "name", None) or s) for s in as_list(getattr(obs, "source", None))]
+            label = next((edge_label(s) for s in sources if s.startswith("network.") and edge_label(s)), None)
+            if label is None:
+                continue
+            matrix = self.network.matrix(label, format="dense") if self.network is not None else None
+            if matrix is None:
+                raise ValueError(
+                    f"The observation {name!r} reads the network's {label!r} matrix, which the network does not have."
+                )
+            matrices[str(name)] = np.asarray(matrix)
+        return matrices
+
+    def _host_observations(self) -> dict:
+        """Each observation a tvb run takes from data rather than records, by name, with its declared ``dims`` and the network's node labels bound as :class:`SimulationResult` binds tvboptim's.
+
+        Raises:
+            ValueError: If an observation reads one subject's data and no subject is active.
+        """
+        values = {**self.bound_observations(), **self.connectome_observations()}
+        unbound = sorted(set(self.dataset_observation_targets) - set(values))
+        if unbound:
+            raise ValueError(
+                f"tvb reads {', '.join(repr(name) for name in unbound)} from one subject's data (`dataset.subject.*`), and no subject is active. "
+                "Run it with `active_subject`, as the per-subject workflow fan-out does."
+            )
+        declared = dict(keyed_items(self.observations, "observations"))
+        nodes = self.network.node_labels if self.network is not None else None
+        return {
+            name: _observation_dataarray(value, as_list(getattr(declared[name], "dims", None)) or None, nodes, name=name)
+            for name, value in values.items()
+        }
 
     def bake_real_node_labels(self) -> bool:
         """Replace the model network's placeholder labels with real ones in place.
