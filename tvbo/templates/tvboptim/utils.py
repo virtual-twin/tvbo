@@ -3159,7 +3159,6 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
 def render_analysis_observations(
     analysis_obs: dict[str, Any],
     coupling_keys: set[str],
-    solver_class: str,
     t1_default: float,
     dt: float,
     solver_kwargs: str = "",
@@ -3171,7 +3170,7 @@ def render_analysis_observations(
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
-    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends; the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
+    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends; the template only interpolates the returned block. Analysis solves take the experiment's ``get_solver``, so a declared clamp or noise covariance holds in them as in the run, on integrator settings that drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling-evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
     """
     # The same window the run measures. The settle is its own scan and reaches this network through `update_history`, so an analysis opens at t=0 on a settled network — and a gradient diagnostic differentiates the measured window alone, which is what the fit it diagnoses does.
     window = f"t0=0.0, t1={t1_default}, dt={dt}"
@@ -3227,7 +3226,7 @@ def render_analysis_observations(
                 "# Same integrator config as the main sim (coupling_evaluation) so lambda_1",
                 "# matches the trajectory it characterises. Emits the exponents and the",
                 f"# per-node leading-vector profile ({name}_xi, paper's xi_i).",
-                f"_le_solve, _le_cfg = prepare(network, {solver_class}({solver_kwargs}), t0=0.0, t1={seg}, dt={dt})",
+                f"_le_solve, _le_cfg = prepare(network, get_solver(solver_kwargs=dict({solver_kwargs})), t0=0.0, t1={seg}, dt={dt})",
             ]
             # Evaluate at the current operating point: sync `wrt` (e.g. the swept coupling) into the segment config so a K-sweep reports lambda_1(K), not at the network's fixed parameters. Optional — omit `wrt` for a static Lyapunov.
             if access:
@@ -3243,7 +3242,7 @@ def render_analysis_observations(
                 )
             lines += [
                 f"# {name}: full (untruncated) {mode}-mode gradient of '{target}' wrt {wrt[0]}",
-                f"_asolve_{name}, _ = prepare(network, {solver_class}({gradient_kwargs}), {window})",
+                f"_asolve_{name}, _ = prepare(network, get_solver(solver_kwargs=dict({gradient_kwargs})), {window})",
                 f"def _grad_of_{name}(_p):",
                 f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
                 f"    return _observed_value(compute_all_observations(_asolve_{name}(_gs), _gs, settle=settle).{target})",
@@ -3259,7 +3258,7 @@ def render_analysis_observations(
             if sig not in fd_emitted:
                 lines += [
                     f"# per-seed central differences of '{target}' wrt {wrt[0]} (shared across its reductions)",
-                    f"_asolve_{gid}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
+                    f"_asolve_{gid}, _ = prepare(network, get_solver(solver_kwargs=dict({solver_kwargs})), {window})",
                     f"_delta_{gid} = {delta}",
                     f"_keys_{gid} = jax.random.split(jax.random.key({seed_base}), {seeds})",
                     f"_g0_{gid} = state.{access}",

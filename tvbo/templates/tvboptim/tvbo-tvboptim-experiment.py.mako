@@ -1415,11 +1415,9 @@ def _load_param(path, key, device=True):
 
 
 % endif
-def get_solver(block_size=None):
-    """Configured solver. ``block_size`` (native solvers only) sets the nested-block-scan
-    granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable
-    in-carry instead of materializing the trajectory; ``None`` keeps the single scan."""
-    _solver_kwargs = dict(${solver_kwargs_str})
+def get_solver(block_size=None, solver_kwargs=None):
+    """Configured solver, wrapped as every solve of this experiment needs it (a declared clamp, a noise covariance). ``block_size`` (native solvers only) sets the nested-block-scan granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable in-carry instead of materializing the trajectory; ``None`` keeps the single scan. ``solver_kwargs`` replaces the run's own integrator settings, for a sweep or analysis solve that drops the differentiation window."""
+    _solver_kwargs = dict(${solver_kwargs_str}) if solver_kwargs is None else dict(solver_kwargs)
     if block_size is not None:
         _solver_kwargs['block_size'] = block_size
     base_solver = ${solver_class}(**_solver_kwargs)
@@ -2843,7 +2841,7 @@ def compute_analysis_observations(state, network, settle=None):
             }
             break
 %>
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint, external_keys=external_input_keys)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint, external_keys=external_input_keys)}
     return obs
 % endif
 
@@ -3266,9 +3264,9 @@ def ${expl['name']}(state, model_fn, settle=None${', opening=None' if has_transi
 % if expl['strategy'] == 'nsga2':
 ${search.nsga2_body(expl)}\
 % elif expl.get('branch_seed'):
-${sweep.branch_analysis_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
+${sweep.branch_analysis_body(expl, dt, warmstart_solver_kwargs)}\
 % elif expl['sweep_seeding'] == 'from_previous':
-${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
+${sweep.warmstart_sweep_body(expl, dt, warmstart_solver_kwargs)}\
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
