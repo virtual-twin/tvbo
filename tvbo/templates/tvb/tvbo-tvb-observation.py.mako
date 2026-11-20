@@ -17,6 +17,7 @@ import os as _os
 
 from tvbo.codegen.templater import source_observations as _source_observations
 from tvbo.templates.tvboptim.utils import is_network_observation as _is_network_observation
+from tvbo.utils import keyed_items as _keyed_items
 observations = getattr(experiment, 'observations', None) or {}
 
 # ── classification helpers ──────────────────────────────────────────
@@ -275,7 +276,7 @@ def _get_sensor_file(obs):
 obs_list = []   # (obs_name, obs, category)
 refused = {}    # obs_name -> what it declares
 
-for obs_name, obs in (observations.items() if hasattr(observations, 'items') else []):
+for obs_name, obs in _keyed_items(observations, 'observations'):
     if _is_network_observation(obs):
         continue  # bound from data on the host (`SimulationExperiment._host_observations`), not a monitor
     try:

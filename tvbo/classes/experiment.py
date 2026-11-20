@@ -365,25 +365,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if getattr(self, "stimulation", None) and not isinstance(self.stimulation, tvbo_datamodel.Stimulus):
             self.stimulation = _coerce(tvbo_datamodel.Stimulus, self.stimulation)
 
-        obss = getattr(self, "observations", None)
-        if obss:
-            from tvbo.classes.observation import populate_observation_from_iri
-
-            # A curated model may ship the helper functions its pipeline calls; collect them into a fresh sink so an experiment with no iri-referenced model keeps its functions table untouched (reassigning it re-wraps the type downstream).
-            _iri_funcs: dict = {}
-            for _, val in keyed_items(obss, "observations"):
-                if val is not None and getattr(val, "iri", None):
-                    populate_observation_from_iri(val, functions_sink=_iri_funcs)
-            if _iri_funcs:
-                # Keep experiment.functions a plain name->Function dict (the YAML-loaded form). Assigning through the LinkML setter re-wraps it into a JsonObj that mangles the Function values and breaks `dict(experiment.functions)` in codegen — so mutate the existing dict in place, and for an experiment with none, install a plain dict via object.__setattr__ (bypassing that setter). Add only functions the experiment lacks.
-                funcs = getattr(self, "functions", None)
-                if funcs is None:
-                    funcs = {}
-                    object.__setattr__(self, "functions", funcs)
-                for k, v in _iri_funcs.items():
-                    if k not in funcs:
-                        funcs[k] = v
-                _reject_unnamed_members(self)  # a curated model may key a function badly too
+        self._fill_curated_observations()
 
         if not getattr(self, "network", None):
             self.network = Network()
@@ -414,6 +396,40 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if not getattr(self, "integration", None):
             self.integration = Integrator()
         self.integration.enrich()
+
+    def __setattr__(self, name, value):
+        """Hold reassigned observations as construction holds them: a plain dict of typed members, each one naming a curated model filled from it.
+
+        LinkML's setter wraps an assigned mapping in a ``JsonObj``, which has no ``.items`` and iterates its keys, so every reader written for the constructed form saw a different collection: tvb rendered no monitor for it, tvboptim and jax raised ``AttributeError``. A reassignment is stored past that setter and runs the two steps construction runs: the generated ``__post_init__``'s ``_normalize_inlined_as_dict``, then :meth:`_fill_curated_observations`. The first assignment, inside the generated ``__init__``, is left to construction, whose own steps follow it.
+        """
+        if name != "observations" or name not in self.__dict__:
+            super().__setattr__(name, value)
+            return
+        self[name] = value
+        self._normalize_inlined_as_dict(slot_name=name, slot_type=tvbo_datamodel.Observation, key_name="name", keyed=True)
+        self._fill_curated_observations()
+
+    def _fill_curated_observations(self) -> None:
+        """Fill each observation that names a curated model by ``iri`` from that model, and add the helper functions its pipeline calls to ``functions``.
+
+        A curated model may ship the helper functions its pipeline calls; they are collected into a fresh sink, so an experiment with no iri-referenced model keeps its functions table untouched. ``functions`` stays the plain name -> Function dict the YAML loads: assigning it through the LinkML setter would wrap it in a ``JsonObj`` that mangles the Function values and breaks ``dict(experiment.functions)`` in codegen, so the existing dict is mutated in place, an experiment with none gets a plain dict past that setter, and a function the experiment already declares wins.
+        """
+        from tvbo.classes.observation import populate_observation_from_iri
+
+        sink: dict = {}
+        for _, observation in keyed_items(getattr(self, "observations", None), "observations"):
+            if observation is not None and getattr(observation, "iri", None):
+                populate_observation_from_iri(observation, functions_sink=sink)
+        if not sink:
+            return
+        funcs = getattr(self, "functions", None)
+        if funcs is None:
+            funcs = {}
+            object.__setattr__(self, "functions", funcs)
+        for k, v in sink.items():
+            if k not in funcs:
+                funcs[k] = v
+        _reject_unnamed_members(self)  # a curated model may key a function badly too
 
     @classmethod
     def from_datamodel(cls, dm: tvbo_datamodel.SimulationExperiment) -> "SimulationExperiment":
