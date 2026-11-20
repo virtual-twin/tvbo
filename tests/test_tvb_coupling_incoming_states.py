@@ -95,19 +95,20 @@ def _columns(naming):
 
 
 def _by_step(experiment, backend):
-    """*experiment*'s recorded states on *backend* as ``(time, variable, node)``, each sample keyed by the integration step it is stamped at."""
+    """The states *experiment*'s dynamics integrates and records, on *backend*, as ``(time, variable, node)``, each sample keyed by the integration step it is stamped at; a derived variable the backend also records is left out."""
     pytest.importorskip(backend)
     trace = experiment.run(backend).integration
     if "mode" in trace.dims:
         trace = trace.isel(mode=0)
     trace = trace.transpose("time", "variable", "node")
-    return trace.assign_coords(time=np.rint(trace["time"].values / float(experiment.integration.step_size)).astype(int))
+    states = [name for name, sv in experiment.dynamics.state_variables.items() if getattr(sv, "record", True)]
+    steps = np.rint(trace["time"].values / float(experiment.integration.step_size)).astype(int)
+    return trace.assign_coords(time=steps).sel(variable=states)
 
 
 def assert_backends_agree(make_experiment, backend, reference="tvboptim"):
-    """The experiment *make_experiment* builds records the same states on *backend* as on *reference*, each run on its own copy, at every integration step both report: all of each, but for at most one opening sample."""
+    """The experiment *make_experiment* builds integrates the same states on *backend* as on *reference*, each run on its own copy, at every integration step both report: all of each, but for at most one opening sample. A backend that does not record one of them raises at the selection."""
     ours, theirs = _by_step(make_experiment(), backend), _by_step(make_experiment(), reference)
-    assert list(ours["variable"].values) == list(theirs["variable"].values)
     shared = np.intersect1d(ours["time"].values, theirs["time"].values)
     assert len(shared) >= max(ours.sizes["time"], theirs.sizes["time"]) - 1
     np.testing.assert_allclose(ours.sel(time=shared).values, theirs.sel(time=shared).values, rtol=1e-8, atol=1e-8)

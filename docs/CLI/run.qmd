@@ -99,7 +99,7 @@ Internally, the planner enumerates the cartesian product of all exploration axes
 ## Container re-exec (`--container IMAGE`)
 
 ```bash
-tvbo run experiment:JR_MEG --backend jax \
+tvbo run experiment:ThreeNode_JansenRit1995_Parity --backend jax \
     --container ghcr.io/the-virtual-brain/tvbo:0.7.0 -o ./out
 ```
 
@@ -122,13 +122,13 @@ The `TVBO_IN_CONTAINER=1` environment variable is set in the inner invocation to
 Non-`local` engines re-emit the run as a workflow kit and submit it:
 
 ```bash
-tvbo run experiment:JR_MEG --engine slurm --backend jax -o ./run-001
+tvbo run experiment:ThreeNode_JansenRit1995_Parity --engine slurm --backend jax -o ./run-001
 ```
 
 is equivalent to:
 
 ```bash
-tvbo workflow slurm experiment:JR_MEG --backend jax -o ./run-001 --set out_dir=$PWD/run-001
+tvbo workflow slurm experiment:ThreeNode_JansenRit1995_Parity --backend jax -o ./run-001 --set out_dir=$PWD/run-001
 sbatch ./run-001/run.sbatch
 ```
 
@@ -140,22 +140,22 @@ For `snakemake` and `nextflow`, only the artefact is written — no automatic la
 
 ```bash
 # Local run on the default backend, no output saved
-tvbo run experiment:JR_MEG_FrequencyGradient_Optimization
+tvbo run experiment:ThreeNode_JansenRit1995_Parity
 
 # Local run with JAX, write results
-tvbo run experiment:JR_MEG -b jax -o ./out
+tvbo run experiment:ThreeNode_JansenRit1995_Parity -b jax -o ./out
 
 # Override the integration window
-tvbo run experiment:JR_MEG -b jax --duration 30000 -o ./out
+tvbo run experiment:ThreeNode_JansenRit1995_Parity -b jax --duration 0.5 -o ./out
 
 # Pick one experiment from a multi-experiment study
-tvbo run study:Schirner2023 --experiment JR_MEG -b jax -o ./out
+tvbo run ./study.yaml --experiment 3 -b jax -o ./out
 
 # Submit via Slurm in one command
-tvbo run experiment:JR_MEG --engine slurm -b jax -o ./run-001
+tvbo run experiment:ThreeNode_JansenRit1995_Parity --engine slurm -b jax -o ./run-001
 
 # Container-isolated run
-tvbo run experiment:JR_MEG -b jax --container ghcr.io/the-virtual-brain/tvbo:0.7.0
+tvbo run experiment:ThreeNode_JansenRit1995_Parity -b jax --container ghcr.io/the-virtual-brain/tvbo:0.7.0
 ```
 
 ## See also

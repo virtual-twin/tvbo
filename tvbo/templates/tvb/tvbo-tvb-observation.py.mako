@@ -367,13 +367,12 @@ class ${class_name}(_RunStepPhase, Monitor):
             spatial_mask = simulator.surface.region_mapping
         else:
             conn = simulator.connectivity
-            if conn.cortical.size == 0:
+            if conn.cortical is None or conn.cortical.size == 0:
                 conn.cortical = numpy.array([True] * conn.weights.shape[0])
             spatial_mask = numpy.array([int(v) for v in conn.cortical])
-        areas = numpy.unique(spatial_mask)
-        n_areas = len(areas)
-        spatial_sum = numpy.zeros((n_nodes, n_areas))
-        spatial_sum[numpy.arange(n_nodes), spatial_mask] = 1
+        areas, area_index = numpy.unique(spatial_mask, return_inverse=True)
+        spatial_sum = numpy.zeros((n_nodes, len(areas)))
+        spatial_sum[numpy.arange(n_nodes), area_index] = 1
         spatial_sum = spatial_sum.T
         nodes_per_area = numpy.sum(spatial_sum, axis=1)[:, numpy.newaxis]
         self.spatial_mean = spatial_sum / nodes_per_area

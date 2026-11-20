@@ -32,19 +32,19 @@ tvbo export FORMAT SPEC
 
 ```bash
 # Pretty-print as YAML to stdout
-tvbo export yaml experiment:JR_MEG
+tvbo export yaml experiment:ThreeNode_JansenRit1995_Parity
 
 # Generate a self-contained JAX script
-tvbo export jax experiment:JR_MEG -o ./scripts/jr_meg.py
+tvbo export jax experiment:ThreeNode_JansenRit1995_Parity -o ./scripts/three_node_jr.py
 
-# Generate a NetworkDynamics.jl experiment
-tvbo export networkdynamics experiment:JR_MEG -o ./scripts/jr_meg.jl
+# Generate a TVB simulator script
+tvbo export tvb experiment:ThreeNode_JansenRit1995_Parity -o ./scripts/three_node_jr_tvb.py
 
 # Generate a Markdown report
-tvbo export markdown experiment:JR_MEG -o ./reports/
+tvbo export markdown experiment:ThreeNode_JansenRit1995_Parity -o ./reports/
 
 # JSON-LD via openMINDS
-tvbo export openminds experiment:JR_MEG -o ./jsonld/
+tvbo export openminds experiment:ThreeNode_JansenRit1995_Parity -o ./jsonld/
 ```
 
 ## Format aliases
@@ -52,8 +52,8 @@ tvbo export openminds experiment:JR_MEG -o ./jsonld/
 Aliases are resolved transparently. For example, all of these select the JAX renderer:
 
 ```bash
-tvbo export jax       experiment:JR_MEG
-tvbo export autodiff  experiment:JR_MEG     # alias for `jax`
+tvbo export jax       experiment:ThreeNode_JansenRit1995_Parity
+tvbo export autodiff  experiment:ThreeNode_JansenRit1995_Parity # alias for `jax`
 ```
 
 Run `tvbo formats` to see the full alias list.

@@ -120,12 +120,20 @@ def referenced(names, *expressions):
     return [n for n in names if re.search(rf"\b{re.escape(str(n))}\b", text)]
 
 
-def time_series_inputs(candidates, body):
+def time_series_inputs(candidates, body, where="a pipeline step"):
     """Which of *candidates* the function *body* reads as its incoming samples.
 
     A pipeline function names the samples either ``X`` (the generator's own convention) or by an argument the spec declared without a default — ``data`` in a body written as ``jnp.mean(data[...])``. Both must resolve to ``ts.data``; binding only ``X`` left the spec's name pointing at an unfilled positional parameter, so calling the function raised :class:`TypeError`.
+
+    One name stands for the samples. A body that reads two of the candidates reads an argument nothing supplies, ``spatial_mean`` in ``spatial_mean @ X``, and binding that to the samples as well would compute ``X @ X``, so it is refused by name under *where*.
     """
-    return referenced(list(dict.fromkeys(candidates)), body)
+    inputs = referenced(list(dict.fromkeys(candidates)), body)
+    if len(inputs) > 1:
+        raise ValueError(
+            f"{where}: {inputs} would all be bound to the incoming samples. One name stands for them, `X` or the one "
+            "argument declared without a value; give each of the others a `value`."
+        )
+    return inputs
 
 
 def retime(body, inputs):

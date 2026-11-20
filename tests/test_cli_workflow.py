@@ -1837,17 +1837,26 @@ def test_validate_omex_stub_accepts_zip_with_manifest(tmp_path: Path):
 # Backend templates expose a runnable __main__ entry point
 
 
+MAIN_BLOCK_EXPERIMENT = {"jax": "ThreeNode_JansenRit1995_Parity"}
+"""The curated experiment each backend's script is rendered from where it is not JR_MEG."""
+
+
 @pytest.mark.parametrize("fmt", ["jax", "tvb", "tvboptim"])
 def test_python_experiment_script_has_main_block(fmt):
     """All Python backends that emit a full experiment script must be runnable.
 
-    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block.
+    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block. jax renders an experiment whose every pipeline step it can compute; JR_MEG's steps read arguments jax is never given, and jax refuses them by name.
     """
     from tvbo import SimulationExperiment
 
-    exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
+    exp = SimulationExperiment.from_db(MAIN_BLOCK_EXPERIMENT.get(fmt, "JR_MEG_FrequencyGradient_Optimization"))
     code = exp.render(fmt)
     assert 'if __name__ == "__main__":' in code, f"backend {fmt!r} renders a script without a __main__ entry point"
+    if fmt == "jax":
+        with pytest.raises(
+            ValueError, match=r"jax: the pipeline step '\w+': \[[^]]+\] would all be bound to the incoming samples"
+        ):
+            SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("jax")
 
 
 def test_pde_experiment_template_has_main_block():
