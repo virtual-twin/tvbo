@@ -15,12 +15,14 @@ _TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%
 experiment = context['experiment']
 
+from tvbo.adapters.tvb import tvb_node_fields as _tvb_node_fields
 from tvbo.utils import initial_value as _initial_value
 
 _tvb_coupling = context['coupling']
 _float64 = str(getattr(experiment.execution, 'precision', None) or 'float64') == 'float64'
 
 _n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
+_node_fields = {field: values.tolist() for field, values in _tvb_node_fields(experiment.network, _n_reg).items()}
 initial_conditions = np.array([
     np.full((_n_reg,), _initial_value(v)) if np.isscalar(v.initial_value) or v.initial_value is None
     else v.initial_value
@@ -105,7 +107,7 @@ def define_simulation(connectivity, simulation_length=${settle['total_duration']
 ######### Connectivity #########
 def load_connectivity(weights_path, lengths_path):
     """
-    Load the weights and lengths from the provided CSV files and create the Connectivity object.
+    Load the weights and lengths from the provided CSV files and create the Connectivity object, with the per-region fields the network declared (centres, labels, and the cortical flags, areas, hemispheres and orientations its nodes carry), as a tvbo run builds it.
 
     Args:
         weights_path (str): Path to the CSV file containing the weights matrix.
@@ -120,9 +122,8 @@ def load_connectivity(weights_path, lengths_path):
     SC = Connectivity(
         weights=weights,
         tract_lengths=lengths,
+        **{field: np.asarray(values) for field, values in ${repr(_node_fields)}.items()},
     )
-    SC.set_centres(np.repeat((0, 0, 0), weights.shape[0]), weights.shape[0])
-    SC.create_region_labels()
     SC.configure()
 
     return SC
