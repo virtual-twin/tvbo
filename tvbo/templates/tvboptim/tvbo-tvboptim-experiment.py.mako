@@ -1535,30 +1535,33 @@ def _apply_parameter_starts(state, seed, n_nodes, edges${', trial=None' if trial
 
 % endif
 % endif
-_DELAY_SOURCE_STATES = {}
-"""Coupling-input name -> the state variables a delayed coupling transmits, filled by create_network(); _carry_delay_history() reads it to rebuild each history buffer."""
+_DELAY_LINES = {}
+"""Coupling-input name -> (the state variables a delayed coupling transmits, the ``buffer_strategy`` of its history buffer), filled by create_network() from each built coupling; _carry_delay_history() reads it to rebuild each history buffer."""
 
 
 def _carry_delay_history(state, result):
     """Hand a finished solve's delay history on to the next one, so chained solves integrate one continuous run.
 
-    A prepared solve starts every delayed coupling from the history buffer in ``state.initial_state.coupling``, and returns only its trajectory. A loop that chains solves (one TR each) and carries only ``initial_state.dynamics`` would restart every delay line from that stale buffer. The buffer a continuous run would hold at this point is its old rows followed by the newly integrated rows of the transmitted states, truncated to its length, which is what this writes back (roll-ordered, oldest first). Raises when a transmitted state is not among the recorded variables, since the history cannot then be rebuilt.
+    A prepared solve starts every delayed coupling from the history buffer in ``state.initial_state.coupling``, and returns only its trajectory. A loop that chains solves (one TR each) and carries only ``initial_state.dynamics`` would restart every delay line from that stale buffer. The buffer a continuous run would hold at this point is its old rows followed by the newly integrated rows of the transmitted states, truncated to its length, which is what this writes back, oldest first, the order tvboptim's ``prepare`` lays a roll and a circular buffer out in: a circular buffer is read oldest first from its write pointer, and the pointer then restarts at 0. A buffer of any other kind (``preallocated``) is refused by name. Raises when a transmitted state is not among the recorded variables, since the history cannot then be rebuilt.
     """
     _names = tuple(getattr(result, "variable_names", None) or ())
     for _cn in list(state.initial_state.coupling.keys()):
         _cs = state.initial_state.coupling[_cn]
         if "history" not in _cs:
             continue
-        if "write_idx" in _cs:
-            raise NotImplementedError(f"coupling {_cn!r}: carrying a delay history across chained solves supports the roll buffer only")
-        _sent = _DELAY_SOURCE_STATES.get(_cn)
+        _sent, _kind = _DELAY_LINES.get(_cn, (None, None))
         if _sent is None or any(_v not in _names for _v in _sent):
             raise ValueError(f"coupling {_cn!r}: cannot carry its delay history, the transmitted states {_sent} are not all recorded in {_names}")
+        if _kind not in ("roll", "circular"):
+            raise NotImplementedError(f"coupling {_cn!r}: carrying a delay history across chained solves does not support the {_kind!r} buffer")
         if not _sent:
             continue
+        _old = jnp.roll(_cs.history, -_cs.write_idx, axis=0) if _kind == "circular" else _cs.history
         _rows = result.data[:, jnp.asarray([_names.index(_v) for _v in _sent]), :]
-        _new = jnp.concatenate([_cs.history, _rows.astype(_cs.history.dtype)], axis=0)[-_cs.history.shape[0]:]
-        state = eqx.tree_at(lambda _s: _s.initial_state.coupling[_cn].history, state, _new)
+        _line = {"history": jnp.concatenate([_old, _rows.astype(_old.dtype)], axis=0)[-_old.shape[0]:]}
+        if _kind == "circular":
+            _line["write_idx"] = jnp.zeros_like(_cs.write_idx)
+        state = eqx.tree_at(lambda _s: [_s.initial_state.coupling[_cn][_k] for _k in _line], state, list(_line.values()))
     return state
 
 
@@ -1708,7 +1711,7 @@ def create_network(
 <%  c_class_name = func_name.replace(' ', '').replace('-', '') %>\
     coupling_dict['${ci_name}'] = ${c_class_name}(**dict(_${func_name}_params))
     % endfor
-    _DELAY_SOURCE_STATES.update({_k: list(getattr(_c, "SOURCE_STATE_NAMES", None) or _c.INCOMING_STATE_NAMES) for _k, _c in coupling_dict.items() if isinstance(_c, DelayedCoupling)})
+    _DELAY_LINES.update({_k: (list(getattr(_c, "SOURCE_STATE_NAMES", None) or _c.INCOMING_STATE_NAMES), _c.buffer_strategy) for _k, _c in coupling_dict.items() if isinstance(_c, DelayedCoupling)})
 
     % if has_noise:
     % if noise_targets:

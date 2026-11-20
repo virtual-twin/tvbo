@@ -1,6 +1,6 @@
 """The CompactDelayedCoupling tvbo emits for delayed tvboptim couplings integrates the same network as tvboptim's stock DelayedCoupling.
 
-The class is rendered from its template def and executed on its own, exactly as a generated module defines it, then subclassed the way the cfun template subclasses it. Each test integrates one network twice, once through tvboptim's stock path and once through the compact path, and compares the trajectories, on a dense delay graph and on a sparse one.
+The class is rendered from its template def and executed on its own, exactly as a generated module defines it, then subclassed the way the cfun template subclasses it. Each test integrates one network twice, once through tvboptim's stock path and once through the compact path, and compares the trajectories, on a dense delay graph and on a sparse one, through a roll and a circular history buffer, each named by ``buffer_strategy`` (both tvboptim 0.4.0 and the development line take it).
 """
 
 from __future__ import annotations
@@ -119,24 +119,32 @@ def _trajectory(coupling_cls, **kw):
     return np.asarray(jax.jit(solve_fn)(config).ys), config
 
 
+BUFFERS = pytest.mark.parametrize("buffer", ["roll", "circular"])
+"""The history buffers the compact path reads, each test run on both."""
+
+
+@BUFFERS
 @pytest.mark.parametrize("noise", [False, True])
-def test_compact_matches_stock_delayed_coupling(noise):
-    stock, _ = _trajectory(STOCK_EIB, noise=noise)
-    compact, config = _trajectory(COMPACT_EIB, noise=noise)
+def test_compact_matches_stock_delayed_coupling(noise, buffer):
+    stock, _ = _trajectory(STOCK_EIB, noise=noise, buffer_strategy=buffer)
+    compact, config = _trajectory(COMPACT_EIB, noise=noise, buffer_strategy=buffer)
     assert "_compact" in config._internal.coupling.eib
     assert np.ptp(stock) > 0.05
     np.testing.assert_allclose(compact, stock, rtol=1e-11, atol=1e-13)
 
 
-def test_compact_matches_stock_on_a_379_node_connectome():
-    stock, _ = _trajectory(STOCK_EIB, n_nodes=379, density=0.4, max_delay_steps=18, n_steps=720)
-    compact, _ = _trajectory(COMPACT_EIB, n_nodes=379, density=0.4, max_delay_steps=18, n_steps=720)
+@BUFFERS
+def test_compact_matches_stock_on_a_379_node_connectome(buffer):
+    shape = dict(n_nodes=379, density=0.4, max_delay_steps=18, n_steps=720, buffer_strategy=buffer)
+    stock, _ = _trajectory(STOCK_EIB, **shape)
+    compact, _ = _trajectory(COMPACT_EIB, **shape)
     np.testing.assert_allclose(compact, stock, rtol=1e-10, atol=1e-12)
 
 
-def test_compact_follows_live_weights_and_edge_parameters():
-    stock_fn, stock_config = _solve(STOCK_EIB)
-    compact_fn, compact_config = _solve(COMPACT_EIB)
+@BUFFERS
+def test_compact_follows_live_weights_and_edge_parameters(buffer):
+    stock_fn, stock_config = _solve(STOCK_EIB, buffer_strategy=buffer)
+    compact_fn, compact_config = _solve(COMPACT_EIB, buffer_strategy=buffer)
     for config in (stock_config, compact_config):
         config.graph.weights = 1.7 * config.graph.weights
         config.coupling.eib.wLRE = 0.5 * config.coupling.eib.wLRE
@@ -145,13 +153,14 @@ def test_compact_follows_live_weights_and_edge_parameters():
     )
 
 
+@BUFFERS
 @pytest.mark.parametrize("per_edge", [False, True], ids=["matrix-edge-params", "per-edge-params"])
 @pytest.mark.parametrize("noise", [False, True])
-def test_compact_matches_stock_on_a_sparse_delay_graph(noise, per_edge):
+def test_compact_matches_stock_on_a_sparse_delay_graph(noise, per_edge, buffer):
     """On a sparse graph the compact path reads the stored edges with their own weights, delays and edge parameters, and integrates what the stock sparse path and the dense path integrate."""
-    stock, _ = _trajectory(STOCK_EIB, noise=noise, sparse=True, per_edge=per_edge)
-    compact, config = _trajectory(COMPACT_EIB, noise=noise, sparse=True, per_edge=per_edge)
-    dense, _ = _trajectory(STOCK_EIB, noise=noise)
+    stock, _ = _trajectory(STOCK_EIB, noise=noise, sparse=True, per_edge=per_edge, buffer_strategy=buffer)
+    compact, config = _trajectory(COMPACT_EIB, noise=noise, sparse=True, per_edge=per_edge, buffer_strategy=buffer)
+    dense, _ = _trajectory(STOCK_EIB, noise=noise, buffer_strategy=buffer)
     assert "_compact" in config._internal.coupling.eib
     assert "off_pattern" not in config._internal.coupling.eib._compact
     assert np.ptp(stock) > 0.05
@@ -159,9 +168,10 @@ def test_compact_matches_stock_on_a_sparse_delay_graph(noise, per_edge):
     np.testing.assert_allclose(compact, dense, rtol=1e-11, atol=1e-13)
 
 
-def test_compact_follows_live_edge_parameters_on_a_sparse_graph():
-    stock_fn, stock_config = _solve(STOCK_EIB, sparse=True)
-    compact_fn, compact_config = _solve(COMPACT_EIB, sparse=True)
+@BUFFERS
+def test_compact_follows_live_edge_parameters_on_a_sparse_graph(buffer):
+    stock_fn, stock_config = _solve(STOCK_EIB, sparse=True, buffer_strategy=buffer)
+    compact_fn, compact_config = _solve(COMPACT_EIB, sparse=True, buffer_strategy=buffer)
     for config in (stock_config, compact_config):
         config.coupling.eib.wLRE = 0.5 * config.coupling.eib.wLRE
     np.testing.assert_allclose(
@@ -169,16 +179,30 @@ def test_compact_follows_live_edge_parameters_on_a_sparse_graph():
     )
 
 
-def test_compact_refuses_a_weight_outside_the_prepared_pattern():
-    compact_fn, config = _solve(COMPACT_EIB)
+@BUFFERS
+def test_compact_refuses_a_weight_outside_the_prepared_pattern(buffer):
+    compact_fn, config = _solve(COMPACT_EIB, buffer_strategy=buffer)
     config.graph.weights = config.graph.weights.at[1, 0].set(0.3)
     with pytest.raises(Exception, match="outside the pattern"):
         jax.block_until_ready(jax.jit(compact_fn)(config).ys)
 
 
+@pytest.mark.parametrize("sparse", [False, True], ids=["dense", "sparse"])
+@pytest.mark.parametrize("noise", [False, True])
+def test_the_compact_path_reads_a_circular_buffer_as_it_reads_a_roll_buffer(noise, sparse):
+    """A circular buffer holds the roll buffer's samples at the rows its write pointer names, so the compact path gathers the same values and integrates the same bits, over a run that wraps the buffer many times."""
+    roll, roll_config = _trajectory(COMPACT_EIB, noise=noise, sparse=sparse, buffer_strategy="roll")
+    circular, circular_config = _trajectory(COMPACT_EIB, noise=noise, sparse=sparse, buffer_strategy="circular")
+    assert "_compact" in roll_config._internal.coupling.eib
+    assert "_compact" in circular_config._internal.coupling.eib
+    assert "write_idx" in circular_config.initial_state.coupling.eib
+    assert np.ptp(roll) > 0.05
+    np.testing.assert_array_equal(circular, roll)
+
+
 @pytest.mark.parametrize(
     "coupling_kw",
-    [dict(history_interpolation="linear"), dict(buffer_strategy="circular")],
+    [dict(history_interpolation="linear"), dict(buffer_strategy="preallocated")],
 )
 def test_configurations_outside_the_compact_path_run_the_stock_path(coupling_kw):
     stock, _ = _trajectory(STOCK_EIB, **coupling_kw)

@@ -238,7 +238,7 @@ def to_tvboptim(
     max_delay : float, optional
         Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to size the static history buffer. Pass it when the delays are meant to vary differentiably (e.g. ``delays = lengths / speed`` with ``speed`` optimised) so the buffer length stays static while the delays may be JAX tracers. When ``None``, derived from the concrete delays.
     interpolate_delays : bool, default=False
-        When True, enable linear interpolation between bracketing history steps on every delayed coupling, making the coupling differentiable w.r.t. the continuous delay (and hence conduction speed). Requires the ``"roll"`` buffer strategy (the default).
+        When True, enable linear interpolation between bracketing history steps on every delayed coupling, making the coupling differentiable w.r.t. the continuous delay (and hence conduction speed). Works with each of tvboptim's buffer strategies (``"roll"``, ``"circular"``, ``"preallocated"``).
     **kwargs
         Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
 
