@@ -52,6 +52,9 @@ continuations:
               value: 50
             degree:
               value: 4
+            # On a fixed mesh the collocation Newton steps into states where the sigmoid's exp overflows, and its Jacobian is no longer finite.
+            mesh_adaptation:
+              value: true
         continuation:
           name: po_alpha_continuation
           max_steps: 200
@@ -72,6 +75,9 @@ continuations:
           ds: 0.5
           ds_max: 5.0
           max_steps: 500
+          # Each bisection step halves the step, so ten sign inversions locate a point to 2^-10 of the step that crossed it, where BifurcationKit's default stops at two.
+          n_inversion: 10
+          max_bisection_steps: 60
 
       hopf_p_C:
         description: "The first Hopf point of eq_in_p continued in p and C"
@@ -85,5 +91,10 @@ continuations:
                 lo: 10
                 hi: 500
           ds: 0.5
-          ds_max: 5.0
-          max_steps: 500
+          # A step of 5.0 from near the Bogdanov-Takens point (p 14.1, C 111.1, frequency 6.5) lands on the curve's upper arch at C 138.0 with the frequency's sign flipped.
+          ds_max: 1.0
+          # AUTO-07p's arclength counts the state, so at ds_max 1.0 its half towards the Bogdanov-Takens point at C 110.3 needs about 3,400 steps.
+          max_steps: 4000
+          # As on fold_p_C.
+          n_inversion: 10
+          max_bisection_steps: 60

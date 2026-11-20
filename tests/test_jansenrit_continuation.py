@@ -19,6 +19,7 @@ from tvbo.adapters.base import ContinuationAdapter
 from tvbo.adapters.bifurcationkit import BifurcationKitAdapter
 from tvbo.adapters.numcont import NumContAdapter
 from tvbo.adapters.pyrates_bifurcation import PyRatesBifurcationAdapter, _pyrates_param_name
+from tvbo.analysis.bifurcation import _label_tokens
 from tvbo.codegen.pyrates import PYRATES_REPL, operator_template, pyrates_names, to_pyrates_yaml_string
 
 SPEC = Path(tvbo.__file__).parent / "database" / "experiments" / "bifurcation" / "JansenRit-bifurcation.yaml"
@@ -98,8 +99,9 @@ def test_bifurcationkit_continues_every_parameter_of_a_branch_as_a_float(experim
 
 def test_a_bifurcationkit_codim2_branch_takes_every_setting_it_leaves_unset_from_its_parent(experiment):
     code = BifurcationKitAdapter(experiment).render_code()
-    expected = "ContinuationPar(p_min = 10.0, p_max = 500.0, ds = 0.5, dsmax = 5.0, max_steps = 500, dsmin = 0.0001, nev = 6, detect_bifurcation = 2, newton_options = NewtonPar(tol = 1e-09))"
-    assert code.count(expected) == 2
+    for name in ("fold_p_C", "hopf_p_C"):
+        expected = f"ContinuationPar(p_min = 10.0, p_max = 500.0, ds = 0.5, dsmax = {BRANCH_STEPS[name]['ds_max']}, max_steps = {BRANCH_STEPS[name]['max_steps']}, dsmin = 0.0001, nev = 6, n_inversion = 10, max_bisection_steps = 60, detect_bifurcation = 2, newton_options = NewtonPar(tol = 1e-09))"
+        assert code.count(expected) == 1, name
 
 
 def _hopf_curve_declares_newton_tol(spec):
@@ -204,7 +206,7 @@ def test_every_backend_hands_a_branch_its_own_newton_tol_else_its_parents(tmp_pa
 BRANCH_STEPS = {
     "po_alpha_rhythm": {"ds": 0.5, "ds_min": 1e-4, "ds_max": 1.0, "max_steps": 200},
     "fold_p_C": {"ds": 0.5, "ds_min": 1e-4, "ds_max": 5.0, "max_steps": 500},
-    "hopf_p_C": {"ds": 0.5, "ds_min": 1e-4, "ds_max": 5.0, "max_steps": 500},
+    "hopf_p_C": {"ds": 0.5, "ds_min": 1e-4, "ds_max": 1.0, "max_steps": 4000},
 }
 """Each branch's steps: its nested continuation's where it declares them, else the parent's ``ds: 0.5``, ``ds_min: 1e-4``, ``ds_max: 1.0``."""
 
@@ -217,7 +219,10 @@ def test_every_backend_hands_a_branch_its_parents_steps_where_it_declares_none(e
     assert "ds = 0.5, dsmin = 0.0001, dsmax = 1.0, max_steps = 200" in orbit
     for name in ("fold_p_C", "hopf_p_C"):
         curve = BifurcationKitAdapter._prepare_codim2_branch(branches[name], cont, experiment.dynamics, (-50.0, 400.0))
-        assert "ds = 0.5, dsmax = 5.0, max_steps = 500, dsmin = 0.0001" in curve["codim2_cp_str"]
+        assert (
+            f"ds = 0.5, dsmax = {BRANCH_STEPS[name]['ds_max']}, max_steps = {BRANCH_STEPS[name]['max_steps']}, dsmin = 0.0001"
+            in curve["codim2_cp_str"]
+        )
 
     pyrates = PyRatesBifurcationAdapter(experiment)
     keys = {"ds": "DS", "ds_min": "DSMIN", "ds_max": "DSMAX", "max_steps": "NMX"}
@@ -502,6 +507,15 @@ def _special(result, kind, column="param") -> list[float]:
     return [float(p) for label, p in zip(labels, result.branch[column].values, strict=True) if kind in label.split(",")]
 
 
+def _points(curve, kind) -> list[tuple[float, float]]:
+    """The (p, C) of every special point of *kind* on the codim-2 *curve*."""
+    return list(zip(_special(curve, kind), _special(curve, kind, "param2"), strict=True))
+
+
+BK_GH_PIN = (42.8805, 137.1533)
+"""A regression pin, not an external value: the Bautin point BifurcationKit itself locates on the Hopf curve in (p, C), held against change."""
+
+
 def _assert_near(found, expected, tol=0.05):
     assert all(any(abs(f - e) < tol for f in found) for e in expected), (found, expected)
 
@@ -523,6 +537,7 @@ def _curves(result) -> dict:
 
 @pytest.mark.slow
 def test_auto07p_finds_both_folds_and_three_hopf_points(experiment, monkeypatch, tmp_path):
+    """AUTO-07p labels a near-continuous `gh` train along the Hopf curve at C ≈ 137-138, where the first Lyapunov coefficient is close to zero, bracketing BifurcationKit's one Bautin point, so no Bautin point of its own is pinned."""
     _needs_auto()
     monkeypatch.chdir(tmp_path)
     result = experiment.run("auto-07p").continuations["eq_in_p"]
@@ -571,8 +586,26 @@ def test_bifurcationkit_finds_the_folds_the_hopf_points_and_the_orbit_between_tw
         float(orbit.branch["param"].min()) < 95 and float(orbit.branch["param"].max()) > 310
         for orbit in result.periodic_orbits
     )
+    assert all(float(orbit.branch["period"].min()) > 0 for orbit in result.periodic_orbits)
     curves = _curves(result)
     _assert_near(_special(curves["fold"], "cusp"), [168.705])
-    _assert_near(_special(curves["hopf"], "bt"), [15.937])
+    bt = {kind: _points(curve, "bt") for kind, curve in curves.items()}
+    # Both curves locate one Bogdanov-Takens point, the same in p and in C within 0.05, at AUTO-07p's p = 15.937.
+    assert len(bt["fold"]) == len(bt["hopf"]) == 1, bt
+    (fold_p, fold_c), (hopf_p, hopf_c) = bt["fold"][0], bt["hopf"][0]
+    assert abs(fold_p - hopf_p) < 0.05 and abs(fold_c - hopf_c) < 0.05, bt
+    _assert_near([fold_p], [15.937])
+    _assert_near([hopf_p], [15.937])
+    hopf = curves["hopf"].branch
+    flagged = [
+        (p, c)
+        for label, p, c in zip(hopf["specialpoint"].values, hopf["param"].values, hopf["param2"].values, strict=True)
+        if _label_tokens(label)
+    ]
+    # The point BifurcationKit flagged at p = 13.131, C = 138.003, with the frequency's sign flipped and no converged bisection, is not reported.
+    assert not [(p, c) for p, c in flagged if abs(p - 13.131) < 0.05 and abs(c - 138.003) < 0.05], flagged
+    # The curve meets its Bautin point once on each sign of the frequency, and reports it once.
+    gh = _points(curves["hopf"], "gh")
+    assert len(gh) == 1 and all(abs(a - b) < 0.05 for a, b in zip(gh[0], BK_GH_PIN, strict=True)), gh
     # BifurcationKit continues a curve in C, so the finaliser stops it at the first step where p leaves its domain.
     assert all(((p := curve.branch["param"].values[1:-1]) >= -50).all() and (p <= 400).all() for curve in curves.values())
