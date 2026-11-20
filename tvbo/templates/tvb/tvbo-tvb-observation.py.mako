@@ -63,61 +63,91 @@ _PROJ_INFO = {
     'projection_ieeg': ('ProjectionSurfaceSEEG', 'tvb.datatypes.projections'),
 }
 
-def _pipeline_step_names(obs):
-    """Return set of step names and function refs in the pipeline."""
-    names = set()
-    for step in (getattr(obs, 'pipeline', None) or []):
-        n = getattr(step, 'name', None)
-        if n:
-            names.add(str(n))
-        f = getattr(step, 'function', None)
-        if f:
-            names.add(str(f))
-    return names
+_BOLD_KEYS = {'hemodynamic_response', 'hrf_kernel', 'HemodynamicResponseFunctionTVB', 'volterra_transform'}
+_PROJECTION_KEYS = {'compute_gain', 'lead_field_projection'}
 
-def _classify(obs):
-    """Determine the monitor category for an observation."""
+# (category, key steps, steps its monitor computes), in the order a pipeline is matched.
+_PIPELINE_CATEGORIES = [
+    ('bold', _BOLD_KEYS, _BOLD_KEYS | {
+        'temporal_average_interim', 'temporal_average', 'convolve', 'fftconvolve',
+        'subsample_to_period', 'subsample_bold', 'select_voi'}),
+    ('projection', _PROJECTION_KEYS, _PROJECTION_KEYS | {'rereference'}),
+    ('spatial_average', {'spatial_average'}, {'spatial_average'}),
+    ('global_average', {'global_mean'}, {'global_mean', 'subsample'}),
+    ('temporal_average', {'temporal_average'}, {'temporal_average'}),
+    ('subsample', {'subsample'}, {'subsample'}),
+    ('raw', {'raw'}, {'raw'}),
+]
+
+def _step_names(step):
+    """The identifiers a pipeline *step* declares: its name, its function and its callable's name."""
+    names = (getattr(step, 'name', None), getattr(step, 'function', None), getattr(getattr(step, 'callable', None), 'name', None))
+    return {str(n) for n in names if n}
+
+def _step_label(step):
+    """The one word that names a pipeline *step* in a message: its function, else its name, else its callable's name, else its output."""
+    return str(getattr(step, 'function', None) or getattr(step, 'name', None)
+               or getattr(getattr(step, 'callable', None), 'name', None) or getattr(step, 'output', None))
+
+def _computation(obs):
+    """What *obs* declares for a backend to compute, one phrase each: its pipeline's steps, its analysis, its imaging modality, its dynamics and its class reference."""
+    steps = [_step_label(step) for step in (getattr(obs, 'pipeline', None) or [])]
+    phrases = ['the pipeline ' + ', '.join(steps)] if steps else []
+    analysis = getattr(obs, 'analysis', None)
+    if analysis is not None:
+        phrases.append(f"the analysis {getattr(analysis, 'type', analysis)}")
+    if getattr(obs, 'imaging_modality', None) is not None:
+        phrases.append(f"the imaging modality {obs.imaging_modality}")
+    if getattr(obs, 'dynamics', None) is not None:
+        phrases.append(f"the dynamics {getattr(obs.dynamics, 'name', None) or 'declared inline'}")
+    if getattr(obs, 'class_reference', None) is not None:
+        phrases.append(f"the class reference {obs.class_reference.name}")
+    return phrases
+
+def _projection_category(obs):
+    """The projection category the imaging modality of *obs* names, EEG unless it names SEEG or MEG."""
+    im = str(getattr(obs, 'imaging_modality', None) or '').upper()
+    return {'SEEG': 'projection_ieeg', 'MEG': 'projection_meg'}.get(im, 'projection_eeg')
+
+def _refuse(obs, name, detail=''):
+    """Raise the refusal for the observation *name*, whose declared computation (`_computation`) no tvb monitor computes in full; *detail* names the steps the nearest monitor leaves out."""
+    raise NotImplementedError(
+        f"the tvb backend has no monitor for the observation {name!r}, which declares {' and '.join(_computation(obs))}{detail}, so tvb would record a different quantity under its name. "
+        "Run it on tvboptim or jax, or declare a curated monitor."
+    )
+
+def _classify(obs, name):
+    """The monitor category of the observation *name*.
+
+    A curated class reference names its category. A declared pipeline is filed under the first category in `_PIPELINE_CATEGORIES` whose key step it holds and whose monitor computes every step it declares. An observation that declares nothing to compute (`_computation`) falls back to its source or period, else to ``raw``.
+
+    Raises:
+        NotImplementedError: If *obs* declares a computation that no tvb monitor computes in full: a pipeline with a step outside every matching category's monitor, or an analysis, imaging modality, dynamics or class reference without a pipeline tvb covers.
+    """
     cr = getattr(obs, 'class_reference', None)
-    if cr is not None:
-        cr_name = str(cr.name)
-        if cr_name in _CATEGORY_BY_CR:
-            return _CATEGORY_BY_CR[cr_name]
+    if cr is not None and str(cr.name) in _CATEGORY_BY_CR:
+        return _CATEGORY_BY_CR[str(cr.name)]
 
-    # Infer from pipeline
-    pnames = _pipeline_step_names(obs)
-    if pnames & {'hemodynamic_response', 'hrf_kernel',
-                 'HemodynamicResponseFunctionTVB', 'volterra_transform'}:
-        return 'bold'
-    if pnames & {'compute_gain', 'lead_field_projection'}:
-        im = getattr(obs, 'imaging_modality', None)
-        if im is not None:
-            im = str(im).upper()
-            if im == 'SEEG':
-                return 'projection_ieeg'
-            if im == 'MEG':
-                return 'projection_meg'
-        return 'projection_eeg'
-    if pnames & {'spatial_average'}:
-        return 'spatial_average'
-    if pnames & {'global_mean'}:
-        return 'global_average'
-    if pnames & {'temporal_average'}:
-        return 'temporal_average'
-    if pnames & {'subsample'}:
-        return 'subsample'
+    pipeline = getattr(obs, 'pipeline', None) or []
+    if pipeline:
+        declared = [_step_names(step) for step in pipeline]
+        matching = [(cat, covered) for cat, keys, covered in _PIPELINE_CATEGORIES if keys & set().union(*declared)]
+        for cat, covered in matching:
+            if all(names & covered for names in declared):
+                return _projection_category(obs) if cat == 'projection' else cat
+        if matching:
+            cat, covered = matching[0]
+            missing = [_step_label(step) for step, names in zip(pipeline, declared) if not names & covered]
+            _refuse(obs, name, f"; the tvb {cat.replace('_', ' ')} monitor does not compute {', '.join(missing)}")
+        _refuse(obs, name)
+    if _computation(obs):
+        _refuse(obs, name)
 
-    # Source-based fallback
     src = getattr(obs, 'source', None)
     if src is not None and str(src) == 'coupling':
-        period = getattr(obs, 'period', None)
-        if period is not None:
-            return 'afferent_ta'
-        return 'afferent'
-
-    period = getattr(obs, 'period', None)
-    if period is not None:
+        return 'afferent_ta' if getattr(obs, 'period', None) is not None else 'afferent'
+    if getattr(obs, 'period', None) is not None:
         return 'subsample'
-
     return 'raw'
 
 def _get_hrf_params(obs):
@@ -222,12 +252,11 @@ def _source_strings(o):
     return [str(getattr(i, 'name', None) or i) for i in items]
 
 for obs_name, obs in (observations.items() if hasattr(observations, 'items') else []):
-    cat = _classify(obs)
-    # Skip observations that are not TVB monitor candidates
-    if getattr(obs, 'aggregation', None) is not None and cat == 'raw':
-        continue  # batch aggregation, not a per-step monitor
     if any(s.startswith('network.') for s in _source_strings(obs)):
         continue  # static data, not a monitor
+    cat = _classify(obs, str(obs_name))
+    if getattr(obs, 'aggregation', None) is not None and cat == 'raw':
+        continue  # batch aggregation, not a per-step monitor
     obs_list.append((str(obs_name), obs, cat))
 
 # Default to raw passthrough if no monitor-capable observations

@@ -1837,7 +1837,7 @@ def test_validate_omex_stub_accepts_zip_with_manifest(tmp_path: Path):
 # Backend templates expose a runnable __main__ entry point
 
 
-MAIN_BLOCK_EXPERIMENT = {"jax": "ThreeNode_JansenRit1995_Parity"}
+MAIN_BLOCK_EXPERIMENT = {"jax": "ThreeNode_JansenRit1995_Parity", "tvb": "ThreeNode_JansenRit1995_Parity"}
 """The curated experiment each backend's script is rendered from where it is not JR_MEG."""
 
 
@@ -1845,7 +1845,7 @@ MAIN_BLOCK_EXPERIMENT = {"jax": "ThreeNode_JansenRit1995_Parity"}
 def test_python_experiment_script_has_main_block(fmt):
     """All Python backends that emit a full experiment script must be runnable.
 
-    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block. jax renders an experiment whose every pipeline step it can compute; JR_MEG's steps read arguments jax is never given, and jax refuses them by name.
+    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block. jax and tvb render an experiment whose every observation they can compute: JR_MEG's pipeline steps read arguments jax is never given, and its observations include ones no tvb monitor computes, which each backend refuses by name.
     """
     from tvbo import SimulationExperiment
 
@@ -1857,6 +1857,11 @@ def test_python_experiment_script_has_main_block(fmt):
             ValueError, match=r"jax: the pipeline step '\w+': \[[^]]+\] would all be bound to the incoming samples"
         ):
             SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("jax")
+    if fmt == "tvb":
+        with pytest.raises(
+            NotImplementedError, match=r"the tvb backend has no monitor for the observation '\w+', which declares"
+        ):
+            SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("tvb")
 
 
 def test_pde_experiment_template_has_main_block():

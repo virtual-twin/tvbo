@@ -53,9 +53,15 @@ observations:
     label: {prose}
     description: {prose}
     source: [x]
+    period: 2.0
     pipeline:
-      - function: thin
-        arguments: {{data: x}}
+      - name: subsample
+        output: thinned
+        equation:
+          rhs: "subsample(X, step)"
+          parameters:
+            step: {{equation: {{rhs: "iround(period / dt)"}}}}
+        apply_on_dimension: time
 explorations:
   g_sweep:
     label: {prose}
