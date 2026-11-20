@@ -1,6 +1,6 @@
 """A temporal average is stamped by its backend's convention, however it is declared.
 
-Every window averages the states after steps ``(k - 1) istep + 1 .. k istep``. tvbo stamps its mean, on tvboptim and on jax, with the label tvboptim's built-in ``TemporalAverage`` gives the same window: the mean time of the samples it averages. tvb's own monitor stamps it at the centre of the interval those steps cover, ``(k istep - istep / 2) dt``, half a step earlier, as ``test_tvb_monitor_phase`` pins it. The probe of ``test_delay_history_from_opening`` reads either in closed form: ``y(t) = t a W x(0)`` is linear, so a window's mean is ``y`` at the mean of its samples' times.
+Every window averages the states after steps ``(k - 1) istep + 1 .. k istep``. tvbo stamps its mean, on tvboptim and on jax, at the mean time of the samples it averages, ``(k istep - (istep - 1) / 2) dt``, the label tvboptim's built-in ``TemporalAverage`` gives it; the released tvboptim 0.4.0 labels and windows it otherwise, an offset upstream fixed after that release, so the expectation is this formula rather than whatever the installed tvboptim computes. tvb's own monitor stamps it at the centre of the interval those steps cover, ``(k istep - istep / 2) dt``, half a step earlier, as ``test_tvb_monitor_phase`` pins it. The probe of ``test_delay_history_from_opening`` reads either in closed form: ``y(t) = t a W x(0)`` is linear, so a window's mean is ``y`` at the mean of its samples' times.
 """
 
 from __future__ import annotations
@@ -40,22 +40,16 @@ def _tvb_interval_centres():
     return centres, centres + DT / 2
 
 
-def _tvboptim_window_labels():
-    """The tvboptim convention: the labels tvboptim's built-in ``TemporalAverage`` gives windows of `PERIOD` over the run's post-step samples, each the mean time of the samples it averages and so also where its mean reads ``y``."""
-    pytest.importorskip("tvboptim")
-    from tvboptim.experimental.network_dynamics.result import NativeSolution
-    from tvboptim.observations.tvb_monitors.downsampling import TemporalAverage
-
-    steps = int(round(DURATION / DT))
-    raw = NativeSolution(ts=DT * np.arange(1, steps + 1), ys=np.zeros((steps, 1, 1)), dt=DT)
-    labels = np.asarray(TemporalAverage(period=PERIOD)(raw).ts, dtype=float)
-    return labels, labels
+def _sample_means():
+    """The tvboptim convention: each window's stamp at the mean time of the samples it averages, ``(k istep - (istep - 1) / 2) dt``, which is also where its mean reads ``y``."""
+    means = PERIOD * np.arange(1, int(DURATION / PERIOD) + 1) - (PERIOD - DT) / 2
+    return means, means
 
 
 BACKENDS = [
     pytest.param("tvb", _tvb_interval_centres, marks=pytest.mark.backend_tvb, id="tvb"),
-    pytest.param("tvboptim", _tvboptim_window_labels, marks=pytest.mark.backend_tvboptim, id="tvboptim"),
-    pytest.param("jax", _tvboptim_window_labels, marks=pytest.mark.backend_jax, id="jax"),
+    pytest.param("tvboptim", _sample_means, marks=pytest.mark.backend_tvboptim, id="tvboptim"),
+    pytest.param("jax", _sample_means, marks=pytest.mark.backend_jax, id="jax"),
 ]
 """Each backend with the convention its temporal average is stamped by."""
 
