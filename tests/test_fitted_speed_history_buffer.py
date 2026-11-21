@@ -96,7 +96,7 @@ At the build speed of 3 mm/ms the delay is 10 ms; at the fit's start it is 25 ms
 
 def _experiment(tmp_path, build_speed=3.0, domain="domain: {lo: 1.0, hi: 6.0}"):
     spec = tmp_path / f"fitted_speed_{build_speed}.yaml"
-    spec.write_text(_FITTED_SPEED_SPEC.replace("BUILD_SPEED", repr(build_speed)).replace("DOMAIN", domain))
+    spec.write_text(_FITTED_SPEED_SPEC.replace("BUILD_SPEED", str(build_speed)).replace("DOMAIN", domain))
     exp = SimulationExperiment.from_file(str(spec))
     exp.configure()
     return exp
@@ -134,6 +134,11 @@ def test_a_lower_bound_above_the_build_speed_keeps_the_build_buffer(tmp_path):
     """A fit that cannot go below the build speed needs no longer buffer than the build speed's."""
     builds = _network_builds(_experiment(tmp_path, domain="domain: {lo: 4.0, hi: 6.0}").render_code("tvboptim"))
     assert "max_delay=float(jnp.max(distances))/3.0*(1.0+1e-4)" in builds[0], builds[0][:300]
+
+
+def test_an_infinite_build_speed_with_a_fitted_speed_renders(tmp_path):
+    """A network built at an infinite speed whose fit frees the speed renders: the buffer size is computed from the speed's value, not from the `jnp.inf` the emitted code spells it as."""
+    assert _network_builds(_experiment(tmp_path, build_speed=".inf").render_code("tvboptim"))
 
 
 def test_a_fitted_speed_without_a_lower_bound_is_refused(tmp_path):

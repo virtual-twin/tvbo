@@ -475,8 +475,8 @@ for _fp in _fitted_speeds:
             "free parameter 'network.conduction_speed' needs a domain with a positive `lo`: the history buffer is static and holds the longest delay, "
             "the longest tract over the slowest speed the fit can reach, and without a positive lower bound there is none to size it from."
         )
-_speed_floor = min((_fp['lower_bound'] for _fp in _fitted_speeds), default=conduction_speed)
-fitted_max_delay_arg = f"max_delay=float(jnp.max(distances)) / {min(conduction_speed, _speed_floor)!r} * (1.0 + 1e-4), " if _fitted_speeds else ""
+_speed_floor = min([_cs_value, *(_fp['lower_bound'] for _fp in _fitted_speeds)])
+fitted_max_delay_arg = f"max_delay=float(jnp.max(distances)) / {_speed_floor!r} * (1.0 + 1e-4), " if _fitted_speeds else ""
 
 # For single-stage or default case, extract settings from first stage
 optimizer_name = optimization_stages[0]['algorithm'] if optimization_stages else 'adam'
