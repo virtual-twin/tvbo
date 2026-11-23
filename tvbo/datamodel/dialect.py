@@ -22,6 +22,8 @@ belongs to the caller — Pydantic already descends into members, and the datacl
 
 from __future__ import annotations
 
+import dataclasses
+import difflib
 import warnings
 from functools import cache
 
@@ -530,6 +532,15 @@ def normalize(cls_name: str, data: dict) -> dict:
     return data
 
 
+def unknown_keys(cls, keys: list[str], slots: frozenset[str]) -> str:
+    """The error for *keys* that name none of the *slots* of *cls*, each with the closest slot it may have meant."""
+    hints = [
+        f"{key!r}" + (f" (did you mean {close[0]!r}?)" if (close := difflib.get_close_matches(key, slots, n=1)) else "")
+        for key in keys
+    ]
+    return f"{cls.__name__} has no key {', '.join(hints)}"
+
+
 def install_on_dataclasses(namespace: dict) -> None:
     """Wrap each generated dataclass's ``__init__`` so it accepts the dialect.
 
@@ -542,9 +553,12 @@ def install_on_dataclasses(namespace: dict) -> None:
 
     def wrap(cls):
         original = cls.__init__
+        slots = frozenset(f.name for f in dataclasses.fields(cls))
 
         def __init__(self, *args, **kwargs):
             normalize(cls.__name__, kwargs)
+            if unknown := sorted(kwargs.keys() - slots):
+                raise TypeError(unknown_keys(cls, unknown, slots))
             original(self, *args, **kwargs)
 
         cls.__init__ = __init__

@@ -247,6 +247,9 @@ class NumContAdapter(ContinuationAdapter):
 
     TEMPLATE = "tvbo-auto7p.py.mako"
 
+    RENDERS_A_CONTINUATION = False
+    """The AUTO-07p Fortran is the model's right-hand side, carrying its analytic Jacobian only where a continuation declares a two-parameter branch, so it renders without one."""
+
     FUNC_ARGUMENTS = ("ndim", "u", "icp", "par", "ijac", "f", "dfdu", "dfdp")
     """The arguments of AUTO's ``FUNC`` subroutine, in scope wherever the emitted model's symbols are, so a symbol spelled like one is renamed (`ContinuationAdapter.fortran_names`)."""
 

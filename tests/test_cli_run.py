@@ -467,6 +467,7 @@ def _run_kwargs(**over):
         set_=[],
         pin=[],
         container=None,
+        datalad=False,
         out_dir=None,
     )
     base.update(over)
@@ -590,3 +591,25 @@ def test_a_plain_collection_run_is_not_refused(collection_spec):
     res = CliRunner().invoke(app, ["run", collection_spec, "--dry-run"])
     assert res.exit_code == 0, res.output
     assert "would be ignored" not in res.output
+
+
+def test_datalad_records_the_run_without_itself(tmp_path, monkeypatch):
+    """``tvbo run S.yaml --datalad`` hands the same command, less ``--datalad``, to ``datalad run`` in the study's dataset with the study's derivatives as the output, so ``datalad rerun`` repeats a plain ``tvbo run``; the spec is named relative to the dataset root, where ``datalad run -d`` runs it."""
+    import sys
+
+    from typer.testing import CliRunner
+
+    from tvbo.cli import app
+
+    spec = tmp_path / "S.yaml"
+    spec.write_text("tvbo_class: tvbo:SimulationStudy\n")
+    calls = []
+    monkeypatch.setattr(run_cli.shutil, "which", lambda name: "/usr/bin/datalad")
+    monkeypatch.setattr(run_cli.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0))
+    monkeypatch.setattr(sys, "argv", ["tvbo", "run", str(spec), "--datalad", "--no-figures"])
+    result = CliRunner().invoke(app, ["run", str(spec), "--datalad", "--no-figures"])
+    assert result.exit_code == 0, result.output
+    (cmd,) = calls
+    assert cmd[:3] == ["/usr/bin/datalad", "run", "-d"] and cmd[3] == str(tmp_path)
+    assert cmd[cmd.index("-o") + 1] == str(tmp_path / "derivatives" / "tvbo")
+    assert cmd[cmd.index("--") + 1 :] == ["tvbo", "run", "S.yaml", "--no-figures"]

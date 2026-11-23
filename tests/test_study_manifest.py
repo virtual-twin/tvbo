@@ -604,6 +604,20 @@ def test_a_caption_failure_does_not_abort_the_render_loop(tmp_path, monkeypatch)
     assert len(written) == 2
 
 
+def test_a_figure_that_fails_to_render_leaves_no_earlier_image(tmp_path, monkeypatch):
+    """A failed render kept the previous run's image, and `StudyResult.figure` then returned it as this run's."""
+    from tvbo.adapters import bsplot
+    from tvbo.run import study as study_run
+
+    monkeypatch.setattr(bsplot, "render", lambda fig, **kw: (_ for _ in ()).throw(ImportError("view_coords")))
+    figures = tmp_path / "figures"
+    figures.mkdir()
+    (figures / "fig-a.png").write_bytes(b"last run")
+    with pytest.raises(RuntimeError, match="1 of 1 figures did not render"):
+        study_run.render_figures([SimpleNamespace(name="fig-a", format="png")], tmp_path, figures)
+    assert not (figures / "fig-a.png").exists()
+
+
 def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monkeypatch):
     """A failed stage means the containers are stale or absent.
 
@@ -626,6 +640,22 @@ def test_a_manifest_is_not_written_when_an_analysis_stage_failed(tmp_path, monke
     with pytest.raises(study_run.StudyRunError, match="manifest was NOT written"):
         study_run.run_tree(obj, str(spec), tmp_path / "output")
     assert not emitted, "the manifest was written from a failed run"
+
+
+@pytest.mark.parametrize("results, written", [("", False), ("results:\n  - {key: parcels, value: '379', source: s}\n", True)])
+def test_only_a_study_that_declares_results_writes_a_manifest(tmp_path, monkeypatch, results, written):
+    """A study of studies with no `results:` has nothing for a manuscript to read, and an earlier run's manifest is removed rather than left reporting keys the recipe dropped."""
+    from tvbo.run import study as study_run
+
+    monkeypatch.setattr(study_run, "run_study", lambda *a, **k: True)
+    (tmp_path / "nested").mkdir()
+    (tmp_path / "nested" / "toy.yaml").write_text("title: Toy\nexperiments: []\n")
+    spec = tmp_path / "collection.yaml"
+    spec.write_text("title: Demo\nstudies:\n  - !include nested/toy.yaml\n" + results)
+    (tmp_path / "manuscript_results.yml").write_text("results: {parcels: '1'}\n")
+    study_run.run_tree(tvbo.SimulationStudy.from_file(str(spec)), str(spec))
+    assert (tmp_path / "manuscript_results.yml").exists() is written
+    assert not written or "379" in (tmp_path / "manuscript_results.yml").read_text()
 
 
 # ------------------------------------------------- caption staleness gate

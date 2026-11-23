@@ -376,3 +376,11 @@ def test_pyrates_continues_both_spellings_in_the_primary_and_the_second(nested):
     assert [(kw["starting_point"], kw["ICP"], kw["RL0"], kw["RL1"], kw["UZSTOP"]) for kw in started] == [
         ("HB1", [names["I"], names["b"]], -10.0, 20.0, {names["b"]: [-20.0, 0.0]})
     ]
+
+
+@pytest.mark.parametrize("backend", ["bifurcationkit", "pyrates-bifurcation"])
+def test_a_continuation_backend_refuses_an_experiment_without_a_continuation(backend):
+    """Rendering continuation source for an experiment that declares no continuation says so, where it used to fail inside the adapter on the missing continuation."""
+    experiment = SimulationExperiment(dynamics=DYNAMICS, integration={"method": "Heun", "step_size": 0.1, "duration": 1.0})
+    with pytest.raises(ValueError, match="the experiment declares none"):
+        experiment.render_code(format=backend)

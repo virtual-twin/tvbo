@@ -1249,6 +1249,30 @@ class OptimizationResult:
                 continue
         return result
 
+    def observe_iterates(self, observe, names, batch_size=None):
+        """Store the named observations at every saved iterate as ``trajectory_observations``, each stacked along the step axis.
+
+        The parameter callback saves only the differentiable part of the state, so each iterate is recombined with the static part of the fitted state before ``observe`` maps it to its observations: every iterate is simulated as the fit saw it, with only the free parameters moved. The iterates are stacked into one batch and mapped by ``jax.lax.map``, *batch_size* of them vectorized at a time (``None``: one at a time), so ``observe`` must trace and the batch is compiled once.
+
+        Raises:
+            ValueError: If the fit saved no iterate.
+        """
+        import jax
+        from tvboptim.types.stateutils import combine_state, partition_state
+
+        if not self.state_trajectory:
+            raise ValueError(
+                f"optimization {self.name!r} saved no parameter iterate, so its trajectory_observations have nothing to observe."
+            )
+        static = partition_state(self.state)[1]
+        iterates = jax.tree.map(lambda *leaves: jnp.stack(leaves), *self.state_trajectory)
+        observed = jax.lax.map(
+            lambda diff: {name: _unwrap_observation(observe(combine_state(diff, static))[name]) for name in names},
+            iterates,
+            batch_size=batch_size,
+        )
+        self._extras["trajectory_observations"] = {name: np.asarray(observed[name], dtype=float) for name in names}
+
     def _plot_parameters(self, figsize=None, **kwargs):
         trajectories = self._get_param_trajectories()
         if not trajectories:
@@ -2448,6 +2472,12 @@ class ExperimentResult:
                 traj_da = _numeric_da(_san(traj_name), traj_arr, dims=traj_dims)
                 if traj_da is not None:
                     data_vars[f"optimization__{_san(opt_name)}__history__{_san(traj_name)}"] = traj_da
+            for obs_name, stacked in (getattr(opt, "trajectory_observations", None) or {}).items():
+                followed = _numeric_da(
+                    _san(obs_name), stacked, dims=("step",) + tuple(_declared_dims().get(str(obs_name)) or ())
+                )
+                if followed is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__trajectory__{_san(obs_name)}"] = followed
             # The `__observation__` infix keeps these clear of the sibling `optimization__<name>__final_loss` / `__fitted__*` keys, which share the prefix.
             _sim = getattr(opt, "simulation", None)
             _write_fit_observations(

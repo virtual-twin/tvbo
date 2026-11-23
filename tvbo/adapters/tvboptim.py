@@ -79,6 +79,33 @@ class TvboptimAdapter(BaseAdapter):
 
         return normalize_coupling_aliases(dict(super().resolve_couplings()), getattr(self.experiment, "dynamics", None))
 
+    def resolve_trajectory_observations(self) -> tuple[list, list]:
+        """The observations the experiment's fit evaluates at each saved iterate, by name, and the sorted closure of observations they read, which is all an iterate traces.
+
+        The saved iterates are simulated under one JAX map, so every observation in the closure has to trace, and one whose pipeline runs a host callable is refused. Whether the fit can be observed at its iterates at all is a property of the spec, checked by `SimulationExperiment._validate_trajectory_observations` here too, so a spec edited after loading is checked on every render.
+        """
+        from tvbo.templates.tvboptim.utils import observation_closure, pipeline_stage_is_host
+
+        self.experiment._validate_trajectory_observations()
+
+        fits = keyed_items(self.experiment.optimizations, "optimizations")
+        names = [str(o) for o in (getattr(fits[0][1], "trajectory_observations", None) or [])] if fits else []
+        observations = dict(keyed_items(self.experiment.observations, "observations"))
+        closure = sorted(observation_closure(observations, names))
+        host = sorted(
+            {
+                n
+                for n in closure
+                for stage in (getattr(observations.get(n), "pipeline", None) or [])
+                if pipeline_stage_is_host(stage)
+            }
+        )
+        if host:
+            raise ValueError(
+                f"trajectory_observations are mapped under JAX across the saved iterates, and {', '.join(host)} runs a host callable; observe a traceable observation instead."
+            )
+        return names, closure
+
 
 def solver_weights(network, apply_transforms: bool = False, delayed: bool | None = None):
     """The weight matrix as the emitted tvboptim graph takes it: a BCOO when that graph is sparse and the network stores its weights sparse, a dense ``jnp`` array otherwise.

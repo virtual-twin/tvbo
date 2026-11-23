@@ -24,6 +24,21 @@ from tvbo.run import study as _study_run
 from . import _common
 
 
+def _reexec_in_datalad(spec: str, out_dir: Path | None, argv: list[str]) -> None:
+    """Re-run the ``tvbo`` command line *argv* (``run SPEC …``), less ``--datalad``, under ``datalad run`` in the dataset holding *spec*: one commit records the command and the results under *out_dir*, else the study's ``derivatives/tvbo``, and ``datalad rerun`` repeats it. ``datalad run -d`` runs the command in the dataset root, so a spec file is named relative to that root. Exits with the run's code."""
+    from tvbo.cli.workflow import datalad_launcher
+
+    datalad = datalad_launcher()
+    root = _study_run.spec_base(spec)
+    outputs = _study_run.results_root(spec, out_dir)
+    in_root = os.path.relpath(Path(spec).resolve(), root) if Path(spec).is_file() else spec
+    command = ["tvbo", *(in_root if a == spec else a for a in argv if a != "--datalad")]
+    message = shlex.join(["tvbo", "run", in_root])
+    raise typer.Exit(
+        subprocess.run([datalad, "run", "-d", str(root), "-m", message, "-o", str(outputs), "--", *command]).returncode
+    )
+
+
 def run(
     spec: str = typer.Argument(..., help="Path, CURIE, or DB name."),
     backend: str = typer.Option(
@@ -69,6 +84,11 @@ def run(
         None,
         "--container",
         help="OCI image (e.g. ghcr.io/the-virtual-brain/tvbo:0.7.0); re-execs the same `tvbo run` inside it.",
+    ),
+    datalad: bool = typer.Option(
+        False,
+        "--datalad",
+        help="Run under `datalad run` in the study's dataset, so one commit records the command and the results it wrote and `datalad rerun` repeats it; the recorded command is this run without --datalad. Needs the `datalad` command.",
     ),
     shard: str = typer.Option(
         None,
@@ -192,6 +212,10 @@ def run(
                 f"{analysis}`."
             )
         _dispatch_to_engine(engine, spec=spec, backend=backend, experiment=experiment, container=container, out_dir=out_dir)
+        return
+
+    if datalad:
+        _reexec_in_datalad(spec, out_dir, sys.argv[1:])
         return
 
     if container and os.environ.get("TVBO_IN_CONTAINER") != "1":

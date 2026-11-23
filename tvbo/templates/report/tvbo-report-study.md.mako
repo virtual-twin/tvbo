@@ -53,7 +53,7 @@ ${eqs.block(ltx, model, name)}
 <% members = [e for e in family.experiments if in_part(e)] %>\
 % if members:
 
-${heading} ${family.label} {#${eqs.unique_anchor('sec-model-' + report.section_slug(report.slot(family.base.model, 'name', family.label)))}}
+${heading} ${family.label}${eqs.heading_anchor('sec-model-' + report.section_slug(report.slot(family.base.model, 'name', family.label)))}
 
 % if report.slot(family.base.model, 'description', None):
 ${report.slot(family.base.model, 'description').strip()}
@@ -100,7 +100,7 @@ ${report.captioned(report.experiment_table(family.experiments, family.shared_par
 ## Each experiment's paragraph prints once, after all family cards — a heterogeneous experiment belongs to several families, and printing per family duplicated it per component card. Sibling depth of the family cards, not one below: an experiment is no longer filed under a single model.
 % for exp in part_experiments:
 
-${heading} Experiment ${report.slot(exp, 'id', '')}: ${report.experiment_title(exp)} {#${eqs.unique_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}}
+${heading} Experiment ${report.slot(exp, 'id', '')}: ${report.experiment_title(exp)}${eqs.heading_anchor('sec-experiment-' + report.section_slug(report.slot(exp, 'id', '')))}
 
 ${report.settings_sentence(exp)}
 % if report.slot(exp, 'description', None):

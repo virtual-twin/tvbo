@@ -6,6 +6,12 @@ description: "Bridges between TVBO and external tools and standards: TVB, PyRate
 
 TVBO provides seamless interoperability with various neuroimaging tools, optimization frameworks, and metadata standards. This enables researchers to leverage specialized capabilities from different ecosystems while maintaining a unified model representation.
 
+## How TVB-O relates to existing tools
+
+TVB-O extends and aligns to existing standards rather than replacing them. It delegates execution to simulators and supplies the semantic layer that keeps results interoperable. SBML established the declarative, annotated pattern for biochemical networks; NeuroML/LEMS covers the cellular layer; BIDS and SONATA standardize data and cellular-resolution networks; PyRates compiles one model to several backends. What none of them provide is the grounding: a whole-brain model and its full experiment as one typed object that is executable, biologically grounded, and queryable at once. TVB-O fills that gap and treats the others as backends or alignment targets.
+
+![Tool coverage: seven capabilities across SBML, openMINDS, NeuroML, SONATA, PyRates and TVB-O.](../_static/tvbo_coverage.png){fig-alt="Tool coverage matrix: seven capabilities (declarative single-source spec, compiles and runs on many backends, whole-brain network scope, four-domain grounding, curated queryable knowledge base, format interoperability, fitting and inference in the spec) across SBML, openMINDS, NeuroML, SONATA, PyRates and TVB-O. Only the TVB-O column is complete."}
+
 ## Integration Overview
 
 ```{mermaid}

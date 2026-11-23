@@ -89,6 +89,18 @@ echo "$AUTO_DIR/python" \
 
 For continuation *runs* (not just imports), also `export AUTO_DIR=/path/to/auto-07p` in your shell profile so pycobi can find AUTO's command-line tools.
 
+### Knowledge-graph extensions (`knowledge`)
+
+The `knowledge` extra reads the NeuroMMSig knowledge base, which is not on PyPI. Install it from GitHub first:
+
+```bash
+pip install git+https://github.com/neurommsig/neurommsig-knowledge.git
+```
+
+### Intel Macs
+
+On Intel Macs (x86_64), the `[tvb]` and `[audio]` extras pin `numba<0.60` and `llvmlite<0.44`, because newer `llvmlite` has no `macosx_x86_64` wheels for Python 3.12+, and JAX is capped below `0.5`, since `jaxlib` 0.4.38 is the last release with a `macosx_x86_64` wheel. Apple Silicon gets the latest compatible JAX automatically.
+
 ## Docker
 
 Run TVBO in a containerized environment with all dependencies pre-installed.

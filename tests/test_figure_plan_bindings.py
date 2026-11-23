@@ -14,7 +14,7 @@ from tvbo.adapters import figure_workflow as fw
 from tvbo.data.dataref import analysis_container_path
 from tvbo.utils.study_layout import study_path
 
-PLAN = {"key": "3", "axes": [], "result_stem": "exp-3_model-M_result"}
+PLAN = {"key": "3", "rule_name": "exp_3", "axes": [], "result_stem": "exp-3_model-M_result"}
 """The kit's plan of experiment 3, one run writing one result."""
 
 LAYER = P.Layer(used=P.DataRef(experiment="3", output="x"), encoding=P.Encoding(x="t", y="x"))
@@ -32,7 +32,7 @@ def test_a_run_read_only_in_a_grid_cell_or_an_inset_is_an_input_of_the_figures_r
     """The rule's inputs were empty, so the figure did not wait for experiment 3 (G211)."""
     figure = P.Figure(name="fig", layout="a", panels={"a": P.Panel(panel_key="a", **panel)})
     (context,) = fw.figure_contexts([figure], base_dir=tmp_path, exp_plans=[PLAN])
-    assert context["inputs"] == [{"value": 'f"{OUT_DIR}/3/exp-3_model-M_result.h5"', "raw": True}]
+    assert context["inputs"] == [{"value": "rules.exp_3.output", "raw": True}]
 
 
 def test_the_mesh_a_grid_template_gives_every_cell_is_an_input_of_the_figures_rule(tmp_path):

@@ -171,9 +171,9 @@ class StudyResult(Mapping):
                 f"no figure {name!r} was rendered; this run drew: {sorted(self._figures)}{self._undrawn()}"
             ) from None
 
-    def report(self, *args, **kwargs) -> str:
-        """The study's Methods section — :meth:`SimulationStudy.report`, reached from the run that produced the numbers it describes."""
-        return self.study.report(*args, **kwargs)
+    def report(self, format: str = "markdown", **kwargs) -> str:
+        """The study's report — :meth:`SimulationStudy.report` rendered from this run, so a document's figure and tree blocks show what it drew."""
+        return self.study.report(format, result=self, **kwargs)
 
     def __repr__(self) -> str:
         # Relative where that is shorter: this repr is cell output on a docs page, and an absolute path would publish one machine's directory layout and change under every other.

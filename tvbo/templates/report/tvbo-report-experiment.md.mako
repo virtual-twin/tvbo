@@ -22,6 +22,7 @@ Context Variables:
 - derivative_notation: 'dot' or 'd' (default: 'dot')
 </%doc>
 <%
+from pathlib import PurePath
 from sympy import latex, Eq, Symbol
 from tvbo.utils import as_list, parameters_acted_on, report, transform_target
 from tvbo.parse.expression import parse_eq
@@ -166,18 +167,6 @@ def _get_func_args(func):
     elif not isinstance(func_args, list):
         func_args = list(func_args) if func_args else []
     return [a.name if hasattr(a, 'name') else str(a) for a in func_args]
-
-def _pipeline_str(pipeline):
-    """Render a pipeline as arrow-separated function names."""
-    if not pipeline:
-        return '—'
-    if not isinstance(pipeline, list):
-        pipeline = [pipeline]
-    names = []
-    for step in pipeline:
-        fn = _p(step, 'function', None) or _p(_p(step, 'callable', None), 'name', None) or _p(_p(step, 'class_call', None), 'name', None)
-        names.append(str(fn) if fn else '?')
-    return ' → '.join(names)
 
 def _transform_text(t):
     """A network transform as `Network._apply_transform` runs it: its callable applied to the matrix with the declared arguments, else its equation, else None for a transform that leaves the matrix as it is."""
@@ -460,7 +449,7 @@ parc_atlas = _p(parcellation, 'atlas', '')
 | Descriptor | ${descriptor} |
 % endif
 % if data_file:
-| Data file | ${data_file} |
+| Data file | ${PurePath(data_file).name} |
 % endif
 % if bids_dir:
 | BIDS directory | ${bids_dir} |
@@ -804,7 +793,7 @@ if obs_data:
 period_str = ', '.join(sampling_bits) or '—'
 src_str = '$' + str(obs_source) + '$' if obs_source else '—'
 %>\
-| **${obs_label}** | ${src_str} | ${period_str} | ${_pipeline_str(pipeline)} | ${_p(obs, 'description', '') or ''} |
+| **${obs_label}** | ${src_str} | ${period_str} | ${report.pipeline_text(pipeline) or '—'} | ${_p(obs, 'description', '') or ''} |
 % endfor
 % endif
 
@@ -830,7 +819,7 @@ for attr, label in (('aggregation', 'aggregation'), ('skip_t', 'skip'), ('tail_s
     if value is not None:
         d_sampling.append(f"{label}={value}")
 %>\
-| **${dobs_label}** | ${', '.join([str(item) for item in src_obs])} | ${', '.join(d_sampling) or '—'} | ${_pipeline_str(d_pipeline)} | ${_p(dobs, 'description', '') or ''} |
+| **${dobs_label}** | ${', '.join([str(item) for item in src_obs])} | ${', '.join(d_sampling) or '—'} | ${report.pipeline_text(d_pipeline) or '—'} | ${_p(dobs, 'description', '') or ''} |
 % endfor
 % endif
 
@@ -856,13 +845,12 @@ if not isinstance(pipeline, list):
 |-----:|:---------|:------|:-------|:----------|:------------|
 % for i, step in enumerate(pipeline):
 <%
-fn = _p(step, 'function', None) or _p(_p(step, 'callable', None), 'name', None) or _p(_p(step, 'class_call', None), 'name', None)
-step_in = _p(step, 'input', '—')
-step_out = _p(step, 'output', '—')
+step_in = _p(step, 'input', None) or '—'
+step_out = _p(step, 'output', None) or '—'
 step_args = _p(step, 'arguments', {})
 step_desc = _p(step, 'description', '') or ''
 %>\
-| ${i+1} | `${fn or '?'}` | ${step_in} | ${step_out} | ${_arguments_text(step_args)} | ${step_desc} |
+| ${i+1} | `${report.step_function(step) or report.step_name(step) or '?'}` | ${step_in} | ${step_out} | ${_arguments_text(step_args)} | ${step_desc} |
 % endfor
 
 % endfor
@@ -932,10 +920,9 @@ else:
 
 % if observable:
 <%
-obs_fn = _p(observable, 'function', None) or _p(_p(observable, 'callable', None), 'name', None)
 obs_args = _p(observable, 'arguments', {})
 %>
-**Observable:** `${obs_fn or '?'}`
+**Observable:** `${report.step_function(observable) or report.step_name(observable) or '?'}`
 % if obs_args:
 
 Arguments: ${_arguments_text(obs_args)}
@@ -1141,10 +1128,7 @@ depends = _p(opt, 'depends_on', None)
 
 # Loss function
 loss_obj = _p(opt, 'loss', None)
-loss_fn = _p(loss_obj, 'function', None) if loss_obj else None
-loss_callable = _p(loss_obj, 'callable', None) if loss_obj else None
-loss_callable_name = _p(loss_callable, 'name', None) if loss_callable else None
-loss_name = str(loss_fn or loss_callable_name or '')
+loss_name = report.step_function(loss_obj) or report.step_name(loss_obj) or ''
 loss_args = _p(loss_obj, 'arguments', {}) if loss_obj else {}
 if hasattr(loss_args, 'items'):
     loss_arg_items = list(loss_args.items())

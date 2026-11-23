@@ -1073,6 +1073,9 @@ class ContinuationAdapter(BaseAdapter):
     HOLDS_PARAMETERS = False
     """Whether the backend continues a system in which a continuation's ``held_parameters`` are unknowns held to their targets."""
 
+    RENDERS_A_CONTINUATION = True
+    """Whether the backend's source is a continuation's workflow, which `render_code` refuses to render for an experiment that declares none; `False` where the source is the model alone."""
+
     def continuations(self) -> dict:
         """Every continuation the experiment declares; empty when it declares none."""
         return getattr(self.experiment, "continuations", None) or {}
@@ -1541,9 +1544,13 @@ class ContinuationAdapter(BaseAdapter):
     def render_code(self, model=None, continuation=None, **kwargs) -> str:
         """This backend's source for one continuation.
 
-        *continuation* defaults to the experiment's first, and *model* to the dynamics `resolve_dynamics` finds for it — the dynamics `run` continues — and the pair is prepared as `run` prepares it (`prepare`), so the rendered source is the source that runs; *kwargs* is extra context for `render_continuation`.
+        *continuation* defaults to the experiment's first, and *model* to the dynamics `resolve_dynamics` finds for it — the dynamics `run` continues — and the pair is prepared as `run` prepares it (`prepare`), so the rendered source is the source that runs; *kwargs* is extra context for `render_continuation`. A backend whose source is a continuation's workflow (`RENDERS_A_CONTINUATION`) refuses an experiment that declares none.
         """
         continuation = self.resolve_continuation(continuation)
+        if continuation is None and self.RENDERS_A_CONTINUATION:
+            raise ValueError(
+                "this backend renders the source of a continuation, and the experiment declares none. Add one under `continuations`."
+            )
         model = self.prepare(model or self.resolve_dynamics(continuation), continuation)
         return self.render_continuation(model, continuation, **kwargs)
 

@@ -1,0 +1,14 @@
+---
+title: "The Simulation Study Lifecycle"
+description: "TVB-O in six steps on one study: explore, specify, generate, run, report, share. The README is rendered from the same study."
+phase: false
+---
+
+```{python}
+#| echo: false
+#| warning: false
+#| output: asis
+from tvbo import SimulationStudy
+
+print(SimulationStudy.from_file("study.yaml").report("qmd", reuse_assets=True))
+```

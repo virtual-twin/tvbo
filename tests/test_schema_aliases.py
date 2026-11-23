@@ -278,3 +278,9 @@ def test_the_model_validator_folds_the_dialect_without_the_loader():
     assert Solver.model_validate({"dt": 0.01}).step_size == 0.01
     equation = Equation.model_validate({"lefthandside": "x", "righthandside": "y"})
     assert (equation.lhs, equation.rhs) == ("x", "y")
+
+
+def test_a_misspelt_key_is_named_with_the_slot_it_may_mean():
+    """A key that is neither a slot nor an alias is refused by name, with the closest slot, instead of as a bare ``unexpected keyword argument``."""
+    with pytest.raises(TypeError, match=r"Integrator has no key 'stepsize' \(did you mean 'step_size'\?\)"):
+        SimulationExperiment.from_string(_BASE + "integration: {stepsize: 0.05}\n")

@@ -7,6 +7,7 @@ project:
     - GettingStarted.qmd
     - installation.md
     - reference.qmd
+    - 0-SimulationStudyLifecycle/*.qmd
     - 1-explore/**/*.qmd
     - 2-specify/**/*.qmd
     - 3-generate/**/*.qmd

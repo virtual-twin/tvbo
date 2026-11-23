@@ -2401,7 +2401,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # Arbitrary named edge properties
         sc = np.array([[0, 1], [1, 0]])
         fc = np.array([[1, 0.8], [0.8, 1]])
-        network = Network.from_matrix(sc=sc, fc=fc, labels=["L", "R"])
+        network = Network.from_matrix(sc=sc, fc=fc, primary_weight="sc", labels=["L", "R"])
         network.plot_overview()
         ```
         """
@@ -4807,7 +4807,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         log_weights: bool = False,
         plot_brain: bool | None = None,
         brain_kwargs: dict[str, Any] | None = None,
-        cmap: str = "magma",
+        cmap: str | dict[str, str] = "magma",
         edge_percentile: float = 0,
         show_nodes: bool = True,
         show_edges: bool = True,
@@ -4835,8 +4835,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             If *False*, use matrix-only layout.  If *None* (default), auto-detect: use brain surface when ``bsplot`` is installed and atlas coordinates are available.
         brain_kwargs : dict, optional
             Keyword arguments passed to `plot_brain_surface` when the brain surface panel is used.
-        cmap : str, default="magma"
-            Default colormap for matrix heatmaps.
+        cmap : str or dict, default="magma"
+            Colormap of every row, or one per edge property (``{"weight": "viridis", "length": "magma"}``) so two quantities are not read on one scale; a property the dict leaves out takes ``"magma"``.
         edge_percentile : float, default=0
             Only show edges above this percentile of weights in the brain surface and graph panels.  ``0`` (default) plots all connections.
         show_nodes : bool, default=True
@@ -4924,6 +4924,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 mat = np.zeros((1, 1))
 
             use_log = prop == "weight" and log_weights
+            prop_cmap = cmap.get(prop, "magma") if isinstance(cmap, dict) else cmap
             norm = None
             if use_log:
                 nonzero = mat[mat > 0]
@@ -4953,8 +4954,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     "edge_radius": 0.12,
                     "edge_color": "auto",
                     "edge_data_key": "weight",
-                    "edge_cmap": cmap,
-                    "node_cmap": cmap,
+                    "edge_cmap": prop_cmap,
+                    "node_cmap": prop_cmap,
                     "edge_scale": {"weight": 6},
                     "threshold_percentile": edge_percentile,
                     "show_nodes": show_nodes,
@@ -5011,7 +5012,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
             # --- Matrix panel ---
             ax_mat = axs[row, col]
-            im = ax_mat.imshow(mat, cmap=cmap, interpolation="none", norm=norm)
+            im = ax_mat.imshow(mat, cmap=prop_cmap, interpolation="none", norm=norm)
             ax_mat.set_title(prop)
             ax_mat.set_box_aspect(1)
             cb = fig.colorbar(im, ax=ax_mat, shrink=0.5, label=label)

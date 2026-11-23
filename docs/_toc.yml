@@ -6,7 +6,7 @@ website:
           logo: _static/tvbo_logo.png
           collapse-level: 1
           contents:
-              # The sidebar IS the documentation's spine. A chapter heading is a text-only row Quarto renders as a plain label; under SIMULATION EXPERIMENTS WITH TVB-O the five numbered phases are sections instead, so each one nests the pages of that phase. scripts/update_toc_*.py splice the replication / datamodel / api blocks in under the preceding heading.
+              # The sidebar IS the documentation's spine. A chapter heading is a text-only row Quarto renders as a plain label; under SIMULATION EXPERIMENTS WITH TVB-O the six phases are linked rows instead: a section where the phase nests pages of its own, a plain `text:` row where it has only its overview (Quarto drops the link of a section without contents). scripts/update_toc_*.py splice the replication / datamodel / api blocks in under the preceding heading.
               - text: "GET STARTED"
               - text: "Home"
                 href: index.qmd
@@ -15,7 +15,9 @@ website:
               - text: "Getting started"
                 href: GettingStarted.qmd
               - text: "SIMULATION EXPERIMENTS WITH TVB-O"
-              - section: "① EXPLORE"
+              - text: "The lifecycle"
+                href: 0-SimulationStudyLifecycle/index.qmd
+              - section: "EXPLORE"
                 href: 1-explore/index.qmd
                 contents:
                   - text: "The platform, feature by feature"
@@ -27,7 +29,7 @@ website:
                         href: https://virtual-twin.github.io/tvbo/ontology/spec/index-en.html
                       - text: "WebVOWL visualisation"
                         href: https://virtual-twin.github.io/tvbo/ontology/spec/webvowl/index.html#ontology
-              - section: "② SPECIFY"
+              - section: "SPECIFY"
                 href: 2-specify/index.qmd
                 contents:
                   - text: "The running example"
@@ -116,7 +118,7 @@ website:
                     href: 2-specify/FanOut.qmd
                   - text: "Writing TVB-O YAML"
                     href: 2-specify/YAML.qmd
-              - section: "③ GENERATE"
+              - section: "GENERATE"
                 href: 3-generate/index.qmd
                 contents:
                   - text: "How code generation works"
@@ -134,16 +136,16 @@ website:
                         href: 3-generate/workflows/hpc.qmd
                   - text: "The study directory"
                     href: Interoperability/BIDS/index.qmd
-              - section: "④ RUN"
+              - section: "RUN"
                 href: 4-run/index.qmd
                 contents:
                   - text: "Run on a backend"
                     href: 4-run/Backends.qmd
                   - text: "The experiment result"
                     href: 4-run/Results.qmd
-              - section: "⑤ REPORT"
+              - text: "REPORT"
                 href: 5-report/index.qmd
-              - section: "⑥ SHARE"
+              - section: "SHARE"
                 href: 6-share/index.qmd
                 contents:
                   - text: "Share and publish your work"

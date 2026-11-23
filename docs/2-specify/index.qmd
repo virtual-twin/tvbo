@@ -5,9 +5,11 @@ aliases:
   - /phases/specify.html
 ---
 
-A TVB-O experiment is a document, not a script. You declare what the system *is* — its dynamics, the network it runs on, how nodes couple, what is observed, what is fitted, what is plotted — and nothing about how to integrate it or which library to call. That separation is the whole point: the same document runs on JAX, TVB, Julia, C or Brian2, and it stays readable years after the run.
+A TVB-O experiment is a document, not a script. You declare what the system *is* (its dynamics, the network it runs on, how nodes couple, what is observed, what is fitted, what is plotted) and nothing about how to integrate it or which library to call. That separation is the whole point: the same document runs on JAX, TVB, Julia, C or Brian2, and it stays readable years after the run.
 
 This is the longest step, because it is where all the modelling decisions live. Nothing else in the spine asks you to make a choice.
+
+![Anatomy of a SimulationExperiment: Network, Dynamics, Coupling, Integration, Observation, Event/Stimulus, Exploration and Environment, each with its key fields. Each section is written inline, loaded from YAML, or referenced by an `iri` pointer into the knowledge base.](../_static/tvbo_anatomy.svg){fig-alt="Anatomy of a SimulationExperiment: Network, Dynamics, Coupling, Integration, Observation, Event/Stimulus, Exploration and Environment, each with its key fields."}
 
 ## The object itself
 

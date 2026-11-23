@@ -396,6 +396,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
         if not getattr(self, "integration", None):
             self.integration = Integrator()
         self.integration.enrich()
+        self._validate_trajectory_observations()
 
     def __setattr__(self, name, value):
         """Hold reassigned observations as construction holds them: a plain dict of typed members, each one naming a curated model filled from it.
@@ -497,8 +498,9 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             with drawing_from(_stated_seed(getattr(obj, "execution", None))):
                 net._resolve(source_dir=source_dir)
 
-        # Validate declarative network-observation sources against the network's declared observational_measures (names only, no data load).
+        # Validate the declared observation references: network sources against observational_measures, trajectory_observations against the fit (names only, no data load).
         obj._validate_network_observations()
+        obj._validate_trajectory_observations()
 
         # Lower declarative stimulus/stimulation Event fields (target_variable, target_regions, weight_distribution) into the legacy fields the shared codegen consumes — resolved here in Python, no template changes.
         obj._resolve_events()
@@ -973,10 +975,11 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def configure(self):
         """Resolve coupling declarations and normalize delay flags.
 
-        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes.
+        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes. An optimization's ``trajectory_observations`` are checked here too (`_validate_trajectory_observations`), so one set after construction is refused before any backend renders it.
         """
         _resolve_coupling(self)
         self._resolve_events()
+        self._validate_trajectory_observations()
 
         lengths_bound = False
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
@@ -2375,6 +2378,40 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
                     f"{measure}', but network '{getattr(self.network, 'label', '?')}' "
                     f"declares observational_measures={sorted(declared)}. "
                     f"Add '{measure}' to the network or fix the observation source."
+                )
+
+    def _validate_trajectory_observations(self) -> None:
+        """Hold each optimization's ``trajectory_observations`` to what can be observed at the saved iterates of a fit.
+
+        They are evaluated at the saved iterates of a single-stage fit, so the experiment has to fit in one stage and the optimization must not refine the front of an exploration, whose seeds each run a fit of their own; and each must name an observation the experiment declares.
+        """
+        from tvbo.classes.optimization import optimization_stages
+
+        optimizations = keyed_items(self.optimizations, "optimizations")
+        if not any(getattr(optimization, "trajectory_observations", None) for _, optimization in optimizations):
+            return
+        n_stages = sum(len(optimization_stages(optimization)) for _, optimization in optimizations)
+        fronts = {
+            str(name)
+            for name, exploration in keyed_items(self.explorations, "explorations")
+            if str(getattr(exploration, "strategy", None) or "grid") == "nsga2"
+        }
+        declared = [str(name) for name, _ in keyed_items(self.observations, "observations")]
+        for name, optimization in optimizations:
+            observed = [str(o) for o in (getattr(optimization, "trajectory_observations", None) or [])]
+            if not observed:
+                continue
+            seed = getattr(optimization, "depends_on", None)
+            seed = str(getattr(seed, "name", seed)) if seed is not None else None
+            if seed in fronts or n_stages > 1:
+                raise ValueError(
+                    f"optimization {name!r}: trajectory_observations {observed!r} are observed at the saved iterates of a single-stage fit; "
+                    f"{f'it refines the front of exploration {seed!r}' if seed in fronts else f'the experiment fits in {n_stages} stages'}, so drop them or fit in one stage."
+                )
+            unknown = [o for o in observed if o not in declared]
+            if unknown:
+                raise ValueError(
+                    f"trajectory_observations names {', '.join(map(repr, unknown))}, which the experiment does not declare; its observations are {', '.join(declared) or 'none'}."
                 )
 
     def resolve_network_observations(self) -> dict:

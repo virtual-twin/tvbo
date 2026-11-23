@@ -24,7 +24,7 @@ from tvbo.templates.tvboptim.utils import (
     classify_network_obs_inputs, coupling_param_keys,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, trajectory_dims, parameter_keypath,
-    has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
+    has_host_pipeline, pipeline_stage_is_host, observation_closure, data_source_arrays, selection_settings, monitor_class_name,
     analysis_settings, set_literal,
     resolve_distribution, distribution_family, draw_expression, initial_condition_draw, initial_state_distribution,
     stochastic_moments, resolve_parameter_starts, refuse_axis_on_parameter_start, refuse_initial_value_on_parameter_start, free_parameter_ref,
@@ -1311,6 +1311,9 @@ from tvboptim.types import Parameter, BoundedParameter
 from tvboptim.optim.optax import OptaxOptimizer
 from tvboptim.optim.callbacks import MultiCallback, SavingLossCallback, SavingParametersCallback
 from tvbo.templates.tvboptim.callbacks import LoggingProgressCallback
+% endif
+% if trajectory_observations:
+from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_vmap   # saved iterates → vmap width within the memory budget
 % endif
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
@@ -3033,42 +3036,6 @@ def run_optimization(
 
 </%def>
 % if has_explorations:
-<%
-    def _observation_closure(roots):
-        """*roots* and every observation they reach through a `source` or a pipeline argument, so an observable traces only what it reads."""
-        _all_obs_names = set(_all_observations.keys())
-
-        def _obs_deps(_o):
-            _deps = set()
-            for _s in (getattr(_o, 'source', None) or []):
-                _sn = str(_s) if not hasattr(_s, 'name') else str(_s.name)
-                if _sn in _all_obs_names:
-                    _deps.add(_sn)
-            for _st in (getattr(_o, 'pipeline', None) or []):
-                for _an, _arg in ((getattr(_st, 'arguments', None) or {}).items()):
-                    _av = getattr(_arg, 'value', None)
-                    if _av is None:
-                        continue
-                    _avs = str(_av)
-                    _base = _avs.split('.', 1)[0]   # bare name or dotted named-output ref
-                    if _avs in _all_obs_names:
-                        _deps.add(_avs)
-                    elif _base in _all_obs_names:
-                        _deps.add(_base)
-            return _deps
-
-        _need = set()
-        _stack = list(roots)
-        while _stack:
-            _n = _stack.pop()
-            if _n in _need:
-                continue
-            _need.add(_n)
-            _od = _all_observations.get(_n)
-            if _od is not None:
-                _stack.extend(_sn for _sn in _obs_deps(_od) if _sn not in _need)
-        return _need
-%>
 
 % for expl in explorations:
 <%
@@ -3404,7 +3371,7 @@ ${folded_cells(_stream_names, _stream_bs)}
 % elif expl.get('record'):
 <%
     # The recorded observations and everything they depend on; anything else is skipped so it never traces inside the observable.
-    _only_list = sorted(_observation_closure(r for r in expl['record'] if r not in analysis_observation_names))
+    _only_list = sorted(observation_closure(_all_observations, [r for r in expl['record'] if r not in analysis_observation_names]))
     # Jit the whole observable only when no recorded observation reaches a host callable.
     _rec_host = any(
         pipeline_stage_is_host(_st)
@@ -3437,9 +3404,9 @@ ${render_recorded_observable(expl['record'], derived_observation_names, network_
     runtime_obs = [o for o in obs_used if o not in observation_names and o not in derived_observation_names]
     needs_all_obs = len(derived_obs) > 0
     # The derived observations the function reads and the derived ones they source: a streamed cell computes these and no others.
-    _call_only = sorted(_observation_closure(derived_obs) & set(derived_observation_names))
+    _call_only = sorted(observation_closure(_all_observations, derived_obs) & set(derived_observation_names))
     # The streamed observations those reads reach, which is all a streamed cell folds; the whole base set only when the function reads none.
-    _call_folded = [n for n in _base_stream_names if n in _observation_closure(obs_used)] or _base_stream_names
+    _call_folded = [n for n in _base_stream_names if n in observation_closure(_all_observations, obs_used)] or _base_stream_names
 %>
     @jax.jit
     def observable_fn(s):
@@ -5158,6 +5125,18 @@ stage_lr = stage['learning_rate']
                 hyperparameters=_opt_hyperparams,
             )
 
+% if trajectory_observations:
+            _iterate_model_fn = model_fn  # traced under jax.lax.map, so compiled with the batch
+            def _observe_iterate(_s):
+                return compute_all_observations(_iterate_model_fn(_s), _s, only=${set_literal(trajectory_closure)})
+
+            _n_iterates = len(_opt_result.state_trajectory or ())
+            _log(f"  Simulating {_n_iterates} saved iterates for ${', '.join(trajectory_observations)}...")
+            _opt_result.observe_iterates(
+                _observe_iterate, ${repr(trajectory_observations)},
+                batch_size=resolve_exploration_n_vmap('auto', max(_n_iterates, 1), _observe_iterate, fitted_params),
+            )
+% endif
             # Store under results.optimizations.{name} for consistent structure
             results['optimizations'] = Bunch(**{_opt_name: _opt_result})
             results[_opt_name] = _opt_result  # Also at top level for convenience

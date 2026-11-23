@@ -63,6 +63,40 @@ def pipeline_stage_is_host(stage: Any) -> bool:
     return module.split(".", 1)[0] not in _JAX_TRACEABLE_MODULE_ROOTS
 
 
+def observation_closure(observations: Mapping, roots: Iterable[str]) -> set:
+    """*roots* and every observation of *observations* they reach through a ``source`` or a pipeline argument, so an observable traces only what it reads.
+
+    *observations* maps each declared observation's name to its member. A pipeline argument reaches an observation by its bare name or by a dotted reference to one of its named outputs.
+    """
+
+    def reads(observation: Any) -> set:
+        sources = (str(s.name) if hasattr(s, "name") else str(s) for s in (getattr(observation, "source", None) or []))
+        found = {name for name in sources if name in observations}
+        for stage in getattr(observation, "pipeline", None) or []:
+            for argument in (getattr(stage, "arguments", None) or {}).values():
+                if getattr(argument, "value", None) is None:
+                    continue
+                value = str(argument.value)
+                base = value.split(".", 1)[0]
+                if value in observations:
+                    found.add(value)
+                elif base in observations:
+                    found.add(base)
+        return found
+
+    needed: set = set()
+    stack = list(roots)
+    while stack:
+        name = stack.pop()
+        if name in needed:
+            continue
+        needed.add(name)
+        observation = observations.get(name)
+        if observation is not None:
+            stack.extend(reads(observation) - needed)
+    return needed
+
+
 def data_source_arrays(experiment: Any) -> dict:
     """Every array an observation declares through ``data_source``, keyed by the name a pipeline argument uses to reach it (``data_source.<key>``).
 
