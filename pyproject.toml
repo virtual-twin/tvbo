@@ -23,6 +23,8 @@ dependencies = [
     "linkml-runtime>=1.12.1",
     # Backs `tvbo validate schema` against the shipped JSON Schema; declared explicitly because we import it directly.
     "jsonschema>=4.0.0",
+    # 6.0.4 lets the later mapping of a `<<: [*a, *b]` merge win for every key Python has not interned (yaml/pyyaml#1013).
+    "pyyaml>=6.0,!=6.0.4",
     "h5py>=3.12.1",
     "h5netcdf>=1.3",
 
