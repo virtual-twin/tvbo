@@ -1,4 +1,4 @@
-## Unreleased
+## 0.9.1 – 2026-11-23
 
 - The running-simulations skill warns that a curated relmat carries raw tractography weights and shows the network transform that scales them, after every benchmark agent that followed its whole-brain recipe on the Desikan-Killiany connectome ran Reduced Wong-Wang into saturation (S_e = 1 within 20 ms).
 
