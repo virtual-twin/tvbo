@@ -109,12 +109,16 @@ def test_each_input_declares_the_channels_of_the_coupling_it_receives(build):
     code = build().render_code("tvboptim")
     declared, wired = _declared(code), _wired(code)
     assert wired, "the render wires no coupling"
-    assert {ci: declared[ci] for ci in wired} == {ci: _n_output_states(code, cls) for ci, cls in wired.items()} == {"a": 2, "b": declared["b"]}
+    assert (
+        {ci: declared[ci] for ci in wired}
+        == {ci: _n_output_states(code, cls) for ci, cls in wired.items()}
+        == {"a": 2, "b": declared["b"]}
+    )
 
 
 @pytest.mark.parametrize("build", [_swapped, _broadcast], ids=["swapped-sources", "broadcast"])
 def test_the_paired_couplings_run_on_tvboptim(build):
-    """tvboptim builds the network, checking each coupling's channels against ``COUPLING_INPUTS``, and integrates it."""
+    """The tvboptim run builds the network, checking each coupling's channels against ``COUPLING_INPUTS``, and integrates it."""
     pytest.importorskip("tvboptim")
 
     result = build().run("tvboptim")
