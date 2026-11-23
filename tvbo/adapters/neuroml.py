@@ -3788,7 +3788,7 @@ class NeuroMLAdapter(BaseAdapter):
     def _invoke_runner(backend: str, lems_file, tmpdir):
         """Call the appropriate pyNeuroML runner for *backend*.
 
-        The NEURON and NetPyNE exports both need `NEURON_HOME` set so jNeuroML can find `nrnivmodl` to compile `.mod` files. Inside a venv the binaries live in `$VIRTUAL_ENV/bin`, so it is derived from where `nrniv` actually is when unset, and that directory is put on `PATH` — jNeuroML's `ProcessManager.findNeuronHome()` searches `PATH`.
+        The NEURON and NetPyNE exports both need `NEURON_HOME` set so jNeuroML can find `nrnivmodl` to compile `.mod` files. Inside a venv the binaries live in `$VIRTUAL_ENV/bin`, so it is derived from where `nrniv` actually is when unset, and that directory is put on `PATH` — jNeuroML's `ProcessManager.findNeuronHome()` searches `PATH`. Every variable set here, and `PYTHONPATH`, which the runner rewrites, is restored when the run returns, so no later subprocess of the session inherits the run's environment.
         """
         import os
         import sys
@@ -3823,7 +3823,7 @@ class NeuroMLAdapter(BaseAdapter):
             if extra not in existing:
                 env_patch["JDK_JAVA_OPTIONS"] = (existing + " " + extra).strip()
 
-        old_env = {k: os.environ.get(k) for k in env_patch}
+        old_env = {k: os.environ.get(k) for k in (*env_patch, "PYTHONPATH")}
         os.environ.update(env_patch)
 
         # pyNeuroML's Brian2 runner accesses sys.argv[1] unconditionally (pyneuroml/runners.py ≈ line 593).  Pad sys.argv so it doesn't crash when invoked from contexts with a short argv (e.g. pytest).
