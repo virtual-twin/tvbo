@@ -22,9 +22,9 @@ from tvbo.adapters.base import (
     BaseAdapter,
     affect_assignments,
     dynamics_library,
-    post_step_resets,
     pure_resets,
     refuse_state_distribution,
+    unapplied_event_reason,
 )
 from tvbo.adapters.smallscale.lowering import (
     EVENT_SOURCE_TYPES,
@@ -432,7 +432,6 @@ def _cell(dyn_name, dyn, ts_factor):
         raise NotImplementedError(
             f"Cell dynamics {dyn_name!r} declares no unit on {sorted(n for n, u in units.items() if not u)} and one on its other state variables; the brian2 backend annotates each equation with its variable's unit, so declare one on every state variable (dimensionless where it has none)."
         )
-    post_step_resets(dyn, "brian2")
     spikes = [
         (str(n), ev)
         for n, ev in keyed_items(getattr(dyn, "events", None), "events")
@@ -445,6 +444,15 @@ def _cell(dyn_name, dyn, ts_factor):
     event_name, event = spikes[0]
     inputs = [str(n) for n in dyn.coupling_inputs or {}]
     syms = _symbols([*units, *_params(dyn), *(str(n) for n in dyn.derived_variables or {}), *inputs])
+    for name, ev in keyed_items(getattr(dyn, "events", None), "events"):
+        assigned = affect_assignments(ev)
+        reason = assigned and unapplied_event_reason(
+            ev, assigned, list(units), syms, "a state variable, a parameter, a derived variable or the coupling input"
+        )
+        if reason:
+            raise NotImplementedError(
+                f"the brian2 backend applies a cell's event as its threshold and reset, which evaluate the cell's state variables, parameters, derived variables and coupling input, and cannot apply event {str(name)!r}, which sets {ev.affect.rhs}: {reason}."
+            )
     condition = _parse(event.condition.rhs, syms)
     if not isinstance(condition, sp.core.relational.Relational):
         raise NotImplementedError(

@@ -361,8 +361,8 @@ class ModelReset(NamedTuple):
     assignments: list[tuple[str, str]]
 
 
-def _unapplied_reason(event, assignments, states, readable) -> str | None:
-    """Why a backend that applies events after each step cannot apply *event*, or None where it can."""
+def unapplied_event_reason(event, assignments, states, readable, kinds: str) -> str | None:
+    """Why a backend cannot apply *event*, or None where it can: the backend tests a comparison as its condition, has no down-crossing for an ``affect_negative``, assigns only *states*, and evaluates only the names in *readable*, the *kinds* of variable its message names."""
     import sympy as sp
 
     condition = getattr(getattr(event, "condition", None), "rhs", None)
@@ -379,7 +379,7 @@ def _unapplied_reason(event, assignments, states, readable) -> str | None:
     read = parsed.free_symbols.union(*(sp.sympify(rhs, locals=readable).free_symbols for _, rhs in assignments))
     unread = sorted({s.name for s in read} - set(readable))
     if unread:
-        return f"it reads {', '.join(unread)}, which is neither a state variable nor a parameter"
+        return f"it reads {', '.join(unread)}, which is not {kinds}"
     return None
 
 
@@ -397,7 +397,7 @@ def post_step_resets(dynamics, backend: str) -> list[ModelReset]:
         assignments = affect_assignments(event)
         if not assignments:
             continue
-        reason = _unapplied_reason(event, assignments, states, readable)
+        reason = unapplied_event_reason(event, assignments, states, readable, "a state variable or a parameter")
         if reason:
             raise NotImplementedError(
                 f"the {backend} backend applies a model's event where its condition holds after an integration step, and cannot apply event {str(name)!r}, which sets {event.affect.rhs}: {reason}."

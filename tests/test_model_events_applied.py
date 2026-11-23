@@ -82,6 +82,31 @@ def test_the_backend_spikes_where_lems_does(cell, backend, tmp_path):
 
 
 SPIKE = 'affect:\n        rhs: "v = reset; w = w + b"'
+
+
+@pytest.mark.backend_neuroml
+@pytest.mark.backend_brian2
+@pytest.mark.parametrize(
+    "old, new",
+    [
+        ("v = reset; w = w + b", "v = reset; w = w + b + 0.5 * (I_ext - 800.0)"),
+        (
+            'rhs: "v = reset; w = w + b"\n\nnetwork:',
+            'rhs: "v = reset; w = w + b + drive_in"\n  coupling_inputs:\n    drive_in: {}\n\nnetwork:',
+        ),
+    ],
+    ids=["derived-variable", "coupling-input"],
+)
+def test_brian2_resets_from_what_its_cells_evaluate(cell, old, new, tmp_path):
+    """Brian2's reset reads the cell's derived variables and its coupling input as it reads its state, so a reset adding ``0.5 * (I_ext - 800.0)``, zero at the cell's constant 800, or the unconnected coupling input, which is zero, spikes where LEMS spikes the curated cell."""
+    pytest.importorskip("brian2")
+    renamed, _, reference = cell
+    experiment = _cell(tmp_path, renamed, old, new)
+    times = np.sort(next(iter(experiment.run("brian2")._extras["spikes"].values()))["t_ms"])
+    assert times.size == reference.size, f"brian2 spiked {times.size} times, LEMS {reference.size}"
+    np.testing.assert_allclose(times, reference, atol=1.001 * DT)
+
+
 NON_STATE = r"cannot apply event 'spike'.*: it assigns I_ext, which is not a state variable"
 
 
@@ -107,7 +132,12 @@ NON_STATE = r"cannot apply event 'spike'.*: it assigns I_ext, which is not a sta
             r"cannot apply event 'spike'.*: it declares an affect_negative",
         ),
         ("jax", "v = reset; w = w + b", "v = reset; I_ext = 0.0", NON_STATE),
-        ("brian2", "v = reset; w = w + b", "v = reset; I_ext = 0.0", NON_STATE),
+        (
+            "brian2",
+            "v = reset; w = w + b",
+            "v = reset; I_ext = 0.0",
+            r"the brian2 backend applies a cell's event as its threshold and reset.*" + NON_STATE,
+        ),
     ],
     ids=["diffrax", "two-conditioned-events-brian2", "affect-negative", "non-state-jax", "non-state-brian2"],
 )
