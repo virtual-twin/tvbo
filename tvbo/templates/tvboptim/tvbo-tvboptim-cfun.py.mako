@@ -15,7 +15,7 @@ Output:
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.base.utils import referenced
-from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements, coupling_inputs_info as _coupling_inputs_info, coupling_function_inputs
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements, coupling_inputs_info as _coupling_inputs_info, resolve_coupling_input_map
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():
@@ -42,7 +42,7 @@ else:
 # output per mode (each mode coupled independently across nodes via the existing
 # 2-D matmul), so n_output == n_modes and the cvar resolves to its mode slots.
 n_modes, _mode_slot_names, _var_slots = get_mode_layout(model) if model is not None else (1, [], {})
-_func_to_ci = coupling_function_inputs(model, coupling_inputs_info, all_couplings)
+_func_to_ci = resolve_coupling_input_map(model, all_couplings)[1]
 %>
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>
 % if any(getattr(_c, 'delayed', False) for _c in all_couplings.values()):

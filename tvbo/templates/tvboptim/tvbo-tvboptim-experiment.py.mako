@@ -133,7 +133,7 @@ external_input_keys = {str(ev.name) for ev in _active_stimulus_events(experiment
 
 # Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
 # tvboptim Python layer, not here — see resolve_coupling_input_map.
-ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict)
+ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings)
 
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None

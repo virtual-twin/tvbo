@@ -1013,15 +1013,16 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     }
 
 
-def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
-    """Map coupling-input names to coupling functions for the tvboptim network dict.
+def resolve_coupling_input_map(model, all_couplings):
+    """Map *model*'s coupling inputs to coupling functions, the one pairing the tvboptim network dict and the coupling classes read.
 
     tvboptim keys coupling by coupling-input name; the schema keys by function name. Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g. ``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
 
-    Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it (for state-access translation).
+    Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it, which names the coupling's parameters in the network state and whose dimension and keys its coupling class is rendered with.
     """
     ci_coupling_map = {}
     func_to_first_ci = {}
+    coupling_inputs_dict = (getattr(model, "coupling_inputs", None) or {}) if model is not None else {}
     if coupling_inputs_dict and all_couplings:
         funcs = list(all_couplings.items())
         ci_names = list(coupling_inputs_dict.keys())
@@ -1053,10 +1054,9 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
                 func_to_first_ci.setdefault(fn, ci_name)
 
     # Drop LOCAL coupling terms from the network wiring (they stay in coupling_inputs_dict so the dfun still binds the symbol to its 0.0 fallback).
-    if model is not None and getattr(model, "coupling_inputs", None):
-        for ci_name, ci in model.coupling_inputs.items():
-            if getattr(ci, "local", False):
-                ci_coupling_map.pop(ci_name, None)
+    for ci_name, ci in coupling_inputs_dict.items():
+        if getattr(ci, "local", False):
+            ci_coupling_map.pop(ci_name, None)
 
     return ci_coupling_map, func_to_first_ci
 
@@ -1070,29 +1070,6 @@ def coupling_inputs_info(model) -> dict[str, dict[str, Any]]:
     return info
 
 
-def coupling_function_inputs(model, inputs_info, all_couplings) -> dict[str, str]:
-    """Map each coupling function to the coupling input whose dimension and keys its class is rendered with.
-
-    Resolution order: (1) an explicit ``CouplingInput.source`` naming the function, (2) the same name, (3) the remaining functions and inputs zip positionally when their counts match.
-    """
-    func_to_ci = {}
-    if not (inputs_info and all_couplings):
-        return func_to_ci
-    for ci_key, ci in (getattr(model, "coupling_inputs", None) or {}).items():
-        src = getattr(ci, "source", None)
-        if src and src in all_couplings:
-            func_to_ci[src] = ci_key
-    for fn in all_couplings:
-        if fn not in func_to_ci and fn in inputs_info:
-            func_to_ci[fn] = fn
-    unmapped_funcs = [f for f in all_couplings if f not in func_to_ci]
-    unmapped_cis = [c for c in inputs_info if c not in func_to_ci.values()]
-    if len(unmapped_funcs) == len(unmapped_cis):
-        for ci_key, fn in zip(unmapped_cis, unmapped_funcs, strict=True):
-            func_to_ci.setdefault(fn, ci_key)
-    return func_to_ci
-
-
 def coupling_input_channels(model, all_couplings) -> dict[str, int]:
     """The channel count the generated dynamics declares for each coupling input of *model* (its ``COUPLING_INPUTS``).
 
@@ -1100,9 +1077,8 @@ def coupling_input_channels(model, all_couplings) -> dict[str, int]:
     """
     info = coupling_inputs_info(model)
     channels = {name: ci["dimension"] for name, ci in info.items()}
-    func_to_ci = coupling_function_inputs(model, info, all_couplings)
     n_modes = get_mode_layout(model)[0]
-    wired, _ = resolve_coupling_input_map(model, all_couplings, channels)
+    wired, func_to_ci = resolve_coupling_input_map(model, all_couplings)
     for ci_name, (func_name, coupling) in wired.items():
         channels[ci_name] = resolve_coupling_spec(coupling, func_name, model, info, func_to_ci, n_modes)["n_output_states"]
     return channels
