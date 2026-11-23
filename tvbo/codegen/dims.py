@@ -134,10 +134,11 @@ _RULES: dict[str, Callable] = {
     "welch": _welch,
     "rfftfreq": lambda d, args: (FREQUENCY,),
     "pearson": lambda d, args: (),
+    "spearman": lambda d, args: (),
     "shape": lambda d, args: (),
     "concatenate": _same,
 }
-"""How each array primitive's axes follow from its operands'. A primitive of the vocabulary with no rule (``upper_triangle``, ``diag``, ``eigvals``, ``hann``, the samplers, the graph constructors) has axes no name describes, so its value is unknown here and an observation built on it declares its ``dims:``."""
+"""How each array primitive's axes follow from its operands'. A primitive of the vocabulary with no rule (``upper_triangle``, ``diag``, ``eigvals``, ``hann``, ``scatter_sum``, the samplers, the graph constructors) has axes no name describes, so its value is unknown here and an observation built on it declares its ``dims:``."""
 
 
 def expression_dims(expr, env: Mapping[str, Dims | None]) -> Dims | None:

@@ -160,8 +160,10 @@ def select_experiments(study: Any, ids: str | None = None) -> list:
 
 
 def runtime_experiment(study: Any, record: Any) -> Any:
-    """*record* materialised through ``study.get_experiment``, which is keyed on its ``id``; a `StudyRunError` names what usually stops one from loading."""
-    if hasattr(record, "run") or not hasattr(study, "get_experiment"):
+    """*record* materialised through ``study.get_experiment``, which is keyed on its ``id``; a `StudyRunError` names what usually stops one from loading. An experiment that is not one of the study's own records is already materialised and is returned as it is."""
+    from tvbo.utils import as_list
+
+    if not hasattr(study, "get_experiment") or not any(record is own for own in as_list(getattr(study, "experiments", None))):
         return record
     record_id = getattr(record, "id", None)
     try:

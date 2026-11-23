@@ -385,7 +385,9 @@ def test_a_study_states_its_rule_once_in_a_theme_file_and_every_figure_follows_i
     low, high = axes["a"].spines["left"].get_bounds()
     data = axes["a"].dataLim.intervaly
     assert axes["a"].spines["left"].get_position() == ("axes", -0.02)
-    assert (low, high) == pytest.approx((min(-0.01, data[0]), max(0.01, data[1]))), "the spine ends on the outer ticks, or on the data where it runs past them"
+    assert (low, high) == pytest.approx((min(-0.01, data[0]), max(0.01, data[1]))), (
+        "the spine ends on the outer ticks, or on the data where it runs past them"
+    )
     assert axes["b"].get_yticks().tolist() == [0, 50, 100], "the ticks a panel declares stand over the rule"
     assert [t.get_text() for t in axes["<colorbar>"].get_yticklabels()] == ["0.0", "0.5", "1.0"]
     letters = [t.get_text() for a in ("a", "b", "c") for t in axes[a].texts]

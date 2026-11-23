@@ -109,6 +109,8 @@ def _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synaps
     """Recover (populations, connections) from a ``Dynamics`` by reading the **input-current** derived variables (affine in state vars + coupling), which capture the connections that the nonlinear transfer function ``r = H(I)`` hides from a plain state-variable coefficient."""
     import sympy as sp
 
+    from tvbo.parse.expression import array_syntax
+
     svs = list(dynamics.state_variables.keys())
     derived = dict(getattr(dynamics, "derived_variables", {}) or {})
     coupling_symbols = list(coupling_symbols)
@@ -116,7 +118,7 @@ def _derive_from_dynamics(dynamics, coupling_symbols, long_range_synapse, synaps
 
     def _rhs(obj):
         eq = getattr(obj, "equation", obj)
-        return sp.sympify(str(getattr(eq, "rhs", getattr(obj, "rhs", obj))), locals=syms)
+        return sp.sympify(array_syntax(str(getattr(eq, "rhs", getattr(obj, "rhs", obj)))), locals=syms)
 
     dvals = {syms[n]: _rhs(d) for n, d in derived.items()}
     for _ in range(len(derived) + 1):

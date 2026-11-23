@@ -46,10 +46,7 @@ dynamics:
             distribution:
                 name: Gaussian
                 seed: 42
-                domain: { lo: -15.0, hi: 15.0 }
-                parameters:
-                    mean: { name: mean, value: 0.0 }
-                    std: { name: std, value: 5.0 }
+                domain: { lo: -10.0, hi: 10.0 }
             unit: "mV"
             variable_of_interest: true
             coupling_variable: true
@@ -63,10 +60,7 @@ dynamics:
             distribution:
                 name: Gaussian
                 seed: 42
-                domain: { lo: -15.0, hi: 15.0 }
-                parameters:
-                    mean: { name: mean, value: 0.0 }
-                    std: { name: std, value: 5.0 }
+                domain: { lo: -10.0, hi: 10.0 }
             unit: "mV"
             variable_of_interest: true
 

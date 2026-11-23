@@ -11,6 +11,8 @@ from tvbo.behaviour.network import (
     graph_laplacian,
     max_row_sum_normalized,
     normalized_graph_laplacian,
+    realised_per_trial,
+    trial_seed,
 )
 
 __all__ = [
@@ -22,6 +24,8 @@ __all__ = [
     "graph_laplacian",
     "max_row_sum_normalized",
     "normalized_graph_laplacian",
+    "realised_per_trial",
+    "trial_seed",
 ]
 
 Network = tvbo_datamodel.Network

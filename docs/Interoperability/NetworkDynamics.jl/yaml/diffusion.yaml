@@ -29,7 +29,7 @@ dynamics:
             distribution:
                 name: Gaussian
                 seed: 1
-                domain: { lo: -3.0, hi: 3.0 }
+                domain: { lo: -2.0, hi: 2.0 }
             variable_of_interest: true
 
 # -- Network -------------------------------------------------------------------

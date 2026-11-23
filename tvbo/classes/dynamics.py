@@ -186,6 +186,8 @@ def class2metadata(ontoclass: Any, metadata: Any):
 
     from sympy import Symbol, sympify
 
+    from tvbo.parse.expression import array_syntax
+
     # First pass: collect all known symbol names to build local_dict
     known_names = (
         set(metadata.parameters.keys())
@@ -204,7 +206,7 @@ def class2metadata(ontoclass: Any, metadata: Any):
     for sv in metadata.state_variables.values():
         if sv.equation and sv.equation.rhs:
             try:
-                eq = sympify(sv.equation.rhs, locals=local_dict)
+                eq = sympify(array_syntax(str(sv.equation.rhs)), locals=local_dict)
                 required_symbols.update(str(s) for s in eq.free_symbols)
             except Exception:
                 pass

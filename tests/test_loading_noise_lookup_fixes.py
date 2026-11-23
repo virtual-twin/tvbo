@@ -299,4 +299,7 @@ def test_an_unlabelled_axis_is_selected_by_its_position():
     da = xr.DataArray(np.arange(12.0).reshape(2, 3, 2), dims=["point", "time", "node"], coords={"time": [0.0, 0.5, 1.0]})
     picked = select_labeled(da, {"point": 1, "node": 0, "time": 0.4})
     assert float(picked) == da.values[1, 1, 0]
-    assert "time" in index_bare_axes(da, {"time": 0.5}).coords and index_bare_axes(da, {"time": 0.5}).coords["time"].values[1] == 0.5
+    assert (
+        "time" in index_bare_axes(da, {"time": 0.5}).coords
+        and index_bare_axes(da, {"time": 0.5}).coords["time"].values[1] == 0.5
+    )

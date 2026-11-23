@@ -50,7 +50,7 @@ slots:
         close_mappings:
             - prov:wasGeneratedBy
         description: >-
-            HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe's `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec's own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Mutually exclusive with `value:`/`source:`.
+            HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe's `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec's own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Without `output:`, a producer whose function declares `outputs` is a bundle: an observer binds each of those arrays as a constant of its own name. Mutually exclusive with `value:`/`source:`.
     time_unit:
         range: UnitEnum
         aliases:
@@ -356,6 +356,13 @@ enums:
                 description: "Resample every integration timestep (stochastic time-varying input)."
             trial:
                 description: "Sample over space once per trial of an `n_trials` ensemble: each trial starts from its own draw, keyed as the run's draw with the trial index folded in. Outside an ensemble it is the run's draw, as under `space`."
+    NetworkRealisation:
+        description: "How often a network's random construction is drawn."
+        permissible_values:
+            run:
+                description: "Once per run: every trial of an `n_trials` ensemble integrates the network the run built."
+            trial:
+                description: "Once per trial of an `n_trials` ensemble: trial k integrates the network its seeded parts build under seeds derived from their declared seeds and k. Outside an ensemble, the base run included, the network is trial 0's realisation."
     NoiseType:
         permissible_values:
             gaussian:
@@ -478,7 +485,9 @@ enums:
             mode:
                 description: "Mode dimension (e.g., coupling modes)"
             sample:
-                description: "Sample/trial/realization dimension"
+                description: "Sample/realization dimension"
+            trial:
+                description: "Trial dimension: the repetitions of an `n_trials` ensemble, the axis an exploration writes its results along"
             batch:
                 description: "Batch dimension (for parallel processing)"
             frequency:
@@ -506,7 +515,7 @@ enums:
         permissible_values:
             streaming:
                 description: >-
-                    Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, and a matrix co-moment FC (compute_fc as a running covariance).
+                    Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, a matrix co-moment FC (compute_fc as a running covariance), and a pipeline step whose callable a curated reducer recipe with `emit_kind: run` replaces (the phase locking value and phase lag index).
             trials:
                 description: >-
                     Evaluate the pipeline across the trial ensemble rather than per solve: the (single) source observation is computed per trial as usual, and after the trial map this observation's (single) pipeline stage runs host-side on the trial-stacked source (n_trials, ...) — e.g. a pattern-entropy over an ensemble of per-trial evoked patterns. Requires a trial-only exploration (n_trials without parameter axes).
@@ -519,6 +528,8 @@ enums:
                 description: "Emit every step, over the current window (a sliding FC)."
             stride:
                 description: "Emit once per stride, at the window boundary (dFC / FCD)."
+            run:
+                description: "Emit once, at the end of the run, over every sample after the transient (a phase locking value). Every state starts at zero in the shape `add` gives it; `evict` and `resync` are not read."
 
     ContinuationAlgorithm:
         description: >-
@@ -1483,6 +1494,28 @@ classes:
                 inlined: true
                 description: >
                     Graph generator specification.  When set, overrides explicit edges/nodes for graph construction.  The type field is a free string; StandardGraphType lists well-known types that get automatic code generation across backends.
+            realisation:
+                range: NetworkRealisation
+                description: >-
+                    How often the network's random construction is drawn. Absent, or `run`, the network is built once and every trial of an `n_trials` ensemble integrates it. `trial` builds it anew for each trial: the graph generator when it declares a `seed`, and every callable transform with a `seed` argument, are called again for trial k with the seed `tvbo.classes.network.trial_seed` derives from the declared seed and k alone, so a trial's network does not depend on how many trials run or in what order. The realisations vary the weights and tract lengths only: one that changes a node's label, position or parameters is refused, and so is a constant a producer computes from the weights, the tract lengths or the in-strength. Outside an ensemble, the base run included, the network is trial 0's realisation, and that realisation is the network a result or a kit freezes beside its spec, the result's sidecar recording it in `realised_trial`; the frozen spec keeps the generator, so a kit draws the realisations the recipe does. A backend that builds one network per run refuses it.
+            realised_trial:
+                range: TrialRealisation
+                inlined: true
+                description: >-
+                    Which realisation of a network realised per trial (`realisation: trial`) this one holds, written into the sidecar of the network frozen beside a result: trial 0 of the experiment's largest `n_trials` ensemble, the network that trial integrates. A recipe does not declare it.
+
+    TrialRealisation:
+        class_uri: tvbo:TrialRealisation
+        description: "One realisation of a network built anew for each trial (`realisation: trial`): trial `trial` of an ensemble of `n_trials`."
+        attributes:
+            trial:
+                range: integer
+                required: true
+                description: "The trial index, counted from 0."
+            n_trials:
+                range: integer
+                required: true
+                description: "The number of trials in the ensemble."
 
     GraphGenerator:
         class_uri: tvbo:GraphGenerator
@@ -1615,13 +1648,12 @@ classes:
         class_uri: tvbo:File
         description: A file a record points to by path, with what a reader needs that the path does not state.
         slots:
-            - name
             - description
-        slot_usage:
-            name:
-                identifier: false
-                required: false
         attributes:
+            name:
+                range: string
+                slot_uri: schema:name
+                description: "A label for the file; a file is identified by its `path`."
             type:
                 range: string
             path:
@@ -1994,7 +2026,7 @@ classes:
             reduce:
                 range: ObservationReductionMode
                 description: >-
-                    Opt into streaming evaluation of this observation: fold it into the integrator carry as an (init, update, finalize) reducer via prepare(reduce=...) instead of computing it post-scan from a materialised trajectory. Byte-identical to the pipeline value (to f64 rounding) but with O(block) instead of O(n_time) peak memory, so a fit whose per-stage simulation is too long to hold the trajectory (e.g. the Schirner 2023 group fit) can still evaluate it. Supported for the HRF-Volterra BOLD pipeline (the resolver lifts the HRF kernel, downsample stride, TR stride and Volterra k_1/V_0 from the declared pipeline), for cumulative mean/std/variance aggregations, and for a matrix co-moment FC (compute_fc as a running covariance emitted at finalize, never a trajectory). Byte-identical holds noise-off; with a per-block noise draw the realization shifts with block size (ergodically vanishing). Absent (the default) keeps the post-scan pipeline unchanged — no other observation or experiment is affected.
+                    Opt into streaming evaluation of this observation: fold it into the integrator carry as an (init, update, finalize) reducer via prepare(reduce=...) instead of computing it post-scan from a materialised trajectory. Byte-identical to the pipeline value (to f64 rounding) but with O(block) instead of O(n_time) peak memory, so a fit whose per-stage simulation is too long to hold the trajectory (e.g. the Schirner 2023 group fit) can still evaluate it. Supported for the HRF-Volterra BOLD pipeline (the resolver lifts the HRF kernel, downsample stride, TR stride and Volterra k_1/V_0 from the declared pipeline), for cumulative mean/std/variance aggregations, for a matrix co-moment FC (compute_fc as a running covariance emitted at finalize, never a trajectory), and for a pipeline step whose callable a curated reducer recipe with `emit_kind: run` replaces (the phase locking value and phase lag index, folded over the run and emitted at finalize). Byte-identical holds noise-off; with a per-block noise draw the realization shifts with block size (ergodically vanishing). Absent (the default) keeps the post-scan pipeline unchanged — no other observation or experiment is affected.
 
             # Direct class reference (alternative to pipeline)
             class_reference:
@@ -2448,6 +2480,11 @@ classes:
             output:
                 description: "Name for this function's output (referenced by subsequent functions)"
                 range: string
+            outputs:
+                description: >-
+                    The names of the arrays a callable that returns several returns. A producer naming this function without `output:` is a bundle of them: an observer binds each as a constant of its own name, so a function that builds a dozen mesh operators in one call is declared once and overridden in one place.
+                range: string
+                multivalued: true
             # Transformation definition (equation OR callable)
             arguments:
                 description: >-
@@ -2540,6 +2577,11 @@ classes:
             output:
                 description: "Name for this step's output (referenced by subsequent functions)"
                 range: string
+            outputs:
+                description: >-
+                    The names of the arrays the invoked callable returns, as `Function.outputs` lists them; an invocation naming a curated function by `iri` takes them from that record. A producer that declares them and no `output:` is a bundle: an observer binds each array as a constant of its own name.
+                range: string
+                multivalued: true
             apply_on_dimension:
                 description: >-
                     Axis to apply the function over, one element at a time (generates a vmap in code). ``node`` applies per node, ``time`` per sample. Inside an observation pipeline the axes are the solve grid's and the ``DimensionType`` vocabulary names them; a study-level ``Analysis`` maps over the axes of the CONTAINERS it reads, which are declared by whatever produced them (``subject``, ``parcel``, ``n_modes``, ``variant``), so this is a free string rather than that closed enum.
@@ -2675,7 +2717,7 @@ classes:
                 range: string
                 multivalued: true
                 description: >-
-                  Operator parameters carrying a leading group axis, sliced per group under the vmap (the per-group meshes' fixed operators). Parameters not listed are shared.
+                  Operator parameters carrying a leading group axis, sliced per group under the vmap (the per-group meshes' fixed operators); a bundle parameter stands for every output it binds. Parameters not listed are shared.
             waves:
                 range: string
                 required: true
@@ -4812,7 +4854,7 @@ classes:
             emit_kind:
                 range: ReducerEmitKind
                 ifabsent: string(window)
-                description: "Whether the reduced value is read out every step or every stride."
+                description: "Whether the reduced value is read out every step, every stride, or once at the end of the run."
             state:
                 range: string
                 multivalued: true

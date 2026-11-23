@@ -17,6 +17,7 @@ from tvbo.adapters.base import (
     refuse_second_definition,
     start_draw,
 )
+from tvbo.adapters.julia_model import initial_state_draws
 from tvbo.data.array_formats import sender_row
 from tvbo.export.registry import StartKind
 
@@ -632,6 +633,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         ``node_overrides`` holds the ``(row, name, value)`` triples, rows 1-based, a homogeneous network sets over its model's defaults and samples: under ``states`` each node's declared initial values, under ``parameters`` its declared parameter values, each restricted to the names the model declares, as on tvboptim.
 
+        ``initial_draws`` holds, per dynamics, the Julia that draws each state variable declaring a distribution (`initial_state_draws`), so an initial state is drawn by `initial_state_distribution`, the one definition of that draw, and refused where it refuses.
+
         ``dealias`` is set wherever the template gives one component a value the others do not carry as a model default: per-node dynamics, events, and every ``set_default!`` a fixpoint search is seeded with. A stochastic network's ``solver_method`` is the StochasticDiffEq.jl solver of its declared method (`julia_sde_solver`), which refuses a method with no stochastic counterpart.
         """
         from tvbo.adapters.julia_model import julia_sde_solver
@@ -640,6 +643,7 @@ class NetworkDynamicsAdapter(BaseAdapter):
         model = ctx["model"]
         if ctx["is_stochastic"]:
             ctx["solver_method"] = julia_sde_solver(self.declared_integration(self.experiment.integration, "method"))
+        ctx["initial_draws"] = {name: initial_state_draws(dyn, ctx["dist_seed"]) for name, dyn in ctx["dynamics_dict"].items()}
         ctx["coupling_splits"] = {key: coupling_split(c, model) for key, c in ctx["all_couplings"].items()}
         split = ctx["edge_split"] = next(iter(ctx["coupling_splits"].values()), None)
         if split is not None:

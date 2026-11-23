@@ -25,7 +25,7 @@ def _net_with_transform():
 
 def _apply_emitted(net, weights, distances=None):
     """Run the emitted const_env + per-transform env exactly as `create_network` does, in the 64-bit precision `run()` forces, so the comparison against `weights_matrix` does not depend on which test enabled x64 first."""
-    transforms, const_env, _ = weight_transform_codegen(net)
+    transforms, const_env, _, _ = weight_transform_codegen(net)
     with enable_x64():
         scope = {
             "jnp": jnp,
@@ -53,7 +53,7 @@ def test_raw_accessor_is_untouched_transformed_is_normalised():
 def test_inline_transform_is_byte_identical_to_weights_matrix():
     """The rendered jax expr applied to the RAW weights reproduces ``weights_matrix`` exactly, so ``experiment.py`` passing ``raw_weights_matrix`` while ``create_network`` inlines the transform is a no-op for every working run."""
     net, _ = _net_with_transform()
-    transforms, const_env, needs_lengths = weight_transform_codegen(net)
+    transforms, const_env, needs_lengths, _ = weight_transform_codegen(net)
     assert len(transforms) == 1
     assert const_env == []
     assert needs_lengths is False
@@ -65,7 +65,7 @@ def test_inline_transform_is_byte_identical_to_weights_matrix():
 
 def test_network_without_transform_emits_nothing():
     net = Network.from_matrix(weights=np.array([[0, 1.0], [1.0, 0]]), lengths=np.zeros((2, 2)))
-    transforms, const_env, needs_lengths = weight_transform_codegen(net)
+    transforms, const_env, needs_lengths, _ = weight_transform_codegen(net)
     assert transforms == []
     assert const_env == []
     assert needs_lengths is False
@@ -116,7 +116,7 @@ def test_a_callable_transform_reaches_the_kit():
         Function(name="weight", callable=CallableRef(module="tvbo.classes.network", name="normalized_graph_laplacian"))
     ]
 
-    transforms, const_env, _ = weight_transform_codegen(net)
+    transforms, const_env, _, _ = weight_transform_codegen(net)
     assert len(transforms) == 1
     assert any(line.startswith("from tvbo.classes.network import") for line in const_env)
     assert np.allclose(_apply_emitted(net, W), np.asarray(net.weights_matrix))
@@ -173,7 +173,7 @@ def test_an_edge_attribute_is_the_vocabulary_not_an_invented_alias():
     net = Network.from_matrix(weights=W, lengths=L)
     net.add_transform("weight", "weight / (length + 1)")
 
-    transforms, const_env, needs_lengths = weight_transform_codegen(net)
+    transforms, const_env, needs_lengths, _ = weight_transform_codegen(net)
     assert needs_lengths is True  # create_network must be handed lengths
     assert "length = distances" in const_env  # bound once, not per transform
     assert transforms[0][1] == ["weight = weights"]  # the target rebinds per transform
@@ -205,7 +205,7 @@ def test_a_transform_written_over_the_declared_weights_reaches_the_kit():
     net = Network(number_of_nodes=2, primary_weight="sc", transforms=transforms)
     net.set_matrix("sc", W)
     assert np.allclose(np.asarray(net.matrix("weight")), 5 * W)
-    emitted, const_env, _ = weight_transform_codegen(net)
+    emitted, const_env, _, _ = weight_transform_codegen(net)
     assert const_env == []
     assert [chained for _, chained in emitted] == [["sc = weights"], ["sc = weights"]]
     assert np.allclose(_apply_emitted(net, W), 5 * W)

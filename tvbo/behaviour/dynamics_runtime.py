@@ -1349,22 +1349,23 @@ class DynamicsRuntime(Catalogued, Copyable):
 
         return filename
 
-    def get_initial_values(self, default=0.1, random=False, N=1, **kwargs):
+    def get_initial_values(self, default=0.1, random=False, N=1, seed=0, **kwargs):
         """Build the initial state vector for a simulation.
 
-        If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it (Gaussian or uniform over the finite domain bounds); otherwise each variable's `initial_value` (or `default`) is used.
+        If any state variable defines a `distribution` (or `random=True`), initial values are sampled from it, by the family, spread and bounds `initial_state_distribution` gives every backend that draws an initial state; otherwise each variable's `initial_value` (or `default`) is used.
 
         Args:
             default: Fallback value for variables without an initial value.
             random: Deprecated flag to sample from each variable's domain.
             N: Number of samples per state variable.
+            seed: The run's seed (`run_seed`). A distribution draws from its own `seed` where it declares one, else from this one (`initial_state_distribution`), on a generator keyed also by the variable's position among the variables that declare a distribution, as tvboptim folds that position into its key, so two variables under one seed draw independently. A draw scales and shifts the generator's standard variate in two roundings, which give the same bits on every platform, where numpy's own `uniform` and `normal` fuse them into one on arm64.
             **kwargs: Ignored extra arguments.
 
         Returns:
-            A NumPy array of initial values. When sampling from a distribution
-            (or `random=True`) the shape is `(n_state_variables, N)`; otherwise
-            it is 1-D with one entry per state variable.
+            A NumPy array of initial values. When sampling from a distribution (or `random=True`) the shape is `(n_state_variables, N)`; otherwise it is 1-D with one entry per state variable.
         """
+        from tvbo.templates.base.utils import initial_state_distribution
+
         if random:
             import warnings
 
@@ -1377,21 +1378,17 @@ class DynamicsRuntime(Catalogued, Copyable):
         has_distributions = any(getattr(sv, "distribution", None) for sv in self.state_variables.values())
         if random or has_distributions:
             init = []
+            drawn = 0
             for sv in self.state_variables.values():
                 dist = getattr(sv, "distribution", None)
                 if dist:
-                    # Use distribution.domain, fall back to sv.domain
-                    domain = getattr(dist, "domain", None) or getattr(sv, "domain", None)
-                    # Guard against non-finite / missing bounds: a distribution without its own domain falls back to sv.domain, which may be a half-open clamp (e.g. [0, inf)); uniform(0, inf) would overflow.
-                    _dlo = getattr(domain, "lo", None) if domain else None
-                    _dhi = getattr(domain, "hi", None) if domain else None
-                    lo = float(_dlo) if (isinstance(_dlo, (int, float)) and np.isfinite(_dlo)) else -10.0
-                    hi = float(_dhi) if (isinstance(_dhi, (int, float)) and np.isfinite(_dhi)) else 10.0
-                    dist_name = str(getattr(dist, "name", "Uniform")).lower()
-                    if dist_name in ("gaussian", "normal"):
-                        sv_init = np.random.normal(loc=(lo + hi) / 2, scale=(hi - lo) / 6, size=N)
+                    spec = initial_state_distribution(sv, seed)
+                    rng = np.random.default_rng((spec["seed"], drawn))
+                    drawn += 1
+                    if spec["family"] == "normal":
+                        sv_init = spec["loc"] + spec["scale"] * rng.standard_normal(N)
                     else:
-                        sv_init = np.random.uniform(lo, hi, size=N)
+                        sv_init = spec["lo"] + (spec["hi"] - spec["lo"]) * rng.random(N)
                 elif random:
                     # Legacy fallback: sample from the domain range. The domain may carry a one-sided clamp (e.g. [0, inf) for a firing rate), so guard against non-finite / inverted bounds — uniform(0, inf) would yield inf/NaN initial states.
                     dlo = getattr(sv.domain, "lo", None) if sv.domain else None

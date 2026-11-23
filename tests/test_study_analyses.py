@@ -299,6 +299,171 @@ def test_a_figure_layer_binds_an_analysis_by_name(tmp_path, calls):
     assert bsplot._container_path(key, study_dir) == str((results / "ana-spec_result.h5").resolve())
 
 
+# ----------------------------------------------------------- reconcile by label
+
+
+def _per_node(labels):
+    """``n<k> -> k`` on the node order *labels*, or ``0, 1, 2`` on an unlabelled node axis for ``None``."""
+    values = [float(label[1:]) for label in labels] if labels else [0.0, 1.0, 2.0]
+    return xr.DataArray(values, dims=["node"], coords={"node": labels} if labels else {})
+
+
+def _fc(labels, *, both_axes=True):
+    """``(n<i>, n<j>) -> 10 i + j`` on the node order *labels*, its ``node_j`` axis unlabelled unless *both_axes*."""
+    k = np.array([float(label[1:]) for label in labels])
+    coords = {"node_i": labels, **({"node_j": labels} if both_axes else {})}
+    return xr.DataArray(10 * k[:, None] + k[None, :], dims=["node_i", "node_j"], coords=coords)
+
+
+_BANDS = ["delta", "theta", "alpha", "beta", "gamma"]
+
+
+def _stored(tmp_path, calls, **arrays):
+    """Run one analysis per keyword, each writing the array it names as output ``v``."""
+    for name, da in arrays.items():
+        setattr(calls, name, lambda da=da: {"v": da})
+        analysis_io.run_analysis(_analysis(name, name), tmp_path)
+
+
+def _by_label(name):
+    return {"used": {"analysis": name, "output": "v", "reconcile": "by_label"}}
+
+
+def _both_by_label():
+    return {"sim": _by_label("sim"), "emp": _by_label("emp")}
+
+
+def _pair(tmp_path, calls, arguments, returns=None, **kw):
+    """Run analysis ``pair`` on *arguments* and return what its callable was handed; the callable returns ``returns(**arguments)``, else a scalar, into ``ana-pair_result.h5``."""
+    seen = {}
+
+    def pair(**given):
+        seen.update(given)
+        return returns(**given) if returns else {"r": 0.0}
+
+    calls.pair = pair
+    analysis_io.run_analysis(_analysis("pair", "pair", arguments, **kw), tmp_path)
+    return seen
+
+
+@pytest.mark.parametrize("declared", [("sim", "emp"), ("emp", "sim")], ids=["sim-first", "emp-first"])
+def test_by_label_arguments_are_laid_out_on_one_node_order(tmp_path, calls, declared):
+    """Two per-node arrays stored on different node orders arrive on one order, node for node, whichever argument is declared first; before, they arrived in their sources' orders and a positional callable paired n2 with n0 (G207)."""
+    _stored(tmp_path, calls, sim=_per_node(["n2", "n0", "n1"]), emp=_per_node(["n1", "n2", "n0"]))
+
+    seen = _pair(tmp_path, calls, {key: _by_label(key) for key in declared})
+
+    for key in ("sim", "emp"):
+        assert list(seen[key].coords["node"].values) == ["n0", "n1", "n2"]
+        np.testing.assert_array_equal(seen[key].values, [0.0, 1.0, 2.0])
+
+
+def test_by_label_arguments_that_share_a_node_order_keep_it(tmp_path, calls):
+    _stored(tmp_path, calls, sim=_per_node(["n2", "n0", "n1"]), emp=_per_node(["n2", "n0", "n1"]))
+
+    seen = _pair(tmp_path, calls, _both_by_label())
+
+    assert list(seen["sim"].coords["node"].values) == list(seen["emp"].coords["node"].values) == ["n2", "n0", "n1"]
+
+
+@pytest.mark.parametrize(
+    ("sim", "emp", "arguments", "reason"),
+    [
+        (
+            _per_node(["n2", "n0", "n1"]),
+            _per_node(["n1", "n0"]),
+            _both_by_label(),
+            r"no entry along 'node' is labelled \['n2'\]",
+        ),
+        (
+            _per_node(["n2", "n0", "n1"]),
+            _per_node(["n1", "n2", "n0"]),
+            {"sim": {"used": {"analysis": "sim", "output": "v"}}, "emp": _by_label("emp")},
+            "no other argument of it declares it",
+        ),
+        (
+            _per_node(["n2", "n0", "n1"]),
+            _per_node(None),
+            _both_by_label(),
+            "it carries no axis labelled with names",
+        ),
+        (
+            xr.DataArray([1.0, 2.0, 3.0, 4.0, 5.0], dims=["band"], coords={"band": _BANDS}),
+            xr.DataArray(np.ones((5, 68)), dims=["band", "node"], coords={"band": _BANDS}),
+            _both_by_label(),
+            "its axis 'node' carries no coordinate",
+        ),
+        (
+            _fc(["n2", "n0", "n1"]),
+            _fc(["n1", "n2", "n0"], both_axes=False),
+            _both_by_label(),
+            "its axis 'node_j' carries no coordinate",
+        ),
+    ],
+    ids=[
+        "a-label-the-other-lacks",
+        "the-only-by-label-argument",
+        "no-labelled-axis",
+        "an-unlabelled-node-axis-beside-a-labelled-band",
+        "a-half-labelled-matrix",
+    ],
+)
+def test_a_by_label_argument_it_cannot_match_is_refused_by_name(tmp_path, calls, sim, emp, arguments, reason):
+    """Refused naming the analysis and the argument, where it was handed over in its source's order or, on an unlabelled axis, paired by position (G207)."""
+    _stored(tmp_path, calls, sim=sim, emp=emp)
+
+    with pytest.raises(ValueError, match=f"analysis 'pair', argument 'emp': .*{reason}"):
+        _pair(tmp_path, calls, arguments)
+
+
+@pytest.mark.parametrize(
+    "mask",
+    [{"used": {"analysis": "mask", "output": "v"}}, {"value": [1.0, 0.0, 1.0]}],
+    ids=["a-mask-from-the-same-source", "a-per-node-literal"],
+)
+def test_an_argument_beside_by_label_arguments_that_move_is_refused_unless_it_declares_by_label(tmp_path, calls, mask):
+    """A mask stored on `sim`'s node order stayed in it while the two `by_label` FCs moved to their sorted labels, and the callable paired it with them by position (G207)."""
+    _stored(tmp_path, calls, sim=_fc(["n2", "n0", "n1"]), emp=_fc(["n1", "n2", "n0"]), mask=_per_node(["n2", "n0", "n1"]))
+
+    with pytest.raises(ValueError, match=r"analysis 'pair', argument 'mask': .*without declaring `reconcile: by_label`"):
+        _pair(tmp_path, calls, {**_both_by_label(), "mask": mask})
+
+
+def test_a_bare_return_axis_named_like_the_node_axis_takes_the_node_order(tmp_path, calls):
+    """A bare per-node array was stored on the sorted node order its `by_label` arguments moved onto, with no labels to say which node each entry is (G207)."""
+    _stored(tmp_path, calls, sim=_per_node(["n2", "n0", "n1"]), emp=_per_node(["n1", "n2", "n0"]))
+
+    _pair(tmp_path, calls, _both_by_label(), returns=lambda sim, emp: np.asarray(sim), dims=["node"])
+
+    ds = xr.open_dataset(tmp_path / "ana-pair_result.h5", engine="h5netcdf")
+    try:
+        assert list(ds["observation__pair"]["node"].values) == ["n0", "n1", "n2"]
+        np.testing.assert_array_equal(ds["observation__pair"].values, [0.0, 1.0, 2.0])
+    finally:
+        ds.close()
+
+
+@pytest.mark.parametrize(
+    ("returns", "dims", "axis"),
+    [(lambda sim, emp: np.asarray(sim), ["band"], "band"), (lambda sim, emp: {"v": np.asarray(sim)}, None, "v_d0")],
+    ids=["a-declared-axis-under-another-name", "an-undeclared-axis"],
+)
+def test_a_bare_return_axis_of_the_node_count_under_another_name_is_refused_by_name(tmp_path, calls, returns, dims, axis):
+    """Keyed by name, never by length, so an axis that only shares the node count is never labelled with nodes (G207)."""
+    _stored(tmp_path, calls, sim=_per_node(["n2", "n0", "n1"]), emp=_per_node(["n1", "n2", "n0"]))
+
+    with pytest.raises(ValueError, match=f"analysis 'pair': its `reconcile: by_label` .* axis '{axis}' of that length"):
+        _pair(tmp_path, calls, _both_by_label(), returns=returns, dims=dims)
+
+
+def test_a_bare_return_axis_named_like_the_node_axis_of_another_length_is_refused_by_name(tmp_path, calls):
+    """A `node` axis of two entries beside a node order of three was stored unlabelled, as if it held nodes (G207)."""
+    _stored(tmp_path, calls, sim=_per_node(["n2", "n0", "n1"]), emp=_per_node(["n1", "n2", "n0"]))
+
+    with pytest.raises(ValueError, match=r"analysis 'pair', output 'pair': its axis 'node' .* has 2 entries .* has 3 labels"):
+        _pair(tmp_path, calls, _both_by_label(), returns=lambda sim, emp: np.ones(2), dims=["node"])
+
+
 # --------------------------------------------------------------------- schedule
 
 

@@ -747,6 +747,8 @@ def record_dict(model) -> dict:
             return value.isoformat()
         if isinstance(value, Enum):
             return value.value
+        if isinstance(value, (np.generic, np.ndarray)):
+            return value.tolist()
         return value
 
     fields = type(model).model_fields
@@ -755,7 +757,7 @@ def record_dict(model) -> dict:
     record = {}
     for name in names:
         stated = value_of(getattr(model, name, None))
-        if stated is None or stated == [] or stated == {}:
+        if stated is None or (isinstance(stated, (list, dict)) and not stated):
             continue
         record[fields[name].alias or name] = stated
     return record

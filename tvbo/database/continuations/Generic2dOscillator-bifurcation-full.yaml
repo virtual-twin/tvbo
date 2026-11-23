@@ -82,6 +82,8 @@ branches:
     # Periodic-orbit discretization: collocation | trapezoid | shooting | poincare
     discretization:
       method: collocation
+      linear_solver:
+        method: COPBLS          # Linear solver for periodic orbits: COPBLS | DefaultLS
       parameters:
         mesh_intervals:
           value: 20                 # Number of mesh intervals
@@ -96,10 +98,6 @@ branches:
     parameters:
       max_norm_bound:
         value: 1.0e+4        # cbMaxNorm callback: discard if ||x|| > this
-
-    options:
-      linear_solver:
-        value: COPBLS         # Linear solver for periodic orbits: COPBLS | DefaultLS
 
 # The toolkit this continuation was written for.
 software:

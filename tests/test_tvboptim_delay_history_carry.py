@@ -1,6 +1,6 @@
 """Chained tvboptim solves carry their delay history, so a TR-by-TR loop integrates the same network as one continuous run.
 
-A fitting loop (FIC, FIC/EIB) runs its prepared solve once per TR and hands the final state to the next call. The delayed couplings' history buffers live in ``initial_state.coupling`` and are not returned by the solve, so the generated experiment rebuilds them from the trajectory with ``_carry_delay_history``. These tests run that helper, taken verbatim from the experiment template, on the stock tvboptim DelayedCoupling and on tvbo's CompactDelayedCoupling, and check a whole fic_eib run changes once the history is carried.
+A fitting loop (FIC, FIC/EIB) runs its prepared solve once per TR and hands the final state to the next call. The delayed couplings' history buffers live in ``initial_state.coupling`` and are not returned by the solve, so the generated experiment rebuilds them from the trajectory with ``_carry_delay_history``. These tests run that helper, rendered from the template def the experiment template emits it from, on the stock tvboptim DelayedCoupling and on tvbo's CompactDelayedCoupling, through a roll and a circular history buffer named by ``buffer_strategy`` (both tvboptim 0.4.0 and the development line take it), and check a whole fic_eib run changes once the history is carried and ends on the same bits through either buffer.
 """
 
 from __future__ import annotations
@@ -27,23 +27,20 @@ from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 from tvboptim.experimental.network_dynamics.solvers import BoundedSolver, Euler
 
-EXPERIMENT_TEMPLATE = "tvbo/templates/tvboptim/tvbo-tvboptim-experiment.py.mako"
 CARRY_CALL = "state = _carry_delay_history("
 
 
 def _template_namespace() -> dict:
-    """``_carry_delay_history`` and its registry exactly as the experiment template emits them, plus the emitted CompactDelayedCoupling."""
-    source = open(EXPERIMENT_TEMPLATE).read()
-    helper = source[source.index("_DELAY_SOURCE_STATES = {}") : source.index("def create_network(")]
+    """``_carry_delay_history``, ``_refill_history`` and their registry, and the CompactDelayedCoupling, each rendered from its template def as the experiment template emits it."""
     namespace = {"jax": jax, "jnp": jnp, "eqx": eqx, "Bunch": Bunch, "DelayedCoupling": DelayedCoupling}
-    exec(compile(helper, "<carry_delay_history>", "exec"), namespace)
+    carry = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-delay-carry.py.mako")
+    exec(compile(carry.get_def("render_delay_history_carry").render(), "<delay_history_carry>", "exec"), namespace)
     compact = Template(filename="tvbo/templates/tvboptim/tvbo-tvboptim-compact-coupling.py.mako")
     exec(compile(compact.get_def("render_compact_delayed_coupling").render(), "<compact_coupling>", "exec"), namespace)
     return namespace
 
 
 NS = _template_namespace()
-NS["_DELAY_SOURCE_STATES"]["eib"] = ["S_e"]
 
 
 class TwoChannelEI(AbstractDynamics):
@@ -77,16 +74,23 @@ COUPLINGS = {"stock": _eib_class(DelayedCoupling), "compact": _eib_class(NS["Com
 N_NODES, CHUNK, N_CHUNKS = 30, 40, 5
 
 
-def _prepared(coupling_cls, n_steps, noise):
+BUFFERS = pytest.mark.parametrize("buffer", ["roll", "circular"])
+"""The history buffers the carry hands on, each test run on both."""
+
+
+def _prepared(coupling_cls, n_steps, noise, buffer):
+    """A prepared solve of *n_steps* on a delayed network whose coupling holds a *buffer* history, recorded in the template's registry as create_network() records a built coupling."""
     rng = np.random.default_rng(0)
     mask = rng.random((N_NODES, N_NODES)) < 0.4
     np.fill_diagonal(mask, False)
     weights = jnp.asarray(np.where(mask, rng.random((N_NODES, N_NODES)), 0.0) / (0.4 * N_NODES))
     delays = jnp.asarray(rng.uniform(1.0, 15.0, (N_NODES, N_NODES)))
     edge_a, edge_b = (jnp.asarray(a) for a in rng.uniform(0.5, 1.5, (2, N_NODES, N_NODES)))
+    coupling = coupling_cls(wLRE=edge_a, wFFI=edge_b, buffer_strategy=buffer)
+    NS["_DELAY_LINES"]["eib"] = (["S_e"], coupling.buffer_strategy)
     network = Network(
         TwoChannelEI(),
-        {"eib": coupling_cls(wLRE=edge_a, wFFI=edge_b)},
+        {"eib": coupling},
         DenseDelayGraph(weights, delays),
         noise=AdditiveNoise(sigma=0.02, apply_to=["S_e", "S_i"], key=jax.random.key(1)) if noise else None,
     )
@@ -96,16 +100,16 @@ def _prepared(coupling_cls, n_steps, noise):
     return jax.jit(solve_fn), config
 
 
-def _continuous_and_chunked(coupling_cls, noise, carry):
-    """One run of N_CHUNKS * CHUNK steps, and the same run as N_CHUNKS chained solves fed the same noise increments."""
+def _continuous_and_chunked(coupling_cls, noise, carry, buffer):
+    """One run of N_CHUNKS * CHUNK steps, the same run as N_CHUNKS chained solves fed the same noise increments, and the (history, write pointer or None) each carry handed on."""
     increments = jax.random.normal(jax.random.key(7), (N_CHUNKS * CHUNK, 2, N_NODES))
-    whole_fn, whole = _prepared(coupling_cls, N_CHUNKS * CHUNK, noise)
+    whole_fn, whole = _prepared(coupling_cls, N_CHUNKS * CHUNK, noise, buffer)
     if noise:
         whole._internal.noise_samples = increments
     continuous = np.asarray(whole_fn(whole).ys)
 
-    chunk_fn, state = _prepared(coupling_cls, CHUNK, noise)
-    pieces = []
+    chunk_fn, state = _prepared(coupling_cls, CHUNK, noise, buffer)
+    pieces, carried = [], []
     for k in range(N_CHUNKS):
         if noise:
             state = eqx.tree_at(
@@ -119,32 +123,66 @@ def _continuous_and_chunked(coupling_cls, noise, carry):
         state = eqx.tree_at(lambda s: s.initial_state.dynamics, state, result.ys[-1][:2])
         if carry:
             state = NS["_carry_delay_history"](state, result)
-    return continuous, np.concatenate(pieces)
+            line = state.initial_state.coupling.eib
+            carried.append((np.asarray(line.history), np.asarray(line.write_idx) if "write_idx" in line else None))
+    return continuous, np.concatenate(pieces), carried
 
 
+@BUFFERS
 @pytest.mark.parametrize("noise", [False, True])
 @pytest.mark.parametrize("kind", ["stock", "compact"])
-def test_chained_solves_equal_one_continuous_run(kind, noise):
-    continuous, chained = _continuous_and_chunked(COUPLINGS[kind], noise, carry=True)
+def test_chained_solves_equal_one_continuous_run(kind, noise, buffer):
+    continuous, chained, _ = _continuous_and_chunked(COUPLINGS[kind], noise, carry=True, buffer=buffer)
     assert np.ptp(continuous) > 0.05
     np.testing.assert_allclose(chained, continuous, rtol=1e-11, atol=1e-13)
 
 
-def test_chained_solves_without_the_carry_restart_every_delay_line():
-    continuous, chained = _continuous_and_chunked(COUPLINGS["compact"], False, carry=False)
+@pytest.mark.parametrize("noise", [False, True])
+@pytest.mark.parametrize("kind", ["stock", "compact"])
+def test_the_circular_carry_equals_the_roll_carry_bitwise(kind, noise):
+    """Chained solves through a circular buffer integrate the bits chained solves through a roll buffer integrate, and the one continuous run does too."""
+    roll_continuous, roll_chained, _ = _continuous_and_chunked(COUPLINGS[kind], noise, carry=True, buffer="roll")
+    continuous, chained, _ = _continuous_and_chunked(COUPLINGS[kind], noise, carry=True, buffer="circular")
+    np.testing.assert_array_equal(chained, roll_chained)
+    np.testing.assert_array_equal(continuous, roll_continuous)
+
+
+@pytest.mark.parametrize("kind", ["stock", "compact"])
+def test_a_carry_into_the_prepare_time_pointer_changes_no_bit(kind):
+    """Every carry hands on the buffer a roll carry hands on, bit for bit, with the circular write pointer back at the 0 prepare() gives it: tvbo only ever carries into a prepared buffer, so unrolling it from its pointer changes nothing."""
+    *_, roll = _continuous_and_chunked(COUPLINGS[kind], True, carry=True, buffer="roll")
+    *_, circular = _continuous_and_chunked(COUPLINGS[kind], True, carry=True, buffer="circular")
+    assert len(circular) == N_CHUNKS
+    for (roll_history, roll_pointer), (history, pointer) in zip(roll, circular, strict=True):
+        assert roll_pointer is None
+        assert pointer is not None and int(pointer) == 0
+        np.testing.assert_array_equal(history, roll_history)
+
+
+@BUFFERS
+def test_chained_solves_without_the_carry_restart_every_delay_line(buffer):
+    continuous, chained, _ = _continuous_and_chunked(COUPLINGS["compact"], False, carry=False, buffer=buffer)
     np.testing.assert_allclose(chained[:CHUNK], continuous[:CHUNK], rtol=1e-11, atol=1e-13)
     assert np.max(np.abs(chained - continuous)) > 1e-4
 
 
-def test_an_unrecorded_transmitted_state_cannot_be_carried():
-    chunk_fn, state = _prepared(COUPLINGS["stock"], CHUNK, False)
+@BUFFERS
+def test_an_unrecorded_transmitted_state_cannot_be_carried(buffer):
+    chunk_fn, state = _prepared(COUPLINGS["stock"], CHUNK, False, buffer)
     result = chunk_fn(state)
-    NS["_DELAY_SOURCE_STATES"]["eib"] = ["V"]
-    try:
-        with pytest.raises(ValueError, match="cannot carry its delay history"):
-            NS["_carry_delay_history"](state, result)
-    finally:
-        NS["_DELAY_SOURCE_STATES"]["eib"] = ["S_e"]
+    NS["_DELAY_LINES"]["eib"] = (["V"], buffer)
+    with pytest.raises(ValueError, match="cannot carry its delay history"):
+        NS["_carry_delay_history"](state, result)
+
+
+def test_a_preallocated_buffer_is_refused_by_name():
+    chunk_fn, state = _prepared(COUPLINGS["stock"], CHUNK, False, "preallocated")
+    result = chunk_fn(state)
+    with pytest.raises(
+        NotImplementedError,
+        match="coupling 'eib': carrying a delay history across chained solves does not support the 'preallocated' buffer",
+    ):
+        NS["_carry_delay_history"](state, result)
 
 
 def _delayed_fic_eib_run(tmp_path, carry):
@@ -171,3 +209,28 @@ def test_carrying_the_history_changes_a_delayed_fic_eib_fit(tmp_path):
     carried = _delayed_fic_eib_run(tmp_path, carry=True)
     restarted = _delayed_fic_eib_run(tmp_path, carry=False)
     assert max(float(np.max(np.abs(a - b))) for a, b in zip(carried, restarted, strict=True)) > 1e-8
+
+
+def _build_delayed_couplings_with(monkeypatch, buffer):
+    """Make every tvboptim DelayedCoupling built from here on hold a *buffer* history, the generated module's included, and return the list each one joins once built."""
+    built, construct = [], DelayedCoupling.__init__
+
+    def init(self, *args, **kwargs):
+        construct(self, *args, **{**kwargs, "buffer_strategy": buffer})
+        built.append(self)
+
+    monkeypatch.setattr(DelayedCoupling, "__init__", init)
+    return built
+
+
+def test_a_delayed_fic_eib_fit_ends_on_the_same_bits_through_either_buffer(tmp_path, monkeypatch):
+    """The flow that carries, a delayed fic_eib fit, ends on the same bits whether its delayed coupling holds a roll or a circular history; each run's built EIBLinearCoupling reports the buffer it was given."""
+    fits = {}
+    for buffer in ("roll", "circular"):
+        with monkeypatch.context() as patch:
+            built = _build_delayed_couplings_with(patch, buffer)
+            fits[buffer] = _delayed_fic_eib_run(tmp_path, carry=True)
+        assert "EIBLinearCoupling" in {type(c).__name__ for c in built}
+        assert {c.buffer_strategy for c in built} == {buffer}
+    for a, b in zip(fits["circular"], fits["roll"], strict=True):
+        np.testing.assert_array_equal(a, b)

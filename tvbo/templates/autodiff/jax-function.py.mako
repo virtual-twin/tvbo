@@ -138,7 +138,7 @@ def ${func_name}(ts, ${signature_args}):
     apply_on_dim = str(func.apply_on_dimension) if func.apply_on_dimension else None
     has_apply_on_time = apply_on_dim in ['time', 'DimensionType.time']
     # `X` or the spec's own unsupplied argument, whichever the body actually reads.
-    inputs = time_series_inputs(['X'] + _bound_in_body, jax_code)
+    inputs = time_series_inputs(['X'] + _bound_in_body, jax_code, where=f"jax: the pipeline step {func_name!r}")
     time_code = retime(jax_code, inputs)
 %>
 def ${func_name}(ts, ${param_args}):

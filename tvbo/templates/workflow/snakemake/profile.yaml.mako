@@ -2,7 +2,7 @@
 ## Inputs (all resolved by the emitter — no lookups here):
 ##   jobs           int   max SLURM jobs queued/running at once
 ##   container      str|None  the `container:` directive, if the kit declares one
-##   container_args str   extra `apptainer exec` flags (binds), "" when none
+##   container_args str   extra `apptainer exec` flags (binds, --nv), "" when none
 ##   container_args_yaml str  container_args as a ready-quoted YAML scalar
 ##   partition      str|None  SLURM partition
 ##   account        str|None  SLURM account
@@ -18,7 +18,7 @@ software-deployment-method:
   - apptainer
 % if container_args:
 ## Pre-quoted by the emitter, since this verbatim escape hatch may itself contain a double quote that would end the scalar early.
-# extra `apptainer exec` flags (bind mounts for site filesystems)
+# extra `apptainer exec` flags (bind mounts for site filesystems, --nv for a GPU)
 apptainer-args: ${container_args_yaml}
 % endif
 % endif

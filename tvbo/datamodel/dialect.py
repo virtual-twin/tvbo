@@ -256,7 +256,9 @@ def key_members(cls_name: str, data: dict) -> dict:
 
     ``parameters: {TR: {value: 720.0}}`` means a Parameter *called* ``TR``, so writing the name a second time inside the member is the redundancy this project's records are written without; the generated models would otherwise reject the member as incomplete.
 
-    The same collection may equally be written as a LIST — of bare identifiers (``arguments: [v]``), of whole members, or of records already built — which the generated models would reject as not a mapping. Both spellings arrive as the mapping here, so a record may use either. A list whose members state no identifier is left alone: there is nothing to key it by, and that is a record to reject rather than to guess at.
+    A member written with nothing after its key (``coupling_inputs: {c_in: }``) is the member of that name with every other slot unset.
+
+    The same collection may equally be written as a LIST — of bare identifiers (``arguments: [v]``), of whole members, of one-key mappings each naming its member (``- weight: {value: 0.8}``), or of records already built — which the generated models would reject as not a mapping. Both spellings arrive as the mapping here, so a record may use either. A list whose members state no identifier is left alone: there is nothing to key it by, and that is a record to reject rather than to guess at.
 
     Members are rebuilt rather than mutated: the mapping may be a cached curated entry, shared by every object that names it.
     """
@@ -267,7 +269,11 @@ def key_members(cls_name: str, data: dict) -> dict:
         if not isinstance(members, dict):
             continue
         data[slot] = {
-            key: ({identifier: key, **member} if isinstance(member, dict) and identifier not in member else member)
+            key: (
+                {identifier: key, **(member or {})}
+                if member is None or (isinstance(member, dict) and identifier not in member)
+                else member
+            )
             for key, member in members.items()
         }
     return data
@@ -281,6 +287,8 @@ def _as_mapping(members: list, identifier: str) -> list | dict:
             keyed[member] = {identifier: member}
         elif isinstance(member, dict) and isinstance(member.get(identifier), str):
             keyed[member[identifier]] = member
+        elif isinstance(member, dict) and len(member) == 1 and isinstance(next(iter(member.values())), dict):
+            keyed.update(member)
         elif not isinstance(member, dict) and isinstance(getattr(member, identifier, None), str):
             keyed[getattr(member, identifier)] = member
         else:

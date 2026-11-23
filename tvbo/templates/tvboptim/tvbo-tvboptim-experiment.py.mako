@@ -6,6 +6,8 @@
 <%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>
 <%namespace name="lyap" file="tvbo-tvboptim-lyapunov.py.mako"/>\
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>\
+<%namespace name="delay_carry" file="tvbo-tvboptim-delay-carry.py.mako"/>\
+<%namespace name="events" file="/base/model-events.mako"/>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.classes.optimization import fitted_parameters as _fitted_parameters
@@ -24,7 +26,7 @@ from tvbo.templates.tvboptim.utils import (
     graph_selection, observation_dims, trajectory_dims, parameter_keypath,
     has_host_pipeline, pipeline_stage_is_host, data_source_arrays, selection_settings, monitor_class_name,
     analysis_settings, set_literal,
-    resolve_distribution, distribution_family, draw_expression, initial_condition_draw,
+    resolve_distribution, distribution_family, draw_expression, initial_condition_draw, initial_state_distribution,
     stochastic_moments, resolve_parameter_starts, refuse_axis_on_parameter_start, refuse_initial_value_on_parameter_start, free_parameter_ref,
     refuse_seed_outside_key_range, refuse_trial_starts_under_algorithms,
 )
@@ -83,10 +85,12 @@ has_model_output = bool(model_output_vars)
 # Each declared output resolves to its channel in the recorded ordering, so the position follows the layout rather than the kind.
 from tvbo.templates.tvboptim.utils import (
     resolve_model_output_indices, format_channel_index, get_recorded_variable_names,
-    state_only_recorded_aux, state_only_derived_var_names,
+    state_only_recorded_aux, state_only_derived_var_names, get_output_channels,
 )
 model_output_indices, model_output_names = resolve_model_output_indices(model, experiment)
 _, _, _recorded_var_names = get_recorded_variable_names(model, experiment)
+# The record=True channels a single run presents, which a sweep cell without an output returns under the same names.
+_output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 # State-only recorded derived variables to realign post-solve (single-mode only).
 _state_only_aux = state_only_recorded_aux(model, experiment) if n_modes == 1 else []
 # Bound as locals in the realign, in dependency order, so a recorded auxiliary can reach the intermediates it is built from.
@@ -129,7 +133,7 @@ external_input_keys = {str(ev.name) for ev in _active_stimulus_events(experiment
 
 # Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
 # tvboptim Python layer, not here — see resolve_coupling_input_map.
-ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict)
+ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings)
 
 # Translate function-name coupling key to ci name for tvboptim state access
 _to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
@@ -217,13 +221,16 @@ if noise_cov_fold:
 # Network metadata
 n_nodes = N_nodes = getattr(network, 'number_of_nodes', None) or getattr(network, 'number_of_regions', 1)
 _cs = getattr(network, 'conduction_speed', None)
-conduction_speed = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
+_cs_value = float(_cs.value if hasattr(_cs, 'value') else _cs) if _cs is not None else 1.0
+# The speed as the emitted code spells it: Python prints an infinite one as `inf`, a name the emitted module does not define.
+conduction_speed = 'jnp.inf' if _cs_value == float('inf') else _cs_value
 
 # `transforms:` -> JAX, applied in create_network on the RAW weights, so the kit is self-contained.
 from tvbo.templates.tvboptim.utils import weight_transform_codegen as _weight_transform_codegen
-weight_transform_jax, weight_transform_const_env, weight_transform_needs_lengths = _weight_transform_codegen(network)
+weight_transform_jax, weight_transform_const_env, weight_transform_needs_lengths, weight_transform_needs_network = _weight_transform_codegen(network)
 has_weight_transforms = bool(weight_transform_jax)
 weight_transform_distances_arg = "distances=distances, " if weight_transform_needs_lengths else ""
+weight_transform_network_arg = "transform_network=transform_network, " if weight_transform_needs_network else ""
 weight_transform_reads_run_data = bool(network.sourced_transform_arguments("weight")) if hasattr(network, "sourced_transform_arguments") else False
 
 # Simulation parameters
@@ -250,7 +257,6 @@ accelerator = str(exec_config.accelerator) if exec_config and exec_config.accele
 from tvbo.templates.tvboptim.utils import jax_platform as _jax_platform_of
 jax_platform = _jax_platform_of(accelerator)
 enable_x64 = precision == 'float64'
-random_seed = int(exec_config.random_seed) if exec_config and exec_config.random_seed else 0
 settle_seed = getattr(getattr(integration, 'noise', None), 'settle_seed', None)
 
 # experiment.observations minus the ones with their own path: `analysis` diagnostics and cross-trial `reduce: trials` reductions are not raw/network monitors.
@@ -345,9 +351,8 @@ sv_distribution_info = {}
 for sv_name, sv in model.state_variables.items():
     dist = getattr(sv, 'distribution', None)
     if dist:
-        # Fallback chain for the bounds: distribution.domain → sv.domain → [-1, 1].
         sv_distribution_info[sv_name] = {
-            **resolve_distribution(dist, random_seed, fallback_domain=getattr(sv, 'domain', None), bounds=(-1.0, 1.0)),
+            **initial_state_distribution(sv, random_seed),
             'idx': state_names.index(sv_name if n_modes == 1 else f"{sv_name}__mode0"),
         }
 
@@ -462,6 +467,17 @@ for opt in optim_list:
         optimization_stages.append(stage_info)
 refuse_initial_value_on_parameter_start(optimization_stages, parameter_start_groups, _parameter_keypath)
 
+# A fitted conduction speed can step below the build speed, so the static history buffer is sized from the slowest speed its domain allows.
+_fitted_speeds = [fp for st in optimization_stages for fp in st['free_parameters'] if _parameter_keypath(free_parameter_ref(fp)) == 'graph.speed']
+for _fp in _fitted_speeds:
+    if not (_fp.get('lower_bound') or 0) > 0:
+        raise ValueError(
+            "free parameter 'network.conduction_speed' needs a domain with a positive `lo`: the history buffer is static and holds the longest delay, "
+            "the longest tract over the slowest speed the fit can reach, and without a positive lower bound there is none to size it from."
+        )
+_speed_floor = min([_cs_value, *(_fp['lower_bound'] for _fp in _fitted_speeds)])
+fitted_max_delay_arg = f"max_delay=float(jnp.max(distances)) / {_speed_floor!r} * (1.0 + 1e-4), " if _fitted_speeds else ""
+
 # For single-stage or default case, extract settings from first stage
 optimizer_name = optimization_stages[0]['algorithm'] if optimization_stages else 'adam'
 learning_rate = optimization_stages[0]['learning_rate'] if optimization_stages else 0.01
@@ -487,6 +503,10 @@ if optim_list and optim_list[0].integration:
     opt_solver_class = _solver_class(opt_method)
     opt_dt = float(opt_integration.step_size) if opt_integration.step_size else dt
     opt_t1 = float(opt_integration.duration) if opt_integration.duration else t1_default
+
+# The model's events act after each step of every solve through ModelEventSolver in get_solver().
+from tvbo.adapters.tvboptim import model_event_resets
+model_resets = model_event_resets(model, solver_class, opt_solver_class)
 
 # Check if optimization depends on an algorithm (copy that algorithm's result state)
 # If no depends_on, optimization starts from FRESH network defaults (not algorithm results)
@@ -1032,8 +1052,6 @@ for expl in exploration_list:
             else:
                 _ga[_gpn] = float(_gpv)
         exp_info['ga'] = _ga
-        # Baked as a literal, like the refine stage's n_workers.
-        exp_info['n_workers'] = context.get('n_workers', 1)
     elif exp_info['strategy'] == 'adiabatic_scan':
         # Adiabatic bifurcation scan: one swept axis (from `space`) plus an observed-signal
         # expression and envelope settings carried on Exploration.parameters (Parameter.value
@@ -1101,6 +1119,27 @@ for expl in exploration_list:
             _b_analysis.append(_lyap_meta(_rn, f"branch exploration '{exp_info['name']}'"))
         exp_info['warmstart_analysis'] = _b_analysis
     explorations.append(exp_info)
+
+# A network built anew for each trial gives every trial of an ensemble its own weights, and its own tract lengths where they vary, which the run stacks on the host (SimulationExperiment.network_realisations).
+from tvbo.classes.network import realised_per_trial as _realised_per_trial
+trial_network = _realised_per_trial(network) and any(_x['n_trials'] > 1 for _x in explorations)
+if trial_network and use_sparse:
+    raise ValueError(
+        "network.realisation: trial runs every trial on a dense graph: each trial's weights replace the graph's on one set of edges, which a sparse graph stores once. "
+        "Drop `graph_representation: sparse`."
+    )
+for _x in explorations if trial_network else []:
+    if _x['n_trials'] > 1 and _x['algorithms']:
+        raise ValueError(
+            f"exploration {_x['name']!r} wires an algorithm into an ensemble whose network is built anew for each trial (`realisation: trial`), and the algorithm tunes each cell once on one network. "
+            "Run the ensemble without the algorithm, or build the network once per run."
+        )
+    _replaced = [ax.get('label', ax['name']) for ax in _x['axes'] if ax.get('is_network') and ax.get('graph_leaf') in ('weights', 'lengths')]
+    if _x['n_trials'] > 1 and _replaced:
+        raise ValueError(
+            f"exploration {_x['name']!r} sweeps {_replaced} on a network built anew for each trial (`realisation: trial`), whose trials each replace the weights and tract lengths with their own. "
+            "Sweep the generator's or the transform's parameters in experiments of their own, or build the network once per run."
+        )
 
 # Optimizations that depend on an Exploration front → per-seed parallel refinement.
 # Build the refine metadata (seed axes from the exploration, free-param paths from the
@@ -1244,6 +1283,9 @@ from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
 % if noise_cov:
 from tvbo.classes.correlated_noise import CorrelatedNoiseSolver, covariance_factor, fold_amplitudes
 % endif
+% if model_resets:
+from tvbo.classes.solver_wrappers import ModelEventSolver
+% endif
 % if has_noise:
 from tvboptim.experimental.network_dynamics.noise import AdditiveNoise
 % endif
@@ -1270,6 +1312,7 @@ from pymoo.core.problem import Problem as _Problem
 from pymoo.algorithms.moo.nsga2 import NSGA2 as _NSGA2
 from pymoo.optimize import minimize as _pymoo_minimize
 from pymoo.indicators.hv import HV as _HV
+from tvbo.templates.tvboptim.callbacks import device_split   # a declared width → pmap replicas on the devices present × vmap lanes
 % endif
 % if has_warmstart or from_working_point:
 # The shared warm-start primitive, also used by from_working_point to ramp to a working point.
@@ -1367,11 +1410,13 @@ def _load_param(path, key, device=True):
 
 
 % endif
-def get_solver(block_size=None):
-    """Configured solver. ``block_size`` (native solvers only) sets the nested-block-scan
-    granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable
-    in-carry instead of materializing the trajectory; ``None`` keeps the single scan."""
-    _solver_kwargs = dict(${solver_kwargs_str})
+% if model_resets:
+${events.apply_model_events(model, model_resets)}
+
+% endif
+def get_solver(block_size=None, solver_kwargs=None):
+    """Configured solver, wrapped as every solve of this experiment needs it (a declared clamp, the model's events, a noise covariance). ``block_size`` (native solvers only) sets the nested-block-scan granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable in-carry instead of materializing the trajectory; ``None`` keeps the single scan. ``solver_kwargs`` replaces the run's own integrator settings, for a sweep or analysis solve that drops the differentiation window."""
+    _solver_kwargs = dict(${solver_kwargs_str}) if solver_kwargs is None else dict(solver_kwargs)
     if block_size is not None:
         _solver_kwargs['block_size'] = block_size
     base_solver = ${solver_class}(**_solver_kwargs)
@@ -1383,6 +1428,9 @@ def get_solver(block_size=None):
     )
 % else:
     solver = base_solver
+% endif
+% if model_resets:
+    solver = ModelEventSolver(solver, _apply_model_events)
 % endif
 % if noise_cov:
     # Factorise the declared covariance (correlated_over: ${noise_cov['axis']}) once here, not per step.
@@ -1474,32 +1522,13 @@ def _apply_parameter_starts(state, seed, n_nodes, edges${', trial=None' if trial
 
 % endif
 % endif
-_DELAY_SOURCE_STATES = {}
-"""Coupling-input name -> the state variables a delayed coupling transmits, filled by create_network(); _carry_delay_history() reads it to rebuild each history buffer."""
+${delay_carry.render_delay_history_carry()}
+% if weight_transform_needs_network:
 
+_HANDED_NETWORK = "this script's weight transform reads the network; run it through `tvbo run`, which hands it the frozen network"
+"""Why the script stops without the tvbo Network its weight transform callable takes: it cannot rebuild that network itself."""
 
-def _carry_delay_history(state, result):
-    """Hand a finished solve's delay history on to the next one, so chained solves integrate one continuous run.
-
-    A prepared solve starts every delayed coupling from the history buffer in ``state.initial_state.coupling``, and returns only its trajectory. A loop that chains solves (one TR each) and carries only ``initial_state.dynamics`` would restart every delay line from that stale buffer. The buffer a continuous run would hold at this point is its old rows followed by the newly integrated rows of the transmitted states, truncated to its length, which is what this writes back (roll-ordered, oldest first). Raises when a transmitted state is not among the recorded variables, since the history cannot then be rebuilt.
-    """
-    _names = tuple(getattr(result, "variable_names", None) or ())
-    for _cn in list(state.initial_state.coupling.keys()):
-        _cs = state.initial_state.coupling[_cn]
-        if "history" not in _cs:
-            continue
-        if "write_idx" in _cs:
-            raise NotImplementedError(f"coupling {_cn!r}: carrying a delay history across chained solves supports the roll buffer only")
-        _sent = _DELAY_SOURCE_STATES.get(_cn)
-        if _sent is None or any(_v not in _names for _v in _sent):
-            raise ValueError(f"coupling {_cn!r}: cannot carry its delay history, the transmitted states {_sent} are not all recorded in {_names}")
-        if not _sent:
-            continue
-        _rows = result.data[:, jnp.asarray([_names.index(_v) for _v in _sent]), :]
-        _new = jnp.concatenate([_cs.history, _rows.astype(_cs.history.dtype)], axis=0)[-_cs.history.shape[0]:]
-        state = eqx.tree_at(lambda _s: _s.initial_state.coupling[_cn].history, state, _new)
-    return state
-
+% endif
 
 def create_network(
     weights: jnp.ndarray,
@@ -1508,6 +1537,9 @@ def create_network(
     % endif
     % if use_delay_graph and not use_length_graph:
     delays: jnp.ndarray = None,
+    % endif
+    % if weight_transform_needs_network:
+    transform_network: Any = None,
     % endif
     region_labels: list = None,
     dynamics_params: dict = None,
@@ -1526,6 +1558,10 @@ def create_network(
     if distances is None:
         # Zero-filling here would silently normalise by the wrong denominator.
         raise ValueError("a declared weight transform reads the tract lengths L; pass distances= to create_network")
+% endif
+% if weight_transform_needs_network:
+    if transform_network is None:
+        raise ValueError(f"{_HANDED_NETWORK}, or pass the tvbo Network as create_network(transform_network=...)")
 % endif
 % for _line in weight_transform_const_env:
     ${_line}
@@ -1630,7 +1666,7 @@ def create_network(
 <%  c_class_name = func_name.replace(' ', '').replace('-', '') %>\
     coupling_dict['${ci_name}'] = ${c_class_name}(**dict(_${func_name}_params))
     % endfor
-    _DELAY_SOURCE_STATES.update({_k: list(getattr(_c, "SOURCE_STATE_NAMES", None) or _c.INCOMING_STATE_NAMES) for _k, _c in coupling_dict.items() if isinstance(_c, DelayedCoupling)})
+    _DELAY_LINES.update({_k: (list(getattr(_c, "SOURCE_STATE_NAMES", None) or _c.INCOMING_STATE_NAMES), _c.buffer_strategy) for _k, _c in coupling_dict.items() if isinstance(_c, DelayedCoupling)})
 
     % if has_noise:
     % if noise_targets:
@@ -1679,7 +1715,7 @@ def _sample_initial_conditions(state, key=None):
     ic = ic.at[${_sv_info['idx']}].set(${initial_condition_draw(_sv_info, '_k%d' % _si, '(n_nodes,)')})
 % endfor
     state.initial_state.dynamics = ic
-    return state
+    return _refill_history(state)
 % endif
 
 % if network_observation_names:
@@ -1804,11 +1840,10 @@ _bind_data_sources()
 _STATE_INDEX = {${', '.join("'%s': %d" % (n, i) for i, n in enumerate(state_names))}}
 
 def _set_rows(state, name_to_vals):
-    """Set per-node values of named state variables in initial_state.dynamics
-    ([n_states, n_nodes]), placing each by its canonical row index _STATE_INDEX[name]."""
+    """Set per-node values of named state variables in initial_state.dynamics ([n_states, n_nodes]), placing each by its canonical row index _STATE_INDEX[name], and refill the delay lines from the result."""
     for _name, _vals in name_to_vals.items():
         state.initial_state.dynamics = state.initial_state.dynamics.at[_STATE_INDEX[_name]].set(jnp.asarray(_vals))
-    return state
+    return _refill_history(state)
 
 # Per-node initial state declared via node ``state:`` YAML entries, keyed by name.
 % if node_state_overrides:
@@ -1864,6 +1899,46 @@ def _network_datum(name):
             f"resolves it and passes it as run_experiment(network_data={{{name!r}: array}})."
         )
     return jnp.asarray(_NETWORK_DATA[name])
+% endif
+% if trial_network:
+
+
+# Each trial's realisation of the network, stacked on a leading trial axis by the run (SimulationExperiment.network_realisations); injected by the caller, never inlined.
+_NETWORK_REALISATIONS = None
+_TRIAL_LEAVES = ${('weights', 'lengths') if use_length_graph else ('weights',)}
+"""The graph leaves a trial's realisation replaces: the weights, and the tract lengths on a graph that derives its delays from them."""
+
+
+def _trial_network_lanes(n_trials, exploration):
+    """The realisations of the network for trials ``0 .. n_trials - 1``, as handed to run_experiment(network_realisations=...), keyed by the graph leaf each replaces; tract lengths the realisations share with the run's network are not handed over."""
+    if _NETWORK_REALISATIONS is None or len(_NETWORK_REALISATIONS["weights"]) < n_trials:
+        raise ValueError(
+            f"{exploration}: the network is built anew for each of its {n_trials} trials, which Experiment.run builds on the host and passes as "
+            "run_experiment(network_realisations={'weights': (n_trials, n, n), 'lengths': (n_trials, n, n) or None})."
+        )
+    return {_leaf: jnp.asarray(_NETWORK_REALISATIONS[_leaf][:n_trials]) for _leaf in _TRIAL_LEAVES if _NETWORK_REALISATIONS.get(_leaf) is not None}
+
+
+def _union_graph(graph, lanes):
+    """*graph* rebuilt to carry every realisation in *lanes*: weights nonzero on every edge any realisation has, so a coupling compacted on them keeps each trial's edges${', and tract lengths at their longest over the realisations, so the static history buffer holds the longest delay any trial asks for' if use_length_graph else ''}. Each trial writes its own leaves over these (`_on_trial_network`)."""
+    weights = jnp.any(lanes["weights"] != 0, axis=0).astype(lanes["weights"].dtype)
+% if use_length_graph:
+    lengths = jnp.max(lanes["lengths"], axis=0) if "lengths" in lanes else graph.lengths
+    # Elementwise then max, as DenseLengthGraph measures it, with the headroom every rebuild here takes.
+    _max_delay_bound = float(jnp.max(lengths / ${conduction_speed})) * (1.0 + 1e-4) if ${conduction_speed} > 0 else 0.0
+    return DenseLengthGraph(weights, lengths, speed=${conduction_speed}, region_labels=graph.region_labels, max_delay_bound=_max_delay_bound)
+% elif use_delay_graph:
+    return DenseDelayGraph(weights, graph.delays, region_labels=graph.region_labels)
+% else:
+    return DenseGraph(weights, region_labels=graph.region_labels)
+% endif
+
+
+def _on_trial_network(state, trial):
+    """Write the graph leaves of the network as realised for *trial* onto *state*, from the stacks its exploration keeps in the state's dynamics as ``_network_<leaf>``."""
+    for _leaf in _TRIAL_LEAVES:
+        if f"_network_{_leaf}" in state.dynamics:
+            setattr(state.graph, _leaf, state.dynamics[f"_network_{_leaf}"][trial])
 % endif
 <%
     _seed_coupling_home = coupling_param_keys(all_couplings, _to_ci_key)
@@ -1984,23 +2059,28 @@ def _run_compiled(fn, state):
     return jax.jit(fn)(state)
 
 
-def _history_window(sol, network, dt):
+def _history_window(sol, network, dt, opening=None):
     """The tail of a settle long enough to serve every delay, which is all ``update_history`` reads.
 
-    Delay lookups reach back at most ``network.max_delay`` and the initial condition is the last
-    slot, so a long settle need not be handed over whole. Keeping its tail bounds the stored
-    history at the delay horizon instead of the settle length — a 300 s settle at dt=1 would
-    otherwise park the entire trajectory in the network for the rest of the run.
+    Delay lookups reach back at most ``network.max_delay`` and the initial condition is the last slot, so a long settle need not be handed over whole. Keeping its tail bounds the stored history at the delay horizon instead of the settle length — a 300 s settle at dt=1 would otherwise park the entire trajectory in the network for the rest of the run.
+
+    A solve records the state after each of its steps, never the *opening* it integrated from, and tvboptim pads a stored history that covers less than the longest delay with its first sample (``extract_history_window``). Given the *opening*, a settle handed over whole leads with it, one step before its first recorded sample, so a settle no longer than the longest delay pads the delay lines with the state it started from, as ``_own_settle``'s carry and TVB do; the delay lines of a longer settle never reach back to it, so they read the same rows as without it.
     """
     if sol is None:
         return None
     _md = float(getattr(network, 'max_delay', 0.0) or 0.0)
     _n = (-int(-_md // dt) + 2) if _md > 0 else 2
-    if sol.ys.shape[0] <= _n:
+    if sol.ys.shape[0] > _n:
+        _ts, _ys = sol.ts[-_n:], sol.ys[-_n:]
+    elif opening is None:
         return sol
+    else:
+        _cols = jnp.asarray([sol.variable_names.index(_v) for _v in network.dynamics.STATE_NAMES])
+        _ts = jnp.concatenate([sol.ts[:1] - dt, sol.ts])
+        _ys = jnp.concatenate([sol.ys[:1].at[0, _cols].set(jnp.asarray(opening).astype(sol.ys.dtype)), sol.ys])
     return NativeSolution(
-        ts=sol.ts[-_n:],
-        ys=sol.ys[-_n:],
+        ts=_ts,
+        ys=_ys,
         dt=getattr(sol, 'dt', None),
         variable_names=getattr(sol, 'variable_names', None),
     )
@@ -2063,6 +2143,7 @@ def run_simulation(
             statistics={'_endpoint': (lambda _a: _a[-1])},
         )
         _st.initial_state.dynamics = jnp.asarray(_wp_scan.stats['_endpoint'])[-1]
+        _st = _refill_history(_st)
     % endif
         return _apply_seed_params(_apply_seed_dynamics(_st))
 
@@ -2083,7 +2164,7 @@ def run_simulation(
         % endif
         result_transient = _run_compiled(_tr_model_fn, _tr_state)
         # Kept whole even when `run_main` is False: the delay horizon is trimmed here, the kernel support by each monitor's own `carry_warmup`, and neither substitutes for the other.
-        network.update_history(_history_window(result_transient, network, dt))
+        network.update_history(_history_window(result_transient, network, dt, opening=_tr_state.initial_state.dynamics))
         _settled = True
     % endif
 
@@ -2158,9 +2239,7 @@ def run_simulation(
         state=state,
         result=result,
         result_transient=result_transient,
-% if has_transient and (has_explorations or has_algorithms):
-        opening=(_tr_state if _settled else state).initial_state.dynamics,   # the declared initial condition, before any settle
-% endif
+        opening=${'(_tr_state if _settled else state)' if has_transient else 'state'}.initial_state.dynamics,   # the state the run opens on, before any settle
         observations=observations,
 % if _base_stream:
         stream_fn=_stream_fn,   # re-fold a caller's own state without materialising
@@ -2391,6 +2470,7 @@ def _own_settle(network, base):
         _tr = s.copy()
         _tr._internal = _cold._internal
         _tr.initial_state = Bunch(dynamics=s.initial_state.dynamics, coupling=_cold.initial_state.coupling, external=_cold.initial_state.external)
+        _tr = _refill_history(_tr)
 % if has_noise and settle_seed is not None:
         _tr.noise.key = jax.random.key(jnp.asarray(${int(settle_seed)}, dtype=jnp.uint32))   # the declared `Noise.settle_seed`, as in the base run
 % endif
@@ -2423,11 +2503,15 @@ def _settled_fold(network, own, names, block_size, progress=False):
     """The streamed observations *names* of a run that settles under its own values, in that order: folded in-carry over the measured window that follows the settle *own* gives its state, so the run holds no trajectory.
 
     The fold is prepared per call, because a kernel's ring opens on the settle of the run it measures. *block_size* is a multiple of every reducer's period, so each sampling boundary falls on a block boundary.
+
+    It is prepared on the network before any settle, built once here outside the trace. The run's delay lines are the ones its own settle wrote, which its state carries, so a history the network holds would be read only to be discarded, and tvboptim reads a stored history through Python branches on its time stamps, which raise inside a traced call, where those time stamps are tracers.
     """
+    _unsettled = _rebuilt_on(network, network.graph, history=None)
+
     def _run(s):
         s, _settle = own(s)
         _fold_fn, _ = prepare(
-            network, get_solver(block_size=block_size), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
+            _unsettled, get_solver(block_size=block_size), t0=${scan_t0}, t1=${t1_default}, dt=${dt},
             reduce=_stream_reduction(names, ${dt}, settle=_settle_rows(_settle), progress=progress),
         )
         return _fold_fn(s)
@@ -2730,7 +2814,7 @@ def compute_analysis_observations(state, network, settle=None):
             }
             break
 %>
-${render_analysis_observations(analysis_observations_dict, coupling_keys, solver_class, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint, external_keys=external_input_keys)}
+${render_analysis_observations(analysis_observations_dict, coupling_keys, t1_default, dt, solver_kwargs_str, model=model, time_si_factor=time_si_factor, events=(dict(experiment.events) if experiment.events else {}), op_constraint=_op_constraint, external_keys=external_input_keys)}
     return obs
 % endif
 
@@ -2995,6 +3079,8 @@ def run_optimization(
     )
     # Every path returns a Bunch, so both must be unpacked at packaging time rather than passed as a raw array.
     returns_bunch = bundles_observations or bool(expl.get('record'))
+    # With no observable, output or observation a cell returns the channels a single run presents, so the grid names them as that run does.
+    returns_trajectory = obs_type != 'function_call' and not obs_name and not returns_bunch and not has_model_output
     # When every recorded observable is a dynamics observer they fold into the integrator carry, dropping peak memory from O(batch·n_time·n_node) to O(batch·block·n_node); an element-slot axis, injected noise or a wired algorithm forces the post-scan path.
     _rec_stream = [r for r in expl['record'] if r not in analysis_observation_names]
     _all_recorded_streaming = bool(_rec_stream) and all(
@@ -3021,6 +3107,8 @@ def run_optimization(
     _speed_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'speed']
     _length_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'lengths']
     _delay_axes = [ax for ax in expl['axes'] if ax.get('is_network') and ax.get('graph_leaf') == 'delays']
+    # Every trial of the ensemble integrates its own realisation of the network.
+    _trial_cell_network = trial_network and expl.get('n_trials', 1) > 1
 
     def _swept_bound(axes, base):
         """Largest value a per-edge leaf reaches over the sweep, as the emitted expression.
@@ -3072,6 +3160,13 @@ def ${expl['name']}(state, model_fn, settle=None${', opening=None' if has_transi
     _axisvals_${_lax['name']} = jnp.asarray(${_lax['builder_expr']})
 % endif
 % endfor
+% if _trial_cell_network:
+    if _network is None:
+        raise ValueError("${expl['name']}: every trial integrates its own realisation of the network, which takes the network to rebuild (run_experiment passes network=...)")
+    # Prepared once, outside jit, on the union of the trials' realisations; each trial then writes its own leaves over it.
+    _lanes = _trial_network_lanes(${expl['n_trials']}, '${expl['name']}')
+    _network = _rebuilt_on(_network, _union_graph(_network.graph, _lanes))
+% endif
 % if _speed_axes or _length_axes:
     if _network is not None and hasattr(_network.graph, 'lengths'):
         # Rebuilt once outside jit/vmap so the buffer covers the longest delay any cell can reach - the longest swept tract over the slowest swept speed; the axes then sweep the live `speed` / `lengths` leaves, which prepare() no longer re-reads.
@@ -3133,13 +3228,18 @@ def ${expl['name']}(state, model_fn, settle=None${', opening=None' if has_transi
 % if has_transient:
         _own = lambda s: (s, settle)   # a passed-in model carries no network to settle again, so its cells keep the base run's
 % endif
+% if _trial_cell_network:
+    # The stacks ride in the state, like the other per-cell slots, where each trial indexes its own.
+    for _leaf, _lane in _lanes.items():
+        _expl_state.dynamics[f'_network_{_leaf}'] = _lane
+% endif
 
 % if expl['strategy'] == 'nsga2':
 ${search.nsga2_body(expl)}\
 % elif expl.get('branch_seed'):
-${sweep.branch_analysis_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
+${sweep.branch_analysis_body(expl, dt, warmstart_solver_kwargs)}\
 % elif expl['sweep_seeding'] == 'from_previous':
-${sweep.warmstart_sweep_body(expl, solver_class, dt, warmstart_solver_kwargs)}\
+${sweep.warmstart_sweep_body(expl, dt, warmstart_solver_kwargs)}\
 % else:
 % if has_axes:
     grid_state = copy.deepcopy(_expl_state)
@@ -3409,11 +3509,15 @@ ${folded_cells(_base_stream_names, _base_bs)}
         result, _ = _expl_cell(s)
         return result.data[:, ${model_output_channel_index}, ...]
 % else:
-    # No observable specified, no model output, no observations — return full simulation data
+    # No observable, model output or observation: the cell returns the record=True channels a single run presents, a list index keeping the variable dim.
     @jax.jit
     def observable_fn(s):
         result, _ = _expl_cell(s)
+% if _record_subset:
+        return result.data[:, ${_output_idx}]
+% else:
         return result.data
+% endif
 % endif
 % elif is_derived_obs:
     # ${obs_name} is a derived observation - use compute_all_observations
@@ -3484,7 +3588,7 @@ ${folded_cells(_base_stream_names, _base_bs)}
         % for ax in ic_axes:
         s.initial_state.dynamics = s.initial_state.dynamics.at[${ax['ic_row']}].set(s.dynamics._ic_${ax['name']})
         % endfor
-        return _ic_base_fn(s)
+        return _ic_base_fn(_refill_history(s))
 % endif
 
 <%
@@ -3492,8 +3596,8 @@ ${folded_cells(_base_stream_names, _base_bs)}
     _trial_cell_starts = trial_parameter_starts and expl.get('n_trials', 1) > 1
     if _trial_cell_starts and expl['algorithms']:
         refuse_trial_starts_under_algorithms(expl['name'], parameter_start_groups)
-    _trial_index = ['_ti'] if _trial_cell_starts else []
-    _trial_indices = ['jnp.arange(_n_trials)'] if _trial_cell_starts else []
+    _trial_index = ['_ti'] if _trial_cell_starts or _trial_cell_network else []
+    _trial_indices = ['jnp.arange(_n_trials)'] if _trial_cell_starts or _trial_cell_network else []
     # Each trial draws its starts under its cell's seed: the swept one on a seed axis, else the run's.
     _trial_starts = f"_apply_parameter_starts(s, {'s.dynamics._noise_seed' if any(ax.get('is_seed') for ax in expl['axes']) else '_run_seed'}, _start_n, _start_edges, trial=_ti)"
 %>\
@@ -3549,6 +3653,9 @@ ${folded_cells(_base_stream_names, _base_bs)}
     % if _trial_cell_starts:
             ${_trial_starts}
     % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
+    % endif
     % for _sp_name in _sp_names:
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
     % endfor
@@ -3561,6 +3668,9 @@ ${folded_cells(_base_stream_names, _base_bs)}
         def _run_trial(${', '.join(_trial_index + [f'_tn_{sp}' for sp in _sp_names])}):
     % if _trial_cell_starts:
             ${_trial_starts}
+    % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
     % endif
     % for _sp_name in _sp_names:
             s.dynamics._stoch_${_sp_name} = _tn_${_sp_name}
@@ -3603,8 +3713,11 @@ ${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
     % if _trial_cell_starts:
             ${_trial_starts}
     % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
+    % endif
             s.initial_state.dynamics = ic
-            return _base_ic_observable(s)
+            return _base_ic_observable(_refill_history(s))
         _trial_outs = [_run_trial(${', '.join(_trial_index + ['_trial_ics[_ti]'])}) for _ti in range(_n_trials)]
         trial_results = jax.tree.map(lambda *_xs: jnp.stack([jnp.asarray(_x) for _x in _xs]), *_trial_outs)
 % else:
@@ -3614,8 +3727,11 @@ ${map_trials(_pmode_s, _pbatch_s, _trial_noises)}\
     % if _trial_cell_starts:
             ${_trial_starts}
     % endif
+    % if _trial_cell_network:
+            _on_trial_network(s, _ti)
+    % endif
             s.initial_state.dynamics = ic
-            return _base_ic_observable(s)
+            return _base_ic_observable(_refill_history(s))
 ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
 % endif
     % if expl.get('average') == 'trials':
@@ -3635,7 +3751,7 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
             f"as a trial-only exploration (n_trials over solver noise) instead."
         )
 %>\
-% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events or _trial_cell_starts):
+% if expl.get('n_trials', 1) > 1 and not stochastic_param_info and not sv_distribution_info and (has_noise or subset_mask_events or trial_bank_events or _trial_cell_starts or _trial_cell_network):
     # ${expl['n_trials']} trials differing through live state leaves, run host-side because a per-trial observable may end in numpy, each solve still jitted.
     _n_trials = ${expl['n_trials']}
 
@@ -3654,6 +3770,9 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
             % endfor
             % if _trial_cell_starts:
             ${_trial_starts}
+            % endif
+            % if _trial_cell_network:
+            _on_trial_network(s, _ti)
             % endif
             return _base_trial_observable(s)
         # Runs OUTSIDE jit, so it writes the caller's live state: restore the leaves or the next cell's ensemble folds on top of trial n-1's key.
@@ -3712,6 +3831,7 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
                 if not _k.startswith('_'):
                     _ts.coupling[_cn][_k] = _ps.coupling[_cn][_k]
         _ts.initial_state.dynamics = _ps.initial_state.dynamics
+        _ts = _refill_history(_ts)
         # A swept stimulus parameter lives on the external inputs, so it is carried too; without it the tuning would run against the default drive.
         for _en in (list(_ps.external.keys()) if getattr(_ps, 'external', None) is not None else []):
             if getattr(_ts, 'external', None) is not None and _en in _ts.external:
@@ -3987,7 +4107,7 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
         dt=${dt},
         # A swept cell integrates the measured window alone, so these results are the analogue of `.data`, not `.full`, opening at t=0 like every other measured window.
         transient_time=0.0,
-        output_names=${model_output_names if has_model_output and not obs_name else []},
+        output_names=${model_output_names if has_model_output and not obs_name else _output_names if returns_trajectory else []},
         observations=_observations_xr,
 % if expl.get('n_trials', 1) > 1:
         n_trials=${expl['n_trials']},
@@ -4037,15 +4157,24 @@ def run_experiment(
     global _NETWORK_DATA
     _NETWORK_DATA = kwargs.pop("network_data", None)
 % endif
+% if trial_network:
+    global _NETWORK_REALISATIONS
+    _NETWORK_REALISATIONS = kwargs.pop("network_realisations", None)
+% endif
+% if weight_transform_needs_network:
+    # The tvbo Network a weight transform callable takes as `network`, the object the runtime hands it; injected by the caller, never rebuilt here.
+    transform_network = kwargs.pop("transform_network", None)
+% endif
     _SEED_DYNAMICS = seed_dynamics
     _BRANCH_SEED = branch_seed
     _SEED_PARAMS = seed_params
 
 % if use_sparse:
-    # A BCOO is the graph's own form; only a dense or scipy input is converted.
+    # A BCOO is the graph's own form; a dense array is converted, and SparseGraph keeps its nonzero entries.
     weights = weights if isinstance(weights, BCOO) else jnp.array(weights)
 % else:
-    weights = jnp.array(weights)
+    # This graph is dense, so a BCOO or scipy matrix is densified: the run path hands a BCOO for a sparse store when the network's delays vanish once bound, after this script was rendered with them.
+    weights = jnp.array(weights.todense() if hasattr(weights, "todense") else weights)
 % endif
     # ``quiet=True`` silences this call whatever the configured level; otherwise the tvbo logger level decides.
     _quiet = kwargs.pop("quiet", False)
@@ -4065,16 +4194,16 @@ def run_experiment(
 
     % if use_length_graph:
     # tract lengths → DenseLengthGraph derives delays = lengths / conduction_speed.
-    network = create_network(weights, distances=distances, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, distances=distances, ${weight_transform_network_arg}${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % elif use_delay_graph:
     # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
     if delays is None:
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
-    network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
-    network = create_network(weights, ${weight_transform_distances_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
+    network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % endif
 
     # Whether the base forward-sim is materialised at all. Algorithm/optimization/exploration modes run their own simulations, so the base trajectory is prepared but never integrated.
@@ -4200,15 +4329,9 @@ def run_experiment(
 % endif
 
 <%
-    # Result labels + record=True output channels are resolved in Python (the
-    # tvboptim utils layer), not here — the template only emits from clean context.
-    # The solver records ALL states (VARIABLES_OF_INTEREST); the user-facing result
-    # presents only sv.record=True states (+ recorded aux), matching the tvb backend.
-    # The full trajectory is kept intact above for observations and the warmup; the
-    # record filter is applied as a channel slice on the presented result only.
-    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn, get_output_channels
+    # The solver records every state and the presented result keeps the record=True channels resolved at the top (`_output_idx`), matching the tvb backend; the full trajectory above stays intact for observations and the warmup.
+    from tvbo.templates.tvboptim.utils import get_recorded_variable_names as _grvn
     _, _requested_aux, result_var_names = _grvn(model, experiment)
-    _output_idx, _output_names, _record_subset = get_output_channels(model, experiment)
 %>
     % if _record_subset:
     # sv.record filters the presented channels; the scan's full channel set is kept intact above for observations. Rebuild the NativeSolution on the record=True channels (preserving its time axis), or slice a raw array.
@@ -4390,9 +4513,8 @@ def run_experiment(
                 algo_model_fn, algo_state = prepare(network, get_solver(), t1=${float(algo_sim_period)}, dt=${dt})
 
 % if _pp_names and has_transient:
-                # The evaluation is the experiment at the tuned values: it opens at the declared initial condition and runs the declared settle under them, and the fold is prepared per call because a kernel's ring opens on that settle.
+                # The evaluation runs the declared settle under the tuned values, and the fold is prepared per call because a kernel's ring opens on that settle.
                 _, post_state = prepare(network, get_solver(block_size=${_pp_bs}), t0=${scan_t0}, t1=${t1_default}, dt=${dt})
-                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
                 # A single long fold outside any vmap, so progress streams live from inside the scan.
                 post_model_fn = _settled_fold(network, _own_settle(network, result_transient), ${repr(_pp_names)}, ${_pp_bs}, progress=True)
 % elif _pp_names:
@@ -4407,11 +4529,13 @@ def run_experiment(
                 # (needed for full-length BOLD simulation for FC computation)
                 post_model_fn, post_state = prepare(network, get_solver(block_size=${solver_block}), t0=${scan_t0}, t1=${t1_default}, dt=${dt})
 % if has_transient:
-                # The evaluation is the experiment at the tuned values: it opens at the declared initial condition and runs the declared settle under them before its measured window.
-                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
+                # The evaluation runs the declared settle under the tuned values before its measured window.
                 post_model_fn = _settled_first(_own_settle(network, result_transient), post_model_fn)
 % endif
 % endif
+                # The evaluation is the experiment at the tuned values, so it opens at the experiment's own opening with its delay lines filled from it; a declared settle then refills them itself.
+                post_state.initial_state.dynamics = jnp.asarray(sim_result.opening)
+                post_state = _refill_history(post_state)
 
                 # Determine source state: depends_on result or initial_state
 % if has_deps:
@@ -4824,11 +4948,11 @@ def run_experiment(
 % else:
             # No depends_on: start from FRESH network (not modified by algorithms)
             % if use_length_graph:
-            opt_network = create_network(weights, distances=distances, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, distances=distances, ${weight_transform_network_arg}${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % elif use_delay_graph:
-            opt_network = create_network(weights, ${weight_transform_distances_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % else:
-            opt_network = create_network(weights, ${weight_transform_distances_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
+            opt_network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${getattr(network, 'noise_sigma', 0.01) or 0.01})
             % endif
             # This network is fresh, so it settles its own: `run_simulation` runs the settle, warm-starts through `update_history` and hands back the measured-window model, without materialising a base trajectory nobody reads.
             _opt_sim = run_simulation(opt_network, t1=${opt_t1}, dt=${opt_dt}, t_transient=${transient_time}, run_main=False, random_seed=kwargs.get('random_seed'))
@@ -5062,6 +5186,9 @@ observational_measures = list(network.observational_measures) if network.observa
 %>
 
 if __name__ == "__main__":
+% if weight_transform_needs_network:
+    raise SystemExit(_HANDED_NETWORK)
+% endif
     import pickle
     from pathlib import Path
     from tvbo.data.types import ExperimentResult

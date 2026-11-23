@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+<%namespace name="events" file="/base/model-events.mako"/>\
 <%
 import numpy as np
 import networkx as nx
@@ -64,6 +65,9 @@ def _clamp_enforced(sv):
 boundaries = [(sv.domain.lo, sv.domain.hi) for sv in model.state_variables.values() if _clamp_enforced(sv)]
 get_lower_bound = lambda sv: float(sv.domain.lo) if _clamp_enforced(sv) and sv.domain.lo is not None else float('-inf')
 get_upper_bound = lambda sv: float(sv.domain.hi) if _clamp_enforced(sv) and sv.domain.hi is not None else float('inf')
+# The model's events act on the stepped state, after the clip, through _apply_model_events.
+from tvbo.adapters.base import post_step_resets
+model_resets = post_step_resets(model, "jax")
 %>
 
 ## Helper that converts a array into a string that can be read as array again
@@ -77,6 +81,10 @@ get_upper_bound = lambda sv: float(sv.domain.hi) if _clamp_enforced(sv) and sv.d
 
 ## TODO: Implement Stimulus
 
+% if model_resets:
+${events.apply_model_events(model, model_resets)}
+
+% endif
 def integrate(state, weights, dt, params_integrate, delay_indices, external_input):
     """
     ${integration.method} Integration
@@ -160,6 +168,9 @@ def integrate(state, weights, dt, params_integrate, delay_indices, external_inpu
     next_state = current_state + (dX)${" + dt * stimulus" if has_stimulus else ''}${' + noise' if stochastic else ''}
     % if boundaries:
     next_state = jnp.clip(next_state, min_bounds, max_bounds)
+    % endif
+    % if model_resets:
+    next_state = _apply_model_events(next_state, params_dfun)
     % endif
 
 % if output_derived_in_integrate:

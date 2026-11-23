@@ -18,7 +18,14 @@ Anything outside this set (non-Poisson spike sources, constant-current inputs, a
 
 from __future__ import annotations
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import (
+    BaseAdapter,
+    affect_assignments,
+    dynamics_library,
+    pure_resets,
+    refuse_state_distribution,
+    unapplied_event_reason,
+)
 from tvbo.adapters.smallscale.lowering import (
     EVENT_SOURCE_TYPES,
     POISSON_INPUT_TYPES,
@@ -29,7 +36,7 @@ from tvbo.adapters.smallscale.lowering import (
     shift_onset,
 )
 from tvbo.codegen.code import render_expression
-from tvbo.utils import edge_param, noise_sigma, normalize_params
+from tvbo.utils import edge_param, initial_value, keyed_items, noise_sigma, normalize_params
 from tvbo.utils.units import time_unit_factor
 
 # ── Brian2 role vocabulary ────────────────────────────────────────────
@@ -40,7 +47,7 @@ _BRIAN2_ROLE_VOCAB = {
     "current_input": _PULSE_TYPES | {"sineGenerator", "rampGenerator"},
     "event_source": POISSON_INPUT_TYPES | EVENT_SOURCE_TYPES,
 }
-"""The inputs Brian2 tells apart from cell populations. Poisson inputs lower to a `PoissonInput` and pulses to a current window; sine and ramp generators and the other spike sources are recognised so that they raise, rather than being mistaken for a cell population with no membrane `v`."""
+"""The inputs Brian2 tells apart from cell populations. Poisson inputs lower to a `PoissonInput` and pulses to a current window; sine and ramp generators and the other spike sources are recognised so that they raise, rather than being mistaken for a cell population with no spike event."""
 _EXP_ONE_TYPES = frozenset({"expOneSynapse"})
 
 # Unit strings that denote a dimensionless (unitless) parameter.
@@ -99,6 +106,17 @@ _UNIT_TO_BRIAN2 = {
     "": "",
 }
 
+# Brian2 unit name -> the base unit that annotates an equation in it (an `Equations` line takes base units only).
+_BASE_UNIT = {
+    **dict.fromkeys(("nS", "psiemens", "usiemens", "siemens"), "siemens"),
+    **dict.fromkeys(("mV", "volt"), "volt"),
+    **dict.fromkeys(("ms", "second", "usecond"), "second"),
+    **dict.fromkeys(("nF", "pfarad", "ufarad", "farad"), "farad"),
+    **dict.fromkeys(("nA", "pamp", "amp"), "amp"),
+    **dict.fromkeys(("Hz", "kHz", "1/ms", "1/second"), "Hz"),
+    "": "1",
+}
+
 
 def _params(dyn):
     """``{name: (value, unit)}`` for a Dynamics/edge's parameters."""
@@ -110,13 +128,13 @@ def _params(dyn):
     return out
 
 
-def _membrane_noise_sigma(v_sv):
-    """The Gaussian white-noise amplitude on a membrane variable, as ``(value, unit)``.
+def _membrane_noise_sigma(sv):
+    """The Gaussian white-noise amplitude on a cell's state variable, as ``(value, unit)``.
 
     The standard-deviation scale σ of an additive Gaussian white-noise current (the Mongillo ``σ_ext·η(t)`` external drive), with the unit its declaration carries.
     Returns None when the variable declares no noise.
     """
-    nz = getattr(v_sv, "noise", None)
+    nz = getattr(sv, "noise", None)
     sigma = noise_sigma(nz)
     if not sigma:
         return None
@@ -141,6 +159,11 @@ def _brian2_unit(unit):
     if unit not in _UNIT_TO_BRIAN2:
         raise ValueError(f"Brian2 backend has no unit mapping for {unit!r}; add it to _UNIT_TO_BRIAN2.")
     return _UNIT_TO_BRIAN2[unit]
+
+
+def _base_unit(unit):
+    """The Brian2 unit that annotates the equation of a variable declared in *unit*: ``mV`` gives ``volt``, a dimensionless one ``1``."""
+    return _BASE_UNIT[_brian2_unit(unit)]
 
 
 def _brian2_const(value, unit):
@@ -172,17 +195,41 @@ def _monitor_literal(populations):
 
 
 def _symbols(names):
-    """``{name: Symbol}`` for a synapse's declared names and the membrane ``v``: the locals its expressions parse against."""
+    """``{name: Symbol}`` for a dynamics' declared *names*: the locals its expressions parse against."""
     import sympy as sp
 
-    return {n: sp.Symbol(n) for n in [*names, "v"]}
+    return {n: sp.Symbol(n) for n in names}
+
+
+def _membrane(syn):
+    """The post-synaptic state variable *syn* reads and delivers to: its one declared coupling input, else the NeuroML ``v`` an expOneSynapse reads."""
+    inputs = [str(name) for name in getattr(syn, "coupling_inputs", None) or {}]
+    if len(inputs) == 1:
+        return inputs[0]
+    if not inputs and nml_type(syn, "") in _EXP_ONE_TYPES:
+        return "v"
+    raise NotImplementedError(
+        f"Synapse {getattr(syn, 'name', syn)!r} declares the coupling inputs {inputs}; the brian2 backend reads the post-synaptic state variable a synapse delivers to from exactly one."
+    )
+
+
+def _delivered_membrane(syn, pop):
+    """The state variable of the cell population *pop* that *syn* delivers to, or raise naming the synapse, the cell and the variable the cell does not declare."""
+    membrane = _membrane(syn)
+    if membrane not in (pop["dyn"].state_variables or {}):
+        raise NotImplementedError(
+            f"Synapse {getattr(syn, 'name', syn)!r} delivers to the state variable {membrane!r}, which the cell {pop['dyn_name']!r} does not declare."
+        )
+    return membrane
 
 
 def _parse(rhs, syms):
     """A declared right-hand side as a SymPy expression, its names bound to *syms* rather than to SymPy built-ins."""
     import sympy as sp
 
-    return sp.sympify(str(rhs), locals=syms)
+    from tvbo.parse.expression import array_syntax
+
+    return sp.sympify(array_syntax(str(rhs)), locals=syms)
 
 
 def _inline_derived(dvs, syms):
@@ -213,16 +260,7 @@ def _linear_gate(i_expr, svs, syms):
 
 def _affect_assignments(events, syms):
     """Every ``lhs = rhs`` the synapse's events assign, in declared order, as ``(lhs, parsed rhs)``."""
-    assignments = []
-    for ev in events.values():
-        affect = getattr(getattr(ev, "affect", None), "rhs", None)
-        if not affect:
-            continue
-        for piece in str(affect).split(";"):
-            if "=" in piece:
-                lhs, rhs = (part.strip() for part in piece.split("=", 1))
-                assignments.append((lhs, _parse(rhs, syms)))
-    return assignments
+    return [(lhs, _parse(rhs, syms)) for ev in events.values() for lhs, rhs in affect_assignments(ev)]
 
 
 def _event_driven_lines(names, svs, syms):
@@ -253,7 +291,8 @@ def _summed_form(syn, sparams):
         raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no state variables to render.")
     if "i" not in dvs:
         raise NotImplementedError(f"Synapse {getattr(syn, 'name', syn)!r}: no current derived variable 'i'.")
-    syms = _symbols([*svs, *dvs, *sparams])
+    membrane = _membrane(syn)
+    syms = _symbols([*svs, *dvs, *sparams, membrane])
     odes = {n: _parse(sv.equation.rhs, syms) for n, sv in svs.items()}
     affects = _affect_assignments(syn.events, syms)
     i_expr = _inline_derived(dvs, syms)
@@ -268,36 +307,37 @@ def _summed_form(syn, sparams):
             f"Synapse {getattr(syn, 'name', syn)!r}: current is not linear in the gating variable "
             f"{summed[0]!r}; an all-to-all population sum requires linearity."
         )
-    return {"syms": syms, "odes": odes, "affects": affects, "i": i_expr, "gate": summed[0]}
+    return {"syms": syms, "odes": odes, "affects": affects, "i": i_expr, "gate": summed[0], "membrane": membrane}
 
 
 def _delta_form(syn, sparams, edge_idx):
     """The edge-independent reduction of an instantaneous (delta) PSC synapse.
 
-    Its per-synapse STP equations, and its spike event as ``on_pre`` steps for `_on_pre`: the membrane jump kept as its bare increment, for each edge to scale by its own weight. The jump is delivered as ``v_post += weight * (increment) * mV``, the weight carrying the mV amplitude, so the increment must be dimensionless: one that holds a residual ``v`` or a parameter with a voltage or current unit is rejected here, as the membrane-noise path does, rather than failing deep inside Brian2.
+    Its per-synapse STP equations, and its spike event as ``on_pre`` steps for `_on_pre`: the membrane jump kept as its bare increment, for each edge to scale by its own weight. The membrane is the state variable the synapse reads (`_membrane`), ``v`` below. The jump is delivered as ``v_post += weight * (increment) * mV``, the weight carrying the mV amplitude, so the increment must be dimensionless: one that holds a residual ``v`` or a parameter with a voltage or current unit is rejected here, as the membrane-noise path does, rather than failing deep inside Brian2.
     """
     import sympy as sp
 
     svs = syn.state_variables
-    syms = _symbols([*svs, *sparams])
+    membrane = _membrane(syn)
+    syms = _symbols([*svs, *sparams, membrane])
     # Short-term-plasticity vars (all state vars — a delta synapse has no conductance gate) become per-synapse (event-driven) equations.
     model_lines, init, syn_ref = _event_driven_lines(list(svs), svs, syms)
     steps, delivered = [], False
     for lhs, expr in _affect_assignments(syn.events, syms):
-        if lhs == "v":  # deliver the membrane jump
-            incr = sp.simplify(expr - syms["v"])
+        if lhs == membrane:  # deliver the membrane jump
+            incr = sp.simplify(expr - syms[membrane])
             unitful = sorted(
                 s.name
                 for s in incr.free_symbols
-                if s.name == "v" or (s.name in sparams and _unit_of(sparams[s.name]) not in _DIMENSIONLESS_UNITS)
+                if s.name == membrane or (s.name in sparams and _unit_of(sparams[s.name]) not in _DIMENSIONLESS_UNITS)
             )
             if unitful:
                 raise NotImplementedError(
                     f"Delta synapse (edge {edge_idx}): the membrane-jump increment "
                     f"'{incr}' is not dimensionless (unit-valued: {unitful}). The jump is "
-                    f"delivered as 'v_post += weight*(increment)*mV', so put the mV "
+                    f"delivered as '{membrane}_post += weight*(increment)*mV', so put the mV "
                     f"amplitude in the edge weight and keep the event increment "
-                    f"dimensionless (e.g. 'v = v + u*x')."
+                    f"dimensionless (e.g. '{membrane} = {membrane} + u*x')."
                 )
             syn_ref |= {s.name for s in incr.free_symbols}
             steps.append((render_expression(str(incr), format="brian2"), None))
@@ -308,10 +348,10 @@ def _delta_form(syn, sparams, edge_idx):
     if not delivered:
         raise NotImplementedError(
             f"Delta synapse (edge {edge_idx}): its spike event must assign the post-synaptic "
-            f"membrane 'v' (e.g. 'v = v + J*u*x') to deliver a jump; none found."
+            f"membrane {membrane!r} (e.g. '{membrane} = {membrane} + J*u*x') to deliver a jump; none found."
         )
     syn_consts = {p: sparams[p] for p in sparams if p in syn_ref}
-    return {"model": "\n".join(model_lines), "steps": steps, "syn_consts": syn_consts, "init": init}
+    return {"model": "\n".join(model_lines), "steps": steps, "syn_consts": syn_consts, "init": init, "membrane": membrane}
 
 
 def _sparse_form(syn, sparams, edge_idx):
@@ -324,7 +364,8 @@ def _sparse_form(syn, sparams, edge_idx):
     svs, dvs = syn.state_variables, syn.derived_variables
     if "i" not in dvs:
         raise NotImplementedError(f"Sparse synapse (edge {edge_idx}): no current derived variable 'i'.")
-    syms = _symbols([*svs, *dvs, *sparams])
+    membrane = _membrane(syn)
+    syms = _symbols([*svs, *dvs, *sparams, membrane])
     # Inline derived variables into i; the single state var in i is the gate g (linear).
     i_expr = _inline_derived(dvs, syms)
     gate, linear = _linear_gate(i_expr, svs, syms)
@@ -366,6 +407,7 @@ def _sparse_form(syn, sparams, edge_idx):
     syn_consts = {p: sparams[p] for p in sparams if p in syn_ref}
     return {
         "syms": syms,
+        "membrane": membrane,
         "gate": g,
         "i": i_expr,
         "g_ode": g_ode,
@@ -373,6 +415,86 @@ def _sparse_form(syn, sparams, edge_idx):
         "steps": steps,
         "syn_consts": syn_consts,
         "init": init,
+    }
+
+
+def _cell(dyn_name, dyn, ts_factor):
+    """The Brian2 form of a cell population's own dynamics, read from its declaration under whatever names it uses.
+
+    Every state variable's equation annotated with its unit, and held through the refractory period where the spike event resets it without reading it (`pure_resets`); the derived variables; the threshold and reset of its one event with a condition; the opening each state variable declares; the one noisy state variable; and the drive, named by its one coupling input. A cell that declares no unit on any state variable is unitless: its equations are per declared time unit, *ts_factor* ms.
+    """
+    import sympy as sp
+
+    svs = dyn.state_variables or {}
+    units = {str(name): str(getattr(sv, "unit", None) or "") for name, sv in svs.items()}
+    unitless = not any(units.values())
+    if not unitless and not all(units.values()):
+        raise NotImplementedError(
+            f"Cell dynamics {dyn_name!r} declares no unit on {sorted(n for n, u in units.items() if not u)} and one on its other state variables; the brian2 backend annotates each equation with its variable's unit, so declare one on every state variable (dimensionless where it has none)."
+        )
+    spikes = [
+        (str(n), ev)
+        for n, ev in keyed_items(getattr(dyn, "events", None), "events")
+        if getattr(getattr(ev, "condition", None), "rhs", None)
+    ]
+    if len(spikes) != 1:
+        raise NotImplementedError(
+            f"the brian2 backend builds a cell population around the one event whose condition its threshold tests, and the cell {dyn_name!r} declares {len(spikes)} such events{': ' if spikes else ''}{', '.join(n for n, _ in spikes)}."
+        )
+    event_name, event = spikes[0]
+    inputs = [str(n) for n in dyn.coupling_inputs or {}]
+    syms = _symbols([*units, *_params(dyn), *(str(n) for n in dyn.derived_variables or {}), *inputs])
+    for name, ev in keyed_items(getattr(dyn, "events", None), "events"):
+        assigned = affect_assignments(ev)
+        reason = assigned and unapplied_event_reason(
+            ev, assigned, list(units), syms, "a state variable, a parameter, a derived variable or the coupling input"
+        )
+        if reason:
+            raise NotImplementedError(
+                f"the brian2 backend applies a cell's event as its threshold and reset, which evaluate the cell's state variables, parameters, derived variables and coupling input, and cannot apply event {str(name)!r}, which sets {ev.affect.rhs}: {reason}."
+            )
+    condition = _parse(event.condition.rhs, syms)
+    if not isinstance(condition, sp.core.relational.Relational):
+        raise NotImplementedError(
+            f"the brian2 backend tests an event's condition as its threshold, and the condition {event.condition.rhs} of event {event_name!r} is not a comparison."
+        )
+    assignments = affect_assignments(event)
+    held = pure_resets(assignments)
+    noisy = {name: sigma for name, sv in svs.items() if (sigma := _membrane_noise_sigma(sv))}
+    if len(noisy) > 1:
+        raise NotImplementedError(
+            f"Cell {dyn_name!r} declares noise on {sorted(noisy)}; the brian2 backend draws one white-noise term per cell."
+        )
+    if len(inputs) > 1:
+        raise NotImplementedError(
+            f"Cell {dyn_name!r} declares the coupling inputs {inputs}; the brian2 backend sums every synaptic current into one."
+        )
+    scale = f" / ({ts_factor} * ms)" if unitless else ""
+
+    def brian2(expr):
+        return render_expression(str(expr), format="brian2")
+
+    return {
+        "state_odes": [
+            (
+                str(name),
+                f"({brian2(sv.equation.rhs)}){scale}",
+                "1" if unitless else _base_unit(units[str(name)]),
+                str(name) in held,
+            )
+            for name, sv in svs.items()
+        ],
+        "derived": {
+            str(name): (brian2(dv.equation.rhs), "1" if unitless else _base_unit(str(getattr(dv, "unit", None) or "")))
+            for name, dv in (dyn.derived_variables or {}).items()
+        },
+        "threshold": f"{brian2(condition.lhs)} {condition.rel_op} {brian2(condition.rhs)}",
+        "reset": [f"{lhs} = {brian2(_parse(rhs, syms))}" for lhs, rhs in assignments],
+        "init": {str(name): (initial_value(sv), units[str(name)]) for name, sv in svs.items()},
+        "noise_var": next(iter(noisy), None),
+        "noise_sigma": next(iter(noisy.values()), None),
+        "drive": inputs[0] if inputs else None,
+        "unitless": unitless,
     }
 
 
@@ -385,6 +507,8 @@ class Brian2Adapter(BaseAdapter):
         """Build and run the network in Brian2, returning an ExperimentResult.
 
         Population firing rates (from Brian2 ``SpikeMonitor``) are the primary output — the exact quantity the Deco 2014 replication targets — and are exposed both as ``result.integration.observations.firing_rate_<pop>`` and, raw, under ``result._extras``.
+
+        ``record_v`` records every state variable of each cell population, under ``result._extras["states"][pop][variable]`` in the unit it declares, beside the time axis ``result._extras["t_ms"]``.
 
         ``codegen_target`` defaults to ``"numpy"`` (no C compilation, portable); pass ``"cython"`` for the faster compiled path where the toolchain allows.
         """
@@ -434,7 +558,10 @@ class Brian2Adapter(BaseAdapter):
         # Written into the saved Dataset's attrs, so a file on disk says which clock its times are on rather than leaving a reader to infer it from a settle it cannot see.
         result._extras["transient_ms"] = settle
         if record_v and meta.get("state_monitors"):
-            result._extras["v"] = {p: np.asarray(m.v / meta["v_unit"]) for p, m in meta["state_monitors"].items()}
+            result._extras["states"] = {
+                p: {sv: np.asarray(getattr(m, sv) / unit) for sv, unit in meta["state_units"][p].items()}
+                for p, m in meta["state_monitors"].items()
+            }
             any_mon = next(iter(meta["state_monitors"].values()))
             result._extras["t_ms"] = np.asarray(any_mon.t / ms) - settle
         # Recorded synapse-internal state (u, x): the population mean over the probed sample, the continuous trace the figures show as MEASURED (not reconstructed from spike trains).
@@ -502,9 +629,15 @@ class Brian2Adapter(BaseAdapter):
     def prepare_context(self):
         """Reduce the experiment to a backend-neutral Brian2 build description.
 
-        Returns a dict the template renders and ``_instantiate`` builds: ``populations`` (per cell pop: eqs data, namespace, poisson, size) and their ``sizes``, ``hubs`` (summed-gate accumulators), ``synapses`` and ``probes`` (sparse projections and their observation probes), the clock (``dt_ms``, the settle ``transient_ms``, the ``measured_ms`` window after it and their sum ``total_ms``), and the validated continuation ``ramp`` or None.
+        Returns a dict the template renders and ``_instantiate`` builds: ``populations`` (per cell pop: eqs data, namespace, poisson, size) and their ``sizes``, ``hubs`` (summed-gate accumulators), ``synapses`` and ``probes`` (sparse projections and their observation probes), the clock (``dt_ms``, the settle ``transient_ms``, the ``measured_ms`` window after it and their sum ``total_ms``), and the validated continuation ``ramp`` or None. Each cell population is built from its own declaration (`_cell`). A declared initial-state distribution is refused, since each cell and each synapse opens at the initial value each of its state variables declares.
         """
         exp = self.experiment
+        for dynamics in dynamics_library(exp).values():
+            refuse_state_distribution(
+                dynamics.state_variables or {},
+                "brian2",
+                "opens each cell and each synapse at the initial value each of its state variables declares",
+            )
         network = exp.network
         dyn_lib = getattr(network, "dynamics", None) or {}
         nodes = getattr(network, "nodes", None) or []
@@ -549,13 +682,7 @@ class Brian2Adapter(BaseAdapter):
                     pulse_of_node[getattr(node, "id", 0)] = (dyn_name, dyn_obj)
                 continue
             # A cell population — ONE per node, so same-dynamics nodes in different areas stay separate (a two-area network keeps its two E pools distinct and its long-range projection connects only the right pair). The clean dynamics name is kept when a single node uses that dynamics; when several do, the node id disambiguates (ExcitatoryCell_2 / ExcitatoryCell_6) so the single-column output keys are unchanged.
-            v_sv = (dyn_obj.state_variables).get("v")
-            if v_sv is None:
-                raise NotImplementedError(
-                    f"Cell dynamics {dyn_name!r} declares no membrane variable 'v'; cannot build a NeuronGroup."
-                )
-            v_rhs = render_expression(str(v_sv.equation.rhs), format="brian2")
-            noise_sigma = _membrane_noise_sigma(v_sv)  # (value, unit) or None
+            cell = _cell(dyn_name, dyn_obj, ts_factor)
             base = safe_id(dyn_name)
             for node in gnodes:
                 node_id = getattr(node, "id", 0)
@@ -566,20 +693,18 @@ class Brian2Adapter(BaseAdapter):
                     "dyn": dyn_obj,
                     "node_id": node_id,
                     "size": int(getattr(node, "size", 1) or 1),
-                    "v_rhs": v_rhs,
-                    "noise_sigma": noise_sigma,  # Gaussian white-noise amplitude on v, or None
+                    **cell,
                     "cell_params": _params(dyn_obj),
                     "gate_odes": {},  # var -> rhs (dimensionless)
                     "gate_increments": {},  # var -> rhs (in reset)
-                    "derived": {},  # name -> rhs (dimensionless helpers)
                     "linked": {},  # S_var -> (hub name, hub field)
-                    "current_terms": [],  # list of amp-expression strings summed into iSyn
+                    "current_terms": [],  # list of current-expression strings summed into the drive
                     "poisson": [],  # {"gate", "rate": (v,u), "weight"}
                     "namespace": {},  # const name -> (value, unit)
                     "masks": {},  # per-neuron 0/1 subset mask var -> fraction (random pulse)
                 }
-                if noise_sigma is not None:
-                    populations[pop]["namespace"]["noise_sigma_v"] = noise_sigma
+                if cell["noise_var"] is not None:
+                    populations[pop]["namespace"][f"noise_sigma_{cell['noise_var']}"] = cell["noise_sigma"]
                 cell_pop_of_node[node_id] = pop
 
         hubs = {}  # hub name -> {"source_pop", "gate", "summed_var"} (all_to_all)
@@ -632,6 +757,7 @@ class Brian2Adapter(BaseAdapter):
             syn = dyn_lib.get(str(edge_dyn)) if edge_dyn is not None else None
             if syn is None:
                 raise NotImplementedError(f"Edge {edge_idx} has no resolvable synapse dynamics.")
+            _delivered_membrane(syn, populations[tgt_pop])
             prefix = safe_id(getattr(edge_dyn, "name", None) or str(edge_dyn))
             memo = forms.setdefault(str(edge_dyn), {})
 
@@ -741,7 +867,8 @@ class Brian2Adapter(BaseAdapter):
         pop["namespace"][f"gbase_{gate}"] = sp_.get("gbase", (1.0, "nS"))
         pop["namespace"][f"erev_{gate}"] = sp_.get("erev", (0.0, "mV"))
         pop["namespace"][f"w_{gate}"] = (weight, "dimensionless")
-        pop["current_terms"].append(f"w_{gate} * gbase_{gate} * (erev_{gate} - v) * {gate}")
+        membrane = _delivered_membrane(ext_syn, pop)
+        pop["current_terms"].append(f"w_{gate} * gbase_{gate} * (erev_{gate} - {membrane}) * {gate}")
         pop["poisson"].append({"gate": gate, "rate": bp.get("averageRate", (2400.0, "Hz")), "weight": 1.0})
 
     def _add_current_pulse(self, pop, pulse_name, pulse_obj, weight, edge, edge_idx, rule_norm, transient_ms=0.0):
@@ -823,7 +950,7 @@ class Brian2Adapter(BaseAdapter):
             tgt["namespace"][cconst("gbase")] = sparams["gbase"]
             tgt["namespace"][cconst("erev")] = sparams["erev"]
             tgt["namespace"][cconst("w")] = (weight, "dimensionless")
-            current = f"{cconst('w')} * {cconst('gbase')} * ({cconst('erev')} - v) * S_{cur_prefix}"
+            current = f"{cconst('w')} * {cconst('gbase')} * ({cconst('erev')} - {_membrane(syn)}) * S_{cur_prefix}"
             summed_var = f"S_{cur_prefix}"
         else:
             r = self._reduce_custom(syn, sparams, gate_prefix, cur_prefix, memo)
@@ -857,7 +984,7 @@ class Brian2Adapter(BaseAdapter):
         syms, g = form["syms"], form["gate"]
         # Gate side renames with gate_prefix; current side with cur_prefix.
         gate_rename = {syms[n]: sp.Symbol(f"{n}_{gate_prefix}") for n in list(syn.state_variables) + list(sparams)}
-        gate_rename[syms["v"]] = syms["v"]
+        gate_rename[syms[form["membrane"]]] = syms[form["membrane"]]
 
         # Gate ODEs + spike increments (source side); track referenced constant names.
         gate_odes, increments, gate_ref = {}, {}, set()
@@ -874,7 +1001,7 @@ class Brian2Adapter(BaseAdapter):
 
         # Current side: params -> cur_prefix, the gate -> the summed target var S_{cur_prefix}.
         cur_rename = {syms[n]: sp.Symbol(f"{n}_{cur_prefix}") for n in sparams}
-        cur_rename[syms["v"]] = syms["v"]
+        cur_rename[syms[form["membrane"]]] = syms[form["membrane"]]
         cur_rename[syms[g]] = sp.Symbol(f"S_{cur_prefix}")
         current_expr = sp.Symbol(f"w_{cur_prefix}") * form["i"].subs(cur_rename)
         current = render_expression(str(current_expr), format="brian2")
@@ -933,7 +1060,7 @@ class Brian2Adapter(BaseAdapter):
             tgt["namespace"][f"tauDecay_{gvar}"] = sparams["tauDecay"]
             tgt["namespace"][f"gbase_{gvar}"] = sparams["gbase"]
             tgt["namespace"][f"erev_{gvar}"] = sparams["erev"]
-            tgt["current_terms"].append(f"gbase_{gvar} * (erev_{gvar} - v) * {gvar}")
+            tgt["current_terms"].append(f"gbase_{gvar} * (erev_{gvar} - {_membrane(syn)}) * {gvar}")
             synapses.append(
                 {
                     "name": f"syn_{gkey}",
@@ -1030,7 +1157,7 @@ class Brian2Adapter(BaseAdapter):
         form = memo["delta"]
         return {
             "model": form["model"],
-            "on_pre": _on_pre(form["steps"], lambda incr: f"v_post += {weight} * ({incr}) * mV"),
+            "on_pre": _on_pre(form["steps"], lambda incr: f"{form['membrane']}_post += {weight} * ({incr}) * mV"),
             "syn_consts": dict(form["syn_consts"]),
             "init": dict(form["init"]),
         }
@@ -1049,7 +1176,7 @@ class Brian2Adapter(BaseAdapter):
         # Target-side renames (g -> gvar, params -> gvar-suffixed) for the decay ODE + current.
         cur_rename = {
             syms[form["gate"]]: sp.Symbol(gvar),
-            syms["v"]: syms["v"],
+            syms[form["membrane"]]: syms[form["membrane"]],
             **{syms[p]: sp.Symbol(f"{p}_{gvar}") for p in sparams},
         }
         decay_expr = form["g_ode"].subs(cur_rename)
@@ -1069,28 +1196,32 @@ class Brian2Adapter(BaseAdapter):
 def assemble_eqs(pop):
     """The Brian2 ``Equations`` block for a cell population.
 
-    Membrane ODE + a summed drive ``iSyn`` + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated script so the two never diverge. A conductance-based cell's drive is a current (``amp``); a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form.
+    Each state variable's ODE + the summed drive named by the cell's coupling input + its derived variables + the pre-synaptic gate ODEs (dimensionless) + any linked summed-gate variables. Shared by the in-process ``run`` path and the generated script so the two never diverge. A conductance-based cell's drive is a current (``amp``); a current-based cell (one declaring a membrane time constant ``tau_m``, whose membrane is ``(-v + ... + iSyn)/tau_m``) has a voltage drive (``volt``) — the Mongillo/Amit-Brunel form; a unitless cell's drive is a number.
     """
-    drive_unit = "volt" if "tau_m" in pop["cell_params"] else "amp"
-    membrane = f"dv/dt = ({pop['v_rhs']})"
-    if pop.get("noise_sigma") is not None:
-        # Additive Gaussian white noise on the membrane: the faithful discretisation of the current-based SDE tau*dv = -v + ... + sigma*eta(t) is dv/dt += sigma*xi/sqrt(tau_m) (stationary membrane std sigma/sqrt(2)). The 1/sqrt(tau_m) normalisation needs the membrane time constant, which only the current-based form declares; a conductance- based cell has no single tau_m, so reject it here rather than emit an equation that references an undefined ``tau_m`` and fails deep inside Brian2 with an opaque error.
-        if "tau_m" not in pop["cell_params"]:
-            raise NotImplementedError(
-                f"Cell {pop['name']!r} declares membrane noise but no 'tau_m'. The additive "
-                "white-noise discretisation sigma*xi/sqrt(tau_m) is defined only for the "
-                "current-based membrane form (tau_m*dv/dt = -v + ...); a conductance-based "
-                "cell has no single membrane time constant. Add tau_m or remove the noise."
-            )
-        membrane += " + noise_sigma_v * xi * tau_m**-0.5"
-    lines = [membrane + " : volt (unless refractory)"]
-    zero = "0*mV" if drive_unit == "volt" else "0*amp"
-    if pop["current_terms"]:
-        lines.append("iSyn = " + " + ".join(f"({t})" for t in pop["current_terms"]) + f" : {drive_unit}")
-    else:
-        lines.append(f"iSyn = {zero} : {drive_unit}")
-    for name, rhs in pop["derived"].items():
-        lines.append(f"{name} = {rhs} : 1")
+    drive_unit = "1" if pop["unitless"] else "volt" if "tau_m" in pop["cell_params"] else "amp"
+    noisy = pop["noise_var"]
+    # Additive Gaussian white noise: the faithful discretisation of the current-based SDE tau*dv = -v + ... + sigma*eta(t) is dv/dt += sigma*xi/sqrt(tau_m) (stationary std sigma/sqrt(2)), which only the current-based form, with its one tau_m, defines.
+    if noisy is not None and "tau_m" not in pop["cell_params"]:
+        raise NotImplementedError(
+            f"Cell {pop['name']!r} declares membrane noise but no 'tau_m'. The additive "
+            "white-noise discretisation sigma*xi/sqrt(tau_m) is defined only for the "
+            "current-based membrane form (tau_m*dv/dt = -v + ...); a conductance-based "
+            "cell has no single membrane time constant. Add tau_m or remove the noise."
+        )
+    lines = [
+        f"d{name}/dt = {rhs}{f' + noise_sigma_{name} * xi * tau_m**-0.5' if name == noisy else ''} : {unit}{' (unless refractory)' if held else ''}"
+        for name, rhs, unit, held in pop["state_odes"]
+    ]
+    if pop["drive"] is not None:
+        zero = {"volt": "0*mV", "amp": "0*amp", "1": "0"}[drive_unit]
+        terms = " + ".join(f"({t})" for t in pop["current_terms"]) or zero
+        lines.append(f"{pop['drive']} = {terms} : {drive_unit}")
+    elif pop["current_terms"]:
+        raise NotImplementedError(
+            f"Cell {pop['name']!r} receives synaptic or input currents and declares no coupling input to sum them into."
+        )
+    for name, (rhs, unit) in pop["derived"].items():
+        lines.append(f"{name} = {rhs} : {unit}")
     for gate, rhs in pop["gate_odes"].items():
         lines.append(f"d{gate}/dt = {rhs} : 1")
     for svar in pop["linked"]:
@@ -1101,11 +1232,8 @@ def assemble_eqs(pop):
 
 
 def reset_code(pop):
-    """The Brian2 reset statement: v reset plus pre-synaptic gate increments."""
-    parts = ["v = reset"]
-    for gate, incr in pop["gate_increments"].items():
-        parts.append(f"{gate} = {incr}")
-    return "; ".join(parts)
+    """The Brian2 reset statement: the spike event's assignments, then the pre-synaptic gate increments."""
+    return "; ".join([*pop["reset"], *(f"{gate} = {incr}" for gate, incr in pop["gate_increments"].items())])
 
 
 def _instantiate(model, seed=None, record_v=False):
@@ -1121,7 +1249,6 @@ def _instantiate(model, seed=None, record_v=False):
         defaultclock,
         linked_var,
         ms,
-        mV,
         start_scope,
     )
 
@@ -1139,7 +1266,6 @@ def _instantiate(model, seed=None, record_v=False):
         return float(value) * getattr(brian2, bu)
 
     objects, groups, spike_mons, state_mons = [], {}, {}, {}
-    v_unit = mV
 
     for name, pop in model["populations"].items():
         cp = {k: qty(*v) for k, v in pop["cell_params"].items()}
@@ -1148,14 +1274,15 @@ def _instantiate(model, seed=None, record_v=False):
         grp = NeuronGroup(
             pop["size"],
             assemble_eqs(pop),
-            threshold="v > thresh",
+            threshold=pop["threshold"],
             reset=reset_code(pop),
             refractory=refract,
             method="euler",
             namespace={**cp, **ns},
             name=name,
         )
-        grp.v = cp.get("v0", cp.get("EL", -70 * mV))
+        for sv, (value, unit) in pop["init"].items():
+            setattr(grp, sv, qty(value, unit))
         for mvar, frac in pop["masks"].items():
             setattr(grp, mvar, f"rand() < {frac}")  # seeded per-neuron subset mask (render≡run)
         groups[name] = grp
@@ -1231,12 +1358,14 @@ def _instantiate(model, seed=None, record_v=False):
         spike_mons[name] = SpikeMonitor(groups[name])
         objects.append(spike_mons[name])
         if record_v:
-            state_mons[name] = StateMonitor(groups[name], "v", record=True)
+            state_mons[name] = StateMonitor(groups[name], list(pop["init"]), record=True)
             objects.append(state_mons[name])
 
     return Network(objects), {
         "spike_monitors": spike_mons,
         "state_monitors": state_mons,
         "probe_monitors": probe_mons,
-        "v_unit": v_unit,
+        "state_units": {
+            name: {sv: qty(1.0, unit) for sv, (_, unit) in pop["init"].items()} for name, pop in model["populations"].items()
+        },
     }

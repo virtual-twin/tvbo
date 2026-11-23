@@ -1,0 +1,47 @@
+id: 30
+label: "Three Jansen-Rit columns, delayed, for cross-backend parity"
+description: >-
+  Three Jansen & Rit (1995) cortical columns on the alpha limit cycle, coupled through the sigmoid of each source column's pyramidal potential over tracts of three lengths. Deterministic by construction: every node declares its opening state, nothing is drawn, and no observation is declared, so tvboptim, jax and tvb integrate the same states and any difference between them is the backends'. The clock is the model's own, seconds; the step is 2^-13 s and every delay and the duration are whole numbers of steps in floating point, so no backend's rounding of a delay to steps can differ from another's.
+
+dynamics:
+  name: JansenRit1995
+  iri: tvbo:models/JansenRit1995
+
+network:
+  label: "Three columns"
+  number_of_nodes: 3
+  nodes:
+    - {id: 0, label: c0, state: {y0: {value: 0.1}, y1: {value: 12.0}, y2: {value: 12.0}, y3: {value: 0.0}, y4: {value: 0.0}, y5: {value: 0.0}}}
+    - {id: 1, label: c1, state: {y0: {value: 0.1}, y1: {value: 16.0}, y2: {value: 12.0}, y3: {value: 0.0}, y4: {value: 0.0}, y5: {value: 0.0}}}
+    - {id: 2, label: c2, state: {y0: {value: 0.1}, y1: {value: 20.0}, y2: {value: 12.0}, y3: {value: 0.0}, y4: {value: 0.0}, y5: {value: 0.0}}}
+  edges:
+    - {source: 0, target: 1, directed: true, parameters: {weight: {name: weight, value: 1.0}, length: {name: length, value: 40.0}}}
+    - {source: 1, target: 0, directed: true, parameters: {weight: {name: weight, value: 1.0}, length: {name: length, value: 40.0}}}
+    - {source: 1, target: 2, directed: true, parameters: {weight: {name: weight, value: 0.5}, length: {name: length, value: 60.0}}}
+    - {source: 2, target: 1, directed: true, parameters: {weight: {name: weight, value: 0.5}, length: {name: length, value: 60.0}}}
+    - {source: 0, target: 2, directed: true, parameters: {weight: {name: weight, value: 0.25}, length: {name: length, value: 80.0}}}
+    - {source: 2, target: 0, directed: true, parameters: {weight: {name: weight, value: 0.25}, length: {name: length, value: 80.0}}}
+  parameters:
+    conduction_speed:
+      name: conduction_speed
+      value: 8192.0
+      description: "Millimetres per second, on the model's clock: tracts of 40, 60 and 80 mm take 40, 60 and 80 steps of 2^-13 s."
+  coupling:
+    c_intercolumn:
+      iri: tvbo:coupling_functions/SigmoidalJansenRit
+      delayed: true
+      incoming_states: [y1, y2]
+      parameters:
+        a: {value: 10.0}
+        cmax: {value: 5.0}
+
+integration:
+  method: Heun
+  step_size: 0.0001220703125
+  duration: 0.125
+  transient_time: 0.0
+  unit: s
+
+execution:
+  random_seed: 0
+  precision: float64

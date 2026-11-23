@@ -74,7 +74,7 @@ The tvboptim template emits one `at[<sv_idx>].set(jnp.array([...]))` per overrid
 
 ## 3. Random / sampled initial conditions
 
-Add a `distribution` to a state variable; tvboptim then samples ICs **per trial** when an exploration with `n_trials > 1` is active.
+Add a `distribution` to a state variable and the run opens on a draw from it, one value per node; tvboptim draws again **per trial** when an exploration with `n_trials > 1` is active.
 
 ### YAML
 
@@ -88,7 +88,9 @@ state_variables:
       domain: { lo: -2.0, hi: 2.0 }
 ```
 
-For `Gaussian`, mean = $(lo+hi)/2$ and std = $(hi-lo)/4$ (clamped to the domain).
+The bounds are the distribution's own `domain`, else the state variable's, else $(-1, 1)$. A `Uniform` draws between them; a `Gaussian` or `Normal` draws with mean $(lo+hi)/2$ and standard deviation $(hi-lo)/4$, unclipped. A run refuses, naming the state variable, bounds that are not finite or not in order (a state variable's half-open `[0, inf)` under a distribution without its own `domain`), any other family, and a declared `mean` or `std`.
+
+RateML is outside this rule: it has no run path, and the `state_variable_range` its model class carries is TVB's own convention for sampling an opening. The continuation backends (BifurcationKit.jl, PyRates with AUTO-07p, AUTO-07p) are outside it as well, because there a state variable's `initial_value` is the Newton start of a continuation, not the state a run opens on.
 
 ### Programmatic
 
@@ -110,7 +112,7 @@ res = exp.run()
 Each trial draws an independent IC of shape `(n_states, n_nodes)` and runs the simulation in parallel via `jax.vmap`. Use `average: trials` on the exploration to reduce across trials.
 
 ::: {.callout-note}
-A plain `exp.run()` without an exploration ignores the `distribution`. Sampling only happens when at least one `Exploration` requests `n_trials > 1`. To add a `random_initial_conditions` flag for single runs, open an issue.
+A plain `exp.run()` opens on one draw, keyed by the distribution's own `seed`, else `execution.random_seed`, on tvboptim, tvb, jax, NetworkDynamics.jl, DifferentialEquations.jl, ModelingToolkit.jl, python and gillespie. tvboptim draws again for each trial when an `Exploration` requests `n_trials > 1`. PyRates, NeuroML/LEMS and the CUDA kernel write that draw into what they render, one number per state variable, so a model that more than one node, cell or connection runs is refused there when it declares a distribution, since tvb and jax would draw each node apart. Brian2, the standard NeuroML cell types (but `fitzHughNagumo1969Cell`, whose `V0` and `W0` carry the draw) and the PDE backend open each state where the type or the mesh says, and refuse a declared distribution, naming the state variable.
 :::
 
 ## Settling in-band {#settling-in-band}
@@ -146,7 +148,7 @@ That state is computed once and reused, where `transient_time` is re-integrated 
 | ------------------------------- | ------------- | -------------------------------------- |
 | `state_variables.initial_value` | global        | always (default)                       |
 | `network.nodes[i].state`        | per-node      | `state:` block on a node               |
-| `state_variables.distribution`  | per-trial     | `Exploration(n_trials=N)` with $N > 1$ |
+| `state_variables.distribution`  | per-node      | always; per trial under $N > 1$ trials |
 | `initial_state.method`          | global        | a declared seed (see above)            |
 
 ## Inspecting the generated code

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import sympy as sp
 
+from tvbo.parse.expression import array_syntax
 from tvbo.utils import as_list
 
 _OPERATOR_NAMES = ("laplacian", "div", "grad", "lap")
@@ -79,8 +80,7 @@ def _split_parameters(owner) -> tuple[dict, set]:
 def _mesh_path(mesh, experiment) -> str:
     """The mesh file, resolved against the declaring spec's directory when relative.
 
-    Same rule as every other file a spec names (``Network.data_file``, a sourced parameter):
-    a recipe means the same mesh wherever it is loaded from, so the run does not depend on the working directory it was launched in. A ``format:`` prefix is preserved for the template to strip, and an unresolvable path is passed through so the failure names the file rather than an empty string.
+    Same rule as every other file a spec names (``Network.data_file``, a sourced parameter): a recipe means the same mesh wherever it is loaded from, so the run does not depend on the working directory it was launched in. A ``format:`` prefix is preserved for the template to strip, and an unresolvable path is passed through so the failure names the file rather than an empty string.
     """
     from pathlib import Path
 
@@ -147,7 +147,7 @@ def _sympify(text: str, variables, parameters):
     local.update({v: sp.Symbol(v) for v in variables})
     local.update({p: sp.Symbol(p) for p in parameters})
     try:
-        return sp.sympify(text, locals=local)
+        return sp.sympify(array_syntax(text), locals=local)
     except (sp.SympifyError, SyntaxError, TypeError) as exc:
         raise FieldPlanError(f"cannot parse field equation {text!r}: {exc}") from exc
 
@@ -222,6 +222,9 @@ def _linear_blocks(rhs, row, variables, parameters, field_params):
             continue
         # A per-vertex coefficient cannot collapse to a number; it rides as a named field.
         coeff_fields = sorted({str(s) for s in factor.free_symbols} & field_params)
+        if coeff_fields and term.has(sp.Piecewise):
+            explicit.append(term)  # a field's Piecewise is no coefficient a block can carry
+            continue
         if len(coeff_fields) > 1:
             raise FieldPlanError(f"term {term} multiplies more than one field parameter")
         try:
@@ -262,9 +265,11 @@ def field_assembly_plan(experiment) -> dict:
     """Everything the FEM template needs, resolved from the experiment datamodel.
 
     Raises:
-        FieldPlanError: when the declared system cannot be lowered — an explicit failure
-            in place of the old behaviour, which silently ignored the equation entirely.
+        FieldPlanError: when the declared system cannot be lowered — an explicit failure in place of the old behaviour, which silently ignored the equation entirely.
+        NotImplementedError: where a field declares an initial-state distribution, which a field opening at one value over its whole mesh cannot carry.
     """
+    from tvbo.adapters.base import refuse_state_distribution
+
     fd = getattr(experiment, "field_dynamics", None)
     if fd is None:
         raise FieldPlanError("experiment has no field_dynamics")
@@ -276,6 +281,7 @@ def field_assembly_plan(experiment) -> dict:
     names = [str(getattr(v, "name", None) or getattr(v, "label", f"u{i}")) for i, v in enumerate(svars)]
     if len(set(names)) != len(names):
         raise FieldPlanError(f"duplicate field state-variable names: {names}")
+    refuse_state_distribution(dict(zip(names, svars, strict=True)), "pde", "opens each field at one value over its whole mesh")
 
     parameters, field_params = _split_parameters(fd)
     events = _event_table(experiment, parameters)

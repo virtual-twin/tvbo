@@ -204,7 +204,10 @@ def test_equal_scores_have_no_range_to_cut(tmp_path):
 
 @pytest.mark.parametrize(
     ("group", "refusal"),
-    [(0, r"rule\.group\n  Input should be greater than or equal to 1"), (4, "asks for group 4 of 3; groups are counted from 1")],
+    [
+        (0, r"rule\.group\n  Input should be greater than or equal to 1"),
+        (4, "asks for group 4 of 3; groups are counted from 1"),
+    ],
     ids=["below", "above"],
 )
 def test_a_group_outside_the_split_is_refused(tmp_path, group, refusal):

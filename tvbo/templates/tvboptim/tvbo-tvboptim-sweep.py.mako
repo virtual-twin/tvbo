@@ -2,36 +2,27 @@
 Warm-started sweep codegen partials (tvboptim backend)
 ======================================================
 
-Reusable Mako `<%def>`s for the warm-started Exploration path
-(`sweep_seeding == 'from_previous'`) — a quasi-static parameter sweep that carries
-each settled state forward into the next value. Inserted only when a warm-started
-exploration is present:
+Reusable Mako `<%def>`s for the warm-started Exploration path (`sweep_seeding == 'from_previous'`) — a quasi-static parameter sweep that carries each settled state forward into the next value. Inserted only when a warm-started exploration is present:
 
     <%namespace name="sweep" file="tvbo-tvboptim-sweep.py.mako"/>
     ...
     % elif expl['sweep_seeding'] == 'from_previous':
-    ${sweep.warmstart_sweep_body(expl, solver_class, dt)}
+    ${sweep.warmstart_sweep_body(expl, dt)}
 
-Both variants delegate to the ONE tvboptim primitive `_adiabatic_scan` (ramp the swept
-parameter, carrying the settled state; reduce each rollout via observe/statistics):
+Both variants delegate to the ONE tvboptim primitive `_adiabatic_scan` (ramp the swept parameter, carrying the settled state; reduce each rollout via observe/statistics):
 
-- **envelope preset** (`expl['adiabatic']`, from `strategy: adiabatic_scan`): the
-  oscillation envelope of a signal → `env_lo`/`env_hi`/`env_mean`.
-- **record path** (`expl['warmstart_records']`): the exploration's declared
-  trajectory-reduction observations, each recorded as a statistic on its source state
-  variable's settled rollout.
+- **envelope preset** (`expl['adiabatic']`, from `strategy: adiabatic_scan`): the oscillation envelope of a signal → `env_lo`/`env_hi`/`env_mean`.
+- **record path** (`expl['warmstart_records']`): the exploration's declared trajectory-reduction observations, each recorded as a statistic on its source state variable's settled rollout.
 
-Resolution (axis→state-path, envelope signal → observe code, record → callable + source
-var index, segment/transient times, up/down/bidirectional → bothways) is done in the
-experiment template's context blocks; these defs only lay out code from that clean
-metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmstart`;
-`ExplorationResult`/`Bunch`/`jnp` are already in scope.
+Every solve here takes the experiment's `get_solver(solver_kwargs=...)`, the run's solver with its declared clamp and noise covariance, on the forward-scan integrator settings `solver_kwargs` names.
+
+Resolution (axis→state-path, envelope signal → observe code, record → callable + source var index, segment/transient times, up/down/bidirectional → bothways) is done in the experiment template's context blocks; these defs only lay out code from that clean metadata. `_adiabatic_scan` is imported once at module top, gated by `has_warmstart`; `ExplorationResult`/`Bunch`/`jnp` are already in scope.
 </%doc>\
 <%!
 from tvbo.templates.tvboptim.utils import axis_keypath
 %>
 ##
-<%def name="warmstart_sweep_body(expl, solver_class, dt, solver_kwargs='')">\
+<%def name="warmstart_sweep_body(expl, dt, solver_kwargs='')">\
 <%
     a = expl.get('adiabatic')
     axis = a['axis'] if a else expl['axes'][0]
@@ -50,7 +41,7 @@ from tvbo.templates.tvboptim.utils import axis_keypath
     _adia_observe = progress_ticker(${n_total_expr}, label="${expl['name']}")(_adia_observe)
     _adia_stats = {"mean": lambda _a: _a.mean(), "lo": lambda _a: _a.min(axis=0).mean(), "hi": lambda _a: _a.max(axis=0).mean()}
     _adia_res = _adiabatic_scan(
-        _network, ${solver_class}(${solver_kwargs}),
+        _network, get_solver(solver_kwargs=dict(${solver_kwargs})),
         accessor=lambda _c: _c.${path},
         low=${axis['lo']}, high=${axis['hi']}, n=kwargs.get('n_${name}', ${axis['n']}),
         t=${a['segment_time']}, skip=${a['skip']}, dt=${dt}, bothways=${bothways},
@@ -85,7 +76,7 @@ from tvbo.templates.tvboptim.utils import axis_keypath
 % endif
     }
     _ws_res = _adiabatic_scan(
-        _network, ${solver_class}(${solver_kwargs}),
+        _network, get_solver(solver_kwargs=dict(${solver_kwargs})),
         accessor=lambda _c: _c.${path},
         low=${axis['lo']}, high=${axis['hi']}, n=kwargs.get('n_${name}', ${axis['n']}),
         t=${expl['warmstart_segment']}, skip=${expl['warmstart_skip']}, dt=${dt}, bothways=${bothways},
@@ -96,7 +87,7 @@ from tvbo.templates.tvboptim.utils import axis_keypath
     # Independent per value, so a memory-bounded lax.map runs one analysis per point.
     _ws_seed_states = jnp.asarray(_ws_res.stats['_seed_state'])   # (n_values, n_states, n_nodes)
 % for a in ws_analysis:
-${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_states')}\
+${lyapunov_map(a, path, dt, solver_kwargs, '_ws_p', '_ws_seed_states')}\
 % endfor
 % endif
     return ExplorationResult(
@@ -108,13 +99,13 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_stat
 % endif
 </%def>\
 ##
-<%def name="lyapunov_map(a, path, dt, solver_class, solver_kwargs, values_expr, seeds_expr)">\
+<%def name="lyapunov_map(a, path, dt, solver_kwargs, values_expr, seeds_expr)">\
     # Re-seeded from each value's settled state, so ${a['name']} tracks the continued branch rather than a cold start.
-    _le_solve_${a['name']}, _le_cfg_${a['name']} = prepare(_network, ${solver_class}(${solver_kwargs}), t0=0.0, t1=${a['segment_time']}, dt=${dt})
+    _le_solve_${a['name']}, _le_cfg_${a['name']} = prepare(_network, get_solver(solver_kwargs=dict(${solver_kwargs})), t0=0.0, t1=${a['segment_time']}, dt=${dt})
     def _lyap_at_${a['name']}(_carry):
         _val, _seed = _carry
         _cfg = eqx.tree_at(lambda _c: _c.${path}, _le_cfg_${a['name']}, _val)
-        _cfg = eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed)
+        _cfg = _refill_history(eqx.tree_at(lambda _c: _c.initial_state.dynamics, _cfg, _seed))
         return benettin_spectrum_and_vectors(_le_solve_${a['name']}, _cfg, t=${a['segment_time']}, n=${a['n_steps']}, k=${a['n_exponents']})
     _lyap_pairs_${a['name']} = (${values_expr}, ${seeds_expr})
     # Ticks as each independent Lyapunov point completes, so a long branch does not go silent.
@@ -127,16 +118,9 @@ ${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_ws_p', '_ws_seed_stat
 <%doc>
 Branch-restart analysis body (from_experiment, source_point='branch')
 ====================================================================
-An independent exploration that restarts a per-point analysis over another experiment's
-recorded branch. Each cell replays one branch point — its swept-parameter value and settled
-state, loaded at runtime as `_BRANCH_SEED` — and records the analysis (Lyapunov λ₁ / ξ_i).
-Because the cells are independent (unlike the sequential scan that produced the branch), HPC
-array tasks shard it by slicing the paired (value, seed) arrays: `shard=(i, N)` keeps cells j
-where j % N == i. Reuses the exact per-point Lyapunov map (`lyapunov_map`) as the warm-start
-scan's post-scan pass — one renderer, one runtime primitive — just sourcing the pairs from
-the loaded branch instead of an in-process scan.
+An independent exploration that restarts a per-point analysis over another experiment's recorded branch. Each cell replays one branch point — its swept-parameter value and settled state, loaded at runtime as `_BRANCH_SEED` — and records the analysis (Lyapunov λ₁ / ξ_i). Because the cells are independent (unlike the sequential scan that produced the branch), HPC array tasks shard it by slicing the paired (value, seed) arrays: `shard=(i, N)` keeps cells j where j % N == i. Reuses the exact per-point Lyapunov map (`lyapunov_map`) as the warm-start scan's post-scan pass — one renderer, one runtime primitive — just sourcing the pairs from the loaded branch instead of an in-process scan.
 </%doc>\
-<%def name="branch_analysis_body(expl, solver_class, dt, solver_kwargs='')">\
+<%def name="branch_analysis_body(expl, dt, solver_kwargs='')">\
 <%
     axis = expl['axes'][0]
     name = axis['name']
@@ -169,7 +153,7 @@ the loaded branch instead of an in-process scan.
         _branch_ic = _branch_ic[_cells]
         _branch_idx = _branch_idx[_cells]
 % for a in analyses:
-${lyapunov_map(a, path, dt, solver_class, solver_kwargs, '_branch_p', '_branch_ic')}\
+${lyapunov_map(a, path, dt, solver_kwargs, '_branch_p', '_branch_ic')}\
 % endfor
     return ExplorationResult(
         name='${expl['name']}',

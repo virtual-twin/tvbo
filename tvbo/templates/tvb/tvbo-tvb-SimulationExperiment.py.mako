@@ -15,11 +15,14 @@ _TVBO_MODEL_CLS = ${context['experiment'].dynamics.name}
 <%
 experiment = context['experiment']
 
+from tvbo.adapters.tvb import tvb_node_fields as _tvb_node_fields
 from tvbo.utils import initial_value as _initial_value
 
 _tvb_coupling = context['coupling']
+_float64 = str(getattr(experiment.execution, 'precision', None) or 'float64') == 'float64'
 
 _n_reg = getattr(experiment.network, 'number_of_nodes', None) or experiment.network.number_of_regions
+_node_fields = {field: values.tolist() for field, values in _tvb_node_fields(experiment.network, _n_reg).items()}
 initial_conditions = np.array([
     np.full((_n_reg,), _initial_value(v)) if np.isscalar(v.initial_value) or v.initial_value is None
     else v.initial_value
@@ -35,6 +38,39 @@ initial_conditions = np.array([
 %if experiment.stimulation:
     <%include file="/tvbo-tvb-stimulus_equation.py.mako" />
 %endif
+%if _float64:
+######### Float64 history #########
+from tvb.simulator.descriptors import NDArray
+
+
+def _at_float64(tvb_array):
+    """TVB's history array *tvb_array* declared at float64, with its shape and mutability."""
+    return NDArray(tvb_array.shape, "d", tvb_array.read_only)
+
+
+class Float64SparseHistory(SparseHistory):
+    """TVB's sparse delay history at the declared float64.
+
+    TVB declares the delay buffer, the weights its coupling reads (`es_weights`, `nnz_weights`), the weights and delays they are cut from and the delayed and current states as float32 `NDArray`s, which allocate once and cast every assignment, so a coupling would read its sources and weights rounded to float32. Each of those arrays is declared here at float64; the integer index arrays stay TVB's.
+    """
+
+    weights = _at_float64(SparseHistory.weights)
+    delays = _at_float64(SparseHistory.delays)
+    es_weights = _at_float64(SparseHistory.es_weights)
+    buffer = _at_float64(SparseHistory.buffer)
+    current_state = _at_float64(SparseHistory.current_state)
+    delayed_state = _at_float64(SparseHistory.delayed_state)
+    nnz_weights = _at_float64(SparseHistory.nnz_weights)
+
+
+class Float64Simulator(Simulator):
+    """TVB's `Simulator`, its delay history a `Float64SparseHistory` on every configure."""
+
+    def _configure_history(self, initial_conditions=None):
+        self.history = Float64SparseHistory.from_simulator(self, initial_conditions)
+
+
+%endif
 ######### Simulation #########
 def define_simulation(connectivity, simulation_length=${settle['total_duration']}, initial_conditions=None, model_kwargs={}, coupling_kwargs={}, integration_kwargs={'dt':${settle['dt']}}, stimulus_kwargs={}):
 %if experiment.stimulation:
@@ -47,7 +83,7 @@ def define_simulation(connectivity, simulation_length=${settle['total_duration']
         weight[${experiment.stimulation.regions}] = 1.0
     %endif
 %endif
-    simulator = Simulator(
+    simulator = ${'Float64Simulator' if _float64 else 'Simulator'}(
         model=_TVBO_MODEL_CLS(**model_kwargs),
         connectivity=connectivity,
         coupling=${'%s(**coupling_kwargs)' % _tvb_coupling.name if _tvb_coupling else 'Linear(**coupling_kwargs)'},
@@ -66,13 +102,12 @@ def define_simulation(connectivity, simulation_length=${settle['total_duration']
         %endif
         # random_state=self.random_state,
     )
-    simulator.configure()
     return simulator
 
 ######### Connectivity #########
 def load_connectivity(weights_path, lengths_path):
     """
-    Load the weights and lengths from the provided CSV files and create the Connectivity object.
+    Load the weights and lengths from the provided CSV files and create the Connectivity object, with the per-region fields the network declared (centres, labels, and the cortical flags, areas, hemispheres and orientations its nodes carry), as a tvbo run builds it.
 
     Args:
         weights_path (str): Path to the CSV file containing the weights matrix.
@@ -87,9 +122,8 @@ def load_connectivity(weights_path, lengths_path):
     SC = Connectivity(
         weights=weights,
         tract_lengths=lengths,
+        **{field: np.asarray(values) for field, values in ${repr(_node_fields)}.items()},
     )
-    SC.set_centres(np.repeat((0, 0, 0), weights.shape[0]), weights.shape[0])
-    SC.create_region_labels()
     SC.configure()
 
     return SC
@@ -124,11 +158,12 @@ if __name__ == "__main__":
     sc = load_connectivity(args.fweights, args.flengths)
     sim = define_simulation(sc, simulation_length=args.simulation_length)
     sim.configure()
+    start_step = sim.current_step
     raw = sim.run()
 
     # Wrap in ExperimentResult for consistent access and export
     from tvbo.data.types import ExperimentResult
-    results = ExperimentResult.from_tvb(sim, raw, transient_time=${settle['transient_time']})
+    results = ExperimentResult.from_tvb(sim, raw, transient_time=${settle['transient_time']}, start_step=start_step)
     print(results)
 
     # Export BIDS-compatible output

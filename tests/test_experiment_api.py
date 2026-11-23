@@ -6,6 +6,7 @@ pytest.importorskip("fastapi", reason="requires the 'api' extra (pip install tvb
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from tvbo.api.experiment_api import _get_experiments
 from tvbo.api.experiment_api import router as experiment_router
 
 
@@ -23,6 +24,20 @@ def _first_experiment_id(client: TestClient) -> str:
     if not experiments:
         pytest.skip("No experiments available in tvbo database")
     return experiments[0]["id"]
+
+
+def _experiment_id_tvb_renders(client: TestClient) -> str:
+    """The first stored experiment whose render the tvb backend does not refuse, asked of the backend itself, so the choice follows what tvb can compute and no experiment's name."""
+    resp = client.get("/api/v1/experiments")
+    assert resp.status_code == 200
+    for experiment in resp.json():
+        stored, _ = _get_experiments()[experiment["id"]]
+        try:
+            stored.render(format="tvb")
+        except NotImplementedError:
+            continue
+        return experiment["id"]
+    pytest.skip("No stored experiment renders on tvb")
 
 
 def test_experiment_export_formats_endpoint(client: TestClient):
@@ -48,7 +63,7 @@ def test_render_stored_experiment_yaml(client: TestClient):
 
 
 def test_render_stored_experiment_tvb(client: TestClient):
-    experiment_id = _first_experiment_id(client)
+    experiment_id = _experiment_id_tvb_renders(client)
 
     resp = client.get(f"/api/v1/experiments/{experiment_id}/render", params={"format": "tvb"})
     assert resp.status_code == 200

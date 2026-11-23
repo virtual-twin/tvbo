@@ -66,7 +66,7 @@ class KuramotoModel2(Model):
             "    {svars} = state\n"
             "    phase = (1/2)*theta/np.pi\n"
             "    signal = np.sin(theta)\n"
-            "    return numpy.array([{voi_names}])"
+            "    return np.array([{voi_names}])"
         )
         svars = ",".join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -74,8 +74,8 @@ class KuramotoModel2(Model):
         code = template.format(
             svars=svars, voi_names=",".join(self.variables_of_interest)
         )
-        namespace = {"numpy": np, "np": np, "pi": np.pi, "sin": np.sin}
-        namespace.update(self.__dict__)
+        # the namespace dfun runs in, plus this model's parameters
+        namespace = {**globals(), **self.__dict__}
         self.log.debug("building observer with code:\n%s", code)
         exec(code, namespace)
         self.observe = namespace["observe"]

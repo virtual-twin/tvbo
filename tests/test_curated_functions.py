@@ -29,8 +29,26 @@ def rng():
     return np.random.default_rng(0)
 
 
-SOFTWARE_BASED = ["FalseDiscoveryControl", "GroupedCorrelation", "Histogram"]
-"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py`` checks what they compute."""
+SOFTWARE_BASED = [
+    "AtOptimum",
+    "ConcordanceCorrelation",
+    "ConsistencyThreshold",
+    "Correlation",
+    "FalseDiscoveryControl",
+    "GroupedCorrelation",
+    "HierarchicalClustering",
+    "Histogram",
+    "LatticeField",
+    "MeshOperators",
+    "NodePermutations",
+    "NonnegativeFactorization",
+    "NonnegativeFactorizationCrossValidation",
+    "PhaseLagIndex",
+    "PhaseLockingValue",
+    "SpinPermutations",
+    "SpreadBand",
+]
+"""The curated functions that record a callable rather than an equation; ``tests/test_curated_statistics.py``, ``tests/test_curated_connectome.py``, ``tests/test_mesh_operators.py``, ``tests/test_resampling_tables.py``, ``tests/test_curated_connectome_factorization.py``, ``tests/test_phase_synchrony_reducers.py``, ``tests/test_optimum_and_concordance.py``, ``tests/test_spread_band.py``, ``tests/test_named_dimension_correlation.py``, ``tests/test_lattice_field.py`` and ``tests/test_hierarchical_clustering.py`` check what they compute."""
 
 
 def test_every_curated_function_resolves_by_iri():

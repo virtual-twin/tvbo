@@ -247,6 +247,170 @@ def test_an_unsupported_reference_lists_the_supported_forms(producer_module):
         param_io.resolve(p, context=_network())
 
 
+# ---------------------------------------------- container references in producer args
+
+
+def _mesh():
+    """Stands in for a study analysis a producer reads: a parcel mesh's vertices."""
+    return {"vertices": np.arange(9.0).reshape(3, 3)}
+
+
+def _strength():
+    """Stands in for a per-node analysis stored in another node order than the network's."""
+    import xarray as xr
+
+    return {"strength": xr.DataArray([30.0, 20.0, 10.0], dims=["node"], coords={"node": ["n2", "n1", "n0"]})}
+
+
+def _ran(tmp_path, name):
+    """The results directory a study run leaves after running analysis *name*, whose callable is this module's ``_<name>``."""
+    from tvbo.data import analysis_io
+    from tvbo.datamodel import Analysis
+
+    results = tmp_path / "results"
+    analysis_io.run_analysis(Analysis(name=name, callable={"name": f"_{name}", "module": __name__}), results)
+    return results
+
+
+def _echo_labelled(positions=None, hemi="lh"):
+    """Stands in for a producer that pairs an argument's entries with nodes by label: it hands the argument back as it arrived."""
+    return {"pos": positions}
+
+
+def _used_producer(used, value=None, name="_echo_positions"):
+    """The producer *name* with its `positions` read through a `used:` reference."""
+    return FunctionCall(
+        callable=Callable(name=name, module=__name__),
+        arguments={
+            "positions": {"name": "positions", "used": used, "value": value},
+            "hemi": {"name": "hemi", "value": "lh"},
+        },
+        output="pos",
+    )
+
+
+def test_a_producer_argument_may_read_an_analysis(producer_module, tmp_path):
+    """`used: {analysis: mesh}` arrives as the analysis's array, read where the network's references are, not as the argument's empty `value`."""
+    p = Parameter(name="ops", producer=_used_producer({"analysis": "mesh", "output": "vertices"}))
+
+    got = param_io.resolve(p, context=_network(3).bind_references(results_root=_ran(tmp_path, "mesh")))
+
+    np.testing.assert_array_equal(got, _mesh()["vertices"])
+
+
+def test_a_producer_argument_read_by_label_takes_the_networks_node_order(producer_module, tmp_path):
+    """`reconcile: by_label` lays a per-node array out on the network's nodes, as it does for a network layer."""
+    used = {"analysis": "strength", "output": "strength", "reconcile": "by_label"}
+    p = Parameter(name="ops", producer=_used_producer(used))
+
+    got = param_io.resolve(p, context=_network(3).bind_references(results_root=_ran(tmp_path, "strength")))
+
+    np.testing.assert_array_equal(got, [10.0, 20.0, 30.0])
+
+
+def test_a_producer_argument_keeps_the_labels_its_analysis_stored(producer_module, tmp_path):
+    """Without `reconcile`, the labelled array arrives as the analysis stored it, labels and order kept, so the producer pairs its entries with nodes by label."""
+    used = {"analysis": "strength", "output": "strength"}
+    p = Parameter(name="ops", producer=_used_producer(used, name="_echo_labelled"))
+
+    got = param_io.resolve(p, context=_network(3).bind_references(results_root=_ran(tmp_path, "strength")))
+
+    assert got.dims == ("node",)
+    assert list(got["node"].values) == ["n2", "n1", "n0"]
+    np.testing.assert_array_equal(got, [30.0, 20.0, 10.0])
+
+
+def test_a_labelled_argument_keys_the_call_by_its_labels_as_well_as_its_values():
+    """The same numbers on other labels are another input, so another call and another artifact; equal labels read twice are one call, however the text objects holding them were made."""
+    import xarray as xr
+
+    def key(*labels):
+        fresh = np.array(["".join(label) for label in labels], dtype=object)
+        return param_io._producer_key("m", "f", {"x": xr.DataArray([1.0, 2.0], dims=["node"], coords={"node": fresh})})
+
+    assert key("ab", "cd") == key("ab", "cd")
+    assert key("ab", "cd") != key("cd", "ab")
+
+
+def test_a_producer_argument_naming_an_analysis_not_yet_run_is_refused_by_name(producer_module, tmp_path):
+    p = Parameter(name="ops", producer=_used_producer({"analysis": "mesh", "output": "vertices"}))
+
+    with pytest.raises(
+        FileNotFoundError, match="Parameter 'ops' producer, argument 'positions': .*no saved result for analysis 'mesh'"
+    ):
+        param_io.resolve(p, context=_network(3).bind_references(results_root=tmp_path / "results"))
+
+
+@pytest.mark.parametrize(
+    ("used", "value", "reason"),
+    [
+        ({"analysis": "mesh", "output": "vertices"}, 1.0, "`value` and `used` are mutually exclusive"),
+        ({"output": "vertices"}, None, "names no `experiment`, `analysis`, `cohort` or `iri`"),
+        ({"analysis": "mesh", "output": "vertices", "reconcile": "by_label"}, None, "given no network"),
+    ],
+    ids=["value-and-used", "local-reference", "by-label-without-a-network"],
+)
+def test_a_producer_argument_it_cannot_read_is_refused_by_name(producer_module, used, value, reason):
+    """Refused before the producer is called, naming the producer and the argument."""
+    p = Parameter(name="ops", producer=_used_producer(used, value))
+
+    with pytest.raises(ValueError, match=f"Parameter 'ops' producer, argument 'positions': .*{reason}"):
+        param_io.resolve(p)
+
+
+# ------------------------------------------------------- curated producers and bundles
+
+_HISTOGRAM_ARGUMENTS = {"values": [0.5, 1.5, 1.6, 3.2], "n_bins": 4, "lower": 0.0, "upper": 4.0}
+_HISTOGRAM_OUTPUTS = ["count", "center", "edge", "width", "n"]
+
+
+def _histogram(**extra):
+    """The curated `tvbo:functions/Histogram` as a producer, stating only its arguments."""
+    return FunctionCall(iri="tvbo:functions/Histogram", arguments=dict(_HISTOGRAM_ARGUMENTS), **extra)
+
+
+def test_a_producer_named_by_iri_runs_the_curated_function(tmp_path):
+    """`producer: {iri: tvbo:functions/Histogram}` takes the curated record's callable and states only its arguments."""
+    p = Parameter(name="count", producer=_histogram(output="count"))
+
+    path, key = param_io.materialise(p, cache_dir=tmp_path)
+
+    np.testing.assert_array_equal(param_io.read_artifact(path, key), [1, 2, 0, 1])
+
+
+def test_a_producer_naming_a_curated_function_is_a_bundle_of_the_outputs_it_lists():
+    """`Function.outputs` reaches the producer through the `iri`, so a producer stating no `output:` binds every array the function lists."""
+    assert param_io.bundle_outputs(Parameter(name="histogram", producer=_histogram())) == _HISTOGRAM_OUTPUTS
+
+
+def test_a_producer_selecting_one_output_is_no_bundle():
+    """`output:` picks one array of a function that returns several, and the parameter binds that one under its own name."""
+    assert param_io.bundle_outputs(Parameter(name="count", producer=_histogram(output="count"))) == []
+
+
+def test_a_bundle_materialises_every_output_from_one_artifact(tmp_path):
+    p = Parameter(name="histogram", producer=_histogram())
+
+    bound = param_io.materialise_bundle(p, cache_dir=tmp_path)
+
+    assert list(bound) == _HISTOGRAM_OUTPUTS
+    assert {path for path, _ in bound.values()} == {bound["count"][0]}
+    assert [key for _, key in bound.values()] == _HISTOGRAM_OUTPUTS
+    np.testing.assert_array_equal(param_io.read_artifact(*bound["count"]), [1, 2, 0, 1])
+
+
+def test_a_bundle_output_its_producer_does_not_return_is_refused(producer_module, tmp_path):
+    """Checked when the bundle is materialised, as a typo `output:` is, so it fails at codegen and names the parameter."""
+    bundle = FunctionCall(
+        callable=Callable(name="_fake_precompute", module=__name__),
+        arguments={"k_ring": {"name": "k_ring", "value": 2}},
+        outputs=["grad_op", "curl_op"],
+    )
+
+    with pytest.raises(ValueError, match="Parameter 'ops': .*has no array 'curl_op'"):
+        param_io.materialise_bundle(Parameter(name="ops", producer=bundle), cache_dir=tmp_path)
+
+
 # ------------------------------------------------------------- shared-array immutability
 
 

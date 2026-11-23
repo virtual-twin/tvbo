@@ -27,7 +27,7 @@ class StreamingReducerSpec:
         resync: ordered assignments rebuilding the state exactly from the window ``x``.
         resync_masked: optional assignments rebuilding the state from a max-sized ring buffer whose valid window is the last ``L`` rows, selected by the boolean mask ``m`` (row-vector over the full buffer) with count ``L``. Present so a reducer can be resynced over a fixed-shape buffer with a traced window length — the tuning scan then compiles once across varying window sizes. Empty when the reducer has no masked form (the masked path is not offered).
         emit: readout expression over the final state (the reduced value).
-        emit_kind: ``"window"`` (emit every step) or ``"stride"`` (emit a per-window observation for a downstream reduction, as dFC / FCD need). Generated code streams only a ``"window"`` spec and recomputes for any other kind, so registering a ``"stride"`` spec is safe.
+        emit_kind: ``"window"`` (emit every step), ``"stride"`` (emit a per-window observation for a downstream reduction, as dFC / FCD need) or ``"run"`` (emit once, at the end of the run). Generated code streams a ``"window"`` spec as a sliding or cumulative FC and a ``"run"`` spec as a fold over the whole run, and recomputes for a ``"stride"`` spec, so registering one is safe.
     """
 
     state: tuple
@@ -72,11 +72,12 @@ def lookup_streaming_reducer(backend: str, reducer_module: str | None, reducer_n
 
 
 def is_windowed_reducer(reducer_module: str | None, reducer_name: str, backend: str = "tvboptim") -> bool:
-    """True when a pipeline reducer is a registered windowed reducer for *backend*.
+    """True when a pipeline reducer has a registered ``window`` recipe for *backend*.
 
-    The registered reducer (``compute_fc`` for ``tvboptim``) is a windowed correlation reduction — undefined over a ``< 2``-sample window, where ``jnp.corrcoef`` collapses to a scalar — so codegen routes it through a degenerate-window guard. Unlike :func:`lookup_streaming_reducer`, this is a pure registry-membership test with no ``TVBO_STREAMING_REDUCERS`` gating: the guard applies whether or not the streaming *path* is active. It shares the one registered reducer set so the guard's routing and the streaming lookup cannot drift.
+    The windowed reducer (``compute_fc`` for ``tvboptim``) is a correlation reduction — undefined over a ``< 2``-sample window, where ``jnp.corrcoef`` collapses to a scalar — so codegen routes it through a degenerate-window guard. A ``run`` recipe folds the whole run and is not windowed. Unlike :func:`lookup_streaming_reducer`, this is a registry test with no ``TVBO_STREAMING_REDUCERS`` gating: the guard applies whether or not the streaming *path* is active. It reads the one registered reducer set so the guard's routing and the streaming lookup cannot drift.
     """
-    return _registered(backend, reducer_module, reducer_name) is not None
+    spec = _registered(backend, reducer_module, reducer_name)
+    return spec is not None and spec.emit_kind == "window"
 
 
 # Recipes are data in `tvbo/database/reducers/*.yaml`; a backend registering none recomputes instead.

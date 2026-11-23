@@ -8,7 +8,7 @@ Provides [`parse_eq`](expression.qmd#parse_eq) for turning an `Equation` (or a r
 
 **Every argument is positional.** SymPy's parser forwards `f(x, axis=0)` into `Basic`'s options and raises `ValueError: Unknown options`, so a primitive can never carry a keyword. Anything that would be one — a metric, an axis, a target range, a distribution, a seed — is a schema field on the DAG step and is lowered into a positional argument, which is why the `Procedural` graph-generator DAG is typed rather than free-form.
 
-The registry covers array manipulation with Python-specific semantics (`window_mean`, `subsample`), structural slice and shape ops so a pipeline that selects a variable of interest, trims a transient or downsamples is authored as declarative equations rather than `source_code`, general ops for per-timestep detectors and permutation-significance tests (`take`, `sum_axis`, `pearson`), the graph-construction primitives a `Procedural` GraphGenerator lowers to, and the distribution samplers.
+The registry covers array manipulation with Python-specific semantics (`window_mean`, `subsample`), structural slice and shape ops so a pipeline that selects a variable of interest, trims a transient or downsamples is authored as declarative equations rather than `source_code`, general ops for per-timestep detectors and permutation-significance tests (`take`, `scatter_sum`, `sum_axis`, `pearson`, `spearman`), the graph-construction primitives a `Procedural` GraphGenerator lowers to, and the distribution samplers.
 
 A sampler takes its PRNG state as the **first** argument, because JAX is functionally pure and a key cannot be threaded implicitly through a rendered expression; the trailing arguments are the sample shape. Draws are *not* bit-identical across backends — numpy's PCG64 is not jax's Threefry.
 
@@ -116,10 +116,16 @@ ARRAY_FUNCTIONS = {
     ),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
     # A 2-D gather, a single-axis reduction, and Pearson correlation.
     "take": Function("take"),  # take(x, idx) → gather x by an int index array (result has idx.shape)
+    "scatter_sum": Function(
+        "scatter_sum"
+    ),  # scatter_sum(values, index, size) → size slots, each the sum of the values whose index names it (np.add.at)
     "sum_axis": Function("sum_axis"),  # sum_axis(x, axis) → reduce one axis ({np,jnp}.sum(x, axis=..))
     "pearson": Function(
         "pearson"
     ),  # pearson(x, y) → Pearson r of two FLAT/1-D operands (reduces all elements; the per-step node-collapsing corr — NOT a columnwise 2-D corr, and distinct from the loss-helper `correlation`)
+    "spearman": Function(
+        "spearman"
+    ),  # spearman(x, y, mask) → Spearman's rho of the entries where mask is nonzero, ties averaged (scipy.stats.spearmanr of those entries)
     "upper_triangle": Function(
         "upper_triangle"
     ),  # upper_triangle(M, k) → entries on and above M's k-th diagonal, flat and row by row (M[triu_indices(n, k, m)]); k=1 is the off-diagonal half a Pearson FC agreement compares
@@ -222,14 +228,70 @@ def _piecewise_from_conditionals(equation: Equation, local_dict):
     return Piecewise(*branches, (default, true))
 
 
-class _MatmulCalls(ast.NodeTransformer):
-    """Writes every ``a @ b`` as ``matmul(a, b)``, the array product the vocabulary names, since a SymPy symbol has no ``@``."""
+_ARITHMETIC = (ast.Add, ast.Sub, ast.Mult, ast.Div, ast.FloorDiv, ast.Mod, ast.Pow)
+"""The binary operators that do arithmetic on their operands; ``&`` and ``|`` combine truth values in SymPy, and ``@`` is ``matmul``."""
+
+_EQUALITIES = {ast.Eq: "Eq", ast.NotEq: "Ne"}
+"""The SymPy relation each equality operator names. SymPy reads a bare ``x == y`` as a structural test of the two expressions, ``False`` for two different symbols, so an equality is spelled out wherever it stands, a ``Piecewise`` condition included."""
+
+
+class _ArraySyntax(ast.NodeTransformer):
+    """Writes the array syntax a SymPy expression cannot hold in terms it can, and records in ``changed`` whether it wrote anything.
+
+    ``a @ b`` becomes ``matmul(a, b)``, the array product the vocabulary names, since a SymPy symbol has no ``@``. A comparison that arithmetic applies to, the ``p <= alpha`` of ``(p <= alpha) * mask``, becomes ``Piecewise((1, p <= alpha), (0, True))``, 1 where it holds and 0 where not, since a SymPy relational is a truth value and takes no arithmetic. A comparison anywhere else (a ``Piecewise`` condition, an index, an argument of ``any``) stays a comparison. Wherever it stands, ``==`` becomes ``Eq`` and ``!=`` becomes ``Ne`` (:data:`_EQUALITIES`).
+    """
+
+    changed = False
 
     def visit_BinOp(self, node):
+        if isinstance(node.op, _ARITHMETIC):
+            node.left, node.right = self._indicator(node.left), self._indicator(node.right)
         self.generic_visit(node)
         if isinstance(node.op, ast.MatMult):
+            self.changed = True
             return ast.Call(func=ast.Name("matmul", ast.Load()), args=[node.left, node.right], keywords=[])
         return node
+
+    def visit_UnaryOp(self, node):
+        if isinstance(node.op, (ast.UAdd, ast.USub)):
+            node.operand = self._indicator(node.operand)
+        self.generic_visit(node)
+        return node
+
+    def visit_Compare(self, node):
+        self.generic_visit(node)
+        relation = _EQUALITIES.get(type(node.ops[0])) if len(node.ops) == 1 else None
+        if relation is None:
+            return node
+        self.changed = True
+        return ast.Call(func=ast.Name(relation, ast.Load()), args=[node.left, node.comparators[0]], keywords=[])
+
+    def _indicator(self, node):
+        """*node* as the 0/1 ``Piecewise`` of the comparison it is, or as it is when it is no comparison."""
+        if not isinstance(node, ast.Compare):
+            return node
+        self.changed = True
+        branches = [
+            ast.Tuple([ast.Constant(1), node], ast.Load()),
+            ast.Tuple([ast.Constant(0), ast.Constant(True)], ast.Load()),
+        ]
+        return ast.Call(func=ast.Name("Piecewise", ast.Load()), args=branches, keywords=[])
+
+
+def array_syntax(expression: str) -> str:
+    """*expression* as the SymPy parser can read it (:class:`_ArraySyntax`), or unchanged when it holds nothing to rewrite or is not Python syntax (implicit multiplication, ``2x``, which only the SymPy parser reads).
+
+    Every reader of a declared expression calls it: :func:`parse_eq`, and the readers that parse against their own vocabularies with ``sympy.sympify`` (an observer's equations and function bodies, an analysis ``equation:``, a streaming reducer's recipe, a field equation, a Brian2 synapse, a stimulus waveform, the schematic, the Python backend's integration scheme and the ontology's model equations), so the one equation reads alike wherever it is declared.
+    """
+    if not any(mark in expression for mark in "@<>="):
+        return expression
+    try:
+        tree = ast.parse(expression, mode="eval")
+    except SyntaxError:
+        return expression
+    rewriter = _ArraySyntax()
+    tree = rewriter.visit(tree)
+    return ast.unparse(tree) if rewriter.changed else expression
 
 
 def parse_eq(
@@ -346,8 +408,7 @@ def parse_eq(
         # parse_latex doesn't accept local_dict; it returns a SymPy Expr directly
         return parse_latex(expression, backend="lark")
 
-    if "@" in expression:
-        expression = ast.unparse(_MatmulCalls().visit(ast.parse(expression, mode="eval")))
+    expression = array_syntax(expression)
 
     for name in _quantity_names(expression):
         local_dict.setdefault(name, Symbol(name))

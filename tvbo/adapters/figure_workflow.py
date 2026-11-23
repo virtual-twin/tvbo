@@ -97,19 +97,21 @@ def _exp_key_of(iri, keys) -> str | None:
 
 
 def _panel_bindings(panel) -> list:
-    """Every ``DataRef`` a panel's render opens: each layer's ``used``, and each annotation's ``used``, ``significance.used`` and ``tail_used``."""
+    """Every ``DataRef`` a panel's render opens: each layer's ``used``, each annotation's ``used``, ``significance.used`` and ``tail_used``, and the ``used`` naming a surface's mesh, the panel's own and those of every grid cell (``cells:``) and inset it draws, which are drawn as panels are. A grid's ``cell:`` template adds only its surface's mesh, which every cell draws; its layers and annotations are not drawn."""
     layers = getattr(panel, "layers", None) or []
     annotations = getattr(panel, "annotations", None) or []
-    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations)]
+    surfaces = (getattr(panel, "surface", None), getattr(getattr(panel, "cell", None), "surface", None))
+    refs = [getattr(holder, "used", None) for holder in (*layers, *annotations, *surfaces)]
     refs += [getattr(getattr(a, "significance", None), "used", None) for a in annotations]
     refs += [getattr(a, "tail_used", None) for a in annotations]
-    return [ref for ref in refs if ref is not None]
+    drawn = (*as_list(getattr(panel, "cells", None)), *as_list(getattr(panel, "insets", None)))
+    return [ref for ref in refs if ref is not None] + [ref for part in drawn for ref in _panel_bindings(part)]
 
 
 def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]:
     """This figure's ``used`` result dependencies, deduped, as ``{value, raw}`` items.
 
-    A ``used`` edge to a KIT experiment resolves to that experiment's own output files — the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to something the kit does not produce (an external/author-time container, or an analysis's own container) falls back to the single resolved container path via the same ``bsplot._container_path`` the ``plot.py`` reads, emitted as a quoted string. Unresolved edges are dropped — a rule cannot depend on a file that does not exist.
+    A ``used`` edge to a KIT experiment resolves to that experiment's own output files — the ``expand()`` over its fanned grid (so the figure waits for EVERY cell) or its single group-run path — emitted RAW so Snakemake evaluates the ``expand``. A ``used`` edge to something the kit does not produce (an external/author-time container, or an analysis's own container) falls back to the single container path the ``plot.py`` reads, from the same ``bsplot._container_path`` with ``planned``, emitted as a quoted string: an analysis's container is that path whether or not the analysis has written it yet, so the rule names the file it waits for, and an experiment edge whose container does not resolve is dropped.
 
     The reference is read through ``bsplot._used_ref``, so the short ``experiment:`` and ``analysis:`` forms register their dependency exactly as a full ``iri`` does. Every binding :func:`_panel_bindings` lists carries the same PROV edge, a layer's plotted result as much as an annotation's printed statistic, its significance or its arrow tail, so all are walked: a figure whose only binding to an experiment is a computed annotation still waits for that run.
     """
@@ -121,7 +123,7 @@ def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]
             if key is not None:
                 item = {"value": _wf.fan_input_expr(exp_plans_by_key[key]), "raw": True}
             else:
-                container = bsplot._container_path(iri, Path(base_dir))
+                container = bsplot._container_path(iri, Path(base_dir), planned=True)
                 if not container:
                     continue
                 item = {"value": container, "raw": False}
@@ -133,10 +135,9 @@ def _figure_inputs(figure, base_dir: Path, exp_plans_by_key: dict) -> list[dict]
 
 
 def _has_unresolved_used(figure, base_dir: Path, exp_plans_by_key: dict) -> bool:
-    """True when a ``used`` edge names data neither the kit nor the author's tree resolves.
+    """True when a ``used`` edge names data neither the kit nor the author's tree holds.
 
-    ``_figure_inputs`` drops such an edge — a rule cannot depend on a file that does not exist — which leaves the figure looking self-contained while its render still opens that container.
-    Reported separately so the figure is kept out of the default target rather than added to it with a dependency silently missing.
+    ``_figure_inputs`` drops such an edge to an experiment, which is not one of the kit's, and names an analysis's by the path the analysis writes, which the kit does not write since it runs no analysis. Read here with the lookup that finds only what exists, so the figure is kept out of the default target rather than added to it with a dependency nothing makes.
     """
     for panel in as_list(getattr(figure, "panels", None)):
         for used in _panel_bindings(panel):
@@ -151,7 +152,7 @@ def _has_unresolved_used(figure, base_dir: Path, exp_plans_by_key: dict) -> bool
 def _figure_context(figure, base_dir, workflow, exp_plans_by_key, bundled_code) -> dict:
     """Resolve one ``Figure`` into the template context for its render rule.
 
-    ``kit_satisfiable`` decides whether the figure joins the kit's default target. A ``raw`` input is an ``expand()`` over a kit experiment's own outputs; anything else is a container resolved against the AUTHOR's tree, which the kit neither produces nor ships — as is a ``used`` edge that resolved to nothing and was dropped from ``input:``. Either way the figure keeps its rule but leaves every default target, because a target that cannot be satisfied on the target host reads as a broken kit.
+    ``kit_satisfiable`` decides whether the figure joins the kit's default target. A ``raw`` input is an ``expand()`` over a kit experiment's own outputs; anything else is a container resolved against the AUTHOR's tree, which the kit neither produces nor ships, an analysis's included whether or not it has been written yet — as is an experiment edge that resolved to nothing and was dropped from ``input:``. Either way the figure keeps its rule but leaves every default target, because a target that cannot be satisfied on the target host reads as a broken kit.
 
     ``pythonpath_code`` puts the kit's bundled ``code/`` on ``PYTHONPATH`` for the figure's custom-panel ``code_modules``, exactly as the experiment rules do.
     """

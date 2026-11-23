@@ -2,8 +2,8 @@
 
 These ops let an observation pipeline that trims a transient, selects a variable of interest, or downsamples be authored as a **declarative equation** rather than backend ``source_code``. Each op is a single backend-agnostic handler in ``tvbo.codegen.code`` that renders through per-backend rendering primitives:
 
-- numpy / jax: Python 0-based slicing (``x[::step]``, ``jnp.take(x, arange, axis)``)
-- julia:       1-based, ``end``-relative indexing (``x[1:step:end]``, ``selectdim``)
+- numpy / jax: Python 0-based slicing (``x[step - 1::step]``, ``jnp.take(x, arange, axis)``)
+- julia:       1-based, ``end``-relative indexing (``x[step - 1 + 1:step:end]``, ``selectdim``)
 
 The two invariants under test:
 
@@ -30,7 +30,7 @@ def test_julia_refuses_a_primitive_it_has_no_form_for():
     ("expr", "numpy", "jax", "julia"),
     [
         # strided downsample of the leading (time) axis
-        ("subsample(x, 1000)", "x[::1000]", "x[::1000]", "x[1:1000:end]"),
+        ("subsample(x, 1000)", "x[999::1000]", "x[999::1000]", "x[999 + 1:1000:end]"),
         ("subsample(x, 5, 1000)", "x[5::1000]", "x[5::1000]", "x[5 + 1:1000:end]"),
         # bounded slice of one axis (keeps ndim)
         (
@@ -73,7 +73,7 @@ def test_piecewise_backend_abstracted():
 def test_ops_compose():
     """Structural ops nest — select a voi, then downsample (Hopf-BOLD flavour)."""
     code = render_expression("subsample(slice_axis(data, 1, 0, 1), 1000)", format="jax")
-    assert code == "jnp.take(data, jnp.arange(0, 1), axis=1)[::1000]"
+    assert code == "jnp.take(data, jnp.arange(0, 1), axis=1)[999::1000]"
 
 
 # 2. Numeric byte-identity vs the hand-written slicing each op replaces
@@ -92,8 +92,8 @@ def test_new_ops_numerically_identical(fmt):
     def gen(expr):
         return eval(render_expression(expr, format=fmt), ns)
 
-    # subsample(x, step) == x[::step]
-    assert bool(xp.array_equal(gen("subsample(x, 1000)"), x[::1000]))
+    # subsample(x, step) == x[step - 1::step]
+    assert bool(xp.array_equal(gen("subsample(x, 1000)"), x[999::1000]))
     # subsample(x, start, step) == x[start::step]
     assert bool(xp.array_equal(gen("subsample(x, 5, 1000)"), x[5::1000]))
     # slice_axis(x, 1, 0, 1) == x[:, 0:1, :]  (keeps ndim)
@@ -104,5 +104,5 @@ def test_new_ops_numerically_identical(fmt):
     assert bool(xp.array_equal(gen("slice_from(x, 0, 100)"), x[100:]))
     # shape(x, 1) == x.shape[1]
     assert gen("shape(x, 1)") == x.shape[1]
-    # composition: select voi 0 then subsample == x[:, 0:1, :][::1000]
-    assert bool(xp.array_equal(gen("subsample(slice_axis(x, 1, 0, 1), 1000)"), x[:, 0:1, :][::1000]))
+    # composition: select voi 0 then subsample == x[:, 0:1, :][999::1000]
+    assert bool(xp.array_equal(gen("subsample(slice_axis(x, 1, 0, 1), 1000)"), x[:, 0:1, :][999::1000]))

@@ -1,9 +1,9 @@
 """An observation reduction observer binds its ``Dynamics.parameters`` as named constants.
 
-A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated auxiliary that computes an observation as a time recurrence — is the same class and so declares constants the same way. These tests pin that the reduction resolver honours them:
-they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently shadow a state variable.
+A model ``Dynamics`` declares its constants as ``parameters`` (scalar, or array-valued for an operator such as a mode-coupling matrix). An observer ``Dynamics`` — the co-integrated auxiliary that computes an observation as a time recurrence — is the same class and so declares constants the same way. These tests pin that the reduction resolver honours them: they enter the symbolic vocabulary, survive into the rendered triple, and cannot silently shadow a state variable. A parameter whose producer is a bundle binds each array it returns under that array's own name.
 """
 
+import numpy as np
 import pytest
 from mako.template import Template
 
@@ -203,3 +203,73 @@ def test_the_emitted_path_is_absolute(tmp_path):
     from pathlib import Path
 
     assert Path(red["parameters"]["A"]["lazy"][0]).is_absolute()
+
+
+# --- bundles: one producer's arrays, each bound under its own name -------------------
+
+
+def _operators():
+    """Stands in for a curated mesh producer: several fixed arrays from one call."""
+    return {"A": np.eye(2), "b": np.ones(2)}
+
+
+def _bundle(*outputs):
+    """A parameter `ops` whose producer, `_operators`, is declared a bundle of *outputs*."""
+    return Parameter(name="ops", producer={"callable": {"name": "_operators", "module": __name__}, "outputs": list(outputs)})
+
+
+def test_a_bundle_binds_each_of_its_outputs_under_its_own_name(tmp_path, monkeypatch):
+    """The update reads `A` and `b`, not `ops`: each declared output is a constant of its own, all read from the one artifact the producer's call is cached in."""
+    monkeypatch.setenv("HOME", str(tmp_path))
+    obs = _observer("acc + matmul(A, x) + b", "acc / count", {"ops": _bundle("A", "b")})
+
+    red = resolve_reduction(obs, _Experiment(tmp_path / "study.yaml"))
+
+    assert sorted(red["parameters"]) == ["A", "b"]
+    (path_a, key_a), (path_b, key_b) = red["parameters"]["A"]["lazy"], red["parameters"]["b"]["lazy"]
+    assert path_a == path_b and (key_a, key_b) == ("A", "b")
+
+
+def test_a_bundle_is_deferred_output_by_output_when_nothing_is_emitted():
+    """The bare predicate call takes the names from the declaration and runs no producer."""
+    obs = _observer("acc + matmul(A, x) + b", "acc / count", {"ops": _bundle("A", "b")})
+
+    red = resolve_reduction(obs)
+
+    assert red["parameters"] == {"A": {"lazy": None, "shape": None}, "b": {"lazy": None, "shape": None}}
+
+
+@pytest.mark.parametrize(
+    ("taken", "owner"),
+    [("acc", "state variable 'acc'"), ("out", "derived variable 'out'"), ("g", "parameter 'g'")],
+)
+def test_a_bundle_output_named_like_another_observer_symbol_is_refused(taken, owner):
+    """One name binds one symbol, so an output named like a symbol the observer declares is refused, naming both."""
+    parameters = {"ops": _bundle("A", taken), "g": Parameter(name="g", value=0.5)}
+    obs = _observer("acc + g * matmul(A, x)", "acc / count", parameters)
+
+    with pytest.raises(ValueError, match=f"parameter 'ops' binds its producer's output '{taken}', .*{owner}"):
+        resolve_reduction(obs)
+
+
+def test_a_partition_over_a_bundle_slices_each_of_its_outputs():
+    """`over: [ops]` names the bundle once and stands for every array it binds."""
+    roles = {"waves": "wave", "directed": "wave", "correlation": "corr"}
+    obs = Observation(
+        name="waves",
+        source=["x"],
+        period=5.0,
+        partition={"gather": "members", "over": ["ops"], **roles},
+        dynamics=Dynamics(
+            name="waves",
+            parameters={"ops": _bundle("members", "A")},
+            derived_variables={
+                "corr": DerivedVariable(name="corr", equation=Equation(rhs="sum(matmul(A, x))")),
+                "wave": DerivedVariable(name="wave", equation=Equation(rhs="corr > 0")),
+            },
+        ),
+    )
+
+    red = resolve_reduction(obs)
+
+    assert red["group_vmap"] == {"gather": "members", "over": ["members", "A"]}

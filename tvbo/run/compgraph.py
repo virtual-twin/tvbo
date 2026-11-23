@@ -152,6 +152,7 @@ def integration_step(integration):
 
     from tvbo.adapters.base import BaseAdapter
     from tvbo.datamodel import Integrator
+    from tvbo.parse.expression import array_syntax
 
     scheme = (
         integration if integration is not None else Integrator(method=BaseAdapter.declared_integration(None, "method"))
@@ -167,10 +168,10 @@ def integration_step(integration):
     head = [Symbol("X"), Symbol("dt")]
     derivatives = [Symbol("dX0")] + [Symbol(f"d{name}") for name, _ in stages]
     stage_fns = [
-        lambdify(head + derivatives[: k + 1], sympify(stage.equation.rhs).subs(zero), "numpy")
+        lambdify(head + derivatives[: k + 1], sympify(array_syntax(str(stage.equation.rhs))).subs(zero), "numpy")
         for k, (_, stage) in enumerate(stages)
     ]
-    update_fn = lambdify(head + derivatives, sympify(update.rhs).subs(zero), "numpy")
+    update_fn = lambdify(head + derivatives, sympify(array_syntax(str(update.rhs))).subs(zero), "numpy")
 
     def field(f, x):
         return np.asarray(f(x), dtype=float)

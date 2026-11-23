@@ -1,7 +1,7 @@
 <%doc>
 Compact delayed coupling: a concrete tvboptim DelayedCoupling that integrates over the connectome's nonzero edges.
 
-Emitted once into a generated module that defines any delayed coupling; every delayed coupling class the cfun template renders then inherits from it. The edge order it integrates over is its own def, `render_compact_edge_list`, which a module without a delayed coupling emits alone when a parameter is drawn per connection. Built only on tvboptim's public coupling and graph contract (prepare / precompute / compute / pre / post, the roll history buffer, and a sparse graph's `edge_indices` and per-edge `data`), so it runs on the released tvboptim as well as a development checkout.
+Emitted once into a generated module that defines any delayed coupling; every delayed coupling class the cfun template renders then inherits from it. The edge order it integrates over is its own def, `render_compact_edge_list`, which a module without a delayed coupling emits alone when a parameter is drawn per connection. Built only on tvboptim's public coupling and graph contract (prepare / precompute / compute / pre / post, the roll and circular history buffers with their `max_delay_steps`, `buffer_size` and `write_idx`, and a sparse graph's `edge_indices` and per-edge `data`), so it runs on the released tvboptim as well as a development checkout.
 </%doc>
 <%def name="render_compact_edge_list()">\
 def _compact_edge_list(graph):
@@ -25,7 +25,7 @@ class CompactDelayedCoupling(DelayedCoupling):
 
     The stock dense path gathers every one of the N^2 delayed source states each step, applies ``pre`` and weights to all of them, and reduces over the source axis, so a connectome with most entries zero pays for edges that carry nothing; the stock sparse path visits only the stored edges but reduces them with a scatter-add. Here the edges (a dense graph's nonzero entries at prepare() time, a sparse graph's stored ones) are laid out as row-contiguous slots, padded per target to whole chunks of ``COMPACT_CHUNK``; each step reads its delayed states with one flat gather from the history buffer, applies ``pre`` and the weights per slot, and sums every chunk with a ones-contraction and every target's chunks with a small gather. The coupling is the stock one up to floating-point summation order.
 
-    The edge list is fixed at prepare(), as a sparse graph's is. Weights may change value on it (sweeps, fits, per-TR updates of edge parameters); on a dense graph a weight that turns nonzero off it raises rather than being dropped, and a sparse graph cannot grow an entry. The gradient with respect to a structurally-zero weight is zero, as for a sparse graph. The compact path covers what tvbo emits, a delay graph, dense or sparse, read through the default roll buffer without interpolation or clamp warnings; any other configuration, or a nearly full graph, takes the stock path unchanged.
+    The edge list is fixed at prepare(), as a sparse graph's is. Weights may change value on it (sweeps, fits, per-TR updates of edge parameters); on a dense graph a weight that turns nonzero off it raises rather than being dropped, and a sparse graph cannot grow an entry. The gradient with respect to a structurally-zero weight is zero, as for a sparse graph. The compact path covers what tvbo emits, a delay graph, dense or sparse, read without interpolation or clamp warnings through a roll or a circular buffer, by the coupling's own ``buffer_strategy``: a roll buffer's read offsets are fixed once per forward pass, a circular buffer's rows follow its write pointer each step. Any other configuration (a preallocated buffer, an interpolated read, clamp warnings), or a nearly full graph, takes the stock path unchanged.
     """
 
     COMPACT_CHUNK = 32
@@ -36,7 +36,7 @@ class CompactDelayedCoupling(DelayedCoupling):
         graph = network.graph
         weights = getattr(graph, "weights", None)
         if (
-            self.buffer_strategy != "roll"
+            self.buffer_strategy not in ("roll", "circular")
             or self.history_interpolation is not None
             or self.warn_on_delay_clamp
             or getattr(weights, "ndim", None) != 2
@@ -53,11 +53,7 @@ class CompactDelayedCoupling(DelayedCoupling):
         data = Bunch(data)
         data._compact = _compact_edge_slots(edges, n_target, self.COMPACT_CHUNK, off_pattern)
         data._compact_dt = dt
-        data._compact_newest, data._compact_channels, data._compact_sources = (
-            state.history.shape[0] - 1,
-            state.history.shape[1],
-            state.history.shape[2],
-        )
+        data._compact_channels, data._compact_sources = state.history.shape[1], state.history.shape[2]
         return data, state
 
     def precompute(self, coupling_data, params, graph):
@@ -78,9 +74,12 @@ class CompactDelayedCoupling(DelayedCoupling):
                 "A delayed coupling's weights gained a nonzero entry outside the pattern prepare() compacted; "
                 "prepare the network again on the new weights.",
             )
-        steps = jnp.clip(jnp.rint(delays / data._compact_dt).astype(jnp.int32), 0, data._compact_newest)
-        channel = jnp.arange(data._compact_channels)[:, None]
-        data._compact_offsets = ((data._compact_newest - steps)[None, :] * data._compact_channels + channel) * data._compact_sources + source[None, :]
+        steps = jnp.clip(jnp.rint(delays / data._compact_dt).astype(jnp.int32), 0, data.max_delay_steps)
+        data._compact_lanes = jnp.arange(data._compact_channels)[:, None] * data._compact_sources + source[None, :]
+        if self.buffer_strategy == "roll":
+            data._compact_offsets = self._compact_slot_offsets(data, data.max_delay_steps - steps)
+        else:
+            data._compact_steps = steps
         data._compact_weights = slot_weights
         pre_params = Bunch(params)
         for name in self.EDGE_PARAMS:
@@ -99,7 +98,12 @@ class CompactDelayedCoupling(DelayedCoupling):
         if slots is None:
             return super().compute(t, state, coupling_data, coupling_state, params, graph)
         local_states = state[coupling_data.local_indices]
-        delayed = coupling_state.history.reshape(-1).at[coupling_data._compact_offsets].get(mode="promise_in_bounds")
+        if self.buffer_strategy == "roll":
+            offsets = coupling_data._compact_offsets
+        else:
+            rows = (coupling_state.write_idx - 1 - coupling_data._compact_steps) % coupling_data.buffer_size
+            offsets = self._compact_slot_offsets(coupling_data, rows)
+        delayed = coupling_state.history.reshape(-1).at[offsets].get(mode="promise_in_bounds")
         target_states = local_states[:, slots.target] if self.PRE_USES_LOCAL else None
         messages = self.pre(delayed, target_states, coupling_data._compact_pre_params)
         n_out = messages.shape[0]
@@ -108,6 +112,11 @@ class CompactDelayedCoupling(DelayedCoupling):
         chunk_sums = weighted @ jnp.ones((chunk,), dtype=weighted.dtype)
         chunk_sums = jnp.concatenate([chunk_sums, jnp.zeros((n_out, 1), dtype=chunk_sums.dtype)], axis=1)
         return self.post(chunk_sums[:, slots.chunk_table].sum(axis=-1), local_states, params)
+
+    @staticmethod
+    def _compact_slot_offsets(data, rows):
+        """The flat history offsets of every slot's channels, ``(n_channels, n_slots)``, when each slot reads the buffer row *rows* gives it."""
+        return rows[None, :] * (data._compact_channels * data._compact_sources) + data._compact_lanes
 
 
 ${render_compact_edge_list()}\

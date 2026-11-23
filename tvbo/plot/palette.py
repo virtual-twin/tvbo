@@ -160,7 +160,9 @@ def load(source) -> dict:
         _as_colormap(value, f"{where}: colormaps.{role}")
     _refuse_shadowed_names(spec, where)
     for role in ROLES:
-        if isinstance(spec[role], str) and spec[role].startswith("palette."):  # a role naming one of the hues, as color() reads it
+        if isinstance(spec[role], str) and spec[role].startswith(
+            "palette."
+        ):  # a role naming one of the hues, as color() reads it
             spec[role] = _hue(spec[role], spec["palette"])
     for key in (*ROLES, *(f"palette[{i}]" for i in range(len(spec["palette"])))):
         value = spec[key] if key in ROLES else spec["palette"][int(key[8:-1])]

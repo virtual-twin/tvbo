@@ -78,6 +78,46 @@ def _get_option(obj, name):
     return None
 
 
+_OPTIONS_READ = {"continuation": {"tangent"}, "discretization": {"jacobian"}, "branch": set()}
+"""The ``options`` keys this backend reads, by the kind of declaration that carries them: a continuation's ``tangent``, a discretization's ``jacobian``, and none on a branch."""
+
+
+def _option_names(obj) -> list[str]:
+    """The names of the ``options`` *obj* declares, in either spelling the loader leaves: a dict keyed by name, or a list of `Option`."""
+    options = getattr(obj, "options", None) or []
+    return [str(name) for name in options] if isinstance(options, dict) else [str(o.name) for o in options]
+
+
+def _refuse_unread_options(obj, kind, label):
+    """Refuse each ``options`` key that *obj*, a *kind* of declaration in `_OPTIONS_READ`, declares and this backend does not read, since it would be dropped without a word.
+
+    Raises:
+        ValueError: Naming *label*, each unread key, and the keys this backend reads on a *kind*.
+    """
+    read = _OPTIONS_READ[kind]
+    unread = sorted(set(_option_names(obj)) - read)
+    if unread:
+        keys = ", ".join(repr(key) for key in unread)
+        raise ValueError(
+            f"{label} declares the option{'s' if len(unread) > 1 else ''} {keys}, which the bifurcationkit backend "
+            f"does not read on a {kind}; it reads {', '.join(repr(key) for key in sorted(read)) or 'no option'} there. "
+            "Declare the setting in the slot that carries it, or remove it."
+        )
+
+
+def _refuse_unread_branch_options(br):
+    """`_refuse_unread_options` on the branch *br* and on its nested continuation."""
+    name = getattr(br, "name", "?")
+    _refuse_unread_options(br, "branch", f"branch {name!r}")
+    _refuse_unread_options(br.continuation, "continuation", f"the continuation of branch {name!r}")
+
+
+def _mesh_setting(disc, name):
+    """The integer *name* (``mesh_intervals`` or ``degree``) of the discretization *disc*: its parameter of that name where declared, the slot ``mesh_adaptation`` also uses, else its attribute, which carries the schema's default."""
+    value = _get_param(disc, name)
+    return int(value if value is not None else _get(disc, name))
+
+
 def _julia_solver(method):
     """The DifferentialEquations.jl solver a declared `Solver.method` names (`julia_solver`), or ``None`` where none is declared."""
     method = _str(method)
@@ -138,8 +178,12 @@ class BifurcationKitAdapter(ContinuationAdapter):
         """Pre-compute every value the template needs.
 
         Returns a flat dict of simple strings/numbers/booleans so the template does zero processing.
+
+        Raises:
+            ValueError: If the continuation, or any of its branches, declares an option this backend does not read (`_refuse_unread_options`).
         """
         ctx = dict(model=model, continuation=cont)
+        _refuse_unread_options(cont, "continuation", f"continuation {getattr(cont, 'name', None)!r}")
 
         # Network context (None or 1-node ⇒ single-node RHS; >1 node ⇒ coupled).
         network = kwargs.get("network")
@@ -229,8 +273,13 @@ class BifurcationKitAdapter(ContinuationAdapter):
 
     @staticmethod
     def _prepare_branch(br, parent=None):
-        """Pre-compute all values for one periodic-orbit branch of the continuation *parent*, whose Newton settings it inherits where it leaves them unset."""
+        """Pre-compute all values for one periodic-orbit branch of the continuation *parent*, whose Newton settings it inherits where it leaves them unset.
+
+        Raises:
+            ValueError: If the branch, its continuation or its discretization declares an option this backend does not read (`_refuse_unread_options`).
+        """
         bc = br.continuation  # sub-Continuation or None
+        _refuse_unread_branch_options(br)
 
         # The branch's ContinuationPar: the parent's (`opts_br`), with every field the branch or its parent declares.
         po_cp = _cont_kwargs(bc, parent)
@@ -247,11 +296,12 @@ class BifurcationKitAdapter(ContinuationAdapter):
         from tvbo.datamodel import Discretization
 
         disc = br.discretization or Discretization()
+        _refuse_unread_options(disc, "discretization", f"the discretization of branch {getattr(br, 'name', '?')!r}")
         method = _str(_get(disc, "method"))
 
-        # Collocation/trapezoid params (direct attributes with schema defaults)
-        mesh_intervals = _get(disc, "mesh_intervals")
-        degree = _get(disc, "degree")
+        # Collocation/trapezoid params, each a declared parameter or else the attribute with its schema default
+        mesh_intervals = _mesh_setting(disc, "mesh_intervals")
+        degree = _mesh_setting(disc, "degree")
         meshadapt = _get_param(disc, "mesh_adaptation")
         jacobian = _str(_get_option(disc, "jacobian"))
 
@@ -444,9 +494,10 @@ class BifurcationKitAdapter(ContinuationAdapter):
         BifurcationKit continues the curve in the second parameter, bounded as `ContinuationAdapter.parameter_bounds` resolves it, and carries the primary among its unknowns, so the primary's *primary_bounds* stop the curve through a finaliser, as AUTO-07p's ``RL0``/``RL1`` do.
 
         Raises:
-            ValueError: If *br* is not a two-parameter continuation (`ContinuationAdapter.is_codim2`), or declares no source point (`ContinuationAdapter.codim2_source`).
+            ValueError: If *br* is not a two-parameter continuation (`ContinuationAdapter.is_codim2`), declares no source point (`ContinuationAdapter.codim2_source`), or it or its continuation declares an option this backend does not read (`_refuse_unread_options`).
         """
         bc = br.continuation
+        _refuse_unread_branch_options(br)
         fp2 = BifurcationKitAdapter.codim2_parameter(br, parent_cont)
         if fp2 is None:
             raise ValueError(

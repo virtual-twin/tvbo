@@ -1,13 +1,15 @@
 """General array-op primitives for per-timestep detectors / permutation tests.
 
-``take`` (2-D gather), ``sum_axis`` (single-axis reduction), and ``pearson`` (node-collapsing correlation) are backend-abstracted printer primitives, so a wave / graph / significance observable can be authored as declarative equations instead of backend ``source_code``. Each parses to a SymPy Function and prints to the backend's array algebra; here we render for jax + numpy and execute against a numpy reference.
+``take`` (2-D gather), ``sum_axis`` (single-axis reduction), and ``pearson`` (node-collapsing correlation) are backend-abstracted printer primitives, so a wave / graph / significance observable can be authored as declarative equations instead of backend ``source_code``. ``scatter_sum`` (a face field summed onto its vertices) and ``spearman`` (a rank correlation over the entries a mask keeps) complete the chain of a mesh wave detector, and a comparison that arithmetic applies to, ``(p <= alpha) * mask``, reads as the 0/1 field it denotes. Each parses to a SymPy Function and prints to the backend's array algebra; here we render for jax + numpy and execute against a numpy reference.
 """
 
 import numpy as np
 import pytest
 
 from tvbo.codegen import render_expression
+from tvbo.datamodel import DerivedVariable, Dynamics, Equation, Observation, Parameter, StateVariable
 from tvbo.parse.expression import parse_eq
+from tvbo.templates.tvboptim.utils import resolve_reduction
 
 
 def _render(rhs, fmt, params):
@@ -87,3 +89,82 @@ def test_masked_mean_form_composes():
     deg = nbr_mask.sum(1)
     got = eval(code, {"jnp": jnp}, {"ang": jnp.array(ang), "nbr_mask": jnp.array(nbr_mask), "deg": jnp.array(deg)})
     assert np.allclose(np.asarray(got), (ang * nbr_mask).sum(1) / deg)
+
+
+@pytest.mark.parametrize("fmt", ["jax", "numpy"])
+def test_scatter_sum_matches_add_at(fmt):
+    """Each slot sums every value whose index names it, a repeated index adding each time and a slot no index names staying 0, as `numpy.add.at` accumulates."""
+    faces = np.array([[0, 1, 2], [2, 1, 3], [3, 1, 0]])
+    values = np.arange(9.0).reshape(3, 3)
+    expected = np.zeros(5)
+    np.add.at(expected, faces, values)
+    code = _render("scatter_sum(values, faces, 5)", fmt, ["values", "faces"])
+    env, arr = _env(fmt)
+
+    got = eval(code, env, {"values": arr(values), "faces": arr(faces)})
+
+    np.testing.assert_allclose(np.asarray(got), expected)
+
+
+@pytest.mark.parametrize("fmt", ["jax", "numpy"])
+def test_spearman_masked_matches_scipy(fmt):
+    """Spearman's rho over the kept entries is `scipy.stats.spearmanr` of those entries alone, ties included; what a left-out entry holds, NaN or an outlier, changes nothing."""
+    from scipy.stats import spearmanr
+
+    rng = np.random.default_rng(3)
+    x = rng.integers(0, 6, 40).astype(float)
+    y = x + rng.integers(0, 4, 40)
+    keep = rng.random(40) < 0.7
+    expected = spearmanr(x[keep], y[keep]).statistic
+    x[~keep], y[~keep] = np.nan, 1e9
+    code = _render("spearman(x, y, keep)", fmt, ["x", "y", "keep"])
+    env, arr = _env(fmt)
+
+    got = eval(code, env, {"x": arr(x), "y": arr(y), "keep": arr(keep)})
+
+    assert float(got) == pytest.approx(expected, abs=1e-6)
+
+
+@pytest.mark.parametrize("fmt", ["jax", "numpy"])
+def test_relational_times_mask(fmt):
+    """A comparison that arithmetic applies to is 1 where it holds and 0 where not, so `(p <= alpha) * mask` is the masked indicator numpy computes."""
+    p = np.array([0.01, 0.2, 0.04, 0.5])
+    mask = np.array([1.0, 1.0, 0.0, 1.0])
+    code = _render("(p <= alpha) * mask", fmt, ["p", "alpha", "mask"])
+    env, arr = _env(fmt)
+
+    got = eval(code, env, {"p": arr(p), "alpha": 0.05, "mask": arr(mask)})
+
+    np.testing.assert_array_equal(np.asarray(got), (p <= 0.05) * mask)
+
+
+@pytest.mark.parametrize("fmt", ["jax", "numpy"])
+def test_an_equality_times_a_mask_compares_values(fmt):
+    """`==` in arithmetic compares the values entry by entry, not the two symbols, which SymPy alone would find unequal."""
+    k = np.array([0.0, 1.0, 2.0, 1.0])
+    mask = np.array([1.0, 1.0, 1.0, 0.0])
+    code = _render("(k == level) * mask", fmt, ["k", "level", "mask"])
+    env, arr = _env(fmt)
+
+    got = eval(code, env, {"k": arr(k), "level": 1.0, "mask": arr(mask)})
+
+    np.testing.assert_array_equal(np.asarray(got), (k == 1.0) * mask)
+
+
+def test_an_observer_reads_a_comparison_times_a_mask_as_parse_eq_does():
+    """An observer parses its per-step chain with its own vocabulary, and lowers the comparison the same way."""
+    obs = Observation(
+        name="hits",
+        source=["p"],
+        dynamics=Dynamics(
+            name="hits",
+            parameters={"alpha": Parameter(name="alpha", value=0.05), "mask": Parameter(name="mask", value=[1.0, 0.0])},
+            state_variables={"acc": StateVariable(name="acc", equation=Equation(rhs="acc + p"), equation_type="recurrence")},
+            derived_variables={"hit": DerivedVariable(name="hit", equation=Equation(rhs="(p <= alpha) * mask"))},
+            output=["hit"],
+        ),
+    )
+
+    (hit,) = resolve_reduction(obs)["derived"]
+
+    assert hit["expr"] == parse_eq("(p <= alpha) * mask", parameters=["p", "alpha", "mask"])

@@ -28,6 +28,7 @@ __all__ = [
     "RENDERERS",
     "analysis_closure",
     "analysis_name",
+    "argument_value",
     "container_path",
     "dependencies",
     "dependents_of",
@@ -352,10 +353,7 @@ _EXPRESSION_NAMESPACES = {
 }
 """Backend name -> the module bindings its printer's output expects at call time.
 
-A printer and the namespace its code runs in are one choice, not two: printing
-``numpy.tanh`` into a scope holding only ``jnp`` compiles fine and raises ``NameError``
-on the first call, so the pair is registered together and an unknown *fmt* is refused
-here rather than at the call site.
+A printer and the namespace its code runs in are one choice, not two: printing ``numpy.tanh`` into a scope holding only ``jnp`` compiles fine and raises ``NameError`` on the first call, so the pair is registered together and an unknown *fmt* is refused here rather than at the call site.
 """
 
 
@@ -367,7 +365,7 @@ def _expression_fn(analysis, names, fmt="jax"):
     import sympy as sp
 
     from tvbo.codegen.code import get_printer
-    from tvbo.parse.expression import ARRAY_FUNCTIONS
+    from tvbo.parse.expression import ARRAY_FUNCTIONS, array_syntax
 
     name = analysis_name(analysis)
     rhs = _slot(_slot(analysis, "equation"), "rhs")
@@ -380,7 +378,7 @@ def _expression_fn(analysis, names, fmt="jax"):
             "bindings alongside it, or render the analysis on a backend that is."
         )
     vocab = {**ARRAY_FUNCTIONS, "pi": sp.pi, **{n: sp.Symbol(n) for n in names}}
-    src = get_printer(fmt).doprint(sp.sympify(str(rhs), locals=vocab))
+    src = get_printer(fmt).doprint(sp.sympify(array_syntax(str(rhs)), locals=vocab))
 
     ns: dict = {}
     exec(f"def _analysis({', '.join(names)}):\n    return {src}\n", _EXPRESSION_NAMESPACES[str(fmt)](), ns)
@@ -589,7 +587,7 @@ def render_tvboptim(analysis, kwargs):
     _pin_accelerator(_slot(analysis, "execution"))
     fn, src = _expression_fn(analysis, names)
     mapped = _slot(analysis, "apply_on_dimension")
-    mapped = str(mapped).split(".")[-1] if mapped else None
+    mapped = str(mapped) if mapped else None  # as the container names it: a swept parameter by its whole path
 
     agg = _slot(analysis, "aggregate")
     over = _slot(agg, "over")
@@ -652,10 +650,7 @@ def render_tvboptim(analysis, kwargs):
 RENDERERS = {"inprocess": render_inprocess, "tvboptim": render_tvboptim}
 """Backend name -> renderer ``fn(analysis, kwargs) -> produced``.
 
-``Analysis.execution.backend`` selects one, exactly as it selects an experiment's
-engine. A backend that renders experiments does not automatically render analyses:
-this registry is what makes the difference explicit, so an unrendered backend raises
-instead of being silently run by another.
+``Analysis.execution.backend`` selects one, exactly as it selects an experiment's engine. A backend that renders experiments does not automatically render analyses: this registry is what makes the difference explicit, so an unrendered backend raises instead of being silently run by another.
 """
 
 _DEFAULT_RENDERER = "inprocess"
@@ -676,35 +671,87 @@ def _render(analysis, kwargs):
     return renderer(analysis, kwargs)
 
 
-def _kwargs_of(analysis, results_root, datasets=None, source_dir=None) -> dict:
-    """The analysis's arguments as kwargs — literals as written, ``used:`` refs resolved.
+def argument_value(arg, where: str, **refs):
+    """One declared argument's value: its literal ``value`` as written, or the labelled array its ``used:`` reference names (:func:`tvbo.data.dataref.resolve_dataref`, given *refs*).
 
-    A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced and reconciled by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the callable selects by name. *datasets* are the study's, where a ``cohort`` reference finds its members, and *source_dir* resolves a relative ``bids_root``.
+    The one reading of an argument that an analysis and a parameter producer share, *where* naming the argument when it declares both or its container cannot be found.
+    """
+    used = _slot(arg, "used")
+    value = _slot(arg, "value")
+    if used is not None and value is not None:
+        raise ValueError(
+            f"{where}: `value` and `used` are mutually exclusive — an argument is either a literal or a sourced array."
+        )
+    if used is None:
+        return value
+    try:
+        return _dref.resolve_dataref(used, **refs)
+    except (FileNotFoundError, _dref.AmbiguousContainerError) as e:
+        raise type(e)(f"{where}: {e}") from e
+
+
+def _kwargs_of(analysis, results_root, datasets=None, source_dir=None) -> dict:
+    """The analysis's arguments as kwargs — literals as written, ``used:`` refs resolved (:func:`argument_value`).
+
+    A sourced argument arrives as a labelled ``xarray.DataArray`` (sliced by :func:`tvbo.data.dataref.resolve_dataref`), never a bare positional array, so the callable selects by name. It arrives in its source's node order, a ``reconcile: by_label`` one included, which :func:`_on_one_node_order` lays out with the analysis's other ``by_label`` arguments. *datasets* are the study's, where a ``cohort`` reference finds its members, and *source_dir* resolves a relative ``bids_root``.
     """
     name = analysis_name(analysis)
-    out: dict = {}
-    for key, arg in _arg_items(_slot(analysis, "arguments")):
-        used = _slot(arg, "used")
-        value = _slot(arg, "value")
-        if used is not None and value is not None:
+    refs = {"results_root": results_root, "datasets": datasets, "source_dir": source_dir, "reconcile": False}
+    return {
+        key: argument_value(arg, f"analysis {name!r}, argument {key!r}", **refs)
+        for key, arg in _arg_items(_slot(analysis, "arguments"))
+    }
+
+
+def _on_one_node_order(analysis, kwargs: dict) -> tuple[dict, dict]:
+    """*kwargs*, the analysis's arguments (:func:`_kwargs_of`), with its ``reconcile: by_label`` ones laid out on one node order by label (:func:`tvbo.data.dataref.reconcile_by_label`), and, where they had to move onto it, that order keyed by the name of each node axis they carry, else an empty mapping.
+
+    Their node axes are :func:`tvbo.data.dataref.node_axes`, and labels are matched as written, there being no network whose aliases they could go through. The order is the one all those axes carry when they carry one, and then nothing moves, else their labels sorted, so it never depends on the order the arguments are declared in. Refused, naming the analysis and the argument: a ``by_label`` argument that is the analysis's only one, which has nothing to be laid out against; one with no labelled axis; one with an axis that carries no coordinate (a node axis beside a labelled ``band``, the unlabelled half of a matrix), since ``by_label`` promises keyed alignment and such an axis can only be paired by position; one that lacks a label another carries; and, once the ``by_label`` arguments move, any other argument with an axis of the order's length (a mask, a per-node literal), which would stay in its own order and be paired with them by position.
+    """
+    import numpy as np
+
+    arguments = _arg_items(_slot(analysis, "arguments"))
+    by_label = [key for key, arg in arguments if _dref.reconcile_mode(_slot(arg, "used")) == "by_label"]
+    if not by_label:
+        return kwargs, {}
+    where = f"analysis {analysis_name(analysis)!r}"
+    if len(by_label) == 1:
+        raise ValueError(
+            f"{where}, argument {by_label[0]!r}: `reconcile: by_label` lays an analysis's arguments out on one node order, matched by label, and no other argument of it declares it, so there is nothing to lay this one against. Declare it on each argument this one is matched with, or drop it."
+        )
+    labels = {key: {tuple(map(str, kwargs[key].coords[d].values)) for d in _dref.node_axes(kwargs[key])} for key in by_label}
+    bare = sorted(key for key, axes in labels.items() if not axes)
+    if bare:
+        raise ValueError(
+            f"{where}, argument {', '.join(map(repr, bare))}: `reconcile: by_label` matches nodes by label, and it carries no axis labelled with names."
+        )
+    for key in by_label:
+        bare_axes = [d for d in kwargs[key].dims if d not in kwargs[key].coords]
+        if bare_axes:
             raise ValueError(
-                f"analysis {name!r}, argument {key!r}: `value` and `used` are mutually "
-                "exclusive — an argument is either a literal or a sourced array."
+                f"{where}, argument {key!r}: `reconcile: by_label` aligns its axes by key, and its axis {', '.join(map(repr, bare_axes))} carries no coordinate, so it could only be paired by position. Give that axis a coordinate (the node names, or numbers on an axis that holds no nodes), or select it away with `sel`."
             )
-        if used is None:
-            out[key] = value
-            continue
-        try:
-            out[key] = _dref.resolve_dataref(used, results_root=results_root, datasets=datasets, source_dir=source_dir)
-        except (FileNotFoundError, _dref.AmbiguousContainerError) as e:
-            raise type(e)(f"analysis {name!r}, argument {key!r}: {e}") from e
-    return out
+    orders = set().union(*labels.values())
+    order = list(next(iter(orders))) if len(orders) == 1 else sorted(set().union(*orders))
+    if len(orders) == 1:
+        return kwargs, {}
+    others = {key: value for key, value in kwargs.items() if key not in by_label}
+    for key, value in others.items():
+        shape = value.shape if hasattr(value, "shape") else np.asarray(_plain(value), dtype=object).shape
+        if len(order) in shape:
+            raise ValueError(
+                f"{where}, argument {key!r}: the `reconcile: by_label` arguments {', '.join(map(repr, by_label))} are laid out on one node order of {len(order)} labels, sorted, and this argument has an axis of that length without declaring `reconcile: by_label`, so it stays in its own order and would be paired with them by position. Declare it through `used:` with `reconcile: by_label` as they are, or give it no axis of {len(order)} entries."
+            )
+    laid_out = {key: _dref.reconcile_by_label(kwargs[key], {}, order, what=f"{where}, argument {key!r}") for key in by_label}
+    return {**kwargs, **laid_out}, {d: order for da in laid_out.values() for d in _dref.node_axes(da)}
 
 
-def _as_dataset(name: str, produced, dims=None):
+def _as_dataset(name: str, produced, dims=None, node_coords=None):
     """The callable's return as an xarray ``Dataset`` of ``observation__<key>`` variables.
 
     A mapping contributes one variable per key; a ``Dataset`` keeps its own variable names; a ``DataFrame`` contributes one variable per COLUMN, all sharing a single row dimension, so a table survives the round trip as a table rather than as an unlabelled block; anything else is a single array keyed by the analysis name. A labelled ``DataArray`` passes through with its dims and coordinates intact — that fidelity is the point, since a figure's ``encoding`` names them. An unlabelled array that is the analysis's only output takes the analysis's declared *dims*, and raises when its rank contradicts them; one that declares nothing is named ``<key>_d<i>``.
+
+    *node_coords* is the order the analysis's ``by_label`` arguments were moved onto, keyed by the name of each node axis they carry (:func:`_on_one_node_order`), so a returned axis of its length that carries no coordinate holds nodes in an order nothing else records. Such an axis named like one of those node axes takes the order as its coordinate, keyed by name, never by length; one under any other name is refused, naming it, so an axis that only shares the node count is never labelled with nodes, and so is a coordinate-less axis named like a node axis whose length is not the order's.
     """
     import numpy as np
     import xarray as xr
@@ -754,7 +801,25 @@ def _as_dataset(name: str, produced, dims=None):
     if not data_vars:
         raise ValueError(f"analysis {name!r}: the callable returned nothing to persist.")
     coords = {row_dim: row_index} if row_index is not None else None
-    return xr.Dataset(data_vars, coords=coords)
+    ds = xr.Dataset(data_vars, coords=coords)
+    if not node_coords:
+        return ds
+    n = len(next(iter(node_coords.values())))
+    bare = {d: size for d, size in ds.sizes.items() if d not in ds.coords and (size == n or d in node_coords)}
+    misnamed = sorted(str(d) for d in bare if d not in node_coords)
+    if misnamed:
+        raise ValueError(
+            f"analysis {name!r}: its `reconcile: by_label` arguments were laid out on one node order of {n} labels, sorted, and its return has axis {', '.join(map(repr, misnamed))} of that length with no coordinate, so it would be stored in that order with nothing to say which node is which. "
+            f"Return it labelled, or name that axis {' or '.join(map(repr, sorted(node_coords)))}, the node axis of the `by_label` arguments, to take the order."
+        )
+    misfit = next((d for d, size in bare.items() if size != n), None)
+    if misfit is not None:
+        outputs = sorted(str(key)[len("observation__") :] for key, da in ds.data_vars.items() if misfit in da.dims)
+        raise ValueError(
+            f"analysis {name!r}, output {', '.join(map(repr, outputs))}: its axis {str(misfit)!r} is named like the node axis of the `reconcile: by_label` arguments and has {bare[misfit]} entries with no coordinate, where their node order has {n} labels, so the order cannot label it. "
+            "Return it labelled, or give that axis another name."
+        )
+    return ds.assign_coords({d: node_coords[d] for d in bare})
 
 
 def _is_dataframe(obj) -> bool:
@@ -869,8 +934,8 @@ def run_analysis(analysis, results_root=None, *, compress: bool = True, datasets
 
     name = analysis_name(analysis)
     cohorts = used_cohorts(analysis, datasets, source_dir)
-    produced = _render(analysis, _kwargs_of(analysis, results_root, datasets, source_dir))
-    ds = _as_dataset(name, produced, _slot(analysis, "dims"))
+    kwargs, node_coords = _on_one_node_order(analysis, _kwargs_of(analysis, results_root, datasets, source_dir))
+    ds = _as_dataset(name, _render(analysis, kwargs), _slot(analysis, "dims"), node_coords)
 
     persisted = is_persisted(analysis)
     path = container_path(name, results_root if persisted else _dref.transient_root(results_root))

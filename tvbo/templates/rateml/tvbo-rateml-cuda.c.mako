@@ -16,16 +16,19 @@ Output:
 - CUDA kernel for parallel brain network simulation
 </%doc>
 <%
+from tvbo.adapters.base import baked_opening, declared_node_count, run_seed
 from tvbo.templates.base.utils import get_coupling_terms, get_func_name
 from tvbo.templates.rateml.utils import cuda_code, get_boundary_str
-from tvbo.utils import initial_value
 
 # Model name: the one sanitized identifier.
 model_name = get_func_name(model)
 
-# State variables
+# State variables, every node opening on the run's draw.
 state_vars = list(model.state_variables.items())
 n_states = len(state_vars)
+_experiment = context.get('experiment', None)
+seed = run_seed(_experiment)
+opening = baked_opening(model, seed, "rateml-cuda", declared_node_count(getattr(_experiment, 'network', None)))
 
 # Parameters (constants)
 params = list(model.parameters.items()) if model.parameters else []
@@ -45,12 +48,9 @@ global_coupling_terms = _global_ct or coupling_terms
 if 'swept_params' not in context.keys():
     swept_params = ['global_speed', 'global_coupling']
 
-# Check for noise
-noisepresent = False
-if 'experiment' in context.keys() and experiment:
-    integration = getattr(experiment, 'integration', None)
-    if integration and getattr(integration, 'noise', None):
-        noisepresent = True
+# Each state variable's noise amplitude, by the reader every backend shares.
+sigmas = dict(zip(model.state_variables, _experiment.noise_sigma_array)) if _experiment is not None else {}
+noisepresent = any(sigma > 0 for sigma in sigmas.values())
 
 # Variables of interest (exposures)
 exposures = [(name, sv) for name, sv in state_vars if getattr(sv, 'record', True)]
@@ -125,14 +125,15 @@ extern "C" __global__ void ${model_name}(
     % endfor
 
     % if noisepresent:
-    // Initialize random state for noise
+    // The run's seed, one subsequence per work item, skipped past the draws of every earlier launch (at most two per state per node per step).
     curandState crndst;
-    curand_init(id + (unsigned int) clock64(), 0, 0, &crndst);
+    curand_init(${seed}ULL, id, 2ULL * i_step * n_node * ${n_states}, &crndst);
+    const float sqrt_dt = sqrtf(dt);
     % endif
 
     // State variable declarations
     % for sv_name, sv in state_vars:
-    float ${sv_name} = ${initial_value(sv)}f;
+    float ${sv_name} = ${opening[sv_name]}f;
     % endfor
 
     // Derivative declarations
@@ -154,7 +155,7 @@ extern "C" __global__ void ${model_name}(
     float dij = 0.0f;
     float wij = 0.0f;
 
-    // Seed the ring from the declared initial values — the time loop reads it back at t == i_step.
+    // Seed the ring from the opening — the time loop reads it back at t == i_step.
     for (unsigned int i_node = 0; i_node < n_node; i_node++)
     {
         tavg(i_node) = 0.0f;
@@ -224,18 +225,14 @@ extern "C" __global__ void ${model_name}(
             d${sv_name} = dt * (${cuda_code(sv.equation)});
             % endfor
 
-            // Update state
-            % if noisepresent:
-            // With noise
+            // Update state: the Euler step, plus sigma * sqrt(dt) * N(0, 1) where the state declares noise.
             % for sv_name, sv in state_vars:
-            ${sv_name} += nsig * curand_normal(&crndst) + d${sv_name};
-            % endfor
+            % if sigmas.get(sv_name, 0.0) > 0:
+            ${sv_name} += ${sigmas[sv_name]}f * sqrt_dt * curand_normal(&crndst) + d${sv_name};
             % else:
-            // Without noise
-            % for sv_name, sv in state_vars:
             ${sv_name} += d${sv_name};
-            % endfor
             % endif
+            % endfor
 
             // Apply boundaries
             % for sv_name, sv in state_vars:

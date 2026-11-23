@@ -63,6 +63,12 @@ enums:
       panel:   {description: "Drawn on the panel at its position. The default."}
       caption: {description: "Written into the figure's composed caption, as part of its panel's clause, and not drawn. A sample size or a test statistic the reader needs but the panel need not carry; with `used:` the number is read from the result when the caption is composed, as a drawn annotation's is when the figure renders."}
 
+  AnnotationCoordinateSystem:
+    description: "The units an annotation's position is given in."
+    permissible_values:
+      axes: {description: "Fractions of the axes: 0 is the left or bottom edge, 1 the right or top. The default."}
+      data: {description: "The panel's data coordinates, the values its axes show, so the label stays on its place in the data when the limits move."}
+
   TickPrune:
     description: "Which end ticks to drop where a corner tick would collide with its neighbour panel's."
     permissible_values:
@@ -116,6 +122,12 @@ enums:
       ventral:   {description: "From below."}
       anterior:  {description: "From the front."}
       posterior: {description: "From behind."}
+
+  SurfaceShading:
+    description: "How a cortical surface's faces are coloured and lit."
+    permissible_values:
+      flat:   {description: "Each face in one colour, the mean of its corners' values, lit by its own normal. The default."}
+      smooth: {description: "Colours and light blended across the faces, as a renderer's smooth shading draws a coarse mesh."}
 
   VolumeView:
     description: "Which anatomical plane a labelled volume is projected along."
@@ -844,13 +856,32 @@ classes:
         inlined: true
 
   Encoding:
-    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form."
+    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel's numbers are shown at a factor of the stored values through `display`, which converts what is drawn and never what is stored."
     attributes:
       x: {range: string}
       y: {range: string}
       z: {range: string, description: "Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D kinds."}
       color: {range: string, description: "Dim/coord/var whose values SEPARATE the marks by colour — a field name, never a colour. `color: node` draws one line per node from the cycler; to fix a mark's colour, use `Style.color`."}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
+      display:
+        range: DisplayScale
+        multivalued: true
+        inlined: true
+        description: "The channels whose numbers are shown at a factor of the stored values, keyed by channel: `{y: {factor: 1000}}` prints a coupling at the 1000 times its simulated value a paper prints, `{x: {factor: 0.001}}` a time stored in ms in seconds, under a label the panel declares. A channel converts the coordinate it names, or, where the layer's array has no such coordinate, the layer's own values on the channel that draws them (y of a line, x of a vertical rule or a horizontal bar, the colour of a heatmap or a brain map), so a colour bar keying them prints the converted numbers. The conversion runs when the figure is drawn, after the layer's `sel`, which therefore selects in the stored values, as `Animation.window` does; every number the panel declares about the converted axis (`xlim`, `xticks`, `rules`, `regions`, an annotation in data coordinates, a colour bar's limits and ticks) is in the displayed values, the ones the reader reads, and the theme's tick rule places its ticks on the displayed values. Nothing is written back to the result container. Two layers drawn on one axis each declare the conversion, and a coordinate two channels of one layer name is declared on one of them."
+
+  DisplayScale:
+    description: "How one channel's numbers are shown: at a `factor` of the stored values. A channel other than `x`, `y`, `z` or `color` and a factor that is not positive are refused when the figure's script is generated."
+    attributes:
+      channel:
+        key: true
+        range: string
+        annotations:
+          collection_key: true
+        description: "The channel converted: `x`, `y`, `z` or `color`."
+      factor:
+        range: float
+        required: true
+        description: "The positive number the stored values are multiplied by for display. It states no unit: a panel that declares no label prints it before the quantity's name (`1000 × KuramotoCoupling.a`), and a unit the axis reads in is named by the declared `xlabel` or `ylabel`. An axis runs the other way through `invert_x` or `invert_y`, never through a sign."
 
   Animation:
     description: "A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show."
@@ -877,7 +908,7 @@ classes:
         description: "The stretch `[start, end]` of the animated dimension the frames advance through, in that dimension's own coordinate (seconds or milliseconds of simulated time, as recorded). A run kept long for a statistic, twenty minutes for a correlation matrix, is shown a minute at a time without a second, shorter run that would draw a different noise realisation. Unset, the frames cover the whole dimension."
 
   Annotation:
-    description: "A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
+    description: "A positioned text label on a panel, placed in axes fractions or, with `coordinate_system: data`, in the panel's data coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
     attributes:
       text:
         range: string
@@ -890,20 +921,23 @@ classes:
         description: "Bind the annotation to a scalar in a result container (same reference form a Layer uses, and the same PROV edge). The referenced value is formatted through `text` at render time, so a statistic printed on a panel is computed, never transcribed."
       x:
         range: float
-        description: "x in axes fraction (0 = left, 1 = right); defaults to 0.5."
+        description: "x in axes fraction (0 = left, 1 = right), defaulting to 0.5; in the data's units under `coordinate_system: data`, where it is required."
       y:
         range: float
-        description: "y in axes fraction (0 = bottom, 1 = top); defaults to 0.95."
+        description: "y in axes fraction (0 = bottom, 1 = top), defaulting to 0.95; in the data's units under `coordinate_system: data`, where it is required."
+      coordinate_system:
+        range: AnnotationCoordinateSystem
+        description: "The units `x`, `y` and an `arrow`'s offset are given in: `axes` fractions (unset) or the panel's `data` coordinates, where a paper places a label beside its points with `ax.text(80, 3, ...)`. Data coordinates need both `x` and `y` and are refused beside `loc`, which names a corner of the axes."
       loc:
         range: string
         description: "Named corner ('upper right', 'upper left', 'center', ...) as an alternative to x/y."
       arrow:
         range: float
         multivalued: true
-        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
+        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in the units `coordinate_system` gives (axes fractions unless it says `data`) — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
       tail_x:
         range: float
-        description: "Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
+        description: "Start the arrow at this x in DATA coordinates instead of at an `arrow` offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
       tail_used:
         range: DataRef
         inlined: true
@@ -927,6 +961,9 @@ classes:
       color:
         range: string
         description: "Text colour; defaults to the current text colour."
+      backdrop:
+        range: boolean
+        description: "Whether a label that reads its number through `used:` sits on a box in the page colour, which keeps a statistic printed over its own scatter readable. Unset is true; false prints the label bare, for a plot that fills its whole area, such as a density whose empty cells take the colormap's light end, where the box shows as a patch."
       placement:
         range: AnnotationPlacement
         description: "Where the text appears: on the panel (absent, or `panel`) or in the figure's composed caption (`caption`), where the position and text style slots do not apply."
@@ -1266,7 +1303,7 @@ classes:
       ticklabels:
         range: string
         multivalued: true
-        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
+        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. With `ticks` the labels name those ticks one to one, and lists of different lengths are refused; without them the labels are spread evenly from the bar's lower end to its upper end, so `[low, high]` marks its two ends. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
       decimals:
         range: integer
         description: "How many decimal places the tick numbers are written to."
@@ -1293,15 +1330,20 @@ classes:
         description: "Pin the map's neutral colour to this value and truncate the map to the half-range the data reaches, keeping the data's own limits: a unit of change is the same colour distance either side, and the bar shows no colour the field never takes."
 
   Surface:
-    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
+    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the four mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, the result of the analysis that derived it, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
     is_a: ColorScale
     attributes:
       connectome:
         range: string
         description: "A tvbo `Network` whose companion carries a mesh group. Geometry belongs to the network, so a study that has one needs no mesh file beside it."
+      used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        description: "The result whose `vertices` (V, 3) and `faces` (F, 3) are the mesh, for one an analysis derived (a parcel mesh, a reconstructed surface), bound as a layer is bound to its data rather than written out to a file by hand. It names only where the result is, since a mesh is both arrays together. When the vertices carry a label coordinate, a layer's values are placed on them by label, and a vertex the layer holds no value for is drawn as missing."
       mesh:
         range: string
-        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces` for a mesh an analysis derived rather than measured."
+        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces`."
       mesh_format:
         range: string
         description: "The mesh file's format, where the extension does not say."
@@ -1331,7 +1373,16 @@ classes:
         description: "Read the layer as (V, 3) vertex COORDINATES rather than as a field: what the panel then shows is the surface a reconstruction rebuilt, not a quantity living on a fixed one."
       color:
         range: string
-        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry."
+        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry; with `markers`, it is the mesh under the dots."
+      shading:
+        range: SurfaceShading
+        description: "How the faces are coloured and lit. Unset is `flat`: each face takes the mean of its corners' values and is lit by its own normal, so a coarse mesh shows its faces. `smooth` blends the colours and the light across the faces, as a renderer's smooth shading does: each face is split into 16 on the curved surface its corners' normals describe, a new vertex taking the mean of its edge's two values, so it is meant for a coarse mesh such as a parcel mesh of a few hundred vertices, where 16 times the faces still draws quickly. Refused beside `markers`, whose mesh is flat and unlit under the dots, and beside `edge_color`, which would outline triangles the mesh does not have."
+      markers:
+        range: boolean
+        description: "Draw the layer as a dot at each vertex over the mesh instead of painting its faces: one dot per region on a parcel mesh, as a plot of region centres shows a parcellated quantity. Dots and faces are depth-sorted together, so the mesh hides the dots behind it. The dots are unlit, so a dot's colour is the colour on the bar keying it, and the mesh under them is flat, in `color` or else in the page colour, so that it only hides what lies behind it. A vertex the layer holds no value for gets a dot in `missing_color`."
+      marker_size:
+        range: float
+        description: "Radius of each dot in the mesh's own coordinate units. Unset is half the median edge length, so neighbouring dots just touch."
       missing_color:
         range: string
         description: "The colour of the atlas regions the layer carries no value for, so a region a map leaves out on purpose, such as the target the mapped quantity is measured in, reads apart from the medial wall and the rest of the mesh no region covers, which stay the base grey. Only with `atlas:`; unset, both are grey."
@@ -1389,7 +1440,7 @@ classes:
         description: "Radius of each region's sphere in millimetres of the brain; unset is 2.5."
       edge_color:
         range: string
-        description: "Colour of the connections that survive `edge_percentile`, when no per-edge layer colours them."
+        description: "Colour of the connections that survive `edge_percentile`, when no per-edge layer colours them; `weight` shades every connection by its weight on a ramp from a faint `base` to the theme's `ink`."
       edge_alpha:
         range: float
         description: "Opacity of those connections."
