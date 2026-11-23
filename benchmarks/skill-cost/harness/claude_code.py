@@ -33,7 +33,7 @@ class ClaudeCodeHarness(Harness):
         # `tvbo skills install --scope project` writes to <cwd>/.claude/skills.
         subprocess.run(
             [
-                "tvbo",
+                str(self.skills_installer),
                 "skills",
                 "install",
                 "--target",
@@ -61,6 +61,7 @@ class ClaudeCodeHarness(Harness):
         env: dict[str, str],
     ) -> RunResult:
         cmd = [
+            *self.wrapper,
             self.claude_bin,
             "-p",
             task.prompt,
@@ -95,7 +96,9 @@ class ClaudeCodeHarness(Harness):
             stdout = proc.stdout
         except subprocess.TimeoutExpired as exc:
             wall = time.time() - t0
-            transcript.write_text(exc.stdout or "", encoding="utf-8")
+            transcript.write_text(
+                (exc.stdout or b"").decode("utf-8", "replace"), encoding="utf-8"
+            )  # a timed-out run hands back bytes even with text=True
             return RunResult(0, 0, 0, wall, None, subtype="timeout", error=f"agent timed out after {timeout:.0f}s")
         wall = time.time() - t0
         transcript.write_text(stdout, encoding="utf-8")
