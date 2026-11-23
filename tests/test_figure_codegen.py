@@ -599,7 +599,9 @@ def test_render_code_annotation_text_kwargs():
     A label running up the side of a reference line is 90-degree rotated text; without these the drawer has no way to say so and the label overlaps the line.
     """
     fig = _cartesian_figure()
-    fig.panels["a"].annotations = [P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5, font_weight="bold")]
+    fig.panels["a"].annotations = [
+        P.Annotation(text="w", x=0.2, y=0.9, rotation=90.0, ha="right", va="top", size=6.5, font_weight="bold")
+    ]
     code = bsplot.render_code(fig, TAHER_BASE, "out.png")
     assert "'rotation': 90.0" in code and "'ha': 'right'" in code
     assert "'va': 'top'" in code and "'size': 6.5" in code
@@ -1786,7 +1788,9 @@ def test_frame_roles_are_emitted_per_layer():
 def test_a_trail_layer_draws_its_history_up_to_the_frame():
     """`trail` keeps everything from the start of the animated dimension to now, so an orbit grows as it is traced instead of shrinking to one dot."""
     fig = _animated_figure()
-    fig.panels["b"].layers = [P.Layer(used=P.DataRef(iri=EXP3_IRI, output="delta_omega"), mark="line", frame="trail", encoding=P.Encoding(x="time"))]
+    fig.panels["b"].layers = [
+        P.Layer(used=P.DataRef(iri=EXP3_IRI, output="delta_omega"), mark="line", frame="trail", encoding=P.Encoding(x="time"))
+    ]
     code = bsplot.render_code(fig, TAHER_BASE, "out.gif")
     ast.parse(code)
     panel_b = code[code.index("def _panel_b") :]
@@ -1872,7 +1876,11 @@ def test_a_per_edge_layer_colours_the_edges_placed_by_label(tmp_path):
     container = tmp_path / "ana-w_result.h5"
     xr.Dataset({"w": m}).to_netcdf(container, engine="h5netcdf")
     net = _three_node_network(tmp_path / "net.yaml")
-    ctx = {"opts": {"network": str(net), "edge_percentile": 0.0}, "layers": [{"container": str(container), "output": "w"}], "base_dir": str(tmp_path)}
+    ctx = {
+        "opts": {"network": str(net), "edge_percentile": 0.0},
+        "layers": [{"container": str(container), "output": "w"}],
+        "base_dir": str(tmp_path),
+    }
 
     import bsplot.graph as surface_graph
 
@@ -1885,7 +1893,9 @@ def test_a_per_edge_layer_colours_the_edges_placed_by_label(tmp_path):
     finally:
         surface_graph.plot_network_on_surface = real
         plt.close(fig)
-    assert drawn["G"]["A"]["B"]["value"] == max(placed[0, 1], placed[1, 0]), "the tube between A and B takes the layer's value for that pair"
+    assert drawn["G"]["A"]["B"]["value"] == max(placed[0, 1], placed[1, 0]), (
+        "the tube between A and B takes the layer's value for that pair"
+    )
     assert drawn["edge_color"] == "auto" and drawn["edge_data_key"] == "value", "the tubes are coloured by the layer"
     assert drawn.get("node_data_key") is None, "the spheres take the flat colour when the edges carry the layer"
     assert drawn["nodes"] == ["A", "B", "C"], "every region is drawn, connected or not"
@@ -2418,7 +2428,23 @@ def test_an_mp4_figure_is_limited_range_bt709_yuv420p(tmp_path):
         for _ in range(3):
             writer.grab_frame()
     plt.close(fig)
-    probe = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=pix_fmt,color_range,color_space", "-of", "default=noprint_wrappers=1", str(out)], capture_output=True, text=True, check=True).stdout
+    probe = subprocess.run(
+        [
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=pix_fmt,color_range,color_space",
+            "-of",
+            "default=noprint_wrappers=1",
+            str(out),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
     assert "pix_fmt=yuv420p" in probe
     assert "color_range=tv" in probe
     assert "color_space=bt709" in probe

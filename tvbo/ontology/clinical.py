@@ -25,7 +25,9 @@ def _by_entity(world, query: str) -> dict:
     for entity, *values in sparql_query(query, flatten_result=False, world=world):
         row = tuple(str(getattr(v, "iri", v)) for v in values)
         if entity.iri in found:
-            raise ValueError(f"{entity.iri} is stated twice where the clinical layer states it once: {found[entity.iri]} and {row}")
+            raise ValueError(
+                f"{entity.iri} is stated twice where the clinical layer states it once: {found[entity.iri]} and {row}"
+            )
         found[entity.iri] = row
     return found
 
@@ -36,10 +38,25 @@ def clinical_landscape(path: Path | None = None) -> dict:
     Domains are ordered by ICD-11 chapter and, within a chapter, by their number of studies; models by their number of studies. A study that used two models counts once for each model and once for its domain. Each domain, chapter and model carries exactly one `skos:prefLabel` (and a domain one ICD-11 code and chapter); a second one raises.
     """
     world = load_world(path)
-    links = sparql_query(f"SELECT ?s ?d ?m WHERE {{ ?s <{CLINICAL}appliesToClinicalDomain> ?d . ?s <{CLINICAL}usesNodeDynamics> ?m . }}", flatten_result=False, world=world)
-    domains = _by_entity(world, f"SELECT ?d ?l ?code ?c WHERE {{ ?d a <{CLINICAL}ClinicalDomain> . ?d <{SKOS}prefLabel> ?l . ?d <{CLINICAL}icd11Code> ?code . ?d <{SKOS}broader> ?c . }}")
-    chapters = _by_entity(world, f"SELECT DISTINCT ?c ?n ?l WHERE {{ ?d a <{CLINICAL}ClinicalDomain> . ?d <{SKOS}broader> ?c . ?c <{SKOS}notation> ?n . ?c <{SKOS}prefLabel> ?l . }}")
-    models = {m: label for m, (label,) in _by_entity(world, f"SELECT ?m ?l WHERE {{ ?m a <{CLINICAL}NodeDynamicsModel> . ?m <{SKOS}prefLabel> ?l . }}").items()}
+    links = sparql_query(
+        f"SELECT ?s ?d ?m WHERE {{ ?s <{CLINICAL}appliesToClinicalDomain> ?d . ?s <{CLINICAL}usesNodeDynamics> ?m . }}",
+        flatten_result=False,
+        world=world,
+    )
+    domains = _by_entity(
+        world,
+        f"SELECT ?d ?l ?code ?c WHERE {{ ?d a <{CLINICAL}ClinicalDomain> . ?d <{SKOS}prefLabel> ?l . ?d <{CLINICAL}icd11Code> ?code . ?d <{SKOS}broader> ?c . }}",
+    )
+    chapters = _by_entity(
+        world,
+        f"SELECT DISTINCT ?c ?n ?l WHERE {{ ?d a <{CLINICAL}ClinicalDomain> . ?d <{SKOS}broader> ?c . ?c <{SKOS}notation> ?n . ?c <{SKOS}prefLabel> ?l . }}",
+    )
+    models = {
+        m: label
+        for m, (label,) in _by_entity(
+            world, f"SELECT ?m ?l WHERE {{ ?m a <{CLINICAL}NodeDynamicsModel> . ?m <{SKOS}prefLabel> ?l . }}"
+        ).items()
+    }
 
     studies: defaultdict = defaultdict(set)
     for s, d, m in links:
@@ -57,8 +74,12 @@ def clinical_landscape(path: Path | None = None) -> dict:
         "chapter_label": ("domain", [chapters[domains[d][2]][1] for d in domain_order]),
     }
     return {
-        "applications": xr.DataArray(counts, dims=["domain", "model"], coords={**domain_coords, "model": [models[m] for m in model_order]}),
-        "studies_by_domain": xr.DataArray(np.array([len(studies[d]) for d in domain_order]), dims=["domain"], coords=domain_coords),
+        "applications": xr.DataArray(
+            counts, dims=["domain", "model"], coords={**domain_coords, "model": [models[m] for m in model_order]}
+        ),
+        "studies_by_domain": xr.DataArray(
+            np.array([len(studies[d]) for d in domain_order]), dims=["domain"], coords=domain_coords
+        ),
         "n_studies": len({s.iri for s, _, _ in links}),
         "n_domains": len(domain_order),
         "n_models": len(model_order),

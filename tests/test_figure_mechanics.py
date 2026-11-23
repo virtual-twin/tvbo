@@ -53,13 +53,17 @@ def test_rest_state_is_where_the_right_hand_side_vanishes():
 def test_vector_field_is_the_right_hand_side_on_the_grid():
     X, Y, U, V = field.vector_field(Dynamics(**SPRING), "x", "v", (-1, 1), (-1, 1), n=5)
     assert X.shape == U.shape == (5, 5)
-    assert U[0, 0] == pytest.approx(-1.0) and V[0, 0] == pytest.approx(1 + 0.5 + 0.3), "at (x, v) = (-1, -1): dx = v, dv = -x - 0.5 v + 0.3"
+    assert U[0, 0] == pytest.approx(-1.0) and V[0, 0] == pytest.approx(1 + 0.5 + 0.3), (
+        "at (x, v) = (-1, -1): dx = v, dv = -x - 0.5 v + 0.3"
+    )
 
 
 def test_equilibria_are_found_once_inside_the_window():
     points = field.equilibria(Dynamics(**SPRING), "x", "v", (-1, 1), (-1, 1))
     assert points.shape == (1, 2) and points[0] == pytest.approx([0.3, 0.0])
-    assert field.equilibria(Dynamics(**SPRING), "x", "v", (1, 2), (-1, 1)).shape == (0, 2), "an equilibrium outside the window is not drawn"
+    assert field.equilibria(Dynamics(**SPRING), "x", "v", (1, 2), (-1, 1)).shape == (0, 2), (
+        "an equilibrium outside the window is not drawn"
+    )
 
 
 def test_a_swept_parameter_reaches_the_model():
@@ -101,8 +105,17 @@ def _figure(container, animation=None):
                 kind="cartesian",
                 layers=[
                     P.Layer(used=P.DataRef(**used), mark="stream", encoding=P.Encoding(x="x", y="v")),
-                    P.Layer(used=P.DataRef(**used, sel={"variable": "v"}), mark="line", frame="trail", encoding=P.Encoding(x="x", y="integration", color="node")),
-                    P.Layer(used=P.DataRef(**used, sel={"variable": "v"}), mark="scatter", encoding=P.Encoding(x="x", y="integration", color="node")),
+                    P.Layer(
+                        used=P.DataRef(**used, sel={"variable": "v"}),
+                        mark="line",
+                        frame="trail",
+                        encoding=P.Encoding(x="x", y="integration", color="node"),
+                    ),
+                    P.Layer(
+                        used=P.DataRef(**used, sel={"variable": "v"}),
+                        mark="scatter",
+                        encoding=P.Encoding(x="x", y="integration", color="node"),
+                    ),
                 ],
             ),
         },

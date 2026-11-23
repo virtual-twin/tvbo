@@ -2,6 +2,7 @@
 
 A figure binds an analysis result by the names of its axes, so a histogram is returned as a labelled ``DataArray``: the counts along one dimension whose coordinate is the centre of each bin. Declared in a study as ``callable: {module: tvbo.analysis.distributions, name: histogram}`` with the array under ``values``.
 """
+
 from __future__ import annotations
 
 import numpy as np

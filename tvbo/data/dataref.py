@@ -616,7 +616,11 @@ def index_bare_axes(da, sel: Mapping[str, object] | None):
     """
     import numpy as np
 
-    bare = {d: np.arange(da.sizes[d]) for d in (resolve_dim(da, str(k)) for k in (sel or {})) if d in da.dims and d not in da.coords}
+    bare = {
+        d: np.arange(da.sizes[d])
+        for d in (resolve_dim(da, str(k)) for k in (sel or {}))
+        if d in da.dims and d not in da.coords
+    }
     return da.assign_coords(bare) if bare else da
 
 

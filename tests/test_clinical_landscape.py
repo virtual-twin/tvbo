@@ -1,4 +1,5 @@
 """The clinical layer of the shipped ontology counted as a study analysis: the arrays agree with each other and with the totals."""
+
 import pytest
 
 from tvbo.ontology.clinical import clinical_landscape

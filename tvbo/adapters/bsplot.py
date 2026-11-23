@@ -661,7 +661,9 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     parts, sides_of = [], {}
     for offset, side in enumerate(("lh", "rh") if hemi == "both" else (hemi,)):
-        vertex_labels, region_names = bsplot.load_atlas_labels(atlas=surface_atlas, hemi=side, template=template, density=density)
+        vertex_labels, region_names = bsplot.load_atlas_labels(
+            atlas=surface_atlas, hemi=side, template=template, density=density
+        )
         parts.append(_np.asarray(vertex_labels) + offset * SIDE_STRIDE)
         for index, region in enumerate(region_names):
             for spelling in (f"ctx-{side}-{region}", f"ctx_{side}_{region}", str(region)):
@@ -950,7 +952,9 @@ def network_panel(fig, ax, ctx):
     if opts.get("labels"):
         size = float(opts.get("label_size", 4.0))
         for (x, y), nm in zip(view_coords(coords, view=view, hemi="lh"), labels, strict=True):
-            ax.annotate(nm, (x, y), fontsize=size, ha="center", va="bottom", xytext=(0, size), textcoords="offset points", zorder=20)
+            ax.annotate(
+                nm, (x, y), fontsize=size, ha="center", va="bottom", xytext=(0, size), textcoords="offset points", zorder=20
+            )
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
@@ -1009,9 +1013,15 @@ def spring_panel(fig, ax, ctx):
         frame = _load_frame(whole, layer)
         fan = layer.get("color")
         if fan:
-            axis, fan_labels, shades = fan_entries(_open_ds(layer["container"]), whole, fan, layer.get("cmap"), bool(layer.get("cmap_declared")))
+            axis, fan_labels, shades = fan_entries(
+                _open_ds(layer["container"]), whole, fan, layer.get("cmap"), bool(layer.get("cmap_declared"))
+            )
         else:
-            axis, fan_labels, shades = None, [layer["style"].get("label", "")], [resolve_color(layer["style"].get("color")) or next(hues)]
+            axis, fan_labels, shades = (
+                None,
+                [layer["style"].get("label", "")],
+                [resolve_color(layer["style"].get("color")) or next(hues)],
+            )
         values = _np.asarray(whole.values, dtype=float)
         extent.extend([float(_np.nanmin(values)), float(_np.nanmax(values))])
         for i, shade in enumerate(shades):
@@ -1024,22 +1034,36 @@ def spring_panel(fig, ax, ctx):
                 labels.append(str(opts.get("label_format") or "{}").format(value))
             if opts.get("mass"):
                 masses.append(float(series.coords[opts["mass"]].item()))
-            rests.append(opts["equilibrium"] if opts.get("equilibrium") is not None else _spring_rest(layer["container"], cell))
+            rests.append(
+                opts["equilibrium"] if opts.get("equilibrium") is not None else _spring_rest(layer["container"], cell)
+            )
     common = {
         "extent": extent,
         "masses": masses if opts.get("mass") else None,
         "colors": colors,
         "labels": labels if opts.get("labels") else None,
-        "rule_color": resolve_color("base"),  # a rest mark is read against the motion, so it takes the secondary ink rather than the gridline's
+        "rule_color": resolve_color(
+            "base"
+        ),  # a rest mark is read against the motion, so it takes the secondary ink rather than the gridline's
     }
     if opts.get("stretch") is not None:
         common["stretch"] = float(opts["stretch"])
     if arrangement in ("hanging", "lying"):
-        mechanics.springs(ax, now, orientation="vertical" if arrangement == "hanging" else "horizontal", equilibrium=rests, **common)
+        mechanics.springs(
+            ax, now, orientation="vertical" if arrangement == "hanging" else "horizontal", equilibrium=rests, **common
+        )
     elif arrangement == "chain":
-        mechanics.chain(ax, now, walls=opts.get("walls", True) is not False, coupling_color=opts.get("coupling_color"), **common)
+        mechanics.chain(
+            ax, now, walls=opts.get("walls", True) is not False, coupling_color=opts.get("coupling_color"), **common
+        )
     else:
-        mechanics.ring(ax, now, motion="radial" if opts.get("radial") else "tangential", coupling_color=opts.get("coupling_color"), **common)
+        mechanics.ring(
+            ax,
+            now,
+            motion="radial" if opts.get("radial") else "tangential",
+            coupling_color=opts.get("coupling_color"),
+            **common,
+        )
 
 
 def _spring_rest(container: str, cell: dict):
@@ -1369,14 +1393,22 @@ def color_dim(ds, da, name):
     try:  # a sibling variable measured once per entry
         sib = ds[match_output(ds.data_vars, name)]
     except KeyError:
-        raise KeyError(f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)}).") from None
+        raise KeyError(
+            f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)})."
+        ) from None
     dims = [str(d) for d in sib.dims if d in [str(x) for x in da.dims]]
-    if len(dims) > 1:  # a length-1 axis cannot be the one the lines fan along, so a per-node quantity with a singleton `variable` axis still shades one line per node
+    if (
+        len(dims) > 1
+    ):  # a length-1 axis cannot be the one the lines fan along, so a per-node quantity with a singleton `variable` axis still shades one line per node
         dims = [d for d in dims if sib.sizes[d] > 1] or dims
     if len(dims) != 1:
-        raise KeyError(f"colour encoding {name!r} must be measured along exactly one axis of the plotted array to give each line a value; it has dims {tuple(sib.dims)}.")
+        raise KeyError(
+            f"colour encoding {name!r} must be measured along exactly one axis of the plotted array to give each line a value; it has dims {tuple(sib.dims)}."
+        )
     dim = dims[0]
-    labels = [str(v) for v in _np.asarray(da.coords[dim].values)] if dim in da.coords else [str(i) for i in range(da.sizes[dim])]
+    labels = (
+        [str(v) for v in _np.asarray(da.coords[dim].values)] if dim in da.coords else [str(i) for i in range(da.sizes[dim])]
+    )
     return dim, labels, _np.asarray(sib.values, dtype=float).squeeze()
 
 
@@ -2294,7 +2326,9 @@ def _annotations(panel, base_dir=Path(".")) -> list:
         tail = None
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
             tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir, planned=True)}
-        text_kwargs = _resolve_colors({k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None})
+        text_kwargs = _resolve_colors(
+            {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None}
+        )
         if getattr(a, "font_weight", None) is not None:
             text_kwargs["weight"] = _enum_value(a.font_weight)
         text_kwargs.setdefault("ha", "center")
@@ -2460,7 +2494,10 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None, *, pla
     from tvbo.data.dataref import experiment_id as _experiment_id
     from tvbo.utils.study_layout import sibling_study_root, study_path
 
-    for direct in (Path(base_dir) / str(iri), Path(str(iri))):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
+    for direct in (
+        Path(base_dir) / str(iri),
+        Path(str(iri)),
+    ):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
         if direct.suffix == ".h5" and direct.is_file():
             return str(direct.resolve())
     # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.
@@ -3393,5 +3430,6 @@ def write_caption(figure, out_dir, *, name: str | None = None, base_dir=None) ->
     path = out_dir / f"{stem}.caption.qmd"
     path.write_text(compose_caption(figure, base_dir) + "\n", encoding="utf-8")
     return path
+
 
 from tvbo.adapters import bsplot_distributions  # noqa: E402,F401  (registers the histogram and joint_density panels)

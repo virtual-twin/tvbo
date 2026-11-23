@@ -545,7 +545,11 @@ def network_array(net, output: str, name: str):
     )
     matrix = net.matrix(output, format="dense") if held else None
     if matrix is not None:
-        return xr.DataArray(np.asarray(matrix), dims=("node_i", "node_j"), coords={"node_i": labels, "node_j": _column_labels(net, spellings) or labels})
+        return xr.DataArray(
+            np.asarray(matrix),
+            dims=("node_i", "node_j"),
+            coords={"node_i": labels, "node_j": _column_labels(net, spellings) or labels},
+        )
     attribute = output.removeprefix("nodes.")
     vector = resolve_network_node(net, attribute)
     if vector is None:
