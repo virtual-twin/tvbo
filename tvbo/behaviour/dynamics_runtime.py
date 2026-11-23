@@ -1402,7 +1402,7 @@ class DynamicsRuntime(Catalogued, Copyable):
             default: Fallback value for variables without an initial value.
             random: Deprecated flag to sample from each variable's domain.
             N: Number of samples per state variable.
-            seed: The run's seed (`run_seed`). A distribution draws from its own `seed` where it declares one, else from this one (`initial_state_distribution`), on a generator keyed also by the variable's position among the variables that declare a distribution, as tvboptim folds that position into its key, so two variables under one seed draw independently.
+            seed: The run's seed (`run_seed`). A distribution draws from its own `seed` where it declares one, else from this one (`initial_state_distribution`), on a generator keyed also by the variable's position among the variables that declare a distribution, as tvboptim folds that position into its key, so two variables under one seed draw independently. A draw scales and shifts the generator's standard variate in two roundings, which give the same bits on every platform, where numpy's own `uniform` and `normal` fuse them into one on arm64.
             **kwargs: Ignored extra arguments.
 
         Returns:
@@ -1430,9 +1430,9 @@ class DynamicsRuntime(Catalogued, Copyable):
                     rng = np.random.default_rng((spec["seed"], drawn))
                     drawn += 1
                     if spec["family"] == "normal":
-                        sv_init = rng.normal(loc=spec["loc"], scale=spec["scale"], size=N)
+                        sv_init = spec["loc"] + spec["scale"] * rng.standard_normal(N)
                     else:
-                        sv_init = rng.uniform(spec["lo"], spec["hi"], size=N)
+                        sv_init = spec["lo"] + (spec["hi"] - spec["lo"]) * rng.random(N)
                 elif random:
                     # Legacy fallback: sample from the domain range. The domain may carry a one-sided clamp (e.g. [0, inf) for a firing rate), so guard against non-finite / inverted bounds — uniform(0, inf) would yield inf/NaN initial states.
                     dlo = getattr(sv.domain, "lo", None) if sv.domain else None

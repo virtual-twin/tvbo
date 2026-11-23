@@ -70,7 +70,11 @@ def test_both_paths_draw_one_definition(distribution, domain, expected):
     family, first, second = expected
     assert _emitted_draw(_experiment(distribution, domain)) == expected
     generator = np.random.default_rng((SEED, 0))
-    reference = generator.normal(first, second, N_NODES) if family == "normal" else generator.uniform(first, second, N_NODES)
+    reference = (
+        first + second * generator.standard_normal(N_NODES)
+        if family == "normal"
+        else first + (second - first) * generator.random(N_NODES)
+    )
     np.testing.assert_array_equal(_host_draw(_experiment(distribution, domain)), reference)
 
 

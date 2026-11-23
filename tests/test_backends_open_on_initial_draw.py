@@ -72,7 +72,7 @@ def test_the_julia_render_refuses_two_seeds_on_one_stream():
 def test_the_python_backend_opens_on_the_draw_tvb_and_jax_open_on(network, n_nodes):
     """Every recorded sample of the held ``x`` is the uniform draw `get_initial_values` makes on the run's seed, the generator G237 keys."""
     data = _held(UNIFORM, network).run("python").integration.data
-    reference = np.random.default_rng((SEED, 0)).uniform(0.5, 3.0, n_nodes)
+    reference = 0.5 + 2.5 * np.random.default_rng((SEED, 0)).random(n_nodes)
     held = data.sel(variable="x").values.reshape(data.sizes["time"], -1)
     np.testing.assert_array_equal(held, np.broadcast_to(reference, held.shape))
 
@@ -80,5 +80,5 @@ def test_the_python_backend_opens_on_the_draw_tvb_and_jax_open_on(network, n_nod
 def test_gillespie_opens_on_the_draw_tvb_and_jax_open_on():
     """The held slow variable ``y`` keeps the uniform draw `get_initial_values` makes on the run's seed in every recorded sample."""
     data = SimulationExperiment(**copy.deepcopy(GILLESPIE)).run("gillespie").integration.data
-    reference = np.random.default_rng((SEED, 0)).uniform(0.5, 3.0, 1)[0]
+    reference = 0.5 + 2.5 * np.random.default_rng((SEED, 0)).random()
     np.testing.assert_array_equal(data.sel(variable="y").values.ravel(), reference)

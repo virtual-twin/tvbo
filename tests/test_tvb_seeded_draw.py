@@ -56,7 +56,7 @@ def test_the_same_seed_opens_a_tvb_run_on_the_same_draw():
     """Run twice in one process, the recipe opens on one draw: the run's seed with each variable's position, ``x`` first."""
     first, second = _opening(7), _opening(7)
     np.testing.assert_array_equal(first, second)
-    expected = [np.random.default_rng((7, position)).uniform(LO, HI, size=N_NODES) for position in range(2)]
+    expected = [LO + (HI - LO) * np.random.default_rng((7, position)).random(N_NODES) for position in range(2)]
     np.testing.assert_allclose(first, expected, rtol=RTOL)
 
 
@@ -67,7 +67,7 @@ def test_another_seed_opens_it_on_another_draw():
 def test_a_distribution_s_own_seed_overrides_the_run_s():
     """Under one own seed the run's seed does not reach the draw."""
     np.testing.assert_array_equal(_opening(7, own_seed=3), _opening(8, own_seed=3))
-    expected = [np.random.default_rng((3, position)).uniform(LO, HI, size=N_NODES) for position in range(2)]
+    expected = [LO + (HI - LO) * np.random.default_rng((3, position)).random(N_NODES) for position in range(2)]
     np.testing.assert_allclose(_opening(7, own_seed=3), expected, rtol=RTOL)
 
 
