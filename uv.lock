@@ -661,7 +661,7 @@ wheels = [
 
 [[package]]
 name = "bsplot"
-version = "0.0.12"
+version = "0.0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cmap" },
@@ -674,9 +674,9 @@ dependencies = [
     { name = "scipy" },
     { name = "templateflow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4a/b6/7123f2788b69723ca75c630c96c1a3efb737677244ab39d925de8aef3125/bsplot-0.0.12.tar.gz", hash = "sha256:1eaf7554b3cbafe9a114b12d2f5c053b0e7ba01395d4ba61c0f944b6846b14f8", size = 6229480, upload-time = "2026-10-26T13:47:29.799Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/97/1134343e2a5390ec14e2a3a233fe6f709ab1470ee7ba119f1d18617417eb/bsplot-0.0.13.tar.gz", hash = "sha256:68f2be4274822c70e32b0372be94fb44081e5b93d2f2be19d89e1469e8718f64", size = 6243825, upload-time = "2026-11-16T08:40:40.537Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/14/c0d37e46ddea540cc8199f3fee203e21ea382460eb897e0e080a5c7838a7/bsplot-0.0.12-py3-none-any.whl", hash = "sha256:81b742090b7299baa97e8181aa6312c91772e9382bed324567f2d6ae999f641b", size = 6251530, upload-time = "2026-10-26T13:47:27.546Z" },
+    { url = "https://files.pythonhosted.org/packages/52/03/0d6430f6e9a5fef8e5f1fb21d9c713568d4ef3cdfb1f87ee2dc29445ce5e/bsplot-0.0.13-py3-none-any.whl", hash = "sha256:1a8004b7d042a0fd0ec5e7fc3c01df957f9c29ba38260a5a32f0d0ee42e260d4", size = 6262147, upload-time = "2026-11-16T08:40:37.781Z" },
 ]
 
 [[package]]
@@ -7612,7 +7612,7 @@ requires-dist = [
     { name = "black", specifier = ">=26.5,<27" },
     { name = "brian2", marker = "extra == 'all'", specifier = ">=2.5.0" },
     { name = "brian2", marker = "extra == 'brian2'", specifier = ">=2.5.0" },
-    { name = "bsplot", specifier = ">=0.0.12" },
+    { name = "bsplot", specifier = ">=0.0.13" },
     { name = "dipy", marker = "extra == 'all'", specifier = ">=1.10.0" },
     { name = "dipy", marker = "extra == 'data'", specifier = ">=1.10.0" },
     { name = "docker", marker = "extra == 'all'", specifier = ">=7.1.0" },

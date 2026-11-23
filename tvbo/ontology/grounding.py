@@ -43,7 +43,11 @@ def go_links(world) -> list[tuple[str, str, str]]:
 
     A pair stated both by `skos:broadMatch` and by a grounding predicate is a `grounding` link, whatever order the rows arrive in.
     """
-    rows = sparql_query("SELECT DISTINCT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(STRSTARTS(STR(?o), '" + GO_PREFIX + "')) }", flatten_result=False, world=world)
+    rows = sparql_query(
+        "SELECT DISTINCT ?s ?p ?o WHERE { ?s ?p ?o . FILTER(STRSTARTS(STR(?o), '" + GO_PREFIX + "')) }",
+        flatten_result=False,
+        world=world,
+    )
     links: dict[tuple[str, str], str] = {}
     for subject, predicate, term in rows:
         key = (subject.iri, str(getattr(term, "iri", term)))

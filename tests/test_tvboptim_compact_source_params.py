@@ -1,6 +1,6 @@
 """A per-source parameter reaches the CompactDelayedCoupling tvbo emits gathered per slot, and tvboptim's stock dense path broadcast over the source axis.
 
-The class is rendered from its template def, as ``test_tvboptim_compact_delayed_coupling.py`` renders it, and subclassed with a ``SOURCE_PARAMS`` gather written here: a declared parameter is held at ``(m, 1, n_source)``, gathered as ``value[:, 0, slots.source]`` when the compact path runs, and passed unchanged to the stock path, where it broadcasts against the ``(m, n_target, n_source)`` delayed states. ``pre`` contracts each source's m-element state with that source's readout, so the coupling is ``kappa * sum_j w_ij W_out[j] . z_j(t - d_ij)``, which numpy computes from the same history. Two graphs pick the two paths: four regions with few connections, which the compact path takes, and the full four-by-four graph with its diagonal, whose density sends it to the stock path. The file imports nothing from tvbo, so it also runs against the released tvboptim.
+The class is rendered from its template def, as ``test_tvboptim_compact_delayed_coupling.py`` renders it, and subclassed with a ``SOURCE_PARAMS`` gather written here: a declared parameter is held at ``(m, 1, n_source)``, gathered as ``value[:, 0, slots.source]`` when the compact path runs, and passed unchanged to the stock path, where it broadcasts against the ``(m, n_target, n_source)`` delayed states. ``pre`` contracts each source's m-element state with that source's readout, so the coupling is ``kappa * sum_j w_ij W_out[j] . z_j(t - d_ij)``, which numpy computes from the same history. Two graphs pick the two paths: four regions with few connections, which the compact path takes, and the full four-by-four graph with its diagonal, whose density sends it to the stock path. Every test runs through a roll and a circular history buffer, named by ``buffer_strategy``; a freshly prepared circular buffer's write pointer is 0, so its newest sample is its last row, as a roll buffer's is. The file imports nothing from tvbo, so it also runs against the released tvboptim.
 """
 
 from __future__ import annotations
@@ -103,12 +103,12 @@ def _readout(m, seed=0):
     return w_out, jnp.swapaxes(jnp.asarray(w_out), 0, 1)[:, None, :]
 
 
-def _coupling_at_random_history(coupling_cls, m, n_edges):
+def _coupling_at_random_history(coupling_cls, m, n_edges, buffer):
     """The coupling's prepared data, a random history, and the coupling it computes from them as a function of the view."""
     weights, delays = _graph(n_edges)
     w_out, view = _readout(m)
     graph = DenseDelayGraph(jnp.asarray(weights), jnp.asarray(delays))
-    coupling = coupling_cls(incoming_states=[f"z{k}" for k in range(m)], _W_out_src=view)
+    coupling = coupling_cls(incoming_states=[f"z{k}" for k in range(m)], _W_out_src=view, buffer_strategy=buffer)
     network = Network(_units(m), {"sc": coupling}, graph)
     data, coupling_state = coupling.prepare(network, 1.0, 0.0, 10.0)
     history = jnp.asarray(np.random.default_rng(1).normal(size=coupling_state.history.shape))
@@ -137,19 +137,24 @@ PATHS = [
     pytest.param(16, False, id="stock-full"),
 ]
 
+BUFFERS = pytest.mark.parametrize("buffer", ["roll", "circular"])
+"""The history buffers the compact path reads, each test run on both."""
 
+
+@BUFFERS
 @pytest.mark.parametrize("m", [5, 4], ids=["m5", "m-equals-regions"])
 @pytest.mark.parametrize("n_edges, compact", PATHS)
-def test_a_per_source_parameter_is_read_at_each_slots_source(m, n_edges, compact):
-    data, computed, view, arrays = _coupling_at_random_history(COMPACT_READOUT, m, n_edges)
+def test_a_per_source_parameter_is_read_at_each_slots_source(m, n_edges, compact, buffer):
+    data, computed, view, arrays = _coupling_at_random_history(COMPACT_READOUT, m, n_edges, buffer)
     assert ("_compact" in data) is compact
     np.testing.assert_allclose(np.asarray(computed(view)), _numpy_coupling(*arrays), rtol=1e-12, atol=1e-12)
 
 
+@BUFFERS
 @pytest.mark.parametrize("m", [5, 4], ids=["m5", "m-equals-regions"])
 @pytest.mark.parametrize("n_edges, compact", PATHS)
-def test_the_gathered_parameter_keeps_its_gradient(m, n_edges, compact):
-    _, computed, view, (weights, delays, w_out, history) = _coupling_at_random_history(COMPACT_READOUT, m, n_edges)
+def test_the_gathered_parameter_keeps_its_gradient(m, n_edges, compact, buffer):
+    _, computed, view, (weights, delays, w_out, history) = _coupling_at_random_history(COMPACT_READOUT, m, n_edges, buffer)
     newest = history.shape[0] - 1
     steps = np.clip(np.rint(delays), 0, newest).astype(int)
     target, source = np.indices(weights.shape)
@@ -159,13 +164,14 @@ def test_the_gathered_parameter_keeps_its_gradient(m, n_edges, compact):
     np.testing.assert_allclose(np.asarray(gradient)[:, 0, :].T, expected, rtol=1e-12, atol=1e-12)
 
 
+@BUFFERS
 @pytest.mark.parametrize("n_edges", [8, 16], ids=["compact", "stock"])
-def test_a_solve_through_prepare_equals_the_stock_coupling(n_edges):
+def test_a_solve_through_prepare_equals_the_stock_coupling(n_edges, buffer):
     weights, delays = _graph(n_edges)
     _, view = _readout(5)
 
     def trajectory(coupling_cls):
-        coupling = coupling_cls(incoming_states=[f"z{k}" for k in range(5)], _W_out_src=view)
+        coupling = coupling_cls(incoming_states=[f"z{k}" for k in range(5)], _W_out_src=view, buffer_strategy=buffer)
         network = Network(_units(5), {"sc": coupling}, DenseDelayGraph(jnp.asarray(weights), jnp.asarray(delays)))
         solve_fn, config = prepare(network, Euler(), t1=40.0, dt=1.0)
         return np.asarray(jax.jit(solve_fn)(config).ys)

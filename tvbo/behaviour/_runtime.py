@@ -114,14 +114,16 @@ class Copyable:
         return new_obj
 
     def __copy__(self):
-        """A shallow copy: the generated form's own hook, else a clone sharing this record's attribute values."""
+        """A shallow copy: the generated form's own hook, else a clone sharing this record's attribute values.
+
+        The values are shared as they are, past the LinkML setter. That setter wraps each mapping in a ``JsonObj``, which has no ``.items`` and iterates its keys, so a clone of an experiment would hold its observations, and every other keyed collection, in a shape no backend reads.
+        """
         inherited = getattr(super(), "__copy__", None)
         if inherited is not None:
             return inherited()
         cls = self.__class__
         clone = cls.__new__(cls)
-        for k, v in self.__dict__.items():
-            setattr(clone, k, v)
+        clone.__dict__.update(self.__dict__)
         return clone
 
     def __deepcopy__(self, memo):

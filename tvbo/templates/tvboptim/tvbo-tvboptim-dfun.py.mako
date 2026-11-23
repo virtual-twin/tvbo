@@ -33,10 +33,8 @@ else:
     model = context['model']
     _exp_functions = {}
 
-# A distribution's own seed overrides execution.random_seed, which defaults to 0.
-_exec_ctx = getattr(_experiment_ctx, 'execution', None)
-_rs = getattr(_exec_ctx, 'random_seed', None) if _exec_ctx is not None else None
-_random_seed = int(_rs) if _rs is not None else 0
+# The run's seed (`run_seed`), which a distribution's own seed overrides: the experiment render hands it, a model rendered alone runs on 0.
+_random_seed = context.get('random_seed', 0)
 
 # Collect user-defined functions from model.functions and experiment.functions
 # These are functions defined in YAML that need to be recognized by the code printer.
@@ -109,18 +107,7 @@ for pname in param_names:
     regular_param_names.append(pname)
 param_names = regular_param_names
 
-# Build COUPLING_INPUTS from coupling_inputs
-# Pattern: each coupling_input name → its dimension (default 1)
-# If dimension > 1 and keys provided, keys are used as variable names
-#
-# Example 1: instant: {dimension: 1}, delayed: {dimension: 1}
-#    → COUPLING_INPUTS = {'instant': 1, 'delayed': 1}
-#    → c_instant = coupling.instant[0], c_delayed = coupling.delayed[0]
-#
-# Example 2: coupling: {dimension: 2, keys: [lre, ffi]}
-#    → COUPLING_INPUTS = {'coupling': 2}
-#    → lre = coupling.coupling[0], ffi = coupling.coupling[1]
-#
+# Each coupling input unpacks by its declared dimension, a dimension > 1 with keys into one name per key (coupling: {dimension: 2, keys: [lre, ffi]} gives lre = coupling.coupling[0]).
 coupling_inputs_dict = {}
 coupling_keys = {}  # ci_name -> list of key names (for unpacking)
 
@@ -131,6 +118,14 @@ if hasattr(model, 'coupling_inputs') and model.coupling_inputs:
         keys = getattr(ci, 'keys', None)
         if keys:
             coupling_keys[ci_name] = list(keys)
+
+# COUPLING_INPUTS declares the channels of the coupling the network wires to each input, which tvboptim checks when it builds the network; a model rendered on its own wires none.
+if 'experiment' in context.keys():
+    from tvbo.adapters.tvboptim import TvboptimAdapter
+    from tvbo.templates.tvboptim.utils import coupling_input_channels
+    coupling_input_channels_dict = coupling_input_channels(model, context.get('all_couplings') or TvboptimAdapter(experiment).resolve_couplings())
+else:
+    coupling_input_channels_dict = coupling_inputs_dict
 
 class_name = entry_point_name(model, 'tvboptim')
 
@@ -176,7 +171,7 @@ class ${class_name}(AbstractDynamics):
     )
 
     COUPLING_INPUTS = {
-        % for ci_name, ci_dim in coupling_inputs_dict.items():
+        % for ci_name, ci_dim in coupling_input_channels_dict.items():
         '${ci_name}': ${ci_dim},
         % endfor
     }

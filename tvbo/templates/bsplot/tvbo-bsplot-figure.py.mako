@@ -8,7 +8,6 @@ from __future__ import annotations
 import functools
 
 import numpy as np
-import xarray as xr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -17,11 +16,12 @@ import bsplot
 from bsplot import panels as _bpanels
 from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   at_frame as _at, expand_bare_axes as _expand_bare_axes,
-                                  fan_entries as _fan_entries,
+                                  fan_entries as _fan_entries, open_container as _open_container,
                                   load_scalar as _load_scalar, registered as _registered,
                                   significance_marks as _significance_marks,
-                                  scale_colormap as _scale_cmap, heatmap_orientation as _orient)
-from tvbo.data.dataref import match_output as _match_output, select as _select
+                                  scale_colormap as _scale_cmap, heatmap_orientation as _orient,
+                                  to_display as _display)
+from tvbo.data.dataref import match_output as _match_output, output_array as _output_array, select_labeled as _select
 from tvbo.plot import axis_rule as _axis_rule, field as _field, palette as _palette
 
 _RULE = ${repr(rule)}   # the axis rule this figure's theme declares; empty moves no tick, limit or spine
@@ -35,19 +35,11 @@ _importlib.import_module("${m}")  # registers this study's panels/transforms int
 % endfor
 
 
-@functools.lru_cache(maxsize=None)
-def _open(path):
-    """Open a run's result container once per distinct path (xarray).
-
-    An empty path means the layer's container was not on disk when this script was generated. A panel declaring a ``placeholder`` catches this and draws the label; one that does not gets the reason rather than a bare open failure.
-    """
-    if not path:
-        raise FileNotFoundError("this layer's result container was not found when the figure was generated. Run the study so the source is on disk, then re-render.")
-    return xr.open_dataset(path, engine="h5netcdf")
+_open = functools.lru_cache(maxsize=None)(_open_container)   # a run's result container, opened once per distinct path in this script
 
 
 def _var(ds, output):
-    """The data-variable a layer's ``output`` names, via the shared ``DataRef`` rule.
+    """The data-variable a channel names in *ds*, via the shared ``DataRef`` rule.
 
     A recorded state variable is stored under its own name, while an observation, an analysis result or an estimate carries an ``observation__``/``estimate__`` prefix. A figure names the quantity, not the storage convention, so both resolve — through the one matcher every other consumer uses, not a copy of it.
     """
@@ -237,7 +229,7 @@ def _frame_positions(sources, dim, frames, window=None):
     lengths, coord = set(), None
     for container, output in sources:
         ds = _open(container)
-        da = _var(ds, output)
+        da = _output_array(ds, container, output)
         if dim in da.dims:
             lengths.add(int(da.sizes[dim]))
             if coord is None and (dim in da.coords or dim in ds.coords):
@@ -534,7 +526,7 @@ def _apply_axopts(ax, o):
     if o.get("hide_yaxis"):
         ax.spines[["left", "right"]].set_visible(False)   # the x axis stays; the axis rule then leaves y unplaced
         ax.tick_params(axis="y", which="both", left=False, right=False, labelleft=False, labelright=False)
-    _ticks = {_k: float(o[_v]) for _k, _v in (("labelsize", "tick_size"), ("length", "tick_length")) if o.get(_v)}
+    _ticks = {_k: float(o[_v]) for _k, _v in (("labelsize", "tick_size"), ("length", "tick_length")) if o.get(_v) is not None}   # a declared zero removes the marks
     if _ticks:
         ax.tick_params(**_ticks)          # a dense grid's cells cannot carry the figure's own tick geometry
     _apply_tick_format(ax, o)
@@ -552,6 +544,16 @@ def _apply_axopts(ax, o):
         ax.legend(**_leg)
 
 
+def _scatter_points(ds, da, x, y):
+    """Where a scatter's points sit: the *x* channel against the array's values, or, where *y* names a coordinate or dim of the array, one point per element at its *x* and *y* coordinates, as a heatmap places its cells.
+
+    Each coordinate is spread over the whole array before it is flattened, so two coordinates along different axes, the rows and columns of a heatmap, pair up element by element rather than position by position.
+    """
+    if y and (y in da.coords or y in da.dims):
+        return tuple(np.asarray(da[n].broadcast_like(da).values).ravel() for n in (x, y))
+    return _channel(ds, da, x, 0), np.asarray(da.values).squeeze()
+
+
 def _channel(ds, da, name, axis=0):
     """One 1-D channel of a panel, by NAME: a data_var, a value along a component coord (e.g. select ``E`` along a ``var=[E,x,u]`` dim), or the index if the name is a plain dim.
 
@@ -565,22 +567,34 @@ def _channel(ds, da, name, axis=0):
     if dim is not None:
         return np.asarray(da.sel({dim: name}).values).squeeze()
     try:                              # a sibling variable, under whatever prefix it is stored
-        return np.asarray(_var(ds, name).values).squeeze()
+        sibling = _var(ds, name)
     except KeyError:
         pass
+    else:
+        return np.asarray(_cut_to(sibling, coords).values).squeeze()
     for sibling in ds.data_vars.values():   # a component of a sibling's coord: the x of a phase plane whose y was selected out of the same array
         dim = _component_dim(sibling, name)
         if dim is None:
             continue
-        component = sibling.sel({dim: name})
-        for k, v in coords.items():   # the plotted line's own position on every other axis (its node, its trial, the stretch of time an animation shows), so the component is the one it was recorded with
-            if k in component.dims and v.dims in ((), (k,)):
-                component = component.sel({k: v.values})
+        component = _cut_to(sibling.sel({dim: name}), coords)
         if component.shape == da.shape:   # a sibling of another shape (a sweep's results beside the run) was not recorded with this line
             return np.asarray(component.values).squeeze()
     if str(name) not in [str(d) for d in getattr(da, "dims", ())]:
         raise KeyError(f"encoding {name!r} names neither a coordinate, a dimension, a component of a coordinate, nor a variable of this container. Falling back to a positional index here would draw a plausible line against the wrong abscissa: available variables are {sorted(getattr(ds, 'data_vars', {}))}, dims {list(getattr(da, 'dims', ()))}.")
     return _coord(da, name, axis)
+
+
+def _cut_to(arr, coords):
+    """*arr* at the plotted array's own place on every axis the two share, so a quantity read beside the plotted one is the one recorded with it.
+
+    A scalar coord (its node, its trial, the frame an animation shows) picks its entry, and a 1-D coord picks the entries it holds (the trail of an animation, the same nodes in another order) unless its values are *arr*'s own on that axis, which are already aligned. The ``time`` axis takes the nearest sample within half of *arr*'s widest sampling step, so a frame lands on the sample recorded at it; every other axis takes the exact entry, so a sibling recorded on a subset of nodes, trials or sweep values raises ``KeyError`` rather than pairing with a neighbour."""
+    for k, v in coords.items():
+        if k not in arr.dims or v.dims not in ((), (k,)) or (v.dims and np.array_equal(v.values, arr[k].values)):
+            continue
+        steps = np.abs(np.diff(arr[k].values)) if k == "time" else []
+        near = {"method": "nearest", "tolerance": steps.max() / 2} if len(steps) else {}
+        arr = arr.sel({k: v.values}, **near)
+    return arr
 
 
 def _component_dim(arr, name):
@@ -722,15 +736,18 @@ ${ind}    fig.set_layout_engine("tight")
 </%def>\
 <%def name="load_layer(L)">\
     _ds = _open(${repr(L['container'])})
-    _da = _var(_ds, ${repr(L['output'])})
+    _da = _output_array(_ds, ${repr(L['container'])}, ${repr(L['output'])})
 % if L['transform']:
     _da = _registered(_TF, ${repr(L['transform'])}, "transform")(_da)
 % endif
 % if L['sel'] is not None:
-    _da = _select(_da, ${repr(L['sel'])}, ${repr(L['sel_method'])})
+    _da = _select(_da, ${repr(L['sel'])})
 % endif
 % if L['ref_transform']:
     _da = _registered(_TF, ${repr(L['ref_transform'])}, "transform")(_da)
+% endif
+% if L['display']:
+    _da = _display(_da, ${repr(L['display'])})   # the values the axes show; `sel` above read the stored ones
 % endif
 % if animation and L['frame'] not in ('static', 'cursor'):
     _da = _at(_da, ${repr(animation['over'])}, _pos, ${repr(L['frame'] == 'trail')})
@@ -805,19 +822,19 @@ ${load_layer(L)}\
     if len(_x) == len(_y) and np.array_equal(np.asarray(_x), np.asarray(_y)):
         ax.set_box_aspect(1)   # a matrix over one index set (SC, FC, delays) is drawn square; a declared aspect is applied after and wins
 % elif L['mark'] == 'scatter':
-    _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
+    _x, _y = _scatter_points(_ds, _da, ${repr(L['x'])}, ${repr(L['y'])})
 % if L['color']:
     if ${repr(not p['colorbar'])} and _fans(_da, ${repr(L['color'])}):   # an axis of the array with no colour bar to read it off: one cloud per entry, coloured as the line fan over it, so a moving dot matches its trace
         _dim, _labels, _colours = _fan_entries(_ds, _da, ${repr(L['color'])}, ${repr(L['cmap'])}, ${repr(bool(L.get('cmap_declared')))})
         for _i in range(len(_labels)):
             _pts = _da.isel({_dim: _i})
-            ax.scatter(_channel(_ds, _pts, ${repr(L['x'])}, 0), np.asarray(_pts.values).squeeze(), color=_colours[_i], **${repr(L['style'])})
+            ax.scatter(*_scatter_points(_ds, _pts, ${repr(L['x'])}, ${repr(L['y'])}), color=_colours[_i], **${repr(L['style'])})
     else:   # a THIRD QUANTITY per point, not a fan of artists: one cloud shaded by the variable it is not plotted against
-        _im = ax.scatter(_x, np.asarray(_da.values).squeeze(),
+        _im = ax.scatter(_x, _y,
                          c=_channel(_ds, _da, ${repr(L['color'])}),
                          cmap=${repr(L['cmap'])}, **${repr(L['style'])})
 % else:
-    ax.scatter(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+    ax.scatter(_x, _y, **${repr(L['style'])})
 % endif
 % elif L['mark'] == 'bar':
 % if L['y'] and not L['x']:
@@ -887,26 +904,37 @@ ${colorbar(p)}\
 % endif
 % if a['tail']:
     _ty = _load_scalar(${repr(a['tail']['layer'])})
-    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="${a['xycoords']}",
                 xytext=(${a['tail']['x']}, _ty), textcoords="data",   # tail ON the computed point
                 zorder=10, **${repr(a['kwargs'])},
                 arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
                             "shrinkA": 2, "shrinkB": 2})
 % elif a['arrow']:
-    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="axes fraction",
+    ax.annotate(_txt, xy=(${a['x']}, ${a['y']}), xycoords="${a['xycoords']}",
                 xytext=(${a['x'] - a['arrow'][0]}, ${a['y'] - a['arrow'][1]}),
-                textcoords="axes fraction", zorder=10, **${repr(a['kwargs'])},
+                textcoords="${a['xycoords']}", zorder=10, **${repr(a['kwargs'])},
                 arrowprops={"arrowstyle": "-|>", "color": "k", "lw": 0.8,
                             "shrinkA": 0, "shrinkB": 0})   # above a composite panel's sub-axes
-% elif a['layer']:
-    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10,
+% elif a['layer'] and a['backdrop']:
+    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.${'transData' if a['xycoords'] == 'data' else 'transAxes'}, zorder=10,
             bbox={"facecolor": fig.get_facecolor(), "edgecolor": "none", "pad": 1.0,
                   "alpha": 0.75},   # a statistic printed over its own scatter stays readable
             **${repr(a['kwargs'])})
 % else:
-    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.transAxes, zorder=10, **${repr(a['kwargs'])})
+    ax.text(${a['x']}, ${a['y']}, _txt, transform=ax.${'transData' if a['xycoords'] == 'data' else 'transAxes'}, zorder=10, **${repr(a['kwargs'])})
 % endif
 % endfor
+</%def>\
+<%def name="guarded(d, target, fn)">\
+% if d['placeholder'] and not d['placeholder_only']:
+    try:                                            # data declared but may be absent: fall back to the label
+        ${target} = ${fn}(fig, ${target}, _pos)
+    except Exception as _e:
+        print("panel ${d['key']}: placeholder ({}: {})".format(type(_e).__name__, _e))
+        _placeholder(${target}, ${repr(d['placeholder'])})
+% else:
+    ${target} = ${fn}(fig, ${target}, _pos)
+% endif
 </%def>\
 <%def name="emit(d, name, what)">\
 % for ins in d['insets']:
@@ -917,7 +945,7 @@ def ${name}(fig, ax, _pos=None):
 ${draw(d)}\
 % for ins in d['insets']:
     _iax = ax.inset_axes(${repr(ins['bounds'])})   # drawn after the body, over it
-    _${ins['key']}(fig, _iax, _pos)
+${guarded(ins, '_iax', '_' + str(ins['key']))}\
 % if ins['post_axopts']:
     _INSET_POST.append((_SCALE_AXES.get(${repr(ins['key'])}, _iax), ${repr(ins['post_axopts'])}))   # re-applied after the axis rule
 % endif
@@ -932,15 +960,7 @@ ${emit(p, '_panel_' + str(p['key']), 'Panel')}\
 def _draw_panels(fig, axd, _pos=None):
     """Draw every panel into *axd* at position ``_pos`` along the animated dimension, without the figure-wide passes."""
 % for p in panels:
-% if p['placeholder'] and not p['placeholder_only']:
-    try:                                            # data declared but may be absent: fall back to the label
-        axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
-    except Exception as _e:
-        print("panel ${p['key']}: placeholder ({}: {})".format(type(_e).__name__, _e))
-        _placeholder(axd[${repr(p['key'])}], ${repr(p['placeholder'])})
-% else:
-    axd[${repr(p['key'])}] = _panel_${p['key']}(fig, axd[${repr(p['key'])}], _pos)
-% endif
+${guarded(p, 'axd[' + repr(p['key']) + ']', '_panel_' + str(p['key']))}\
 % endfor
 
 
@@ -999,7 +1019,8 @@ def _compose(fig, axd, _pos=None, _pinned=None):
     _axis_rule.place(fig, _RULE, skip=_exempt, names={id(_a): _k for _k, _a in axd.items()},
                      shared={_n: [[axd[_k] for _k in _g if _k in axd] for _g in _gs] for _n, _gs in ${repr(shared_scales)}.items()})
     for _iax, _iopts in _INSET_POST:                        # an inset's declared frame, same rule as a panel's
-        _apply_axopts(_iax, _iopts)
+        if _iax not in _PLACEHOLDER_AXES:                   # a cell that fell back to a placeholder stays bare
+            _apply_axopts(_iax, _iopts)
     for _cbar, _dec, _declared in _COLORBAR_POST:
         _format_colorbar(_cbar, _dec, _declared)
     _format_stray_colorbars(fig, _bars)

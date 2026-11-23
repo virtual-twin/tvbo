@@ -21,7 +21,14 @@ import warnings
 from fractions import Fraction
 from typing import TYPE_CHECKING, NamedTuple
 
-from tvbo.adapters.base import BaseAdapter
+from tvbo.adapters.base import (
+    BaseAdapter,
+    affect_assignments,
+    baked_opening,
+    pure_resets,
+    refuse_state_distribution,
+    run_seed,
+)
 from tvbo.adapters.smallscale.lowering import (
     CURRENT_INPUT_TYPES,
     EVENT_SOURCE_TYPES,
@@ -392,8 +399,7 @@ def _build_regime_data(events):
             'condition':  str,          # e.g. "v > thresh" 'assignments': [(lhs, rhs), ...],  # parsed affect assignments 'reset_vars': set,          # SVs clamped in refractory (no TD)
         }
 
-    A variable is "clamped" (excluded from refractory TimeDerivatives) when the assignment is a pure reset (``v = reset``, LHS absent from RHS).
-    A variable that receives a bump (``w = w + b``, LHS appears in RHS) still evolves via its TimeDerivative in the refractory regime.
+    A variable is "clamped" (excluded from refractory TimeDerivatives) when the assignment is a pure reset (`pure_resets`: ``v = reset``, LHS absent from RHS). A variable that receives a bump (``w = w + b``, LHS appears in RHS) still evolves via its TimeDerivative in the refractory regime.
     """
     for ev in (events or {}).values():
         cond = getattr(ev, "condition", None)
@@ -404,23 +410,11 @@ def _build_regime_data(events):
         if not (cond_rhs and affect_rhs):
             continue
 
-        assignments = []
-        reset_vars = set()
-        for piece in str(affect_rhs).split(";"):
-            piece = piece.strip()
-            if "=" not in piece:
-                continue
-            lhs, rhs_val = piece.split("=", 1)
-            lhs, rhs_val = lhs.strip(), rhs_val.strip()
-            assignments.append((lhs, rhs_val))
-            # If LHS doesn't appear in RHS → it's a reset / clamp
-            if not re.search(r"\b" + re.escape(lhs) + r"\b", rhs_val):
-                reset_vars.add(lhs)
-
+        assignments = affect_assignments(ev)
         return {
             "condition": str(cond_rhs),
             "assignments": assignments,
-            "reset_vars": reset_vars,
+            "reset_vars": pure_resets(assignments),
         }
     return None
 
@@ -1007,6 +1001,11 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None, *, clock):
         "EIF_cond_alpha_isfa_ista",
         "HH_cond_exp",
     }
+    if cell_type not in _FLAT_CELL_TYPES and cell_type not in ("pointCellCondBased", "cell"):
+        return None
+    refuse_state_distribution(
+        dyn.state_variables or {}, "neuroml", f"opens a standard {cell_type} from the type's own start and parameters"
+    )
     if cell_type in _FLAT_CELL_TYPES:
         if dyn_id is None:
             dyn_id = safe_id(dyn.name or "dynamics")
@@ -1026,9 +1025,6 @@ def _render_cell_xml(dyn, dyn_id=None, custom_types=None, *, clock):
             "cell_type": cell_type,
             "dyn_id": dyn_id,
         }
-
-    if cell_type not in ("pointCellCondBased", "cell"):
-        return None
 
     if dyn_id is None:
         dyn_id = safe_id(dyn.name or "dynamics")
@@ -1515,12 +1511,13 @@ def _hier_parse_select_label(label_str):
     return result if result["select"] else None
 
 
-def _hier_build_dynamics(dyn, extends, all_params, clock):
+def _hier_build_dynamics(dyn, extends, all_params, clock, seed):
     """Build the ``dynamics`` sub-dict for a custom ComponentType.
 
-    Reads state_variables, derived_variables, and events from the Dynamics object and converts them to LEMS template data, every expression reading ``t`` on the measurement clock (`_on_the_measurement_clock`).
+    Reads state_variables, derived_variables, and events from the Dynamics object and converts them to LEMS template data, every expression reading ``t`` on the measurement clock (`_on_the_measurement_clock`). A state variable opens where the base type names a parameter for it, else on the run's draw on *seed* (`baked_opening`), and a distribution declared on one the base type opens from a parameter is refused.
     """
     meta = _base_type_meta(extends)
+    opening = baked_opening(dyn, seed, "neuroml")
     exposures = meta.get("exposures", {})
 
     # Collect all symbol names for expression conversion
@@ -1633,15 +1630,18 @@ def _hier_build_dynamics(dyn, extends, all_params, clock):
             }
         )
 
-        # OnStart: use named reference from base type meta, fallback to literal
-        on_start_refs = meta.get("on_start_refs", {})
-        iv = getattr(sv, "initial_value", None)
-        if iv is not None:
-            on_start_value = on_start_refs.get(sv_key, str(iv))
+        # OnStart: the parameter the base type names for the variable, else the run's draw.
+        ref = meta.get("on_start_refs", {}).get(sv_key)
+        drawn = getattr(sv, "distribution", None)
+        if drawn and ref:
+            refuse_state_distribution(
+                {sv_key: sv}, "neuroml", f"opens {sv_key!r} of a component extending {extends} from its parameter {ref!r}"
+            )
+        if drawn or getattr(sv, "initial_value", None) is not None:
             dynamics["on_start"].append(
                 {
                     "variable": sv_key,
-                    "value": on_start_value,
+                    "value": ref or str(opening[sv_key]),
                 }
             )
 
@@ -1688,6 +1688,7 @@ def _build_hier_custom_context(experiment):
 
     dyn = experiment.dynamics
     clock = _lems_clock(experiment)
+    seed = run_seed(experiment)
 
     label = getattr(experiment, "label", None)
     dyn_id = safe_id(dyn.name or "dynamics")
@@ -1757,7 +1758,7 @@ def _build_hier_custom_context(experiment):
                         "child_slots": [],
                         "children_slots": [],
                         "attachments": [],
-                        "dynamics": _hier_build_dynamics(r_dyn, r_extends, r_params, clock),
+                        "dynamics": _hier_build_dynamics(r_dyn, r_extends, r_params, clock, seed),
                     }
                     type_order.append(r_type_name)
 
@@ -1781,7 +1782,7 @@ def _build_hier_custom_context(experiment):
                     "child_slots": child_slots,
                     "children_slots": [],
                     "attachments": [],
-                    "dynamics": _hier_build_dynamics(g_dyn, g_extends, g_params, clock),
+                    "dynamics": _hier_build_dynamics(g_dyn, g_extends, g_params, clock, seed),
                 }
                 type_order.append(g_type_name)
 
@@ -1811,7 +1812,7 @@ def _build_hier_custom_context(experiment):
                 "child_slots": [],
                 "children_slots": ch_children_slots,
                 "attachments": [],
-                "dynamics": _hier_build_dynamics(ch_dyn, ch_extends, ch_params, clock),
+                "dynamics": _hier_build_dynamics(ch_dyn, ch_extends, ch_params, clock, seed),
             }
             type_order.append(ch_type_name)
 
@@ -1854,7 +1855,7 @@ def _build_hier_custom_context(experiment):
         "child_slots": [],
         "children_slots": cell_children_slots,
         "attachments": cell_attachments,
-        "dynamics": _hier_build_dynamics(dyn, root_extends, cell_params, clock),
+        "dynamics": _hier_build_dynamics(dyn, root_extends, cell_params, clock, seed),
     }
     type_order.append(root_type_name)
 
@@ -1970,13 +1971,15 @@ def _build_std_fhn_context(experiment, cell_type):
     pop_id = f"{dyn_id}Pop"
 
     if cell_type == "fitzHughNagumo1969Cell":
+        opening = baked_opening(dyn, run_seed(experiment), "neuroml")
         cell_attrs = {}
         for pname in ("a", "b", "I", "phi"):
             p = params.get(pname)
             cell_attrs[pname] = str(getattr(p, "value", 0) if p else 0)
-        cell_attrs["V0"] = str(initial_value(svs.get("V")))
-        cell_attrs["W0"] = str(initial_value(svs.get("W")))
+        cell_attrs["V0"] = str(opening.get("V", initial_value(None)))
+        cell_attrs["W0"] = str(opening.get("W", initial_value(None)))
     else:
+        refuse_state_distribution(svs, "neuroml", "opens a standard fitzHughNagumoCell at the type's own start")
         I_param = params.get("I")
         I_val = getattr(I_param, "value", 0.8) if I_param else 0.8
         cell_attrs = {"I": str(I_val)}
@@ -3112,12 +3115,15 @@ def build_lems_context(experiment):
         """The unit symbol appended to a value, blank whenever the dimension above is `none`: a dimensionless equation expects bare numbers in model units."""
         return unit_to_lems_symbol(unit) if _all_dimensioned else ""
 
+    seed = run_seed(experiment)
     ctx = dict(
         dyn=dyn,
         dyn_id=dyn_id,
         sim_id=sim_id,
         params=params,
         svs=svs,
+        # The one component a network without explicit populations builds serves all of its nodes.
+        opening=baked_opening(dyn, seed, "neuroml", 1 if net_ctx else n_nodes),
         dvs=dvs,
         events=events,
         coupling_inputs=coupling_inputs,
@@ -3150,10 +3156,10 @@ def build_lems_context(experiment):
         has_network=net_ctx is not None,
     )
 
-    def _component_type_context(ct_dyn, dyn_id, ct_params):
+    def _component_type_context(ct_dyn, dyn_id, ct_params, instances):
         """The context a network ComponentType renders from, shared by cell and synapse types.
 
-        *ct_params* are the parameters the type is emitted with, which for a synapse carry its edge's overrides. `Dynamics` declares no clock of its own, so every ComponentType uses the scope's time scale, and SEC supplies it only to purely numeric equations: against dimensioned time constants it double-counts.
+        *ct_params* are the parameters the type is emitted with, which for a synapse carry its edge's overrides. `Dynamics` declares no clock of its own, so every ComponentType uses the scope's time scale, and SEC supplies it only to purely numeric equations: against dimensioned time constants it double-counts. Its one component instance opens each of the *instances* it serves, cells or connections, on the run's draw (`baked_opening`).
         """
         ct_svs = ct_dyn.state_variables or {}
         ct_dvs = ct_dyn.in_dependency_order("derived_variables")
@@ -3203,6 +3209,7 @@ def build_lems_context(experiment):
             "dyn_id": dyn_id,
             "params": ct_params,
             "svs": ct_svs,
+            "opening": baked_opening(ct_dyn, seed, "neuroml", instances),
             "dvs": ct_dvs,
             "events": ct_dyn.events,
             "coupling_inputs": ct_coupling_inputs,
@@ -3219,7 +3226,10 @@ def build_lems_context(experiment):
     if net_ctx:
         cell_contexts = {}
         for ct_name, ct_dyn in net_ctx["cell_types"].items():
-            ct_ctx = _component_type_context(ct_dyn, safe_id(ct_name), ct_dyn.parameters or {})
+            cells = sum(
+                pop["size"] for pop in net_ctx["populations"] if pop["dyn_name"] == ct_name and not pop.get("is_input")
+            )
+            ct_ctx = _component_type_context(ct_dyn, safe_id(ct_name), ct_dyn.parameters or {}, cells)
             # Detect threshold (spike-emitting) events for this node type
             threshold_event_names = [
                 k for k, v in ct_ctx["events"].items() if getattr(getattr(v, "condition", None), "rhs", None) is not None
@@ -3251,7 +3261,8 @@ def build_lems_context(experiment):
                     if _pinfo.get("unit") is not None:
                         _p.unit = _pinfo["unit"]
                     ct_params[_pn] = _p
-                ct_ctx = _component_type_context(rdyn, ct_name, ct_params)
+                connections = sum(conn.get("synapse") == ct_name for conn in net_ctx.get("connections", []))
+                ct_ctx = _component_type_context(rdyn, ct_name, ct_params, connections)
 
                 # Synapse-specific: events without a condition are external spike triggers
                 external_event_names = [
@@ -3777,7 +3788,7 @@ class NeuroMLAdapter(BaseAdapter):
     def _invoke_runner(backend: str, lems_file, tmpdir):
         """Call the appropriate pyNeuroML runner for *backend*.
 
-        The NEURON and NetPyNE exports both need `NEURON_HOME` set so jNeuroML can find `nrnivmodl` to compile `.mod` files. Inside a venv the binaries live in `$VIRTUAL_ENV/bin`, so it is derived from where `nrniv` actually is when unset, and that directory is put on `PATH` — jNeuroML's `ProcessManager.findNeuronHome()` searches `PATH`.
+        The NEURON and NetPyNE exports both need `NEURON_HOME` set so jNeuroML can find `nrnivmodl` to compile `.mod` files. Inside a venv the binaries live in `$VIRTUAL_ENV/bin`, so it is derived from where `nrniv` actually is when unset, and that directory is put on `PATH` — jNeuroML's `ProcessManager.findNeuronHome()` searches `PATH`. Every variable set here, and `PYTHONPATH`, which the runner rewrites, is restored when the run returns, so no later subprocess of the session inherits the run's environment.
         """
         import os
         import sys
@@ -3812,7 +3823,7 @@ class NeuroMLAdapter(BaseAdapter):
             if extra not in existing:
                 env_patch["JDK_JAVA_OPTIONS"] = (existing + " " + extra).strip()
 
-        old_env = {k: os.environ.get(k) for k in env_patch}
+        old_env = {k: os.environ.get(k) for k in (*env_patch, "PYTHONPATH")}
         os.environ.update(env_patch)
 
         # pyNeuroML's Brian2 runner accesses sys.argv[1] unconditionally (pyneuroml/runners.py ≈ line 593).  Pad sys.argv so it doesn't crash when invoked from contexts with a short argv (e.g. pytest).

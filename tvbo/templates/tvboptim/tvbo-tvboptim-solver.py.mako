@@ -18,10 +18,11 @@ Output:
 - get_solver() function
 - Module-level solver constant
 </%doc>
+<%namespace name="events" file="/base/model-events.mako"/>\
 <%
 import jax.numpy as jnp
 
-from tvbo.adapters.tvboptim import solver_class as _solver_class
+from tvbo.adapters.tvboptim import model_event_resets, solver_class as _solver_class
 
 # Get integration and model from context
 if 'experiment' in context.keys():
@@ -51,6 +52,9 @@ state_bounds_hi_str = format_bounds_array(state_bounds_hi, 'jax')
 # Differentiation strategy -> native-solver kwargs, resolved in the tvboptim Python
 # layer (shared with the experiment template). Diffrax has no such knobs.
 solver_kwargs_str = resolve_solver_kwargs(integration, dt, is_diffrax=is_diffrax)
+
+# The model's events act after each step through ModelEventSolver.
+model_resets = model_event_resets(model, solver_class)
 %>
 % if is_diffrax:
 import diffrax
@@ -63,6 +67,11 @@ from tvboptim.experimental.network_dynamics.solvers import BoundedSolver
 % endif
 % if noise_cov:
 from tvbo.classes.correlated_noise import CorrelatedNoiseSolver, covariance_factor
+% endif
+% if model_resets:
+import jax.numpy as jnp
+
+from tvbo.classes.solver_wrappers import ModelEventSolver
 % endif
 
 
@@ -81,6 +90,10 @@ def _load_covariance(path, key):
 
     return LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key)
 
+
+% endif
+% if model_resets:
+${events.apply_model_events(model, model_resets)}
 
 % endif
 def get_solver(block_size=None):
@@ -121,6 +134,9 @@ def get_solver(block_size=None):
         low=jnp.array(${state_bounds_lo_str})[:, None],
         high=jnp.array(${state_bounds_hi_str})[:, None]
     )
+% endif
+% if model_resets:
+    base_solver = ModelEventSolver(base_solver, _apply_model_events)
 % endif
 % if noise_cov:
     # Factorise the declared covariance (correlated_over: ${noise_cov['axis']}) once here, not per step.

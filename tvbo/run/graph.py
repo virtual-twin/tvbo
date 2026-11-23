@@ -9,7 +9,6 @@ import numpy as np
 from tvbo.classes import dynamics as localdynamics
 from tvbo.classes.coupling import Coupling
 from tvbo.run import compgraph
-from tvbo.utils import initial_value
 
 
 class GraphRunner:
@@ -127,19 +126,20 @@ class GraphRunner:
                 compiled[id(model)] = compgraph.coupling_transforms(model, self.coupling)
             self.graph.nodes[node]["coupling"] = compiled.get(id(model))
 
-    def setup_initial_conditions(self):
+    def setup_initial_conditions(self, seed=0):
         """Initialize each node's state and dynamics parameters from what it declares for itself.
 
-        A node's `"state"` holds its model's initial values, with each state the node declares in its place (`node_initial_states`), and its `"parameters"` the model's parameters it sets (`node_parameter_arrays`), both read at the node's position in the graph, its declaration order.
+        A node's `"state"` holds its model's opening, the draw `get_initial_values` makes on *seed* for every node of the graph (each state variable's declared distribution, else its initial value), as tvb and jax open, with each state the node declares in its place (`node_initial_states`), and its `"parameters"` the model's parameters it sets (`node_parameter_arrays`), both read at the node's position in the graph, its declaration order.
         """
         from tvbo.adapters.base import node_initial_states, node_parameter_arrays
 
         declared = {}
+        n_nodes = self.graph.number_of_nodes()
         for position, node in enumerate(self.graph.nodes):
             model = self.graph.nodes[node]["model"]
             if id(model) not in declared:
-                defaults = np.array([initial_value(sv) for sv in model.state_variables.values()])
-                states = np.repeat(defaults[:, None], self.graph.number_of_nodes(), axis=1)
+                opening = np.asarray(model.get_initial_values(N=n_nodes, seed=seed), dtype=float)
+                states = np.broadcast_to(opening.reshape(len(opening), -1), (len(opening), n_nodes))
                 declared[id(model)] = (
                     node_initial_states(self.connectome, model, states),
                     node_parameter_arrays(self.connectome, model),
@@ -166,7 +166,7 @@ class GraphRunner:
                     sampling_rate=sampling_rate,
                 )
 
-    def run(self, duration=1000, dt=1, format="graph", integration=None):
+    def run(self, duration=1000, dt=1, format="graph", integration=None, seed=0):
         """Integrate the network in time and return the simulated time series.
 
         Sets up initial conditions and per-node parameters, stimulation, node derivative functions and each node's coupling, starts each node's trace at its initial state, then integrates the network with delays by the declared method, every node synchronously (`compgraph.simulate_graph_dynamics_with_delay`), and collects the states recorded at dt to `duration`, the nodes labelled by the connectome's `node_labels`.
@@ -176,11 +176,12 @@ class GraphRunner:
             dt: Integration time step.
             format: Reserved output-format selector; currently unused.
             integration: The experiment's `Integrator`, whose ``method`` steps every node and whose ``coupling_evaluation`` must be the per-step one this runner integrates; ``None`` integrates by the schema's default method.
+            seed: The run's seed (`run_seed`), from which a declared initial-state distribution draws the opening.
 
         Returns:
             The collected per-node time series over the simulated interval.
         """
-        self.setup_initial_conditions()
+        self.setup_initial_conditions(seed)
         self.setup_stimulation()
         self.setup_dfuns()
         self.setup_cfuns()

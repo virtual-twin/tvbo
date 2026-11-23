@@ -1,0 +1,83 @@
+name: MeshOperators
+label: Wave-detection operators of a triangulated mesh
+description: The fixed arrays a travelling-wave detector reads on a triangulated mesh,
+  built once per group of its vertices (a hemisphere) and padded to the largest group,
+  in the gather form of the detector of Koller et al. (2024, doi:10.1038/s41467-024-47860-x).
+  Mesh vertices meet network nodes by label, the groups are ordered by label and the
+  vertices of a group by network node, so no input order changes a value. Per group
+  it returns members, the network node of each vertex; group, its label; vertex_mask
+  and face_mask, 1 for a real entry and 0 for padding; faces, the corner-major face
+  table; grad_x, grad_y and grad_z, the gradient of each corner's hat function on
+  its face; area; poisson, the pseudo-inverse of the negated cotangent Laplacian,
+  whose potentials have zero mean on each connected component; kring_faces, kring_mask
+  and kring_count, the faces incident to every vertex of the k-ring of each vertex
+  but itself, each once per ring vertex it touches; divergent_x, divergent_y and divergent_z,
+  the unit gradient on each listed face of the heat-method geodesic distance from
+  the vertex; null_mask and decision_mask, 1 outside the border rings; reference,
+  a node field on the vertices; and components, the number of connected components.
+  It is built with libigl and potpourri3d, which the extra tvbo[mesh] installs, where
+  the producer runs.
+outputs:
+- members
+- group
+- vertex_mask
+- face_mask
+- faces
+- grad_x
+- grad_y
+- grad_z
+- area
+- poisson
+- kring_faces
+- kring_mask
+- kring_count
+- divergent_x
+- divergent_y
+- divergent_z
+- null_mask
+- decision_mask
+- reference
+- components
+arguments:
+  vertices:
+    name: vertices
+    description: Positions, n by 2 or n by 3, in the length unit a potential is wanted
+      in, metres for a cortex and millimetres for a sheet; planar vertices get z =
+      0. Labelled on `node`, each row names its network node and faces index the rows;
+      unlabelled, there is one row per network node, in network order.
+  faces:
+    name: faces
+    description: Triangles, m by 3, indexing the rows of vertices. Without them each
+      group of planar vertices is triangulated by Delaunay, as Koller triangulates
+      his sheet; 3-D vertices need them.
+  node_labels:
+    name: node_labels
+    description: The labels of the network nodes in network order, network.labels.
+  groups:
+    name: groups
+    description: The group of each vertex, labelled on `node` or in vertex order,
+      or one label for a mesh of one group. A face with corners in two groups is refused.
+  reference:
+    name: reference
+    description: A per-node field, labelled on `node` or in network order, laid out
+      on the vertices of each group; NaN without one.
+  k_ring:
+    name: k_ring
+    description: Each vertex lists the faces incident to every vertex of its k-ring
+      except itself, a face once per ring vertex it touches, as compute_wave_template(k=2)
+      lists them; at 2 these are the faces inside the 3-ring.
+    value: 2
+  null_ring:
+    name: null_ring
+    description: The border ring the null family of the wave test leaves out, as k_ring_boundary(v,
+      f, k) marks it; -1 for none, 0 for the border vertices, k for every vertex within
+      k edges of them.
+    value: -1
+  decision_ring:
+    name: decision_ring
+    description: The border ring left out of the vertices that decide a wave, counted
+      as null_ring; a decision ring inside the null ring is refused.
+    value: -1
+callable:
+  name: mesh_operators
+  module: tvbo.analysis.mesh

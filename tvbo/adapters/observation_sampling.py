@@ -19,7 +19,9 @@ from typing import Any
 
 __all__ = [
     "ObservationSampling",
+    "last_sampling_kind",
     "resolve_observation_sampling",
+    "sampling_kind",
     "tvb_iround",
 ]
 
@@ -35,6 +37,25 @@ def tvb_iround(value: float) -> int:
 
 _tvb_iround = tvb_iround
 """Alias: the tvboptim runtime historically called this `_tvb_iround`."""
+
+
+def sampling_kind(rhs: Any) -> str | None:
+    """How a pipeline step's equation *rhs* samples time: ``"window"`` for an averaging window (``window_mean``), ``"subsample"`` for a decimation (``subsample``), else None.
+
+    The kind of the last sampling step decides where an observation's sample is stamped: a window's mean at the mean time of the samples it averages, as tvboptim's ``TemporalAverage`` labels it, and a point sample at the step it takes.
+    """
+    rhs = str(rhs or "")
+    if "window_mean(" in rhs:
+        return "window"
+    if "subsample(" in rhs:
+        return "subsample"
+    return None
+
+
+def last_sampling_kind(rhs_list: Any) -> str | None:
+    """The `sampling_kind` of the last step among the equations *rhs_list* of a pipeline that samples time, or None where none does; it decides where the pipeline's samples are stamped."""
+    kinds = [kind for kind in map(sampling_kind, rhs_list) if kind]
+    return kinds[-1] if kinds else None
 
 
 def _to_numeric(value: Any) -> Any:

@@ -83,19 +83,19 @@ The same study YAML produces a *different* DAG on different backends. The planne
 
 ```bash
 # Inspect a study
-tvbo info study:Schirner2023_MultiscaleBNM_DM
+tvbo info ./study.yaml
 
 # Render JAX code to stdout
-tvbo export jax experiment:JR_MEG_FrequencyGradient_Optimization
+tvbo export jax experiment:ThreeNode_JansenRit1995_Parity
 
 # Run locally with the tvboptim backend
-tvbo run experiment:JR_MEG_FrequencyGradient_Optimization -b tvboptim -o ./out
+tvbo run experiment:ThreeNode_JansenRit1995_Parity -b tvboptim -o ./out
 
 # Emit a Snakemake reproducibility kit
-tvbo workflow snakemake experiment:JR_MEG_FrequencyGradient_Optimization \
+tvbo workflow snakemake experiment:ThreeNode_JansenRit1995_Parity \
     --backend jax -o ./kit-jax
 
 # Submit the same study via Slurm in one shot
-tvbo run experiment:JR_MEG_FrequencyGradient_Optimization \
+tvbo run experiment:ThreeNode_JansenRit1995_Parity \
     --engine slurm --backend jax -o ./run-001
 ```

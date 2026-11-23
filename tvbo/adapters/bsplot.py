@@ -13,18 +13,33 @@ import re
 from contextlib import contextmanager
 from contextvars import ContextVar
 from pathlib import Path
+from types import SimpleNamespace
 
 from tvbo.adapters.base import dense_matrix
 from tvbo.templates import lookup
 from tvbo.utils import as_list
 
 
-@functools.cache
-def _open_ds(path):
-    """Open a result container once per distinct path (shared by the adapter's custom panels)."""
+def open_container(path):
+    """Open a result container with xarray — public API, the opener of the emitted plot script and of the adapter's own panels alike.
+
+    An empty path means the layer reads an experiment whose container was not on disk when the script was generated. A path that is not a file, such as the one an analysis writes before the analysis has run (:func:`_container_path` with ``planned``), is refused naming that path and the command that writes it; the script holds the path, so it reads the container once it is there. A panel declaring a ``placeholder`` catches either and draws the label; one that does not gets the reason, where xarray would open the empty path as the working directory and fail on a directory.
+    """
     import xarray as xr
 
+    if not path:
+        raise FileNotFoundError(
+            "this layer's result container was not found when the figure was generated. Run the study so the source is on disk, then re-render."
+        )
+    if not Path(path).is_file():
+        raise FileNotFoundError(
+            f"the result container {path} is not on disk. Run the analysis or experiment that writes it (`tvbo run <study> --analysis <name>` for an analysis), or stage the file at that path, then render the figure again."
+        )
     return xr.open_dataset(path, engine="h5netcdf")
+
+
+_open_ds = functools.cache(open_container)
+""":func:`open_container` once per distinct path, for the adapter's custom and built-in panels."""
 
 
 _TEMPLATE = "bsplot/tvbo-bsplot-figure.py.mako"
@@ -216,12 +231,52 @@ def _read_mesh(path: str, kind: str, mesh_format):
     return vertices.copy(), faces.copy()
 
 
+@functools.cache
+def _result_mesh(path: str):
+    """``(vertices, faces, labels)`` of a mesh an analysis derived, read once from its result container.
+
+    The container holds ``vertices`` (V, 3) and ``faces`` (F, 3), the faces indexing the vertices in the order they are stored. ``labels`` names each vertex when the vertices carry a label coordinate (a parcel mesh's regions) and is ``None`` when they do not.
+
+    Raises:
+        ValueError: If the container lacks either array or they are not a triangulation of the vertices.
+    """
+    import numpy as _np
+
+    from tvbo.data.dataref import match_output
+
+    ds = _open_ds(path)
+    try:
+        vertices, faces = (ds[match_output(ds.data_vars, name)] for name in ("vertices", "faces"))
+    except KeyError as missing:
+        raise ValueError(f"surface panel: the mesh's result {path!r} needs `vertices` and `faces`: {missing}") from None
+    v, f = _np.asarray(vertices.values, dtype=float), _np.asarray(faces.values)
+    if v.ndim != 2 or v.shape[1] != 3 or f.ndim != 2 or f.shape[1] != 3 or f.min() < 0 or f.max() >= len(v):
+        raise ValueError(
+            f"surface panel: the mesh's result {path!r} holds vertices of shape {v.shape} and faces of shape {f.shape} "
+            f"reaching index {int(f.max())}; a mesh is (V, 3) coordinates and (F, 3) indices into them."
+        )
+    return v, f.astype(int), _region_labels(vertices)
+
+
+def _derived_mesh(opts):
+    """``(vertices, faces)`` of the mesh a surface's ``used`` binding names, each caller getting its own arrays as from :func:`_read_mesh`."""
+    others = [f"`{_RETIRED_BY_KIND['surface'][k]}:`" for k in ("network", "mesh", "template") if opts.get(k)]
+    if others:
+        raise ValueError(f"surface panel: `used:` names the mesh, so {' and '.join(others)} cannot name another one.")
+    if not opts["mesh_result"]:
+        raise ValueError("surface panel: no result holds the mesh its `used:` names; run the analysis that derives it first.")
+    vertices, faces, _labels = _result_mesh(str(opts["mesh_result"]))
+    return vertices.copy(), faces.copy()
+
+
 def _surface_mesh(ctx):
     """``(vertices, faces)`` for a ``surface`` panel, from whichever source it declares.
 
-    Four tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — an ``.npz`` holding ``vertices``/``faces`` (what an analysis emits when the mesh is derived rather than measured), or a named ``template:`` surface, fetched rather than committed so a parcellated map needs no mesh checked in beside the page.
+    Five tvbo-native sources: a tvbo ``Network`` whose companion carries a ``mesh`` group (geometry belongs to the network, and ``network_io`` already writes it), the result container of the analysis that derived the mesh, named by ``used:`` as a layer names its data, a surface mesh FILE in any format :mod:`tvbo.data.mesh_io` reads — the GIFTI/VTK/FreeSurfer that ``Mesh.mesh_file`` has always declared — an ``.npz`` holding ``vertices``/``faces``, or a named ``template:`` surface, fetched rather than committed so a parcellated map needs no mesh checked in beside the page.
     """
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
+    if "mesh_result" in opts:
+        return _derived_mesh(opts)
     net_path, mesh_path = opts.get("network"), opts.get("mesh")
     if net_path:
         return _read_mesh(str(resolve_path(net_path, base)), "network", None)
@@ -241,16 +296,14 @@ def _surface_mesh(ctx):
         return _np.vstack([lv, rv]), _np.vstack([lf, rf + len(lv)])
     raise ValueError(
         "surface panel: declare where the mesh comes from — `network:` (a tvbo Network whose "
-        "companion carries a mesh group), `mesh:` (a GIFTI/VTK/FreeSurfer surface, or an "
-        "npz with `vertices`/`faces`), or `template:` (a named surface such as fsaverage)."
+        "companion carries a mesh group), `used:` (the result of the analysis that derived it), "
+        "`mesh:` (a GIFTI/VTK/FreeSurfer surface, or an npz with `vertices`/`faces`), or "
+        "`template:` (a named surface such as fsaverage)."
     )
 
 
-def _vertex_values(da, n_vertices):
-    """A layer's values on the FULL mesh, placed BY LABEL from a vertex-subset array.
-
-    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial wall cut away — returns fewer values than the mesh has vertices and carries the kept indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on its own vertex and leaves the rest NaN, which renders grey; placing them positionally would silently rotate the map into a plausible-looking wrong one.
-    """
+def _one_map(da):
+    """A layer's values as one value per vertex, refusing a layer that still holds several maps."""
     import numpy as _np
 
     values = _np.asarray(da.values, dtype=float).squeeze()
@@ -260,6 +313,41 @@ def _vertex_values(da, n_vertices):
             f"dims {tuple(da.dims)}. Add a `sel:` to the layer picking a single map "
             "(e.g. `sel: {mode: 1}`)."
         )
+    return values
+
+
+def _labelled_vertex_values(da, vertex_labels):
+    """A layer's values on a mesh whose vertices are named, each placed on the vertex of its own name.
+
+    A derived mesh's vertices can be regions — a parcel mesh has one vertex per parcel — and a layer over those regions may be stored in any order, so position says nothing about which vertex a value belongs to. A vertex the layer holds no value for stays NaN and is drawn as missing, which is how a layer over fewer regions than the mesh is placed; a value whose name is no vertex has nowhere to go and is refused.
+    """
+    import numpy as _np
+
+    values, names = _one_map(da), _region_labels(da)
+    if names is None:
+        raise ValueError(
+            "surface panel: the mesh's vertices are named, but the layer carries no region-label coordinate to place its values by."
+        )
+    index = {name: i for i, name in enumerate(vertex_labels)}
+    unknown = [name for name in names if name not in index]
+    if unknown:
+        raise ValueError(
+            f"surface panel: {len(unknown)} of the layer's {len(names)} labels name no vertex of the mesh: {unknown[:5]}"
+            f"{' …' if len(unknown) > 5 else ''}."
+        )
+    full = _np.full(len(vertex_labels), _np.nan)
+    full[[index[name] for name in names]] = values
+    return full
+
+
+def _vertex_values(da, n_vertices):
+    """A layer's values on the FULL mesh, placed BY LABEL from a vertex-subset array.
+
+    An analysis that runs on a subset of the mesh — the cortex vertices, with the medial wall cut away — returns fewer values than the mesh has vertices and carries the kept indices as a ``vertex`` coordinate. Scattering by that coordinate puts each value on its own vertex and leaves the rest NaN, which renders grey; placing them positionally would silently rotate the map into a plausible-looking wrong one.
+    """
+    import numpy as _np
+
+    values = _one_map(da)
     if values.size == n_vertices:
         return values
     idx = da.coords["vertex"].values if "vertex" in da.coords else None
@@ -291,7 +379,7 @@ def surface_panel(fig, ax, ctx):
 
     A spec declares all of this as ``surface:`` — the `Surface` class names and documents every attribute, and ``_KIND_RENAMES`` says where one reaches this callable under a different word. What is only true here:
 
-    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`). With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one.
+    ``symmetric`` defaults to TRUE, because a cortical map is usually signed deviations and reading those on an off-centre scale is misleading in a way no axis label catches. ``percentile`` defaults to 100. Geometry comes from whichever of ``connectome`` / ``used`` / ``mesh`` / ``template`` is given (see :func:`_surface_mesh`); on a mesh whose vertices are named, which a ``used`` result can carry, the layer's values are placed on them by label. With no layer the panel draws the bare mesh; with ``geometry: true`` the layer supplies (V, 3) vertex COORDINATES, so what it shows is the surface a reconstruction rebuilt rather than a field living on a fixed one; with ``markers: true`` the layer is a dot at each vertex over the flat mesh (see :func:`_vertex_markers`); with ``shading: smooth`` each face is split into 16 before it is drawn, so a coarse mesh blends its colours and light across faces (see :func:`_smooth_mesh`).
     """
     import bsplot
     import numpy as _np
@@ -300,8 +388,20 @@ def surface_panel(fig, ax, ctx):
 
     opts, base = ctx.get("opts", {}), ctx.get("base_dir")
     verts, faces = _surface_mesh(ctx)
+    vertex_labels = _result_mesh(str(opts["mesh_result"]))[2] if opts.get("mesh_result") else None
     layers = ctx.get("layers") or []
     geometry = bool(opts.get("geometry", False))
+    if opts.get("markers") and (geometry or not layers):
+        raise ValueError("surface panel: `markers` draws a layer's values as dots, so it needs a layer of values.")
+    smooth = opts.get("shading") == "smooth"
+    unblendable = {
+        "markers": "`markers` draws the layer as dots over a flat, unlit mesh",
+        "edgecolor": "`edge_color` would outline triangles the mesh does not have",
+    }
+    if smooth and any(opts.get(k) for k in unblendable):
+        raise ValueError(
+            f"surface panel: `shading: smooth` blends a painted layer across faces it splits into 16, so it is refused here: {'; '.join(why for k, why in unblendable.items() if opts.get(k))}."
+        )
     if not layers and not (opts.get("color") or opts.get("edgecolor")):
         raise ValueError(
             "surface panel: needs a layer supplying the per-vertex values, or a `color:` / "
@@ -355,6 +455,10 @@ def surface_panel(fig, ax, ctx):
                 f"{opts.get('surface_atlas', 'Desikan2006')!r} through atlas {str(opts['atlas'])!r} "
                 f"({labels[:5]}{' …' if len(labels) > 5 else ''}). The panel would draw an empty mesh."
             )
+    elif layers and vertex_labels is not None:
+        values = _labelled_vertex_values(load_layer(layers[0]), vertex_labels)
+        if opts.get("missing_color"):
+            grey = _np.isnan(values)
     elif layers:
         values = _vertex_values(load_layer(layers[0]), len(verts))
         if opts.get("mask"):
@@ -368,32 +472,122 @@ def surface_panel(fig, ax, ctx):
             values = _np.where(grey, _np.nan, values)  # also keeps it out of the limits
 
     vmin, vmax = _colour_limits(_limits_source(layers, values), opts, True)
+    if smooth:
+        verts, faces, values, grey = _smooth_mesh(verts, faces, values, grey)
 
     edges = (
         {"edgecolor": str(opts["edgecolor"]), "linewidth": float(opts.get("edge_linewidth", 0.08))}
         if opts.get("edgecolor")
         else None
     )
+    cmap = _resolve_cmap(resolve_colormap(opts.get("cmap")))
+    missing = _rgba(opts["missing_color"]) if opts.get("missing_color") else None
+    painted = (
+        {
+            **_vertex_markers(verts, faces, values, missing, cmap, vmin, vmax, opts.get("marker_size")),
+            "color": opts.get("color") or fig.get_facecolor(),
+            "shade_intensity": 0.0,
+        }
+        if opts.get("markers")
+        else {"overlay": values, "mask": grey, "mask_colour": missing, "color": opts.get("color")}
+    )
     bsplot.plot_surf(
         vertices=verts,
         faces=faces,
-        overlay=values,
         ax=ax,
-        mask=grey,
-        mask_colour=_rgba(opts["missing_color"]) if opts.get("missing_color") else None,
         # A merged bilateral mesh is already whole, and the backend reads `hemi` as an instruction to go find one hemisphere's geometry — which it then cannot resolve.
         hemi="lh" if str(opts.get("hemi", "lh")) == "both" else str(opts.get("hemi", "lh")),
         view=str(opts.get("view", "lateral")),
-        cmap=_resolve_cmap(resolve_colormap(opts.get("cmap"))),
+        cmap=cmap,
         vmin=vmin,
         vmax=vmax,
-        color=opts.get("color"),
+        transparency=float(opts.get("opacity", 1.0)),
         faces_kwargs=edges,
+        **painted,
     )
     ax.set_aspect("equal")  # a surface's frame is anatomy, not a coordinate system
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
+
+
+def _vertex_markers(vertices, faces, values, missing, cmap, vmin, vmax, size=None) -> dict:
+    """The dots ``markers: true`` draws, as the extra surfaces ``bsplot.plot_surf`` depth-sorts in one pass with the mesh.
+
+    One sphere per vertex, so the sort that orders the mesh's faces also hides a dot behind the mesh: a lateral view of two hemispheres shows the near one's dots rather than both overplotted. Eight segments make a sphere round enough at the millimetre a dot prints at. bsplot winds its spheres inward and culls faces by winding, which would leave each dot only its far half for the mesh to cover, so they are turned outward. Each dot sits on the surface, raised by its radius along the vertex's area-weighted normal: centred on the vertex it would be half inside the mesh, and the sort by face centroid would draw the faces around the vertex over its front. A vertex without a value gets a dot in *missing*, or bsplot's grey, as a painted face would. Unset, *size* is half the median edge length.
+    """
+    import nibabel as nib
+    import numpy as _np
+    from bsplot.graph.network import create_sphere_mesh
+
+    corners = vertices[faces]
+    radius = float(size or 0.5 * _np.median(_np.linalg.norm(corners - _np.roll(corners, 1, axis=1), axis=-1)))
+    unit, triangles = create_sphere_mesh((0.0, 0.0, 0.0), radius, resolution=8)
+    raised = vertices + radius * _vertex_normals(vertices, faces)
+
+    def spheres(centres):
+        points = (centres[:, None, :] + unit[None]).reshape(-1, 3).astype(_np.float32)
+        wound = (triangles[None, :, ::-1] + len(unit) * _np.arange(len(centres))[:, None, None]).reshape(-1, 3)
+        return nib.gifti.GiftiImage(
+            darrays=[
+                nib.gifti.GiftiDataArray(points, intent="NIFTI_INTENT_POINTSET"),
+                nib.gifti.GiftiDataArray(wound.astype(_np.int32), intent="NIFTI_INTENT_TRIANGLE"),
+            ]
+        )
+
+    valued = ~_np.isnan(values)
+    groups = [g for g in ((valued, _np.repeat(values[valued], len(unit)), None), (~valued, None, missing)) if g[0].any()]
+    return {
+        "additional_surfaces": [spheres(raised[keep]) for keep, _, _ in groups],
+        "additional_overlays": [overlay for _, overlay, _ in groups],
+        "additional_colors": [colour for _, _, colour in groups],
+        "additional_cmaps": [cmap] * len(groups),
+        "additional_vmins": [vmin] * len(groups),
+        "additional_vmaxs": [vmax] * len(groups),
+    }
+
+
+def _vertex_normals(vertices, faces):
+    """Each vertex's unit normal, the area-weighted mean of its faces' normals; zero at a vertex no face uses."""
+    import numpy as _np
+
+    corners = vertices[faces]
+    normal = _np.zeros_like(vertices)
+    _np.add.at(normal, faces, _np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])[:, None, :])
+    length = _np.linalg.norm(normal, axis=1, keepdims=True)
+    return _np.divide(normal, length, out=_np.zeros_like(normal), where=length > 0)
+
+
+SMOOTH_SHADING_LEVELS = 2
+"""How many times ``shading: smooth`` splits every face in four: twice makes 16 of each, enough for a parcel mesh of a few hundred vertices to print without facets."""
+
+
+def _smooth_mesh(vertices, faces, values=None, mask=None, levels=SMOOTH_SHADING_LEVELS):
+    """``(vertices, faces, values, mask)`` of the mesh ``shading: smooth`` draws: every face split in four *levels* times, with the per-vertex *values* and *mask* carried onto the new vertices.
+
+    bsplot paints a face in one colour, the mean of its corners' values, and lights it by its own normal, so a coarse mesh shows its faces twice over, as steps of colour and as steps of light, where a renderer's smooth shading blends both across them. Smaller faces do the same in a painter's algorithm. A new vertex sits on its edge's midpoint pulled along the two ends' normals, the middle of the cubic edge of a curved point-normal triangle (Vlachos et al. 2001, doi:10.1145/364338.364387), so the faces turn smoothly and the light varies across what was one face; a midpoint of the flat face would leave every one of the 16 lit alike. It takes the mean of the two ends' values, or the one value where the other end has none, and is masked where either end is, so a missing vertex still greys every face it touched. The mesh's own vertices keep their place and value, and each new face keeps its parent's winding, by which the backend culls.
+    """
+    import numpy as _np
+
+    for _ in range(levels):
+        n, normal = len(vertices), _vertex_normals(vertices, faces)
+        edges = _np.sort(_np.concatenate([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]]), axis=1)
+        keys, inverse = _np.unique(edges[:, 0] * n + edges[:, 1], return_inverse=True)
+        lo, hi = keys // n, keys % n
+        span = vertices[hi] - vertices[lo]
+        pull = (
+            _np.einsum("ij,ij->i", span, normal[lo])[:, None] * normal[lo]
+            - _np.einsum("ij,ij->i", span, normal[hi])[:, None] * normal[hi]
+        )
+        vertices = _np.vstack([vertices, 0.5 * (vertices[lo] + vertices[hi]) - pull / 8.0])
+        (a, b, c), (ab, bc, ca) = faces.T, n + inverse.reshape(3, -1)
+        faces = _np.concatenate([_np.c_[a, ab, ca], _np.c_[ab, b, bc], _np.c_[ca, bc, c], _np.c_[ab, bc, ca]])
+        if values is not None:
+            x, y = values[lo], values[hi]
+            values = _np.concatenate([values, _np.where(_np.isnan(x), y, _np.where(_np.isnan(y), x, 0.5 * (x + y)))])
+        if mask is not None:
+            mask = _np.concatenate([mask, mask[lo] | mask[hi]])
+    return vertices, faces, values, mask
 
 
 def _atlas_spec(atlas: str, base_dir) -> Path:
@@ -456,6 +650,8 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     The surface atlas supplies one integer parcel per vertex and the region names those integers stand for; the curated terminology supplies every other name each region answers to. Joining them on the entity key is what places a value by NAME on a mesh, so a parcellated map needs neither a committed ``.annot`` beside the page nor a hand-written abbreviation table.
 
+    A surface atlas names a region either bare, with the side left to the file (Desikan ``bankssts``, Destrieux ``G_cuneus``), or with its side already in the name (Schaefer ``7Networks_LH_Vis_1``). A parcel therefore answers to three spellings, ``ctx-<side>-<region>``, ``ctx_<side>_<region>`` and the bare name, compared without case, so one join serves every atlas templateflow carries. A spelling two parcels share, such as a bare Desikan name under ``hemi: both``, places no value: an atlas entity keyed by it raises a ``ValueError`` naming the region and the sides that carry it, and a shared spelling no entity is keyed by (``unknown``, the medial wall) is left alone.
+
     Across ``hemi: both`` the surface atlas numbers its parcels from zero again in the right hemisphere, so a bare index says ``lateraloccipital`` without saying whose. The side is folded into the id, which is the difference between a bilateral map and one that paints both hemispheres with the left one's values.
     """
     import bsplot
@@ -463,25 +659,29 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
 
     SIDE_STRIDE = 1000
 
-    def _load(h):
-        return bsplot.load_atlas_labels(atlas=surface_atlas, hemi=h, template=template, density=density)
-
-    if hemi == "both":
-        left, region_names = _load("lh")
-        right, _ = _load("rh")
-        labels = _np.concatenate([_np.asarray(left), _np.asarray(right) + SIDE_STRIDE])
-        sides = ("lh", "rh")
-    else:
-        labels, region_names = _load(hemi)
-        labels = _np.asarray(labels)
-        sides = (hemi,)
+    parts, sides_of = [], {}
+    for offset, side in enumerate(("lh", "rh") if hemi == "both" else (hemi,)):
+        vertex_labels, region_names = bsplot.load_atlas_labels(
+            atlas=surface_atlas, hemi=side, template=template, density=density
+        )
+        parts.append(_np.asarray(vertex_labels) + offset * SIDE_STRIDE)
+        for index, region in enumerate(region_names):
+            for spelling in (f"ctx-{side}-{region}", f"ctx_{side}_{region}", str(region)):
+                sides_of.setdefault(spelling.lower(), {})[index + offset * SIDE_STRIDE] = side
 
     names, _entities = _atlas_crosswalk(atlas, base_dir)
-    by_key = {}
-    for offset, side in enumerate(sides):
-        for index, region in enumerate(region_names):
-            by_key[f"ctx-{side}-{str(region)}"] = index + offset * SIDE_STRIDE
-    return labels, {nm: by_key[key] for nm, key in names.items() if key in by_key}
+    parcel_of = {}
+    for nm, key in names.items():
+        parcels = sides_of.get(key.lower(), {})
+        if len(parcels) > 1:
+            raise ValueError(
+                f"surface panel: atlas {atlas!r} keys the region {key!r}, which {surface_atlas!r} carries as "
+                f"{len(parcels)} parcels (sides {', '.join(sorted(set(parcels.values())))}) under `hemi: {hemi}`. "
+                f"Key the atlas entity by its side (`ctx-lh-{key}`, `ctx-rh-{key}`) so its value lands on one parcel."
+            )
+        if parcels:
+            (parcel_of[nm],) = parcels
+    return _np.concatenate(parts), parcel_of
 
 
 def _check_placeable(labels, table, kind: str, atlas: str) -> None:
@@ -669,7 +869,7 @@ def network_panel(fig, ax, ctx):
 
     The panel a whole-brain paper draws beside its time courses: the network the model actually ran on, with the state living on it. Registered here rather than shipped per study, so ``kind: network`` needs no ``code_modules``. It is drawn the way bsplot draws a brain network: the graph is bsplot's ``create_network``, and ``plot_network_on_surface`` renders the region spheres and connection tubes depth-sorted with a translucent ``plot_surf`` cortex (fsaverage, both hemispheres), so the network panels and the surface panels of a figure share one camera and one shading.
 
-    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute. What is only true here: the connectome is the one ``network:`` names, or else the network the layer's experiment ran on, read from the copy the run froze beside its result; ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` picks the camera (axial from above, coronal from the front, sagittal from the left) and defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. A layer with one value per region colours the spheres; one with a value per pair of regions colours the tubes kept by ``edge_percentile`` on the panel's colour scale, and the spheres take ``color``. Tube radii grow with the weight from ``edge_width``, so a strong connection reads as strong. Sizes are in millimetres of the brain. With no layer the panel draws the bare graph in ``color`` and ``edge_color``.
+    A spec declares all of this as ``network:`` — the `Graph` class names and documents every attribute. What is only true here: the connectome is the one ``network:`` names, or else the network the layer's experiment ran on, read from the copy the run froze beside its result; ``symmetric`` defaults to FALSE, because a state variable is not a signed deviation from zero the way a brain map of differences is; ``projection`` picks the camera (axial from above, coronal from the front, sagittal from the left) and defaults to axial, ``edge_percentile`` to 92, and ``labels`` to off, since 87 region names on one panel is a block of text rather than a figure. A layer with one value per region colours the spheres; one with a value per pair of regions colours the tubes kept by ``edge_percentile`` on the panel's colour scale, and the spheres take ``color``. Tube radii grow with the weight from ``edge_width``, so a strong connection reads as strong; a tube ends at the surfaces of the two spheres it joins and is built in sections, so it is drawn behind a node that lies in front of it. Sizes are in millimetres of the brain. With no layer the panel draws the bare graph in ``color`` and ``edge_color``.
     """
     import numpy as _np
     from bsplot.graph import create_network, plot_network_on_surface
@@ -717,7 +917,17 @@ def network_panel(fig, ax, ctx):
 
     shaded = {"color": "auto", "cmap": cmap, "data_key": "value", "vmin": vmin, "vmax": vmax}
     node_kw = shaded if node_values is not None else {"color": resolve_color(opts.get("color", "palette.0"))}
-    edge_kw = shaded if edge_values is not None else {"color": resolve_color(opts.get("edge_color", "base"))}
+    if edge_values is not None:
+        edge_kw = shaded
+    elif opts.get("edge_color") == "weight":
+        from matplotlib.colors import LinearSegmentedColormap, to_rgb
+
+        faint = 0.6 * _np.array(fig.get_facecolor()[:3]) + 0.4 * _np.array(to_rgb(resolve_color("base")))
+        ramp = LinearSegmentedColormap.from_list("weight", [faint, resolve_color("ink")])
+        edge_kw = {"color": "auto", "cmap": ramp, "data_key": "weight", "vmin": 0.0}
+    else:
+        edge_kw = {"color": resolve_color(opts.get("edge_color", "base"))}
+    node_radius = float(opts.get("node_size", 2.5))
     plot_network_on_surface(
         graph,
         ax=ax,
@@ -727,9 +937,13 @@ def network_panel(fig, ax, ctx):
         color=resolve_color(opts.get("surface_color", "base")),
         surface_alpha=float(opts.get("surface_alpha", 0.12)),
         nodes=labels,
-        node_radius=float(opts.get("node_size", 2.5)),
+        node_radius=node_radius,
+        node_resolution=32,
         show_edges=graph.number_of_edges() > 0,
         edge_radius=float(opts.get("edge_linewidth", 0.35)),
+        edge_resolution=16,
+        edge_segments=12,
+        edge_trim=0.9 * node_radius,
         edge_scale={"weight": 3.0},
         edge_alpha=float(opts.get("edge_alpha", 1.0)),
         **{f"node_{k}": v for k, v in node_kw.items()},
@@ -738,7 +952,9 @@ def network_panel(fig, ax, ctx):
     if opts.get("labels"):
         size = float(opts.get("label_size", 4.0))
         for (x, y), nm in zip(view_coords(coords, view=view, hemi="lh"), labels, strict=True):
-            ax.annotate(nm, (x, y), fontsize=size, ha="center", va="bottom", xytext=(0, size), textcoords="offset points", zorder=20)
+            ax.annotate(
+                nm, (x, y), fontsize=size, ha="center", va="bottom", xytext=(0, size), textcoords="offset points", zorder=20
+            )
     ax.axis("off")
     if opts.get("title"):
         ax.set_title(str(opts["title"]))
@@ -797,9 +1013,15 @@ def spring_panel(fig, ax, ctx):
         frame = _load_frame(whole, layer)
         fan = layer.get("color")
         if fan:
-            axis, fan_labels, shades = fan_entries(_open_ds(layer["container"]), whole, fan, layer.get("cmap"), bool(layer.get("cmap_declared")))
+            axis, fan_labels, shades = fan_entries(
+                _open_ds(layer["container"]), whole, fan, layer.get("cmap"), bool(layer.get("cmap_declared"))
+            )
         else:
-            axis, fan_labels, shades = None, [layer["style"].get("label", "")], [resolve_color(layer["style"].get("color")) or next(hues)]
+            axis, fan_labels, shades = (
+                None,
+                [layer["style"].get("label", "")],
+                [resolve_color(layer["style"].get("color")) or next(hues)],
+            )
         values = _np.asarray(whole.values, dtype=float)
         extent.extend([float(_np.nanmin(values)), float(_np.nanmax(values))])
         for i, shade in enumerate(shades):
@@ -812,22 +1034,36 @@ def spring_panel(fig, ax, ctx):
                 labels.append(str(opts.get("label_format") or "{}").format(value))
             if opts.get("mass"):
                 masses.append(float(series.coords[opts["mass"]].item()))
-            rests.append(opts["equilibrium"] if opts.get("equilibrium") is not None else _spring_rest(layer["container"], cell))
+            rests.append(
+                opts["equilibrium"] if opts.get("equilibrium") is not None else _spring_rest(layer["container"], cell)
+            )
     common = {
         "extent": extent,
         "masses": masses if opts.get("mass") else None,
         "colors": colors,
         "labels": labels if opts.get("labels") else None,
-        "rule_color": resolve_color("base"),  # a rest mark is read against the motion, so it takes the secondary ink rather than the gridline's
+        "rule_color": resolve_color(
+            "base"
+        ),  # a rest mark is read against the motion, so it takes the secondary ink rather than the gridline's
     }
     if opts.get("stretch") is not None:
         common["stretch"] = float(opts["stretch"])
     if arrangement in ("hanging", "lying"):
-        mechanics.springs(ax, now, orientation="vertical" if arrangement == "hanging" else "horizontal", equilibrium=rests, **common)
+        mechanics.springs(
+            ax, now, orientation="vertical" if arrangement == "hanging" else "horizontal", equilibrium=rests, **common
+        )
     elif arrangement == "chain":
-        mechanics.chain(ax, now, walls=opts.get("walls", True) is not False, coupling_color=opts.get("coupling_color"), **common)
+        mechanics.chain(
+            ax, now, walls=opts.get("walls", True) is not False, coupling_color=opts.get("coupling_color"), **common
+        )
     else:
-        mechanics.ring(ax, now, motion="radial" if opts.get("radial") else "tangential", coupling_color=opts.get("coupling_color"), **common)
+        mechanics.ring(
+            ax,
+            now,
+            motion="radial" if opts.get("radial") else "tangential",
+            coupling_color=opts.get("coupling_color"),
+            **common,
+        )
 
 
 def _spring_rest(container: str, cell: dict):
@@ -910,7 +1146,7 @@ def colorbar_panel(fig, ax, ctx):
 
     Panels that share one scale cannot each own the bar: attaching it to any one of them steals that panel's width and implies the scale is local to it. The paper puts it in an empty cell instead, and so does this.
 
-    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound and no explicit limits the limits are read from the data, so the bar cannot drift from what it describes, and ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. A quantity in arbitrary units is labelled at its ends (Minimum..Maximum) rather than with numbers that mean nothing.
+    A spec declares all of this as ``colorbar:`` — the `Colorbar` class names and documents every attribute. This is the one panel that states its own scale: a bar attached to another panel keys the field beside it and is refused a ``colormap`` of its own. With a layer bound, an end the bar does not declare is read from the data by the rule the surface, volume and network kinds follow (:func:`_colour_limits`): ``symmetric`` centres the scale on zero, ``percentile`` clips it, and without either it spans the data, so the bar cannot drift from what it describes. ``center`` resolves exactly as the mesh resolves its own, so a bar keying centred heatmaps is the scale they were drawn on. ``decimals`` writes every tick number to that many places. ``ticklabels`` without ``ticks`` are spread evenly from the bar's lower end to its upper end, so ``[low, high]`` labels a quantity in arbitrary units at its two ends rather than with numbers that mean nothing; with ``ticks`` they name those ticks one to one, and lists of different lengths are refused, as is ``decimals`` beside them, since the labels replace the numbers it would write.
 
     Returns the bar's own axes, so a declared frame (ticks, formats, label padding) lands on the scale rather than on the blanked slot behind it.
     """
@@ -923,6 +1159,7 @@ def colorbar_panel(fig, ax, ctx):
     layers = ctx.get("layers") or []
     if (vmin is None or vmax is None) and layers:
         values = _np.asarray(load_layer(layers[0]).values, dtype=float)
+        vmin, vmax = _colour_limits(values, opts, False)
         finite = values[_np.isfinite(values)]
         if finite.size:
             vmin = float(finite.min()) if vmin is None else vmin
@@ -935,13 +1172,30 @@ def colorbar_panel(fig, ax, ctx):
     lo, hi = float(vmin if vmin is not None else 0.0), float(vmax if vmax is not None else 1.0)
     norm = mpl.colors.Normalize(vmin=lo, vmax=hi)
     mappable = mpl.cm.ScalarMappable(norm=norm, cmap=scale_colormap(opts.get("cmap"), lo, hi, opts.get("center")))
-    cb = fig.colorbar(mappable, cax=ax.inset_axes(box), orientation="vertical" if vertical else "horizontal")
+    decimals = opts.get("decimals")
+    if decimals is not None and opts.get("ticklabels") is not None:
+        raise ValueError(
+            "colorbar panel: `decimals` writes the tick numbers and `ticklabels` replaces them with text; declare one of the two."
+        )
+    cb = fig.colorbar(
+        mappable,
+        cax=ax.inset_axes(box),
+        orientation="vertical" if vertical else "horizontal",
+        format=None if decimals is None else f"{{x:z.{int(decimals)}f}}",  # z: a tick that rounds to zero prints 0, not -0
+    )
     cb.outline.set_linewidth(0.6)
     cb.ax.tick_params(direction="in", labelsize=plt.rcParams["ytick.labelsize"])
-    if opts.get("ticks") is not None:
-        cb.set_ticks([float(t) for t in opts["ticks"]])
-    if opts.get("ticklabels") is not None:
-        cb.set_ticklabels([str(t) for t in opts["ticklabels"]])
+    ticks, ticklabels = opts.get("ticks"), opts.get("ticklabels")
+    if ticklabels is not None and ticks is None:
+        ticks = _np.linspace(lo, hi, len(ticklabels))
+    elif ticklabels is not None and len(ticklabels) != len(ticks):
+        raise ValueError(
+            f"colorbar panel: {len(ticklabels)} `ticklabels` for {len(ticks)} `ticks`; give one label per tick, or leave `ticks` unset to spread the labels evenly from the bar's lower end to its upper end."
+        )
+    if ticks is not None:
+        cb.set_ticks([float(t) for t in ticks])
+    if ticklabels is not None:
+        cb.set_ticklabels([str(t) for t in ticklabels])
     if opts.get("label"):
         cb.set_label(str(opts["label"]))
     return cb.ax
@@ -1139,14 +1393,22 @@ def color_dim(ds, da, name):
     try:  # a sibling variable measured once per entry
         sib = ds[match_output(ds.data_vars, name)]
     except KeyError:
-        raise KeyError(f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)}).") from None
+        raise KeyError(
+            f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)})."
+        ) from None
     dims = [str(d) for d in sib.dims if d in [str(x) for x in da.dims]]
-    if len(dims) > 1:  # a length-1 axis cannot be the one the lines fan along, so a per-node quantity with a singleton `variable` axis still shades one line per node
+    if (
+        len(dims) > 1
+    ):  # a length-1 axis cannot be the one the lines fan along, so a per-node quantity with a singleton `variable` axis still shades one line per node
         dims = [d for d in dims if sib.sizes[d] > 1] or dims
     if len(dims) != 1:
-        raise KeyError(f"colour encoding {name!r} must be measured along exactly one axis of the plotted array to give each line a value; it has dims {tuple(sib.dims)}.")
+        raise KeyError(
+            f"colour encoding {name!r} must be measured along exactly one axis of the plotted array to give each line a value; it has dims {tuple(sib.dims)}."
+        )
     dim = dims[0]
-    labels = [str(v) for v in _np.asarray(da.coords[dim].values)] if dim in da.coords else [str(i) for i in range(da.sizes[dim])]
+    labels = (
+        [str(v) for v in _np.asarray(da.coords[dim].values)] if dim in da.coords else [str(i) for i in range(da.sizes[dim])]
+    )
     return dim, labels, _np.asarray(sib.values, dtype=float).squeeze()
 
 
@@ -1626,6 +1888,7 @@ _KIND_ATTRS = {
     "surface": (
         *_SCALE_ATTRS,
         "connectome",
+        "used",
         "mesh",
         "mesh_format",
         "template",
@@ -1637,6 +1900,9 @@ _KIND_ATTRS = {
         "mask",
         "geometry",
         "color",
+        "shading",
+        "markers",
+        "marker_size",
         "missing_color",
         "edge_color",
         "edge_width",
@@ -1707,7 +1973,13 @@ _KIND_ATTRS = {
 """Every attribute of the object each built-in kind's loose options became, in the schema's own words. The one list per kind: what a panel may declare, what the drawing code is handed, and what the retired spelling was are all read off it below."""
 
 _KIND_RENAMES = {
-    "surface": {"connectome": "network", "colormap": "cmap", "edge_color": "edgecolor", "edge_width": "edge_linewidth"},
+    "surface": {
+        "connectome": "network",
+        "used": "mesh_result",
+        "colormap": "cmap",
+        "edge_color": "edgecolor",
+        "edge_width": "edge_linewidth",
+    },
     "volume": {"image": "volume", "colormap": "cmap"},
     "network": {
         "connectome": "network",
@@ -1796,6 +2068,8 @@ def _declared_kind(panel) -> dict:
                 value = [_plain(v) for v in raw]
             elif isinstance(raw, (bool, int, float)):
                 value = raw
+            elif attr == "used":
+                value = _plain(raw)  # a binding: _resolve_drawable finds its container, knowing the study
             else:
                 value = _enum_value(raw)  # an enum member, whichever of the two loaders produced it
             out[renames.get(attr, attr)] = HEMISPHERES.get(value, value) if attr == "hemi" else value
@@ -2022,9 +2296,9 @@ def _group_axis(opts, axis: str) -> dict | None:
 
 
 def _annotations(panel, base_dir=Path(".")) -> list:
-    """Resolve ``Panel.annotations`` into ``[{text, x, y, layer}]`` in axes-fraction coords.
+    """Resolve ``Panel.annotations`` into ``[{text, x, y, xycoords, layer, ...}]``, ``xycoords`` naming the units of ``x``, ``y`` and an arrow's offset as ``ax.annotate`` does: ``"axes fraction"``, or ``"data"`` where the annotation declares ``coordinate_system: data``.
 
-    An annotation with a ``used:`` binding carries its resolved layer, so the emitted script reads the number out of the container and formats ``text`` with it — a panel's printed statistic is computed from the run, never typed into the spec.
+    An annotation with a ``used:`` binding carries its resolved layer, so the emitted script reads the number out of the container and formats ``text`` with it — a panel's printed statistic is computed from the run, never typed into the spec. A data position has no default and no named corner, so ``coordinate_system: data`` without both ``x`` and ``y``, or beside ``loc``, is refused.
     """
     out = []
     for a in getattr(panel, "annotations", None) or []:
@@ -2035,19 +2309,26 @@ def _annotations(panel, base_dir=Path(".")) -> list:
                 )
             continue
         loc = getattr(a, "loc", None)
+        xycoords = "data" if _enum_value(getattr(a, "coordinate_system", None)) == "data" else "axes fraction"
+        if xycoords == "data" and (loc is not None or getattr(a, "x", None) is None or getattr(a, "y", None) is None):
+            raise ValueError(
+                f"annotation {a.text!r} of panel {getattr(panel, 'panel_key', '?')!r} declares `coordinate_system: data`, which places it at an `x` and a `y` in the data's units: give both, and no `loc`, which names a corner of the axes."
+            )
         if loc in _ANNOT_LOC:
             x, y = _ANNOT_LOC[loc]
         else:
             x = a.x if getattr(a, "x", None) is not None else 0.5
             y = a.y if getattr(a, "y", None) is not None else 0.95
         used = getattr(a, "used", None)
-        layer = _resolve_layer(_UsedOnly(used), "cartesian", base_dir) if used is not None else None
+        layer = _resolve_layer(_UsedOnly(used), "cartesian", base_dir, planned=True) if used is not None else None
         arrow = [float(v) for v in (getattr(a, "arrow", None) or [])] or None
         tail_used = getattr(a, "tail_used", None)
         tail = None
         if tail_used is not None and getattr(a, "tail_x", None) is not None:
-            tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir)}
-        text_kwargs = _resolve_colors({k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None})
+            tail = {"x": float(a.tail_x), "layer": _resolve_layer(_UsedOnly(tail_used), "cartesian", base_dir, planned=True)}
+        text_kwargs = _resolve_colors(
+            {k: getattr(a, k) for k in ("rotation", "ha", "va", "size", "color") if getattr(a, k, None) is not None}
+        )
         if getattr(a, "font_weight", None) is not None:
             text_kwargs["weight"] = _enum_value(a.font_weight)
         text_kwargs.setdefault("ha", "center")
@@ -2057,10 +2338,12 @@ def _annotations(panel, base_dir=Path(".")) -> list:
                 "text": a.text,
                 "x": x,
                 "y": y,
+                "xycoords": xycoords,
                 "layer": layer,
                 "arrow": arrow,
                 "tail": tail,
                 "significance": _significance(a, base_dir),
+                "backdrop": getattr(a, "backdrop", None) is not False,
                 "kwargs": text_kwargs,
             }
         )
@@ -2081,7 +2364,7 @@ def _significance(annotation, base_dir=Path(".")) -> dict | None:
         raise ValueError(
             f"annotation {annotation.text!r}: every `significance.levels` threshold lies strictly between 0 and 1, got {levels}."
         )
-    return {"layer": _resolve_layer(_UsedOnly(declared.used), "cartesian", base_dir), "levels": levels}
+    return {"layer": _resolve_layer(_UsedOnly(declared.used), "cartesian", base_dir, planned=True), "levels": levels}
 
 
 def significance_marks(p_value: float, levels=SIGNIFICANCE_LEVELS) -> str:
@@ -2195,23 +2478,26 @@ def reading_results(results_dir: Path | None):
 
 
 @functools.cache
-def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str:
+def _container_path(iri, base_dir: Path, results_dir: Path | None = None, *, planned: bool = False) -> str:
     """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``, or under *results_dir* when given, which stands in for the study's own results directory (the one :func:`reading_results` names while a figure reads a sample).
 
     One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. Both are found by :mod:`tvbo.data.dataref` — :func:`~tvbo.data.dataref.locate_exp_container` for a run, :func:`~tvbo.data.dataref.locate_analysis_container` for an analysis — the lookups every cross-experiment reader shares, so a figure cannot read a different container than a warm start or a report does.
 
     An IRI that names a study (``tvbo:exp/<study>/exp-N``) is resolved against that study's root rather than ``base_dir``, so a figure owned by a study-of-studies can read a member's run; the name is matched within the tree the referring study belongs to and an unmatched or ambiguous one raises.
 
-    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. A panel without a placeholder gets a named error from ``_open`` at render time. Several runs of one experiment raise :class:`~tvbo.data.dataref.AmbiguousContainerError` instead, since drawing whichever sorts first is how a figure comes to show one run's experiments against another run's analyses.
+    Returns ``""`` when the container is not there, which a panel declaring a ``placeholder`` relies on: the generated script draws the honest label instead of a plot, so a partially-run study still renders. With *planned*, an analysis whose container is not there returns the path the analysis writes instead (:func:`~tvbo.data.dataref.analysis_container_path`, under the results directory the lookup read), so a script generated before the analysis ran reads its container once it is written and a render rule names the file it waits for; an experiment returns ``""`` either way, since its container's name carries its run's entities, which the reference does not give. The drawing of a figure and its rule's inputs pass *planned*; a reader that asks whether the container exists (a caption's number, whether a figure joins a kit's default target, which author path a kit rewrites) does not. A panel without a placeholder gets a named error from :func:`open_container` at render time. Several runs of one experiment raise :class:`~tvbo.data.dataref.AmbiguousContainerError` instead, since drawing whichever sorts first is how a figure comes to show one run's experiments against another run's analyses.
     """
     if not iri:
         return ""
     from tvbo.adapters.bids import entity_value
+    from tvbo.data.dataref import analysis_container_path, iri_scope, locate_analysis_container, locate_exp_container
     from tvbo.data.dataref import experiment_id as _experiment_id
-    from tvbo.data.dataref import iri_scope, locate_analysis_container, locate_exp_container
     from tvbo.utils.study_layout import sibling_study_root, study_path
 
-    for direct in (Path(base_dir) / str(iri), Path(str(iri))):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
+    for direct in (
+        Path(base_dir) / str(iri),
+        Path(str(iri)),
+    ):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
         if direct.suffix == ".h5" and direct.is_file():
             return str(direct.resolve())
     # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.
@@ -2227,7 +2513,9 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str
     try:
         path = locate_exp_container(results, eid) if eid else locate_analysis_container(results, key)
     except FileNotFoundError:
-        return ""
+        if eid or not planned:
+            return ""
+        path = analysis_container_path(results, key)
     return str(Path(path).resolve())
 
 
@@ -2237,7 +2525,7 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None) -> str
 def load_layer(layer: dict):
     """Open a custom panel's resolved layer into a DataArray (public API).
 
-    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform`` and ``.sel`` already applied. A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them. The shared container cache means opening the same file across panels is free.
+    A registered ``custom`` panel receives ``ctx`` with a ``layers`` list of resolved-layer dicts (container path, output, transform, selector — all resolved by ``build_context``); it calls ``bsplot.load_layer(ctx["layers"][i])`` to open the i-th one as an xarray ``DataArray`` with the declared ``transform``, ``.sel`` and ``encoding.display`` already applied, the selection taken as every ``DataRef`` reader takes it (:func:`~tvbo.data.dataref.select_labeled`). A ``Layer.transform`` runs before the selection and a ``DataRef.transform`` after it, which is the order the two slots are documented in and the only thing that distinguishes them; the display conversion runs last (:func:`to_display`), so the selection reads the stored values. The shared container cache means opening the same file across panels is free.
 
     Under an animation the emitted script binds ``frame_dim``/``frame_pos`` onto each layer before handing the context over, so a drawer that knows nothing about animation still draws the frame the rest of the figure is at.
     """
@@ -2245,18 +2533,39 @@ def load_layer(layer: dict):
     fn = registered(TRANSFORMS, name, "transform") if name else None  # spec error before any IO
     ref_fn = registered(TRANSFORMS, ref_name, "transform") if ref_name else None
     ds = _open_ds(layer["container"])
-    from tvbo.data.dataref import match_output
+    from tvbo.data.dataref import output_array, select_labeled
 
-    da = ds[match_output(ds.data_vars, layer["output"])]
+    da = output_array(ds, layer["container"], layer["output"])
     if fn:
         da = fn(da)
-    if layer.get("sel"):
-        from tvbo.data.dataref import select
-
-        da = select(da, layer["sel"], layer.get("sel_method"))
+    da = select_labeled(da, layer.get("sel"))
     if ref_fn:
         da = ref_fn(da)
-    return _load_frame(da, layer)
+    return _load_frame(to_display(da, layer.get("display")), layer)
+
+
+def to_display(da, display):
+    """*da* as its axes show it, from a resolved layer's ``display`` (:func:`_resolve_display`) — public API, imported by the emitted plot script.
+
+    Each channel multiplies the coordinate it names by its factor or, where the array has no such coordinate, the layer's own values if that channel draws them. A channel naming neither, or naming a coordinate of labels, is refused, since converting anything else would draw a plausible wrong axis. Callers run it after the layer's ``sel``, so the selection reads the stored values, and nothing is written back to the container.
+    """
+    import numpy as np
+
+    for channel, shown in (display or {}).items():
+        name, factor = shown["name"], shown["factor"]
+        if name is not None and name in da.coords:
+            if not np.issubdtype(da.coords[name].dtype, np.number):
+                raise ValueError(
+                    f"`display.{channel}`: coordinate {name!r} holds labels, not numbers, so there is nothing to convert."
+                )
+            da = da.assign_coords({name: da.coords[name] * factor})
+        elif shown["values"]:
+            da = da * factor
+        else:
+            raise ValueError(
+                f"`display.{channel}`: {name!r} is not a coordinate of the array this layer draws (coordinates {list(da.coords)}), and {channel} does not draw the layer's own values, so there is nothing to convert."
+            )
+    return da
 
 
 def _load_frame(da, layer: dict):
@@ -2286,22 +2595,13 @@ def _items(coll):
 
 
 def _sel_dict(used):
-    """Resolve ``DataRef.sel`` (Argument dict) into ``({dim: value}, method)`` or ``(None, None)``.
+    """Resolve ``DataRef.sel`` (Argument dict) into a plain ``{dim: value}``, or ``None`` when it selects nothing.
 
-    A numeric selection uses ``method="nearest"`` (label-based nearest coordinate, e.g. the sampled K-values on a continuous sweep); a non-numeric one is an exact label match.
+    The emitted script and :func:`load_layer` apply it with :func:`~tvbo.data.dataref.select_labeled`, key by key: the nearest coordinate for a number (the sampled K-values on a continuous sweep) and the exact label for a name, so one selection can name a hemisphere and a swept coupling at once.
     """
     from tvbo.data.dataref import sel_dict
 
-    resolved = {dim: _plain(value) for dim, value in sel_dict(used).items()}
-    if not resolved:
-        return None, None
-
-    def _numeric(v):
-        vals = v if isinstance(v, (list, tuple)) else [v]
-        return all(isinstance(x, (int, float)) and not isinstance(x, bool) for x in vals)
-
-    method = "nearest" if all(_numeric(v) for v in resolved.values()) else None
-    return resolved, method
+    return {dim: _plain(value) for dim, value in sel_dict(used).items()} or None
 
 
 def _used_ref(used):
@@ -2319,13 +2619,48 @@ def _used_ref(used):
     return str(ana) if ana is not None else None
 
 
-def _resolve_layer(layer, panel_kind, base_dir, animation=None):
+def _refuse_by_label(used) -> None:
+    """Refuse a figure binding that declares ``reconcile: by_label``, naming it.
+
+    A figure draws what a binding reads in its container's order and lays nothing out on another node order, so the directive would pass for an alignment that never happened. Every binding a figure opens is checked here before its container is looked up: by :func:`_resolve_layer` a layer of any panel, inset or grid cell and an annotation's ``used``, ``tail_used`` and ``significance``, and by :func:`_mesh_container` a surface's mesh. The slot defaults to ``none``, so only a declared ``by_label`` is refused.
+    """
+    from tvbo.data.dataref import _reference_text, reconcile_mode
+
+    if reconcile_mode(used) == "by_label":
+        raise ValueError(
+            f"`reconcile: by_label` on {_reference_text(used)} lays it out on a node order by label, and a figure draws what it reads in its container's order, so it would pass for an alignment that never happened. "
+            "A `surface`, `volume` or `network` panel places a per-node layer on its nodes by label without it; on a figure's bindings, drop `reconcile`."
+        )
+
+
+def _mesh_container(ref: dict, base_dir) -> str:
+    """The result container a surface's ``used`` binding names, found by the lookup a layer's ``used`` takes, or the path its analysis writes while that analysis has not run (:func:`_container_path` with ``planned``).
+
+    A mesh is the container's ``vertices`` and ``faces`` together, so the binding says only where the result is: an ``output``, ``sel`` or ``transform`` on it would be accepted and then ignored, and is refused instead, as ``reconcile: by_label`` is on every figure binding (:func:`_refuse_by_label`).
+    """
+    used = SimpleNamespace(**ref)
+    _refuse_by_label(used)
+    stated = sorted(name for name in ("output", "sel", "transform") if ref.get(name))
+    if stated:
+        raise ValueError(
+            f"surface panel: the mesh's `used:` names where its result is and nothing else, but states {', '.join(stated)}."
+        )
+    return _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get(), planned=True)
+
+
+def _resolve_layer(layer, panel_kind, base_dir, animation=None, *, planned=False):
     """Resolve one ``Layer`` into the flat dict the template/callables consume.
 
     Under an ``animation`` the layer also gets its frame role. Undeclared, the role is read off the data: a layer carrying the animated dimension is what moves, one that does not is the fixed backdrop. That inference is the whole reason a two-panel movie needs no per-layer annotation, and a `frame:` on the layer overrides it.
+
+    Every layer and annotation binding a figure draws or prints passes through here, so a ``used`` declaring ``reconcile: by_label`` is refused here (:func:`_refuse_by_label`), before anything is opened.
+
+    *planned* is :func:`_container_path`'s: a binding the script draws passes it, so an analysis not yet run is read from the path it writes once it is there; the caption composer does not, since it leaves out the sentence of a placeholder panel whose container is absent.
+
+    The encoding's ``display`` is resolved here to the factor each converted channel is drawn at (:func:`_resolve_display`), so a malformed conversion is refused before any script is written.
     """
     used, enc = layer.used, getattr(layer, "encoding", None)
-    sel, method = _sel_dict(used)
+    _refuse_by_label(used)
     # str() collapses the MarkType enum (dataclass flavor) to a plain string the template compares.
     mark = str(layer.mark) if layer.mark else ("heatmap" if panel_kind == "heatmap" else "line")
     style = getattr(layer, "style", None)
@@ -2341,7 +2676,7 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
     if _fans_by_color or _shades_points:
         kwargs.pop("color", None)  # a per-entry/per-point colour and a layer-wide one collide
     return {
-        "container": _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get()),
+        "container": _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get(), planned=planned),
         "output": used.output,
         "mark": mark,
         "x": getattr(enc, "x", None),
@@ -2352,12 +2687,62 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None):
         "cmap_declared": bool(getattr(style, "colormap", None)),
         "transform": getattr(layer, "transform", None),
         "ref_transform": getattr(used, "transform", None),
-        "sel": sel,
-        "sel_method": method,
+        "sel": _sel_dict(used),
         "triangle": str(triangle) if triangle else None,
         "style": kwargs,
         "frame": _frame_role(layer, animation),
+        "display": _resolve_display(used, enc, mark, panel_kind),
     }
+
+
+def _resolve_display(used, enc, mark, panel_kind) -> dict:
+    """The encoding's ``display`` as ``{channel: {name, factor, values}}``, what :func:`to_display` converts and a default axis label names: the name the channel encodes, the factor its numbers are drawn at, and whether the channel draws the layer's own values (:func:`_value_channel`).
+
+    Refused, naming the channel: a key that is not ``x``, ``y``, ``z`` or ``color``, a factor that is not positive, a coordinate two channels convert (it would be multiplied twice), and any conversion on a ``stream`` layer, which draws the model's field from the run's sidecar, where the conversion does not reach.
+    """
+    from tvbo.data.dataref import _reference_text
+    from tvbo.utils import keyed_items
+
+    values = _value_channel(mark, panel_kind, enc)
+    out: dict = {}
+    for channel, scale in keyed_items(getattr(enc, "display", None), "display"):
+        channel = str(channel)  # the dataclass form keys by a str subclass, whose repr the emitted script cannot read
+        where = f"`display.{channel}` on the layer reading {_reference_text(used)}"
+        if channel not in ("x", "y", "z", "color"):
+            raise ValueError(f"{where}: {channel!r} is not a channel; a display converts `x`, `y`, `z` or `color`.")
+        if mark == "stream":
+            raise ValueError(
+                f"{where}: a `stream` layer draws the model's field from the run's sidecar, which a display conversion does not reach."
+            )
+        factor = float(scale.factor)
+        if not factor > 0:
+            raise ValueError(
+                f"{where}: factor {scale.factor} is not positive. A display factor rescales an axis; `invert_x` or `invert_y` turns one round."
+            )
+        name = getattr(enc, channel, None)
+        twin = next((c for c, shown in out.items() if name is not None and shown["name"] == name), None)
+        if twin is not None:
+            raise ValueError(f"{where}: {name!r} is converted by `display.{twin}` already; declare its conversion once.")
+        out[channel] = {"name": name, "factor": factor, "values": channel == values}
+    return out
+
+
+def _value_channel(mark, panel_kind, enc) -> str | None:
+    """The channel a layer draws its own values on: the colour of a heatmap or a brain map, x for a vertical rule or a horizontal bar, none on a 3-D panel (whose channels each name a coordinate), and y otherwise."""
+    x, y = getattr(enc, "x", None), getattr(enc, "y", None)
+    if mark == "heatmap" or panel_kind in ("surface", "volume", "network", "colorbar"):
+        return "color"
+    if panel_kind == "line3d":
+        return None
+    if (mark == "rule" and x) or (mark == "bar" and y and not x):
+        return "x"
+    return "y"
+
+
+def _default_label(layer, channel, fallback="") -> str:
+    """The label a panel that declares none prints on *channel*: the name the resolved *layer* encodes there, or *fallback*, with the factor it is displayed at before it (`1000 × K`)."""
+    text, shown = layer[channel] or fallback, layer["display"].get(channel)
+    return f"{shown['factor']:g} × {text}" if text and shown else text
 
 
 def _frame_role(layer, animation) -> str | None:
@@ -2383,13 +2768,13 @@ _BUILTIN_PANELS = {"surface", "volume", "network", "colorbar", "legend", "spring
 class _GridCell:
     """One cell of a ``grid`` panel: the shared ``cell:`` template with this cell's overrides.
 
-    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is how the two would drift apart.
+    Shaped like a Panel so it resolves through :func:`_resolve_drawable` — a grid cell must draw exactly as the same kind draws in a mosaic slot, and a second resolution path is how the two would drift apart. It carries the grid's ``placeholder``, so a cell whose data is missing falls back to the grid's label as a mosaic panel falls back to its own, and a cell drawn from data shows none.
     """
 
     opts_are_resolved = True
     """Its ``opts`` are the directives the template's and the cell's declared slots resolved to, not what anyone wrote."""
 
-    def __init__(self, template, cell, layers, opts):
+    def __init__(self, template, cell, layers, opts, placeholder):
         self.kind = getattr(cell, "kind", None) or getattr(template, "kind", None)
         self.render = getattr(cell, "render", None) or getattr(template, "render", None)
         self.path = getattr(cell, "path", None) or getattr(template, "path", None)
@@ -2398,7 +2783,8 @@ class _GridCell:
         self.opts = opts
         self.annotations = getattr(cell, "annotations", None)
         self.legend = getattr(cell, "legend", None)
-        self.placeholder = self.number = self.number_loc = self.insets = None
+        self.placeholder = placeholder
+        self.number = self.number_loc = self.insets = None
 
 
 def _grid_geometry(opts, n_cells):
@@ -2439,6 +2825,7 @@ def _grid_geometry(opts, n_cells):
             "text": str(text),
             "x": x,
             "y": y,
+            "xycoords": "axes fraction",
             "layer": None,
             "arrow": None,
             "tail": None,
@@ -2515,7 +2902,7 @@ def _grid_cells(panel, key, base_dir, opts) -> tuple:
         cell = item if declared else None
         merged.update(_panel_opts(cell) if cell is not None else {})
         cell_layers = list(getattr(cell, "layers", None) or []) if declared else [item]
-        cells.append(_GridCell(template, cell, cell_layers, merged))
+        cells.append(_GridCell(template, cell, cell_layers, merged, getattr(panel, "placeholder", None)))
 
     boxes, labels = _grid_geometry(opts, len(cells))
     resolved = [
@@ -2544,12 +2931,16 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
     """
     kind = str(panel.kind)  # datamodel enum -> plain string (flavor-agnostic)
     opts = _panel_opts(panel)
+    if opts.get("mesh_result") is not None:
+        opts["mesh_result"] = _mesh_container(opts["mesh_result"], base_dir)
     # A grid's `layers:` belong to its cells, so they are not also drawn on the host axes.
     cells, cell_labels = _grid_cells(panel, key, base_dir, opts) if kind == "grid" else ([], [])
     layers = (
         []
         if kind == "grid"
-        else [_resolve_layer(layer, kind, base_dir, animation) for layer in (getattr(panel, "layers", None) or [])]
+        else [
+            _resolve_layer(layer, kind, base_dir, animation, planned=True) for layer in (getattr(panel, "layers", None) or [])
+        ]
     )
     # A callable-drawn kind gets the whole opts dict; grammar panels read the axis subset.
     ctx = (
@@ -2576,19 +2967,21 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
             colorbar_kwargs[kw] = str(opts[name])
     if opts.get("colorbar_aspect"):
         colorbar_kwargs["aspect"] = float(opts["colorbar_aspect"])
-    # Default the axis labels to the first layer's x-dim / output; opts override them.
+    # Default the axis labels to the first layer's x-dim / output and the display it declares; opts override them.
     axopts = _axopts(panel)
     # A DECLARED frame (the paper's own tick marks and ranges) is re-applied after the theme's axis rule has placed everything nobody declared, so intent written in the spec is never replaced by it. A custom panel's declared labels and legend go on then too, because its drawer gets no axis pass of its own and nothing else would apply them.
     post = {k: v for k, v in axopts.items() if k in _POST_FORMAT_OPTS or (kind == "custom" and k in _DRAWER_DIRECTIVES)}
     if kind in ("cartesian", "heatmap", "line3d") and layers:
-        axopts.setdefault("xlabel", layers[0]["x"] or "")
-        axopts.setdefault("ylabel", layers[0]["y"] or layers[0]["output"])
+        axopts.setdefault("xlabel", _default_label(layers[0], "x"))
+        axopts.setdefault("ylabel", _default_label(layers[0], "y", layers[0]["output"]))
     if kind == "line3d" and layers:
-        axopts.setdefault("zlabel", layers[0]["z"] or "")
+        axopts.setdefault("zlabel", _default_label(layers[0], "z"))
     placeholder = getattr(panel, "placeholder", None)
     # A built-in kind names no `render:` and falls back to the callable core registers.
     render = getattr(panel, "render", None) or (kind if kind in _BUILTIN_PANELS else None)
     path = resolve_path(getattr(panel, "path", None), base_dir)
+    # Nothing to draw at all, not even a grid's cells: the placeholder IS the panel, not a fallback. Without this the guarded draw succeeds silently (no layer raises) and the slot renders as an empty 0-1 axes instead of the honest label.
+    placeholder_only = bool(placeholder) and not (layers or cells or render or path)
     source = getattr(panel, "source", None)
     if kind == "image" and source and path:
         # The panel draws a file; with a `source` it is a build product, re-rendered here so the figure cannot go out with a stale screenshot of a page that has since changed.
@@ -2606,8 +2999,7 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         "path": path,
         "render": render,
         "placeholder": placeholder,
-        # Nothing to draw at all: the placeholder IS the panel, not a fallback. Without this the guarded draw succeeds silently (no layer raises) and the slot renders as an empty 0-1 axes instead of the honest label.
-        "placeholder_only": bool(placeholder) and not layers and not render and not path,
+        "placeholder_only": placeholder_only,
         "layers": layers,
         "colorbar": colorbar,
         "colorbar_kwargs": colorbar_kwargs,
@@ -2619,7 +3011,7 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         # Cells of blank band between two triangle layers, so the halves read as two quantities rather than one field (the paper's own `extra_diagonal`).
         "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
         "axopts": axopts,
-        "post_axopts": {} if (placeholder and not layers and not render and not path) else post,
+        "post_axopts": {} if placeholder_only else post,
         "ctx": ctx,
         "annotations": _annotations(panel, base_dir) + cell_labels,
         "groups": [g for g in (_group_axis(opts, "x"), _group_axis(opts, "y")) if g],
@@ -3038,3 +3430,6 @@ def write_caption(figure, out_dir, *, name: str | None = None, base_dir=None) ->
     path = out_dir / f"{stem}.caption.qmd"
     path.write_text(compose_caption(figure, base_dir) + "\n", encoding="utf-8")
     return path
+
+
+from tvbo.adapters import bsplot_distributions  # noqa: E402,F401  (registers the histogram and joint_density panels)

@@ -531,7 +531,7 @@ def _container_plan(image="docker://ghcr.io/virtual-twin/tvbo:dev", binds=("/dat
         container_binds=list(binds),
         container_args=args,
         container_exec_flags=WorkflowPlan.container_exec_flags.fget(
-            SimpleNamespace(container_binds=list(binds), container_args=args)
+            SimpleNamespace(container_binds=list(binds), container_args=args, gpu=False)
         ),
     )
 
@@ -554,6 +554,7 @@ def _layer_plan(container="/w/tvbo-dev.sif", reqs=({"package": "igl"},), binds=(
         container=container,
         container_binds=list(binds),
         container_args=None,
+        gpu=False,
         requirements=list(reqs),
         experiment_selector=None,
         source_spec=None,
@@ -1019,7 +1020,7 @@ def test_bind_paths_survive_spaces_and_commas():
     from tvbo.run.workflow import WorkflowPlan
 
     flags = WorkflowPlan.container_exec_flags.fget(
-        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"], container_args=None)
+        SimpleNamespace(container_binds=["/data/cephfs-1", "/my scratch"], container_args=None, gpu=False)
     )
     assert flags == "--bind /data/cephfs-1 --bind '/my scratch'"
 
@@ -1836,17 +1837,32 @@ def test_validate_omex_stub_accepts_zip_with_manifest(tmp_path: Path):
 # Backend templates expose a runnable __main__ entry point
 
 
+MAIN_BLOCK_EXPERIMENT = {"jax": "ThreeNode_JansenRit1995_Parity", "tvb": "ThreeNode_JansenRit1995_Parity"}
+"""The curated experiment each backend's script is rendered from where it is not JR_MEG."""
+
+
 @pytest.mark.parametrize("fmt", ["jax", "tvb", "tvboptim"])
 def test_python_experiment_script_has_main_block(fmt):
     """All Python backends that emit a full experiment script must be runnable.
 
-    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block.
+    The workflow kit (`tvbo workflow ...`) freezes the rendered script and invokes it via `python scripts/<exp>.py`, so the script itself must define an `if __name__ == "__main__":` block. jax and tvb render an experiment whose every observation they can compute: JR_MEG's pipeline steps read arguments jax is never given, and its observations include several no tvb monitor computes, which each backend refuses by name, tvb all of them in one refusal.
     """
     from tvbo import SimulationExperiment
 
-    exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
+    exp = SimulationExperiment.from_db(MAIN_BLOCK_EXPERIMENT.get(fmt, "JR_MEG_FrequencyGradient_Optimization"))
     code = exp.render(fmt)
     assert 'if __name__ == "__main__":' in code, f"backend {fmt!r} renders a script without a __main__ entry point"
+    if fmt == "jax":
+        with pytest.raises(
+            ValueError, match=r"jax: the pipeline step '\w+': \[[^]]+\] would all be bound to the incoming samples"
+        ):
+            SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("jax")
+    if fmt == "tvb":
+        with pytest.raises(
+            NotImplementedError,
+            match=r"the tvb backend has no monitor for the observation '\w+', which declares .+; for the observation '\w+', which declares",
+        ):
+            SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization").render("tvb")
 
 
 def test_pde_experiment_template_has_main_block():

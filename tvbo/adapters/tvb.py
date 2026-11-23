@@ -741,6 +741,15 @@ def from_tvb_zip(zip_path):
     return net
 
 
+TVB_NODE_FIELDS = {
+    "cortical": ("cortical", bool),
+    "area": ("areas", float),
+    "hemisphere": ("hemispheres", bool),
+    "orientation": ("orientations", float),
+}
+"""Per node parameter that `from_tvb` stores and `to_tvb` writes back: the TVB ``Connectivity`` field it holds and that field's dtype. ``orientation`` is a node's unit vector, three numbers, where the others are one."""
+
+
 def from_tvb(connectivity):
     """Import a live TVB Connectivity object into a tvbo Network.
 
@@ -776,21 +785,10 @@ def from_tvb(connectivity):
                 z=float(centres[i, 2]),
             ),
         )
-        if conn.cortical is not None and len(conn.cortical) == n:
-            node.parameters["cortical"] = tvbo_datamodel.Parameter(
-                name="cortical",
-                value=float(conn.cortical[i]),
-            )
-        if conn.areas is not None and len(conn.areas) == n:
-            node.parameters["area"] = tvbo_datamodel.Parameter(
-                name="area",
-                value=float(conn.areas[i]),
-            )
-        if conn.hemispheres is not None and len(conn.hemispheres) == n:
-            node.parameters["hemisphere"] = tvbo_datamodel.Parameter(
-                name="hemisphere",
-                value=float(conn.hemispheres[i]),
-            )
+        for name, (field, _) in TVB_NODE_FIELDS.items():
+            values = getattr(conn, field)
+            if values is not None and len(values) == n:
+                node.parameters[name] = tvbo_datamodel.Parameter(name=name, value=np.asarray(values[i], dtype=float).tolist())
         nodes.append(node)
 
     net = Network(nodes=nodes, edges=[], number_of_nodes=n)
@@ -798,9 +796,6 @@ def from_tvb(connectivity):
     net.set_matrix("length", lengths)
     net.label = getattr(conn, "title", None) or "TVB Connectivity"
     net.descriptor = "SC"
-
-    if conn.orientations is not None and len(conn.orientations) == n:
-        object.__setattr__(net, "_orientations", np.asarray(conn.orientations))
 
     speed = np.asarray(conn.speed).ravel()
     cs_val = float(speed[0]) if len(speed) > 0 else 3.0
@@ -888,8 +883,25 @@ def from_tvb_surface(connectivity, surface, region_mapping):
     return region_net, surface_net
 
 
+def tvb_node_fields(network, n_regions: int) -> dict[str, np.ndarray]:
+    """The per-region fields of the TVB ``Connectivity`` tvbo builds for *network* of *n_regions* regions, by ``Connectivity`` field name.
+
+    ``centres`` are the node positions and ``region_labels`` the node labels, or the atlas's where the nodes do not label every region. The ``cortical`` flags, ``areas``, ``hemispheres`` and ``orientations`` are the node parameters ``cortical``, ``area``, ``hemisphere`` and ``orientation`` (`TVB_NODE_FIELDS`), as `from_tvb` stores them, where every node carries the parameter; otherwise the field is left out for TVB, which leaves `cortical`, `areas` and `orientations` unset and guesses `hemispheres` from the region labels. `to_tvb` builds a run's connectivity from these, and the exported tvb script embeds them.
+    """
+    # Region labels for THIS connectome come from its own nodes (they align with the weights matrix). Only fall back to the parcellation atlas for networks with no per-node labels; the atlas may lack terminology (-> nii volume lookup that raises for label-only parcellations like Lobar8) or hold the full parcellation (87 DK entities vs an 84-node connectome subset).
+    labels = network.node_labels
+    if not labels or len(labels) != n_regions:
+        labels = list(network.atlas.region_labels)
+    vectors = network.node_parameter_vectors
+    return {
+        "centres": np.asarray(list(network.get_centers().values()), dtype=float),
+        "region_labels": np.asarray(labels),
+        **{field: vectors[name].astype(dtype) for name, (field, dtype) in TVB_NODE_FIELDS.items() if name in vectors},
+    }
+
+
 def to_tvb(network):
-    """Export a tvbo Network to a TVB Connectivity object.
+    """Export a tvbo Network to a TVB Connectivity object, its per-region fields from `tvb_node_fields`.
 
     Parameters
     ----------
@@ -910,23 +922,15 @@ def to_tvb(network):
     _lengths = dense_matrix(network, "length")
     if _lengths is None:
         _lengths = np.zeros_like(_weights)
-    _centres = np.asarray(list(network.get_centers().values()), dtype=float)
     cs_param = getattr(network, "conduction_speed", None)
     cs_value = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0
     _speed = np.asarray([cs_value], dtype=float)
 
-    # Region labels for THIS connectome come from its own nodes (they align with the weights matrix). Only fall back to the parcellation atlas for networks with no per-node labels; the atlas may lack terminology (-> nii volume lookup that raises for label-only parcellations like Lobar8) or hold the full parcellation (87 DK entities vs an 84-node connectome subset).
-    _labels = network.node_labels
-    if not _labels or len(_labels) != _weights.shape[0]:
-        _labels = list(network.atlas.region_labels)
-    _region_labels = np.asarray(_labels)
-
     tvb_conn = Connectivity(
         weights=_weights,
         tract_lengths=_lengths,
-        centres=_centres,
-        region_labels=_region_labels,
         speed=_speed,
+        **tvb_node_fields(network, _weights.shape[0]),
     )
     tvb_conn.configure()
     return tvb_conn

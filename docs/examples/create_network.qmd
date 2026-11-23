@@ -20,6 +20,6 @@ fc[5, 1] = fc[5, 7] = 0.7                # smile ends
 fc[6, 2] = fc[6, 6] = 0.8                # smile mid
 fc[7, 3] = fc[7, 4] = fc[7, 5] = 0.9     # smile bottom
 
-net = Network.from_matrix(sc=sc, fc=fc)
+net = Network.from_matrix(sc=sc, fc=fc, primary_weight="sc")
 net.plot_overview()
 ```

@@ -3,7 +3,7 @@
 <%page args="reductions=None"/>\
 <%
 from tvbo.codegen import render_expression
-from tvbo.adapters.observation_sampling import tvb_iround as _tvb_iround
+from tvbo.adapters.observation_sampling import last_sampling_kind, tvb_iround as _tvb_iround
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
@@ -469,6 +469,8 @@ ${render_convolution_reduction(red, name, s_idx, dt)}\
 ${render_stride_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'comoment':
 ${render_comoment_reduction(red, name, s_idx, dt)}\
+% elif red.get('kind') == 'run':
+${render_run_reduction(red, name, s_idx, dt)}\
 % elif red.get('kind') == 'wave':
 ${render_wave_reduction(red, name, s_idx, dt)}\
 % else:
@@ -516,6 +518,36 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
     def _finalize(acc):
         ${_acc}, _gstep = acc
         return ${_emit}
+    return (_init, _update, _finalize)
+</%def>\
+<%def name="render_run_reduction(red, name, s_idx, dt)">\
+<%doc>
+    A reducer recipe read out once over the run (`emit_kind: run`, utils._resolve_run_stream), such as the phase locking value. Its `add` folds one sample of the source at a time, every sample from the transient `skip` on, and its `emit` is read out at finalize, so the carry is the recipe's state and never a trajectory. Every state starts at zero in the shape `add` gives it from a zero scalar, which `jax.eval_shape` finds without computing anything, so a node-by-node accumulator needs no declared shape.
+</%doc>\
+<%
+    _acc = ", ".join(red['states'])
+%>\
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
+    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
+    def _add(${_acc}, v):
+% for _lhs, _rhs in red['add']:
+        ${_lhs} = ${_rhs}
+% endfor
+        return (${_acc},)
+    def _init(template, n_steps):
+        _zero = jnp.zeros((), template.dtype)
+        _shapes = jax.eval_shape(_add, *[_zero] * ${len(red['states'])}, template[s_var])
+        return (*[jnp.zeros(_s.shape, _s.dtype) for _s in _shapes], jnp.array(0))
+    def _update(carry, block):
+        def _step(state, row):
+            *_folded, _gstep = state
+            _added = _add(*_folded, row[s_var])
+            _folded = [jnp.where(_gstep >= skip, _new, _old) for _new, _old in zip(_added, _folded)]
+            return (*_folded, _gstep + 1), None
+        return jax.lax.scan(_step, carry, block)[0]
+    def _finalize(carry):
+        ${_acc}, _gstep = carry
+        return ${red['emit']}
     return (_init, _update, _finalize)
 </%def>\
 <%def name="render_convolution_reduction(red, name, s_idx, dt)">\
@@ -1689,6 +1721,7 @@ class ${class_name}(AbstractMonitor):
         _decl_period = float(_decl_period)
     except (TypeError, ValueError):
         _decl_period = None
+    _window_stamped = last_sampling_kind(step['equation'] for step in pipeline) == 'window'
 %>
 % if tail_samples and not (_decl_period and _decl_period > float(dt)):
         elif _time is not None and len(_time) > len(_final) > 1:
@@ -1700,6 +1733,10 @@ class ${class_name}(AbstractMonitor):
         elif _time is not None and len(_time) > len(_final) > 1:
             # A sample that reports a period covers it, so it is stamped at the END of the period it covers: the first lands one whole period into the measured window, not on its first step. Verified against where a delta actually moves the output, not read off the emitting code.
             _ts = _time[0] - self.dt + (jnp.arange(len(_final)) + 1) * ${_decl_period}
+% if _window_stamped:
+## A window's mean is stamped instead at the mean time of the samples it averages, as tvboptim's TemporalAverage labels it.
+            _ts = _ts - (${_decl_period} - self.dt) / 2
+% endif
             _out_dt = ${_decl_period}
 % else:
         elif _time is not None and len(_time) > len(_final) > 1:

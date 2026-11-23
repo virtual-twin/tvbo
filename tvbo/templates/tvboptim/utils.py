@@ -28,6 +28,7 @@ from typing import Any
 from tvbo.export.registry import StartKind
 from tvbo.templates.base.utils import (  # noqa: F401  re-exported for the mako templates
     distribution_family,
+    initial_state_distribution,
     referenced,
     resolve_distribution,
     samples_over_time,
@@ -37,6 +38,7 @@ from tvbo.utils import (  # noqa: F401  re-exported for the mako templates
     _NETWORK_EDGE_ALIASES,
     as_list,
     edge_label,
+    is_array_valued,
     keyed_items,
 )
 
@@ -255,9 +257,9 @@ def draw_expression(
 
 
 def initial_condition_draw(info: Mapping[str, Any], key: str, shape: str) -> str:
-    """JAX source drawing one state variable's initial condition from its resolved distribution *info*: a normal around the middle of its bounds with a quarter of their width as spread, and uniform between the bounds for every other declared name."""
-    if distribution_family(info["dist"]) == "normal":
-        return draw_expression("normal", key, shape, mean=(info["lo"] + info["hi"]) / 2, std=(info["hi"] - info["lo"]) / 4.0)
+    """JAX source drawing one state variable's initial condition from *info*, its `initial_state_distribution`."""
+    if info["family"] == "normal":
+        return draw_expression("normal", key, shape, mean=info["loc"], std=info["scale"])
     return draw_expression("uniform", key, shape, lo=info["lo"], hi=info["hi"])
 
 
@@ -425,7 +427,7 @@ def resolve_parameter_starts(
 ) -> list[dict[str, Any]]:
     """The parameter starts a tvboptim module computes when it builds the network, one group per owner, or a refusal naming the declaration it cannot honour.
 
-    A start is a parameter of the experiment's dynamics or of one of its couplings that declares a distribution sampled over space, drawn per node or per connection, or an equation, evaluated once from the other parameters of the same owner (`tvbo.adapters.base.parameter_starts`). Each group carries the function the module emits for its owner (``function``) and the name `create_network` binds its result to (``variable``), the literal parameters its equations read (``inputs``), its starts in evaluation order (``starts``: ``name``, ``kind``, ``code``, ``seeded``, ``trial``, ``rank``, ``reads``), whether any start follows the run's seed (``seeded``) or is drawn again for each trial of an ensemble (``trial``), whether a draw is keyed by the run's seed (``run_key``) or fills the network's edges (``edges``), and for a coupling the coupling inputs it serves (``inputs_served``, from *coupling_inputs*). A coupling start is grouped under its coupling's key in *couplings*, the couplings the template integrates, whatever alias the network declares that coupling under.
+    A start is a parameter of the experiment's dynamics or of one of its couplings that declares a distribution sampled over space, drawn per node or per connection, or an equation, evaluated once from the other parameters of the same owner (`tvbo.adapters.base.parameter_starts`); a draw at every step (`per_step`) is the stochastic input the dfun and stimulus templates draw, and is left to them. Each group carries the function the module emits for its owner (``function``) and the name `create_network` binds its result to (``variable``), the literal parameters its equations read (``inputs``), its starts in evaluation order (``starts``: ``name``, ``kind``, ``code``, ``seeded``, ``trial``, ``rank``, ``reads``), whether any start follows the run's seed (``seeded``) or is drawn again for each trial of an ensemble (``trial``), whether a draw is keyed by the run's seed (``run_key``) or fills the network's edges (``edges``), and for a coupling the coupling inputs it serves (``inputs_served``, from *coupling_inputs*). A coupling start is grouped under its coupling's key in *couplings*, the couplings the template integrates, whatever alias the network declares that coupling under.
 
     Refused, by name: a start on a dynamics the module does not integrate, a parameter whose value something else declares as well (`tvbo.adapters.base.refuse_second_definition`), a distribution that does not say what to draw or a shape a draw cannot fill (`_draw_code`), and an equation that reads a symbol that is not a parameter of its owner, a parameter with no literal value or one whose value comes from elsewhere, or itself through other equations (`_owner_parameter_starts`).
     """
@@ -442,7 +444,7 @@ def resolve_parameter_starts(
         for owner, holder in owners.items()
     }
     grouped: dict[tuple[str, str], list] = {}
-    for start in parameter_starts(experiment):
+    for start in (start for start in parameter_starts(experiment) if not start.per_step):
         owner = next((o for o, params in declared.items() if any(q is start.parameter for q in params.values())), None)
         if owner is None or owner[0] != start.owner_kind:
             raise NotImplementedError(
@@ -570,9 +572,7 @@ def get_recorded_variable_names(model: Any, experiment: Any = None) -> tuple[lis
     The generated dynamics class declares ``VARIABLES_OF_INTEREST = state_names + recorded_aux`` where ``recorded_aux`` is the union of:
       * derived variables with ``record: true``,
       * model.output entries that are derived (auxiliary) variables, and
-      * derived variables referenced as the ``source`` of any experiment observation
-        (so observations of auxiliaries work without requiring users to also list them
-        in ``model.output``).
+      * derived variables referenced as the ``source`` of any experiment observation (so observations of auxiliaries work without requiring users to also list them in ``model.output``).
 
     Returns ``(state_names, recorded_aux, all_var_names)`` where ``all_var_names`` is the runtime ordering on axis 1 of ``solution.ys`` / ``result.data`` and matches ``solution.variable_names`` produced by tvboptim >= 0.2.7.
 
@@ -654,6 +654,22 @@ def state_only_derived_var_names(model: Any) -> list[str]:
     return [name for name in model.in_dependency_order("derived_variables") if name in recomputable]
 
 
+def state_only_dependencies(model: Any, names: Iterable[str]) -> list[str]:
+    """The state-only derived variables that code computing *names* from the state has to bind, in dependency order.
+
+    Those of *names* that are state-only (`state_only_derived_var_names`) and every derived variable they read, directly or through each other, read in the evaluated and the authored view alike, as `in_dependency_order` reads them. A state-only variable reads only state-only ones, so the walk never leaves that set.
+    """
+    order = state_only_derived_var_names(model)
+    views = [
+        model.symbolic_system.form(notation="symbol", evaluate=evaluate)["derived-variables"] for evaluate in (True, False)
+    ]
+    needed = set(names) & set(order)
+    for name in reversed(order):
+        if name in needed:
+            needed |= {str(symbol) for view in views for symbol in view[name].rhs.free_symbols}
+    return [name for name in order if name in needed]
+
+
 def state_only_recorded_aux(model: Any, experiment: Any = None) -> list[tuple[str, int]]:
     """Recorded derived variables that are provably functions of the state alone.
 
@@ -693,9 +709,7 @@ def get_output_channels(model: Any, experiment: Any = None) -> tuple[list[int], 
 def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[list[int], list[str]]:
     """Resolve ``model.output`` entries to channel indices in the recorded ordering.
 
-    ``model.output`` may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:`get_recorded_variable_names`), so an output's position cannot be inferred from its kind — a state output sits
-    *before* the auxiliaries, not after them. Multi-mode state variables expand to
-    all of their ``v__mode{m}`` slots.
+    ``model.output`` may name state variables, auxiliary (derived) variables, or a mix of the two. The recorded ordering is the state channels followed by the auxiliaries that were actually requested (:func:`get_recorded_variable_names`), so an output's position cannot be inferred from its kind — a state output sits *before* the auxiliaries, not after them. Multi-mode state variables expand to all of their ``v__mode{m}`` slots.
 
     Returns ``(indices, names)`` in the declared output order, so the emitted channel order and the reported ``output_names`` always agree.
 
@@ -704,11 +718,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[li
         experiment: Optional SimulationExperiment, forwarded to the layout resolver.
 
     Raises:
-        ValueError: if an output names neither a recorded state nor a recorded
-            auxiliary. Model construction already rejects unknown output names and
-            every listed auxiliary is recorded by construction, so this guards the
-            invariant against future changes to the recorded layout rather than a
-            reachable input.
+        ValueError: if an output names neither a recorded state nor a recorded auxiliary. Model construction already rejects unknown output names and every listed auxiliary is recorded by construction, so this guards the invariant against future changes to the recorded layout rather than a reachable input.
     """
     _, _, all_var_names = get_recorded_variable_names(model, experiment)
     n_modes, _, _ = get_mode_layout(model)
@@ -739,8 +749,7 @@ def resolve_model_output_indices(model: Any, experiment: Any = None) -> tuple[li
 def format_channel_index(indices: list[int], n_channels: int) -> str:
     """Render axis-1 channel indices as the narrowest correct index expression.
 
-    A single channel yields a scalar index (dropping the variable dimension);
-    a contiguous run yields a slice, so the common all-auxiliaries case emits the same ``n_states:`` slice as before; anything else yields an explicit index list, which preserves the declared output order under advanced indexing. An empty selection yields ``:`` (all channels) rather than raising.
+    A single channel yields a scalar index (dropping the variable dimension); a contiguous run yields a slice, so the common all-auxiliaries case emits the same ``n_states:`` slice as before; anything else yields an explicit index list, which preserves the declared output order under advanced indexing. An empty selection yields ``:`` (all channels) rather than raising.
     """
     if not indices:
         return ":"
@@ -789,10 +798,8 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
 
     Returns ``(use_length_graph, use_delay_graph)``:
 
-    - **tract lengths present** → ``DenseLengthGraph`` (delays = lengths /
-      conduction_speed, so the conduction speed is a live, sweepable and differentiable graph leaf) → ``(True, False)``.
-    - **only explicit per-edge ``delay`` attributes** (no lengths) →
-      ``DenseDelayGraph`` over those delays → ``(False, True)``.
+    - **tract lengths present** → ``DenseLengthGraph`` (delays = lengths / conduction_speed, so the conduction speed is a live, sweepable and differentiable graph leaf) → ``(True, False)``.
+    - **only explicit per-edge ``delay`` attributes** (no lengths) → ``DenseDelayGraph`` over those delays → ``(False, True)``.
     - **no delays** (``has_delay`` False) → ``DenseGraph`` → ``(False, False)``.
 
     Lengths win over edge delays: a network that measures tract lengths derives its delays from the swept/optimised conduction speed.
@@ -974,6 +981,8 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
 
     return {
         "n_output": n_output,
+        # The class's N_OUTPUT_STATES: pre()'s leading axis, so a factored pre that post() recombines (n_pre > 1, n_output == 1) reduces over n_pre.
+        "n_output_states": n_pre if (n_pre > 1 and n_output == 1) else n_output,
         "has_delay": has_delay,
         "param_names": param_names,
         "param_defaults": param_defaults,
@@ -1004,17 +1013,16 @@ def resolve_coupling_spec(coupling, coupling_key, model, coupling_inputs_info, f
     }
 
 
-def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
-    """Map coupling-input names to coupling functions for the tvboptim network dict.
+def resolve_coupling_input_map(model, all_couplings):
+    """Map *model*'s coupling inputs to coupling functions, the one pairing the tvboptim network dict and the coupling classes read.
 
-    tvboptim keys coupling by coupling-input name; the schema keys by function name.
-    Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g.
-    ``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
+    tvboptim keys coupling by coupling-input name; the schema keys by function name. Resolution order: (1) explicit ``CouplingInput.source``, (2) same name, (3) a single unmapped function broadcasts to all remaining inputs, (4) equal counts zip positionally. LOCAL inputs (``CouplingInput.local=True``, e.g. ``local_coupling``) are then dropped from the network mapping — a local term is TVB's surface/local coupling, zero for the region-based simulations tvboptim supports, so it must not be wired to the long-range connectome (the dfun binds it to 0 via its fallback).
 
-    Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it (for state-access translation).
+    Returns ``(ci_coupling_map, func_to_first_ci)`` where ``ci_coupling_map`` maps ci_name -> (func_name, coupling_obj) and ``func_to_first_ci`` maps func_name to the first ci_name using it, which names the coupling's parameters in the network state and whose dimension and keys its coupling class is rendered with.
     """
     ci_coupling_map = {}
     func_to_first_ci = {}
+    coupling_inputs_dict = (getattr(model, "coupling_inputs", None) or {}) if model is not None else {}
     if coupling_inputs_dict and all_couplings:
         funcs = list(all_couplings.items())
         ci_names = list(coupling_inputs_dict.keys())
@@ -1046,12 +1054,34 @@ def resolve_coupling_input_map(model, all_couplings, coupling_inputs_dict):
                 func_to_first_ci.setdefault(fn, ci_name)
 
     # Drop LOCAL coupling terms from the network wiring (they stay in coupling_inputs_dict so the dfun still binds the symbol to its 0.0 fallback).
-    if model is not None and getattr(model, "coupling_inputs", None):
-        for ci_name, ci in model.coupling_inputs.items():
-            if getattr(ci, "local", False):
-                ci_coupling_map.pop(ci_name, None)
+    for ci_name, ci in coupling_inputs_dict.items():
+        if getattr(ci, "local", False):
+            ci_coupling_map.pop(ci_name, None)
 
     return ci_coupling_map, func_to_first_ci
+
+
+def coupling_inputs_info(model) -> dict[str, dict[str, Any]]:
+    """``{name: {"dimension": int, "keys": list | None}}`` for each coupling input *model* declares."""
+    info = {}
+    for ci_key, ci in (getattr(model, "coupling_inputs", None) or {}).items():
+        keys = getattr(ci, "keys", None)
+        info[ci_key] = {"dimension": getattr(ci, "dimension", 1) or 1, "keys": list(keys) if keys else None}
+    return info
+
+
+def coupling_input_channels(model, all_couplings) -> dict[str, int]:
+    """The channel count the generated dynamics declares for each coupling input of *model* (its ``COUPLING_INPUTS``).
+
+    An input the network wires a coupling to (`resolve_coupling_input_map`) receives that coupling's ``N_OUTPUT_STATES``, one channel per mode under the mode fold, which tvboptim checks against the declaration when it builds the network; an input no coupling feeds receives zeros of its declared ``dimension``.
+    """
+    info = coupling_inputs_info(model)
+    channels = {name: ci["dimension"] for name, ci in info.items()}
+    n_modes = get_mode_layout(model)[0]
+    wired, func_to_ci = resolve_coupling_input_map(model, all_couplings)
+    for ci_name, (func_name, coupling) in wired.items():
+        channels[ci_name] = resolve_coupling_spec(coupling, func_name, model, info, func_to_ci, n_modes)["n_output_states"]
+    return channels
 
 
 def get_node_state_overrides(
@@ -1098,7 +1128,7 @@ def get_node_state_overrides(
 def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dict[str, float]) -> dict[str, list[float]]:
     """Scan network.nodes for per-node parameter overrides.
 
-    When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned. Entry ``k`` is the ``k``-th declared node's, the connectome matrices' row order (`Network.node_index_map`), whatever ``id`` the node carries.
+    When nodes define parameters that differ from the dynamics defaults, build per-node arrays. Only parameters that differ on at least one node are returned. Entry ``k`` is the ``k``-th declared node's, the connectome matrices' row order (`Network.node_index_map`), whatever ``id`` the node carries. A parameter whose value is a vector (`is_array_valued`), such as the ``orientation`` `from_tvb` stores, holds no per-node scalar and is skipped.
 
     Args:
         network: Network object with .nodes list
@@ -1115,7 +1145,7 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dic
     if len(nodes) != n_nodes:
         return {}
 
-    # Collect per-node values for all parameters defined on any node
+    # Collect per-node values for every scalar parameter defined on any node
     node_params = {}  # param_name -> {row: value}
     for row, node in enumerate(nodes):
         if not getattr(node, "parameters", None):
@@ -1124,10 +1154,8 @@ def get_node_param_overrides(network: Any, n_nodes: int, dyn_param_defaults: dic
         if hasattr(params, "values"):
             params = params.values()
         for p in params:
-            pname = str(p.name)
-            val = float(p.value) if p.value is not None else None
-            if val is not None:
-                node_params.setdefault(pname, {})[row] = val
+            if p.value is not None and not is_array_valued(p.value):
+                node_params.setdefault(str(p.name), {})[row] = float(p.value)
 
     # Build per-node arrays using dynamics defaults as base
     overrides = {}
@@ -1179,7 +1207,7 @@ refused at render time rather than emitted as a name the kit lacks.
 """
 
 
-def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str], bool]:
+def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list[str], bool, bool]:
     """Render `transforms:` targeting weight to JAX for inlining in the generated script.
 
     A transform is a `Function`, so both of its forms are lowered: an `equation:` renders through the very expression the runtime evaluates (`Network.transform_expression`, which folds any mask into the reductions it scopes), and a `callable:` renders as an import of that callable plus a call. The kit therefore applies the declared transform exactly as the runtime does, but visibly, on the RAW weights the generated `create_network` is handed — raw SC stays in the network file, the transform stays declared in the spec, and the operation is in the script rather than hidden in the tvbo runtime. This helper runs only at render time, inside the tvbo environment.
@@ -1188,10 +1216,10 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         network: The `Network` whose transforms are being lowered.
 
     Returns:
-        A `(transforms, const_env, needs_lengths)` triple. `transforms` is a list of `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from the current `weights`, so a chain composes. `const_env` binds everything bound once — other edge matrices, per-node parameter vectors, imported callables, and each argument declared with `used:`, which the script reads by name from the arrays its run hands it (`run_experiment(network_data=...)`) rather than embedding. `needs_lengths` reports whether `create_network` has to be handed real lengths.
+        A `(transforms, const_env, needs_lengths, needs_network)` tuple. `transforms` is a list of `(jax_expr, chained_env)`; `chained_env` rebinds the transform's own target from the current `weights`, so a chain composes. `const_env` binds everything bound once — other edge matrices, per-node parameter vectors, imported callables, and each argument declared with `used:`, which the script reads by name from the arrays its run hands it (`run_experiment(network_data=...)`) rather than embedding. `needs_lengths` reports whether `create_network` has to be handed real lengths. `needs_network` reports whether it has to be handed the run's `Network` as `transform_network`: a callable that takes the `network` the runtime injects is called with that object, which the run passes in (`run_experiment(transform_network=...)`) rather than the script rebuilding one of its own.
 
     Raises:
-        ValueError: If a transform equation names a symbol that is neither an edge attribute this kit holds, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster. Also if a callable transform takes the `network` the runtime injects, which a kit has no object to supply.
+        ValueError: If a transform equation names a symbol that is neither an edge attribute this kit holds, a declared per-node parameter, nor a substituted argument. Failing here beats emitting an undefined name into a kit that only dies once it reaches a cluster.
     """
     import numpy as np
 
@@ -1214,6 +1242,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
     const_env: list[str] = []
     const_seen: set[str] = set()
     labels_used: set[str] = set()
+    needs_network = False
 
     def _add_const(name: str, line: str) -> None:
         if name not in const_seen:
@@ -1271,11 +1300,8 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
                 for n, a in keyed_items(getattr(t, "arguments", None), "arguments")
             )
             if _callable_wants(c, "network", _source_dir):
-                raise ValueError(
-                    f"weight transform callable {c.module}.{c.name} takes a `network` argument, "
-                    f"which the runtime injects but a self-contained kit has no object to supply. "
-                    f"Give it a signature over the matrix (and `L`) alone."
-                )
+                needs_network = True
+                args += ", network=transform_network"
             if _callable_wants(c, "L", _source_dir):
                 labels_used.add("length")
                 _add_const("L", f"L = {_KIT_EDGE_ARRAYS['length']}")
@@ -1294,7 +1320,7 @@ def weight_transform_codegen(network) -> tuple[list[tuple[str, list[str]]], list
         for line in constant:
             _add_const(line.split(" = ", 1)[0], line)
         transforms.append((expr, chained + mask_lines))
-    return transforms, const_env, "length" in labels_used
+    return transforms, const_env, "length" in labels_used, needs_network
 
 
 def to_numeric(val: Any) -> int | float | Any:
@@ -1312,8 +1338,7 @@ def to_numeric(val: Any) -> int | float | Any:
 def normalize_coupling_aliases(all_couplings: dict[str, Any], model: Any = None) -> dict[str, Any]:
     """Collapse duplicate keys that point to the same coupling object.
 
-    tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source.
-    tvboptim only needs one key per distinct object, so prefer stable, user-meaningful aliases before attempting input-to-coupling mapping.
+    tvbo can expose one coupling under multiple names such as the coupling function name, a coupling-input key, or an explicit CouplingInput.source. tvboptim only needs one key per distinct object, so prefer stable, user-meaningful aliases before attempting input-to-coupling mapping.
     """
     if not all_couplings:
         return {}
@@ -1845,6 +1870,15 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     }
 
 
+def _step_recipe(step: Any, emit_kind: str):
+    """The reducer recipe registered for the callable a pipeline *step* names, when its ``emit_kind`` is *emit_kind*, else ``None``."""
+    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
+
+    call = get_attr(step, "callable")
+    spec = lookup_streaming_reducer("tvboptim", str(get_attr(call, "module", "") or ""), str(get_attr(call, "name", "") or ""))
+    return spec if spec is not None and spec.emit_kind == emit_kind else None
+
+
 def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
     """Lift a cumulative co-moment FC reducer from a ``compute_fc`` pipeline marked ``reduce: streaming``.
 
@@ -1853,7 +1887,6 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
     The reducer's assignments are lowered to backend source here (via the shared :func:`tvbo.codegen.reducers.resolve_streaming_reducer`) so the render partial emits from clean context; the dict is tagged ``kind: 'comoment'`` for the matrix-state render branch. Returns ``None`` when the pipeline's first reducer has no registered ``window`` streaming form (so the caller falls through to the BOLD path). Takes no ``experiment`` — side-effect-free, so the bare ``resolve_reduction(obs)`` streaming predicate stays truthy.
     """
     from tvbo.codegen.reducers import resolve_streaming_reducer
-    from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 
     name = str(get_attr(obs, "name", "observation"))
     source = obs_source(obs)
@@ -1861,13 +1894,9 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
         raise ValueError(
             f"Observation {name!r} declares a compute_fc pipeline + reduce: streaming but has no source to reduce over."
         )
-    pipeline = as_list(get_attr(obs, "pipeline"))
-    step = pipeline[0]
-    call = get_attr(step, "callable")
-    mod = str(get_attr(call, "module", "") or "")
-    fname = str(get_attr(call, "name", "") or "")
-    spec = lookup_streaming_reducer("tvboptim", mod, fname)
-    if spec is None or spec.emit_kind != "window":
+    step = as_list(get_attr(obs, "pipeline"))[0]
+    spec = _step_recipe(step, "window")
+    if spec is None:
         return None
 
     # compute_fc `skip_t` (initial samples dropped before correlating), read off the step arguments (dict-keyed or a legacy list of named args).
@@ -1889,6 +1918,26 @@ def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
         "skip_t": int(skip_t),
         "statistic": "mean",
         "windowed": False,
+    }
+
+
+def _resolve_run_stream(obs: Any) -> dict[str, Any] | None:
+    """Lift a reducer recipe read out once over the run (``emit_kind: run``) from the pipeline step it replaces, on an observation marked ``reduce: streaming``.
+
+    The recipe is registered for the step's callable, as ``windowed_fc`` is for ``compute_fc``, so a step naming ``tvbo:functions/PhaseLockingValue`` streams through the ``phase_locking_value`` recipe. Its ``add`` folds every sample after the transient into its state and its ``emit`` is read out once at finalize, so no trajectory is held. The assignments are lowered here (:func:`tvbo.codegen.reducers.resolve_streaming_reducer`) and the dict is tagged ``kind: 'run'`` for the observation template's ``render_run_reduction``. No kind names the emitted value's axes, so the observation declares them with ``dims:``. Returns ``None`` when the step's callable has no such recipe. Takes no ``experiment``, so the bare ``resolve_reduction(obs)`` streaming predicate stays side-effect-free.
+    """
+    from tvbo.codegen.reducers import resolve_streaming_reducer
+
+    spec = _step_recipe(as_list(get_attr(obs, "pipeline"))[0], "run")
+    if spec is None:
+        return None
+    lowered = resolve_streaming_reducer(spec, "jax")
+    return {
+        "kind": "run",
+        "source": obs_source(obs),
+        "states": list(spec.state),
+        "add": lowered["add"],
+        "emit": lowered["emit"],
     }
 
 
@@ -2279,6 +2328,21 @@ def _resolve_propagation_gate(
     return {"direction": direction, "mask": mask, "min_dispersion": float(to_numeric(get_attr(gate, "min_dispersion")))}
 
 
+def _refuse_bundle_collisions(name: Any, bundles: dict[str, list[str]], declared: dict[str, list[str]]) -> None:
+    """Refuse a bundle output named like another symbol of observation *name*.
+
+    *bundles* maps each bundle parameter to the outputs it binds (:func:`tvbo.data.param_io.bundle_outputs`), and *declared* each kind of symbol the observer declares, a ``state variable`` or a ``parameter``, to its names. An output that one of those, or another output, also names would leave the rendered update reading whichever binding came last, so it is refused, naming the bundle and the symbol.
+    """
+    owners = {symbol: f"{kind} {symbol!r}" for kind, names in declared.items() for symbol in names}
+    for bundle, outputs in bundles.items():
+        for output in outputs:
+            if output in owners:
+                raise ValueError(
+                    f"Observation {name!r}: parameter {bundle!r} binds its producer's output {output!r}, the name of the observer's {owners[output]}; one name binds one symbol."
+                )
+            owners[output] = f"output {output!r} of parameter {bundle!r}"
+
+
 def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None:
     """Lift an observation's auxiliary ``dynamics`` into a backend-agnostic reduction.
 
@@ -2286,7 +2350,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     An observation may instead opt a post-scan ``pipeline`` into streaming via ``reduce: streaming`` (currently the HRF-Volterra BOLD pipeline), in which case the reducer is lifted by :func:`_resolve_bold_stream` (tagged ``kind: 'convolution'``).
     This resolves that Dynamics into clean context for the reduction partial: the source state variable read, and for each observer state its ``init`` value, its discrete update RHS (``equation.rhs`` with ``equation_type: recurrence``), and whether it is an *accumulator* — its update references its own symbol, so its commit is gated on the first step while its memory input is still unset (a memory state, which does not reference itself, updates every step). The readout is the observer ``output`` (a derived variable's RHS, or a bare final state), and any user ``functions`` (e.g. ``wrap``) are surfaced for the printer. Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
 
-    Every RHS is parsed to a **sympy** expression against the observer's symbolic vocabulary (its states, its ``parameters``, the source, and the framework scalars ``dt``/``count``; user functions become undefined ``Function``s). An observer parameter is a named constant exactly as a model Dynamics' parameters are, scalar or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. That makes the analysis symbolic, not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression`` (which accepts sympy directly). Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
+    Every RHS is parsed to a **sympy** expression against the observer's symbolic vocabulary (its states, its ``parameters``, the source, and the framework scalars ``dt``/``count``; user functions become undefined ``Function``s). An observer parameter is a named constant exactly as a model Dynamics' parameters are, scalar or array-valued (a mesh operator, a template matrix), and binds by name in the rendered update. A parameter whose producer is a bundle (:func:`tvbo.data.param_io.bundle_outputs`) binds each of its outputs as a constant of that name instead, and a ``partition.over`` naming it stands for all of them. That makes the analysis symbolic, not string-based: accumulator classification is ``state_symbol in expr.free_symbols``, and an unknown symbol (a typo) is caught here rather than surfacing as a codegen error. The context carries sympy ``Expr`` objects; the partial renders them per backend via ``render_expression`` (which accepts sympy directly). Returns ``None`` when the observation declares no ``dynamics`` (the post-scan path runs).
 
     Backend array primitives (``take``, ``sum_axis``, ``clip``, ``matmul``, …) join that vocabulary as undefined ``Function``s the printer lowers later, exactly as ``parse_eq`` registers them — without it a name colliding with a SymPy builtin (``take`` is ``sympy.utilities.iterables.take``) is evaluated at parse time and blows up.
 
@@ -2301,11 +2365,14 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         _pipe = as_list(get_attr(obs, "pipeline"))
         if not _pipe and _agg in {"mean", "std", "variance", "last", "first_passage"}:
             return _resolve_stat_stream(obs)
-        # A compute_fc (windowed-correlation) pipeline streams as a cumulative co-moment FC reducer (add-only Welford), NOT the HRF/BOLD convolution reducer; fall through to the BOLD path only when the pipeline is not a registered windowed reducer.
+        # A step whose callable a recipe replaces streams through it (a `window` recipe as a cumulative co-moment FC, a `run` recipe as a fold over the run), a subsampling step as a stride, and any other pipeline as the HRF/BOLD convolution reducer.
         if _pipe:
             _fc = _resolve_fc_stream(obs)
             if _fc is not None:
                 return _fc
+            _run = _resolve_run_stream(obs)
+            if _run is not None:
+                return _run
             _sub = _resolve_subsample_stream(obs, experiment)
             if _sub is not None:
                 return _sub
@@ -2338,19 +2405,35 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     param_map = get_attr(dyn, "parameters") or {}
     param_objs = dict(param_map.items()) if hasattr(param_map, "items") else {str(get_attr(p, "name")): p for p in param_map}
     param_names, param_values, param_shapes = get_param_info(param_map)
+    bundles = {n: outputs for n in param_names if (outputs := param_io.bundle_outputs(param_objs[n]))}
+    _refuse_bundle_collisions(
+        get_attr(obs, "name", None),
+        bundles,
+        {
+            "state variable": sv_names,
+            "derived variable": dv_names,
+            "derived parameter": dp_names,
+            "parameter": [n for n in param_names if n not in bundles],
+        },
+    )
 
-    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source. The spec dir grounds a relative source path exactly as bids_dir is grounded. Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
+    # Resolve each constant to what the template emits: a literal binds inline; a sourced/produced one is materialised (codegen-time) to a content-addressed artifact and emitted as a lazy (file, key) the backend reads at run time, so a large operator never enters the generated source; a bundle binds each output its producer declares as a constant of that name, all read from the producer's one artifact. The spec dir grounds a relative source path exactly as bids_dir is grounded. Materialisation runs the producer and writes to disk, so it happens ONLY when an experiment is supplied — i.e. at genuine emission. resolve_reduction is also called bare (no experiment) as a cheap "is this a streaming reducer?" predicate; that path must stay side-effect-free, so a lazy constant is left deferred (never materialised just to answer a boolean, and never triggering an igl precompute as a side effect).
     src_file = get_attr(experiment, "_source_file", None) if experiment is not None else None
     src_dir = Path(src_file).parent if src_file else None
     parameters: dict[str, Any] = {}
     for n in param_names:
-        if n in param_values:
+        if n in bundles:
+            bound = param_io.materialise_bundle(param_objs[n], context=experiment) if experiment is not None else {}
+            for output in bundles[n]:
+                parameters[output] = {"lazy": (str(bound[output][0]), output) if bound else None, "shape": None}
+        elif n in param_values:
             parameters[n] = {"value": param_values[n], "shape": param_shapes.get(n)}
         elif experiment is None:
             parameters[n] = {"lazy": None, "shape": param_shapes.get(n)}  # deferred
         else:
             path, key = param_io.materialise(param_objs[n], source_dir=src_dir, context=experiment)
             parameters[n] = {"lazy": (str(path), key), "shape": param_shapes.get(n)}
+    param_names = list(parameters)  # the names the observer binds, a bundle's outputs in place of the bundle
     # One symbol cannot denote both a per-step state and a fixed constant: the update would read whichever the renderer bound last, silently.
     shadowed = sorted(set(param_names) & set(sv_names))
     if shadowed:
@@ -2368,7 +2451,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     loc: dict[str, Any] = {n: sp.Symbol(n) for n in allowed}
     loc["pi"] = sp.pi
     # setdefault, so a declared symbol of the same name still wins over the primitive.
-    from tvbo.parse.expression import ARRAY_FUNCTIONS
+    from tvbo.parse.expression import ARRAY_FUNCTIONS, array_syntax
 
     for _afn in ARRAY_FUNCTIONS:
         loc.setdefault(str(_afn), sp.Function(str(_afn)))
@@ -2379,11 +2462,15 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         fargs = [str(get_attr(a, "name", a)) for a in as_list(get_attr(fn, "arguments"))]
         frhs = get_attr(feq, "rhs") if feq is not None else None
         loc[str(fname)] = sp.Function(str(fname))
-        fexpr = sp.sympify(str(frhs), locals={**{a: sp.Symbol(a) for a in fargs}, "pi": sp.pi}) if frhs is not None else None
+        fexpr = (
+            sp.sympify(array_syntax(str(frhs)), locals={**{a: sp.Symbol(a) for a in fargs}, "pi": sp.pi})
+            if frhs is not None
+            else None
+        )
         functions[str(fname)] = {"args": fargs, "expr": fexpr}
 
     def _parse(rhs_str: str, where: str):
-        expr = sp.sympify(rhs_str, locals=loc)
+        expr = sp.sympify(array_syntax(rhs_str), locals=loc)
         unknown = {str(s) for s in expr.free_symbols} - allowed
         if unknown:
             raise ValueError(
@@ -2569,6 +2656,13 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
     # `period` makes the observer a MONITOR: its output is emitted every period into a time series, instead of collapsing time into one value per node at the final step. That is the declared contract of Observation.dynamics ("read at the final step for a reduction ... or, when `period` is set, sub-sampled over time for a monitor"). The period is resolved against the integration grid, so it needs the experiment; the bare predicate call ("is this a reduction?") only asks whether the observer exists.
     _period = get_attr(obs, "period")
     _period = float(to_numeric(_period)) if _period is not None else None
+    _aggregation = get_attr(obs, "aggregation", None)
+    if _period is not None and _aggregation is not None:
+        raise ValueError(
+            f"Observation {get_attr(obs, 'name', None)!r} declares both `period` and `aggregation: {getattr(_aggregation, 'value', _aggregation)}`. "
+            "An observer with a period emits its output as a time series and reduces nothing, and a median observer reduces every step and ignores the period, "
+            "so the pair has no defined meaning: declare `period` for a monitor, or `aggregation` for one value per node over the whole run."
+        )
     _dt = _integration_dt(experiment)
     period_steps = None
     if _period and experiment is not None:
@@ -2631,7 +2725,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 f"is not an observer parameter ({sorted(parameters)}); it must be the produced "
                 "(n_groups, n) node-index table."
             )
-        over = [str(x) for x in as_list(get_attr(partition, "over"))]
+        over = [name for x in as_list(get_attr(partition, "over")) for name in bundles.get(str(x), [str(x)])]
         _missing = [p for p in over if p not in parameters]
         if _missing:
             raise ValueError(
@@ -2848,9 +2942,7 @@ def _adapt_tvb_bold_reference(class_info: dict[str, Any], obs: Any, dt: float) -
 def resolve_solver_kwargs(integration: Any, dt: float, is_diffrax: bool = False) -> str:
     """Map the backend-neutral ``integration.differentiation`` strategy onto native-solver kwargs, returned as a ready-to-emit string (e.g. ``"grad_horizon=100, block_size=50"``).
 
-    ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time;
-    the native JAX solver counts integration steps, so they are converted with ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``.
-    Shared by the experiment and solver templates so the mapping lives in one place rather than being duplicated in both mako blocks.
+    ``truncation_window`` / ``checkpoint_interval`` are in ms of simulated time; the native JAX solver counts integration steps, so they are converted with ``dt``. Diffrax has no such knobs, so ``is_diffrax=True`` yields ``""``. Shared by the experiment and solver templates so the mapping lives in one place rather than being duplicated in both mako blocks.
     """
     if integration is None or is_diffrax:
         return ""
@@ -3041,7 +3133,6 @@ def _lr_analysis_spec(lr_obs, model, events, op_constraint, time_si_factor, dt):
 def render_analysis_observations(
     analysis_obs: dict[str, Any],
     coupling_keys: set[str],
-    solver_class: str,
     t1_default: float,
     dt: float,
     solver_kwargs: str = "",
@@ -3053,8 +3144,7 @@ def render_analysis_observations(
 ) -> str:
     """Render the body of the generated ``compute_analysis_observations()`` function.
 
-    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends;
-    the template only interpolates the returned block. Analysis solves drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling- evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
+    Analysis observations ANALYZE the solve/loss (Lyapunov spectrum, autodiff and finite-difference gradients) rather than transforming ``result.data``. Each is emitted from its declarative ``analysis`` metadata (type + target + wrt + parameters). This lives in the adapter/Python layer — NOT the mako template — so the per-type branching can be deduped/harmonized and reused across backends; the template only interpolates the returned block. Analysis solves take the experiment's ``get_solver``, so a declared clamp or noise covariance holds in them as in the run, on integrator settings that drop the differentiation-truncation window (an optimization knob, not part of these diagnostics — see :func:`_analysis_solver_kwargs`) while keeping the coupling-evaluation config. ``time_si_factor`` is seconds per model time unit (ms -> 1e-3); the linear-response operating point rescales the Jacobian A to per-second with it, so every downstream quantity (covariance, PSD in Hz, Fisher) is physical. Returns a string whose lines are indented for a function body (4 spaces), empty string if there are no analysis observations.
     """
     # The same window the run measures. The settle is its own scan and reaches this network through `update_history`, so an analysis opens at t=0 on a settled network — and a gradient diagnostic differentiates the measured window alone, which is what the fit it diagnoses does.
     window = f"t0=0.0, t1={t1_default}, dt={dt}"
@@ -3110,7 +3200,7 @@ def render_analysis_observations(
                 "# Same integrator config as the main sim (coupling_evaluation) so lambda_1",
                 "# matches the trajectory it characterises. Emits the exponents and the",
                 f"# per-node leading-vector profile ({name}_xi, paper's xi_i).",
-                f"_le_solve, _le_cfg = prepare(network, {solver_class}({solver_kwargs}), t0=0.0, t1={seg}, dt={dt})",
+                f"_le_solve, _le_cfg = prepare(network, get_solver(solver_kwargs=dict({solver_kwargs})), t0=0.0, t1={seg}, dt={dt})",
             ]
             # Evaluate at the current operating point: sync `wrt` (e.g. the swept coupling) into the segment config so a K-sweep reports lambda_1(K), not at the network's fixed parameters. Optional — omit `wrt` for a static Lyapunov.
             if access:
@@ -3126,7 +3216,7 @@ def render_analysis_observations(
                 )
             lines += [
                 f"# {name}: full (untruncated) {mode}-mode gradient of '{target}' wrt {wrt[0]}",
-                f"_asolve_{name}, _ = prepare(network, {solver_class}({gradient_kwargs}), {window})",
+                f"_asolve_{name}, _ = prepare(network, get_solver(solver_kwargs=dict({gradient_kwargs})), {window})",
                 f"def _grad_of_{name}(_p):",
                 f"    _gs = eqx.tree_at(lambda _s: _s.{access}, state, _p)",
                 f"    return _observed_value(compute_all_observations(_asolve_{name}(_gs), _gs, settle=settle).{target})",
@@ -3142,7 +3232,7 @@ def render_analysis_observations(
             if sig not in fd_emitted:
                 lines += [
                     f"# per-seed central differences of '{target}' wrt {wrt[0]} (shared across its reductions)",
-                    f"_asolve_{gid}, _ = prepare(network, {solver_class}({solver_kwargs}), {window})",
+                    f"_asolve_{gid}, _ = prepare(network, get_solver(solver_kwargs=dict({solver_kwargs})), {window})",
                     f"_delta_{gid} = {delta}",
                     f"_keys_{gid} = jax.random.split(jax.random.key({seed_base}), {seeds})",
                     f"_g0_{gid} = state.{access}",
@@ -3367,13 +3457,10 @@ def get_noise_covariance(model: Any, experiment: Any = None) -> dict[str, Any] |
 
     Args:
         model: Dynamics instance with ``.state_variables``.
-        experiment: The declaring experiment, used to ground a relative source path and
-            to resolve a producer's arguments. Without it a lazy covariance stays
-            deferred, so calling this as a cheap predicate has no side effects.
+        experiment: The declaring experiment, used to ground a relative source path and to resolve a producer's arguments. Without it a lazy covariance stays deferred, so calling this as a cheap predicate has no side effects.
 
     Returns:
-        ``{"axis": str, "value": [[...]] | None, "lazy": (path, key) | None}``, or None
-        when no covariance is declared.
+        ``{"axis": str, "value": [[...]] | None, "lazy": (path, key) | None}``, or None when no covariance is declared.
     """
     from pathlib import Path
 
@@ -3892,8 +3979,7 @@ def get_domain_bounds(param_name: str, model: Any, all_couplings: dict) -> tuple
             param: A schema parameter whose optional `domain` carries `lo`/`hi`.
 
         Returns:
-            A `(lo, hi)` tuple of floats; either is `None` when unset or when the
-            bound is not numeric.
+            A `(lo, hi)` tuple of floats; either is `None` when unset or when the bound is not numeric.
         """
         domain = getattr(param, "domain", None)
         if not domain:
@@ -4116,9 +4202,7 @@ def normalize_n_parallel(expl: Any):
     ``"auto"`` (the schema default) defers the vmap chunk width to runtime, where the grid size is known — the generated script resolves it via :func:`tvbo.templates.tvboptim.callbacks.resolve_n_vmap`. An explicit integer is passed through unchanged (``1`` = fully sequential).
 
     Raises:
-        ValueError: if ``n_parallel`` is a non-numeric string other than ``"auto"``
-            (the schema allows any string, so a typo like ``"sequential"`` reaches
-            here — fail with a clear message rather than a bare ``int()`` error).
+        ValueError: if ``n_parallel`` is a non-numeric string other than ``"auto"`` (the schema allows any string, so a typo like ``"sequential"`` reaches here — fail with a clear message rather than a bare ``int()`` error).
     """
     v = getattr(expl, "n_parallel", None)
     if v is None:
@@ -4416,9 +4500,7 @@ def network_axis_leaf(ref: Any) -> str | None:
     Accepts the canonical ``network.edges.<label>`` form and the ``network.weight`` and ``network.length(s)`` shortcuts (both via ``edge_label``, so axes and observations resolve a matrix identically), plus the network's own scalars (``network.conduction_speed``). Returns None for a reference outside the ``network.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
-        ValueError: the reference is ``network.``-scoped but names an attribute
-            with no live graph leaf to sweep — failing at codegen rather than
-            silently writing the axis into the wrong scope.
+        ValueError: the reference is ``network.``-scoped but names an attribute with no live graph leaf to sweep — failing at codegen rather than silently writing the axis into the wrong scope.
     """
     if not isinstance(ref, str) or not ref.startswith(_NETWORK_SCOPE):
         return None
@@ -4458,9 +4540,7 @@ def noise_axis_param(ref: Any) -> str | None:
     Returns the bare parameter name; None for a reference outside the ``noise.`` scope, which callers route through the dynamics/coupling path.
 
     Raises:
-        ValueError: the reference is ``noise.``-scoped but names no sweepable noise
-            parameter — failing at codegen rather than silently writing the axis into the
-            dynamics scope, where it would sweep nothing.
+        ValueError: the reference is ``noise.``-scoped but names no sweepable noise parameter — failing at codegen rather than silently writing the axis into the dynamics scope, where it would sweep nothing.
     """
     if not isinstance(ref, str) or not ref.startswith(_NOISE_SCOPE):
         return None
@@ -4505,9 +4585,7 @@ def initial_conditions_axis_sv(ref: Any) -> str | None:
     ``initial_conditions.<state_var>`` sweeps the *initial value* of one state variable across grid cells — a deterministic initial-condition ensemble (one trajectory per swept value), as opposed to the stochastic ``n_trials`` + ``StateVariable.distribution`` ensemble. Returns the bare ``<state_var>`` name; None for a reference outside the ``initial_conditions.`` scope, which callers route through the dynamics/coupling path. The name is validated against the model's state variables at codegen, where they are known.
 
     Raises:
-        ValueError: the reference is ``initial_conditions.``-scoped but does not
-            name a single state variable (empty, or a further-dotted path) —
-            failing at codegen rather than sweeping nothing.
+        ValueError: the reference is ``initial_conditions.``-scoped but does not name a single state variable (empty, or a further-dotted path) — failing at codegen rather than sweeping nothing.
     """
     if not isinstance(ref, str) or not ref.startswith(_INITIAL_CONDITIONS_SCOPE):
         return None
@@ -4530,21 +4608,16 @@ def parameter_keypath(ref: Any, *, couplings: Any = (), coupling_key: Any = None
     ONE resolution of WHERE a declared parameter lives, for every consumer holding the reference as a STRING rather than as a classified axis: the NSGA-II search axes, the fitted free parameters, the marked optimizer parameters, the ``initial_state`` working-point ramp, an analysis ``wrt`` and an inference prior. Each grew its own prefix ladder and they disagreed — the ramp knew no scope at all and hard-prefixed ``dynamics.``, two knew ``noise.`` but not ``network.``, and the ``wrt``/prior grammar knew ``external.`` that none of the others did. Every disagreement is silent: the reference resolves to a same-named model parameter, or to nothing, and the run still completes with a plausible answer. Write paths are where this family hides — the state is a permissive container, so assigning to a mis-resolved keypath INVENTS the leaf instead of raising, and the optimiser then fits a slot no dfun reads; a read path at least fails with an AttributeError unless the wrong scope happens to declare the same name. The ``initial_conditions.`` and ``execution.random_seed`` scopes resolve to the dummy ``dynamics`` slots a wrapper reads per cell, which is where codegen binds them. :func:`axis_keypath` is the counterpart for an exploration axis, whose reference the classifier has already split into scope flags; it must answer alike for the same reference, and a test pins that.
 
     Args:
-        ref: Dotted reference as declared, e.g. ``noise.sigma``, ``network.conduction_speed``,
-            ``ReducedWongWang.w``, or a bare parameter name.
-        couplings: Coupling keys this experiment declares; a matching prefix routes to that
-            coupling instance.
-        coupling_key: Optional callable mapping a coupling name to its state key (the
-            coupling-input spelling). Identity when omitted.
-        external: External-input event names (the keys of the network's ``external_input``);
-            a matching prefix routes to that event's parameters.
+        ref: Dotted reference as declared, e.g. ``noise.sigma``, ``network.conduction_speed``, ``ReducedWongWang.w``, or a bare parameter name.
+        couplings: Coupling keys this experiment declares; a matching prefix routes to that coupling instance.
+        coupling_key: Optional callable mapping a coupling name to its state key (the coupling-input spelling). Identity when omitted.
+        external: External-input event names (the keys of the network's ``external_input``); a matching prefix routes to that event's parameters.
 
     Returns:
         The keypath, e.g. ``noise.sigma``, ``graph.speed``, ``coupling.<key>.a``, ``dynamics.w``.
 
     Raises:
-        ValueError: the reference is in a reserved scope but names nothing bindable there,
-            raised by that scope's own resolver.
+        ValueError: the reference is in a reserved scope but names nothing bindable there, raised by that scope's own resolver.
     """
     text = str(ref)
     if "." not in text:
@@ -4643,7 +4716,7 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
     """Embed per-node vectors referenced by observations as ``{measure: nested list}``.
 
     Scans every observation's ``source``, its pipeline-step arguments, AND its observer (``dynamics``) parameters for a ``network.positions`` / ``network.instrength`` reference, resolving each once against the network:
-    ``positions`` → ``Network.node_positions()``; ``instrength`` → the weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention, ``koller2024_networks.instrength_normalize``). Raises if a referenced vector cannot be built.
+    ``positions`` → ``Network.node_positions()``; ``instrength`` → the weighted in-degree ``matrix('weight').sum(axis=1)`` (row sum = incoming, the TVB/Koller convention, ``koller2024_networks.instrength_normalize``). Raises if a referenced vector cannot be built, or if it differs from trial to trial on a network realised per trial (:func:`tvbo.data.param_io.refuse_per_trial_read`), where one embedded vector would hold trial 0's in every trial.
     """
     from tvbo.data import param_io
 
@@ -4658,6 +4731,7 @@ def collect_network_node_arrays(experiment: Any) -> dict[str, list]:
         lab = node_label(name)
         if not lab or lab in arrays:
             return
+        param_io.refuse_per_trial_read(net, lab, "An observation")
         vec = _resolve(lab)
         if vec is None:
             raise ValueError(

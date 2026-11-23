@@ -184,7 +184,9 @@ def _renamed_scope(model, repl: dict[str, str]) -> dict:
     return scope
 
 
-def operator_template(model, op_name: str | None = None, fortran: bool = False) -> dict:
+def operator_template(
+    model, op_name: str | None = None, fortran: bool = False, seed: int | None = 0, instances: int = 1
+) -> dict:
     """Resolve a Dynamics model into the fields of a PyRates ``OperatorTemplate``.
 
     Everything the template needs to decide is decided here, so the Mako file only emits: names are renamed through `pyrates_names`, functions are inlined (PyRates YAML has no user functions), and unsupported constructs are rewritten by :func:`_pyrates_compatible`.
@@ -195,10 +197,13 @@ def operator_template(model, op_name: str | None = None, fortran: bool = False) 
         model: The :class:`~tvbo.classes.dynamics.Dynamics` to convert.
         op_name: Operator name; defaults to ``<model name>_op``.
         fortran: Whether the operator is compiled by PyRates's Fortran backend, which renames the symbols that differ only in case (`pyrates_names`).
+        seed: The run's seed (`run_seed`): each state variable opens at the draw tvb and jax open on (`baked_opening`), and a distribution on an operator more than one node runs is refused. None for a continuation, whose start is each variable's initial value.
+        instances: How many nodes run the operator.
 
     Returns:
         dict: ``op_name``, ``description``, ``equations`` (list of strings) and ``variables`` (name → PyRates spec).
     """
+    from tvbo.adapters.base import baked_opening
     from tvbo.classes.equation import sympify as tvbo_sympify
     from tvbo.utils import initial_value, parameter_number
 
@@ -218,6 +223,10 @@ def operator_template(model, op_name: str | None = None, fortran: bool = False) 
 
     equations: list[str] = []
     variables: dict[str, object] = {}
+    if seed is None:
+        opening = {key: initial_value(sv) for key, sv in (model.state_variables or {}).items()}
+    else:
+        opening = baked_opening(model, seed, "pyrates", instances)
 
     for key, dv in (model.derived_variables or {}).items():
         display = repl.get(key, key)
@@ -227,7 +236,7 @@ def operator_template(model, op_name: str | None = None, fortran: bool = False) 
     for key, sv in (model.state_variables or {}).items():
         display = repl.get(key, key)
         equations.append(f"{display}' = {compat(render(sv))}")
-        variables[display] = f"variable({initial_value(sv)})"
+        variables[display] = f"variable({opening[key]})"
 
     if getattr(model, "autonomous", True) is False:
         variables["t"] = "variable"
@@ -325,6 +334,7 @@ def to_pyrates_yaml_string(
     network: Network | None = None,
     filepath: str | None = None,
     fortran: bool = False,
+    seed: int | None = 0,
 ) -> str:
     """Export to complete PyRates experiment YAML (model + network, ready to run).
 
@@ -340,6 +350,8 @@ def to_pyrates_yaml_string(
         Path to write the YAML file. If None, returns the YAML string.
     fortran : bool, optional
         Whether the YAML is compiled by PyRates's Fortran backend, which the AUTO-07p continuation uses; its operators then rename the symbols that differ only in case (`pyrates_names`).
+    seed : int or None, optional
+        The run's seed, on which each operator opens at the draw tvb and jax open on (`operator_template`); None for a continuation, which starts from each variable's initial value.
 
     Returns:
     -------
@@ -352,9 +364,9 @@ def to_pyrates_yaml_string(
 
     if isinstance(dynamics, dict):
         # dynamics is a library for heterogeneous networks
-        yaml_str = str(template.render(model=None, network=network, dynamics=dynamics, fortran=fortran))
+        yaml_str = str(template.render(model=None, network=network, dynamics=dynamics, fortran=fortran, seed=seed))
     else:
-        yaml_str = str(template.render(model=dynamics, network=network, dynamics={}, fortran=fortran))
+        yaml_str = str(template.render(model=dynamics, network=network, dynamics={}, fortran=fortran, seed=seed))
 
     if filepath:
         with open(filepath, "w", encoding="utf-8") as f:

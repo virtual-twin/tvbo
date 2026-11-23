@@ -1,6 +1,6 @@
 """Statistics over stored, labelled arrays: the implementations behind the software-based curated functions.
 
-Each function here is named by a record in ``tvbo/database/functions/`` (``GroupedCorrelation``, ``FalseDiscoveryControl``, ``Histogram``) and returns a mapping of labelled arrays, which a study-level analysis stores one variable per key. Each runs along one named dimension and keeps every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study.
+Each function here is named by a record in ``tvbo/database/functions/`` (``SpreadBand``, ``Correlation``, ``GroupedCorrelation``, ``ConcordanceCorrelation``, ``FalseDiscoveryControl``, ``Histogram``, ``PhaseLockingValue``, ``PhaseLagIndex``, ``AtOptimum``, ``HierarchicalClustering``) and returns a labelled array or a mapping of them, which a study-level analysis stores under its own name or one variable per key. The correlations, the counts and the false discovery control run along one named dimension and keep every other one, so a statistic per question, region or pair is one call on the whole array rather than a loop in the study; the phase-synchrony measures pair the nodes of the one other, and the value at an optimum is searched over every dimension of its score.
 """
 
 from __future__ import annotations
@@ -10,11 +10,20 @@ import numpy as np
 GROUPINGS = ("equal_width", "equal_count")
 """How units are cut into groups: bins of equal width over the grouping variable's range, or runs of equal size along its order."""
 
+CORRELATIONS = ("pearson", "spearman")
+"""The correlation coefficients: Pearson's over the values, and Spearman's, which is Pearson's over their ranks."""
+
 MIN_POINTS = 3
 """The fewest points a correlation is stated for; two points always correlate perfectly, so their r and p say nothing."""
 
+STATISTICS = ("mean_sd", "median_iqr")
+"""What a spread band draws: the mean with one standard deviation either side, or the median with the 25th and 75th percentiles."""
+
 METHODS = ("bh", "by")
 """The false-discovery procedures: Benjamini-Hochberg, and Benjamini-Yekutieli for tests of arbitrary dependence."""
+
+DIRECTIONS = ("max", "min")
+"""Which end of a score its optimum lies at: the largest score or the smallest."""
 
 
 def group_index(values, n_groups: int, grouping: str = "equal_width") -> np.ndarray:
@@ -32,6 +41,74 @@ def group_index(values, n_groups: int, grouping: str = "equal_width") -> np.ndar
             index[members] = k
         return index
     raise ValueError(f"grouping must be one of {GROUPINGS}, got {grouping!r}.")
+
+
+def _clusters(tree: np.ndarray, order: np.ndarray, cut: float) -> np.ndarray:
+    """The cluster of each leaf of the linkage matrix *tree*, in the dendrogram order *order*, the tree cut at *cut* times its highest merge.
+
+    A cluster is the subtree under a merge that lies below the cut where the merge above it, if there is one, does not, as :func:`scipy.cluster.hierarchy.dendrogram` colours the links below its ``color_threshold``; a merge at the cut is not below it. Clusters are numbered 1, 2, ... in the order their leaves come in the dendrogram from the left, the order in which scipy gives them the colours ``C1``, ``C2``, ..., and a leaf that no merge below the cut joins to another is 0, scipy's ``C0``. The numbers do not wrap round after nine as scipy's colours do.
+    """
+    n = len(order)
+    threshold = cut * tree[:, 2].max()
+    top = np.full(2 * n - 1, -1)  # each node's highest ancestor or self below the threshold, -1 for none
+    for merge in range(n - 2, -1, -1):
+        node = n + merge
+        if top[node] < 0 and tree[merge, 2] < threshold:
+            top[node] = node
+        top[tree[merge, :2].astype(int)] = top[node]
+    tops = top[order].tolist()
+    number = {node: k for k, node in enumerate(dict.fromkeys(t for t in tops if t >= 0), start=1)}
+    return np.array([number.get(t, 0) for t in tops])
+
+
+def hierarchical_clustering(features, dim: str, cut: float) -> dict:
+    """Ward hierarchical clustering of the units of *dim* by their correlation profiles, the tree cut at *cut* times its highest merge.
+
+    *features* holds one row per unit of *dim* and one column per feature along its one other dimension. The rows are correlated over the features (Pearson's r, :func:`numpy.corrcoef`), each unit is described by its row of that correlation matrix, and Ward's linkage on the Euclidean distances between those rows builds the tree: :func:`scipy.cluster.hierarchy.linkage` with ``method="ward"`` on the correlation matrix, as Koller et al. (2024, doi:10.1038/s41467-024-47860-x) cluster the components of their NMF fits (released ``scripts/results/48_results.ipynb``, cells 40 and 47). The rows are put in the order of their labels along *dim* before anything is computed, positions 0, 1, ... standing in for labels where *dim* has none, so the result, a tie between two merges included, depends on the labels and never on the order the rows come in. The clusters are cut from the tree as :func:`_clusters` states; 0.7 is the multiple below which :func:`scipy.cluster.hierarchy.dendrogram` colours by default, and the one Koller et al.'s two clusters come from (cell 49).
+
+    A row that is constant or holds a value that is not finite has no correlation and is refused by its label, as are fewer than two units, fewer than :data:`MIN_POINTS` features, a dimension beyond the two, and a *cut* that is not one finite number above 0.
+
+    Returns:
+        ``correlation`` on *dim* and *dim* with ``_j`` appended, both labelled and in dendrogram order, so that a heatmap of it shows the clustered matrix; ``linkage``, scipy's linkage matrix of the label-sorted rows on ``merge`` and ``field`` (``first``, ``second``, ``height``, ``size``), whose leaf ids are positions among the sorted labels and whose merge k forms the id n + k; ``leaf_order``, each unit's position in the dendrogram from the left; and ``cluster``, each unit's cluster (:func:`_clusters`). The last two run along *dim* in dendrogram order.
+    """
+    import xarray as xr
+    from scipy.cluster.hierarchy import leaves_list, linkage
+
+    level = np.asarray(cut)
+    if level.ndim or level.dtype.kind not in "fiu" or not 0 < float(level) < np.inf:
+        raise ValueError(
+            f"`cut` is the height the tree is cut at as a multiple of its highest merge, one finite number above 0, got {cut!r}."
+        )
+    features = _along(features, dim, "features")
+    if features.ndim != 2:
+        raise ValueError(
+            f"`features` holds one row per unit of {dim!r} and one column per feature, two dimensions; its dimensions are {list(features.dims)}."
+        )
+    if dim not in features.indexes:
+        features = features.assign_coords({dim: np.arange(features.sizes[dim])})
+    rows = features.sortby(dim).transpose(dim, ...)
+    labels, values = rows.indexes[dim], np.asarray(rows.values, dtype=float)
+    if values.shape[0] < 2 or values.shape[1] < MIN_POINTS:
+        raise ValueError(
+            f"`features` needs at least two units along {dim!r} and {MIN_POINTS} features to correlate them over; it has {values.shape[0]} and {values.shape[1]}."
+        )
+    defined = np.isfinite(values).all(axis=1) & (values.max(axis=1) > values.min(axis=1))
+    if not defined.all():
+        raise ValueError(
+            f"`features` has no correlation for {_some(labels[~defined])} along {dim!r}: a row that is constant or holds a value that is not finite correlates with nothing."
+        )
+    correlation = np.corrcoef(values)
+    tree = linkage(correlation, method="ward")
+    order = leaves_list(tree)
+    leaves = labels.values[order]
+    return {
+        "correlation": xr.DataArray(
+            correlation[np.ix_(order, order)], dims=[dim, f"{dim}_j"], coords={dim: leaves, f"{dim}_j": leaves}
+        ),
+        "linkage": xr.DataArray(tree, dims=["merge", "field"], coords={"field": ["first", "second", "height", "size"]}),
+        "leaf_order": xr.DataArray(np.arange(len(order)), dims=[dim], coords={dim: leaves}),
+        "cluster": xr.DataArray(_clusters(tree, order, float(level)), dims=[dim], coords={dim: leaves}),
+    }
 
 
 def _some(labels, limit: int = 5) -> str:
@@ -64,9 +141,105 @@ def _along(value, dim: str, key: str):
     return xr.DataArray(array, dims=[dim])
 
 
+def _paired_along(first, second, dim: str, names: tuple[str, str]) -> tuple:
+    """*first* and *second*, called *names* in a refusal, as labelled arrays along *dim* (:func:`_along`), entry for entry.
+
+    Where both label *dim*, *second* is put in the order of *first*'s labels, and a label only one of them carries is refused (:func:`_same_labels`); otherwise the two are paired by position.
+    """
+    first, second = _along(first, dim, names[0]), _along(second, dim, names[1])
+    if dim in first.indexes and dim in second.indexes:
+        _same_labels(first, second, dim, names)
+        second = second.reindex({dim: first.indexes[dim]})
+    return first, second
+
+
+def _average_ranks(values: np.ndarray) -> np.ndarray:
+    """The 1-based rank of each of the 1-D *values*, tied values given the mean of the ranks they span, as :func:`scipy.stats.rankdata` ranks by default (``method="average"``)."""
+    order = np.argsort(values)
+    ordered = values[order]
+    starts = np.flatnonzero(np.r_[True, ordered[1:] != ordered[:-1]])
+    ends = np.r_[starts[1:], values.size]
+    ranks = np.empty(values.size)
+    ranks[order] = np.repeat((starts + 1 + ends) / 2, ends - starts)
+    return ranks
+
+
+def _coefficient(a: np.ndarray, b: np.ndarray, method: str) -> tuple:
+    """``(r, n)`` of the 1-D *a* and *b* over the *n* pairs where both are finite: Pearson's r of the values, or of their average ranks for ``spearman``, NaN where :func:`_correlates` finds no correlation defined."""
+    kept = np.isfinite(a) & np.isfinite(b)
+    a, b = a[kept], b[kept]
+    if not _correlates(a, b):
+        return np.nan, a.size
+    if method == "spearman":
+        a, b = _average_ranks(a), _average_ranks(b)
+    da, db = a - a.mean(), b - b.mean()
+    return np.sum(da * db) / np.sqrt(np.sum(da**2) * np.sum(db**2)), a.size
+
+
+def correlation(x, y, dim: str, method: str) -> dict:
+    """Pearson's or Spearman's correlation coefficient of *x* and *y* over the units of *dim*.
+
+    ``pearson`` correlates the values and ``spearman`` their ranks, tied values given the mean of the ranks they span, so ``spearman`` is the coefficient :func:`scipy.stats.spearmanr` returns, ties included. A unit enters where both *x* and *y* are finite: a NaN on either side drops that pair only, and the ranks are taken over the pairs that enter, where :func:`scipy.stats.spearmanr` and :func:`scipy.stats.pearsonr` at their defaults return NaN for a slice holding any NaN. Labelled inputs are paired on the labels of *dim*, which occur once each and which both carry (:func:`_paired_along`); bare 1-D inputs are paired by position. Every other dimension an input carries is kept, with one coefficient per element of it, computed from that element's own pairs; one that both carry is aligned by xarray's exact join, which refuses labels that differ in content or order. A coefficient is NaN with fewer than :data:`MIN_POINTS` pairs or a constant side, as for every correlation here (:func:`_correlates`), and carries none of the inputs' attributes, such as their units.
+
+    Returns:
+        ``r``, the coefficient, and ``n``, the number of pairs it was computed from, both labelled on the inputs' other dimensions.
+    """
+    import xarray as xr
+
+    if method not in CORRELATIONS:
+        raise ValueError(f"method must be one of {CORRELATIONS}, got {method!r}.")
+    x, y = _paired_along(x, y, dim, ("x", "y"))
+    r, n = xr.apply_ufunc(
+        _coefficient,
+        x,
+        y,
+        kwargs={"method": method},
+        input_core_dims=[[dim], [dim]],
+        output_core_dims=[[], []],
+        vectorize=True,
+        output_dtypes=[float, int],
+        keep_attrs=False,
+    )
+    return {"r": r, "n": n}
+
+
 def _correlates(a: np.ndarray, b: np.ndarray) -> bool:
     """Whether a correlation of the paired *a* and *b* is defined: at least :data:`MIN_POINTS` points and neither side constant."""
     return a.size >= MIN_POINTS and np.ptp(a) > 0 and np.ptp(b) > 0
+
+
+def spread_band(values, dim: str, statistic: str, ddof=None) -> dict:
+    """The centre of *values* along *dim* and a band around it, the pair a ``band`` or ``errorbar`` layer draws.
+
+    ``mean_sd`` is the mean with the band from one standard deviation below it to one above, the squared deviations divided by ``n - ddof`` for the *n* values counted. *ddof* is required with it, since both forms are in use: 0 is the population form :func:`numpy.nanstd` computes by default, 1 the sample form of pandas and seaborn. ``median_iqr`` is the median with the band from the 25th to the 75th percentile, each read at rank ``p (n - 1)`` of the sorted values and interpolated linearly between its two neighbours, numpy's default ``method="linear"``; it refuses a *ddof*. NaN entries are left out, as :func:`numpy.nanmean`, :func:`numpy.nanstd`, :func:`numpy.nanmedian` and :func:`numpy.nanpercentile` leave them out, and a slice with no other entry gives NaN. A bare 1-D *values* runs along *dim*; a labelled one keeps every other dimension with its labels.
+
+    Returns:
+        ``center`` on the other dimensions of *values*, and ``band`` on them and a last dimension ``bound`` labelled ``lower`` and ``upper``, the order in which the ``band`` and ``errorbar`` marks read the two edges.
+    """
+    import warnings
+
+    import xarray as xr
+
+    if statistic not in STATISTICS:
+        raise ValueError(f"statistic must be one of {STATISTICS}, got {statistic!r}.")
+    if statistic == "mean_sd" and ddof is None:
+        raise ValueError(
+            "`mean_sd` needs `ddof`: 0 divides the squared deviations by n, as numpy does, and 1 by n - 1, as pandas and seaborn do."
+        )
+    if statistic == "median_iqr" and ddof is not None:
+        raise ValueError(f"`median_iqr` takes no `ddof`, got {ddof!r}; a percentile has no degrees of freedom.")
+    values = _along(values, dim, "values")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)  # a slice of nothing but NaN gives NaN, not a warning
+        if statistic == "mean_sd":
+            center = values.reduce(np.nanmean, dim)
+            sd = values.reduce(np.nanstd, dim, ddof=ddof)
+            edges = [center - sd, center + sd]
+        else:
+            center = values.reduce(np.nanmedian, dim)
+            edges = [values.reduce(np.nanpercentile, dim, q=q) for q in (25, 75)]
+    band = xr.concat(edges, dim="bound").assign_coords(bound=["lower", "upper"]).transpose(..., "bound")
+    return {"center": center, "band": band}
 
 
 def grouped_correlation(x, y, n_groups: int, dim: str, by=None, grouping: str = "equal_width") -> dict:
@@ -137,6 +310,62 @@ def grouped_correlation(x, y, n_groups: int, dim: str, by=None, grouping: str = 
         "n_units": labelled(finite.sum(axis=-1)),
         "n_units_total": int(finite.reshape(-1, finite.shape[-1]).any(axis=0).sum()),
     }
+
+
+def concordance_correlation(x, y, dim: str):
+    """Lin's concordance correlation coefficient of *x* and *y* over the units of *dim* (Lin 1989, doi:10.2307/2532051).
+
+    It is ``2 cov(x, y) / (var(x) + var(y) + (mean(x) - mean(y))**2)`` with population moments, numpy's default (``ddof=0``): the Pearson correlation scaled down by how far the two differ in mean and spread, so it is 1 only where *y* equals *x* unit for unit and -1 where *y* is *x* reflected about their common mean. Labelled inputs are paired on the labels of *dim*, which occur once each and which both carry; bare 1-D inputs are paired by position. Every other dimension an input carries is kept, with one coefficient per element of it. A NaN unit makes the coefficient NaN, as it makes numpy's moments NaN.
+
+    Returns:
+        The coefficient, labelled on the inputs' other dimensions.
+    """
+    x, y = _paired_along(x, y, dim, ("x", "y"))
+    mean_x, mean_y = x.mean(dim, skipna=False), y.mean(dim, skipna=False)
+    covariance = ((x - mean_x) * (y - mean_y)).mean(dim, skipna=False)
+    spread = x.var(dim, skipna=False) + y.var(dim, skipna=False) + (mean_x - mean_y) ** 2
+    with np.errstate(divide="ignore", invalid="ignore"):
+        return 2 * covariance / spread
+
+
+def at_optimum(score, value, direction: str) -> dict:
+    """The entry of *value* at the cell where *score* is largest (``max``) or smallest (``min``), with the score there and the cell's coordinates.
+
+    The optimum is searched over every dimension of *score*. *value* carries each of them with the same labels, in any order, and keeps its other dimensions; a dimension without labels is labelled by position, as a reference's ``sel`` reads it (:func:`tvbo.data.dataref.index_bare_axes`). NaN scores are ignored, and a score that is NaN in every cell is refused, naming it. Of several cells with the optimal score the one with the smallest coordinates is taken, compared dimension by dimension in the sorted order of the dimensions' names, so neither the order of the dimensions nor that of the labels along them changes the cell; on a score without NaN whose dimensions are in that order and whose labels ascend, it is the cell :func:`numpy.argmax` or :func:`numpy.argmin` finds first.
+
+    Returns:
+        ``value`` at the optimum, on *value*'s other dimensions; ``score``, the optimal score; and one output per dimension of *score*, named by the dimension, holding its coordinate at the optimum.
+    """
+    import xarray as xr
+
+    from tvbo.data.dataref import index_bare_axes
+
+    if direction not in DIRECTIONS:
+        raise ValueError(f"direction must be one of {DIRECTIONS}, got {direction!r}.")
+    for key, array in (("score", score), ("value", value)):
+        if not isinstance(array, xr.DataArray):
+            raise ValueError(
+                f"`{key}` is a bare array; only a labelled array names the dimensions an optimum is searched over."
+            )
+    taken = [d for d in score.dims if d in ("value", "score")]
+    if taken:
+        raise ValueError(f"`score` runs along {taken}, the name of another output; rename that dimension.")
+    for d in score.dims:
+        _along(score, d, "score")
+        _along(value, d, "value")
+    searched = dict.fromkeys(score.dims)
+    score, value = index_bare_axes(score, searched), index_bare_axes(value, searched)
+    for d in searched:
+        _same_labels(score, value, d, ("score", "value"))
+    scores = np.asarray(score.values, dtype=float)
+    if np.isnan(scores).all():
+        named = f" ({score.name})" if score.name else ""
+        raise ValueError(f"`score`{named} has no cell that is not NaN, so it has no optimum.")
+    best = np.nanmax(scores) if direction == "max" else np.nanmin(scores)
+    cells = ({d: score.indexes[d][i] for d, i in zip(score.dims, cell, strict=True)} for cell in np.argwhere(scores == best))
+    order = sorted(searched)
+    at = min(cells, key=lambda cell: tuple(cell[d] for d in order))
+    return {"value": value.sel(at), "score": score.sel(at), **at}
 
 
 def _rate(q) -> float | None:
@@ -214,6 +443,15 @@ def false_discovery_control(p, q=None, method: str = "bh", dim=None) -> dict:
     return out
 
 
+def _same_labels(first, second, dim: str, names: tuple[str, str]) -> None:
+    """Refuse the labelled *first* and *second*, called *names* in the message, unless they carry the same labels along *dim*, in any order."""
+    unpaired = first.indexes[dim].symmetric_difference(second.indexes[dim])
+    if len(unpaired):
+        raise ValueError(
+            f"`{names[0]}` and `{names[1]}` do not carry the same labels along {dim!r}: {_some(unpaired)} {'is' if len(unpaired) == 1 else 'are'} in only one of them."
+        )
+
+
 def _paired(values, where) -> tuple:
     """The labelled *values* and the labelled mask *where*, entry for entry.
 
@@ -226,11 +464,7 @@ def _paired(values, where) -> tuple:
         raise ValueError(f"`where` runs along {own}, which `values` does not; a mask marks entries of `values`.")
     for d in where.dims:
         if d in values.indexes and d in where.indexes:
-            unpaired = values.indexes[d].symmetric_difference(where.indexes[d])
-            if len(unpaired):
-                raise ValueError(
-                    f"`values` and `where` do not carry the same labels along {d!r}: {_some(unpaired)} {'is' if len(unpaired) == 1 else 'are'} in only one of them."
-                )
+            _same_labels(values, where, d, ("values", "where"))
     return xr.broadcast(values, where.reindex_like(values))
 
 
@@ -259,3 +493,57 @@ def histogram(values, n_bins: int, lower: float, upper: float, where=None) -> di
         "width": float(edges[1] - edges[0]),
         "n": int(count.sum()),
     }
+
+
+def _phase_series(phase, dim: str):
+    """*phase* as a labelled array along *dim* and one node dimension, in that order; a bare 2-D array runs along *dim* first and ``node`` second."""
+    import xarray as xr
+
+    if not isinstance(phase, xr.DataArray):
+        array = np.asarray(phase, dtype=float)
+        if array.ndim != 2:
+            raise ValueError(
+                f"`phase` is a bare array of rank {array.ndim}; a bare phase is 2-D, along {dim!r} first and its nodes second."
+            )
+        phase = xr.DataArray(array, dims=[dim, "node"])
+    nodes = [d for d in phase.dims if d != dim]
+    if dim not in phase.dims or len(nodes) != 1:
+        raise ValueError(f"`phase` runs along {list(phase.dims)}; it must run along {dim!r} and one node dimension.")
+    return phase.transpose(dim, nodes[0])
+
+
+def _node_pairs(value, phase):
+    """*value*, one entry per two nodes of the ``(dim, node)`` *phase*, on the node dimension and the same name with ``_j`` appended, both labelled as *phase*'s nodes are."""
+    import xarray as xr
+
+    node = phase.dims[1]
+    labels = phase.indexes.get(node)
+    coords = {} if labels is None else {node: labels.values, f"{node}_j": labels.values}
+    return xr.DataArray(value, dims=[node, f"{node}_j"], coords=coords)
+
+
+def phase_locking_value(phase, dim: str = "time"):
+    """The phase locking value of every two nodes: the modulus of the mean over *dim* of ``exp(i (phase_j - phase_k))``.
+
+    It is 1 for two nodes whose phase difference stays constant, near 0 for one spread evenly over the circle, and 1 on the diagonal. *phase* is in radians, along *dim* and one node dimension; a bare 2-D array is read with *dim* first. Folded over a run, the same quantity is the ``phase_locking_value`` reducer recipe.
+
+    Returns:
+        The node-by-node matrix, labelled as :func:`_node_pairs` labels it.
+    """
+    phase = _phase_series(phase, dim)
+    unit = np.exp(1j * phase.values)
+    return _node_pairs(np.abs(unit.T @ unit.conj()) / unit.shape[0], phase)
+
+
+def phase_lag_index(phase, dim: str = "time"):
+    """The phase lag index of every two nodes: the modulus of the mean over *dim* of ``sign(sin(phase_j - phase_k))``.
+
+    It is 1 for two nodes whose phase difference stays strictly inside (0, pi) or strictly inside (-pi, 0), 0 for a zero difference and on the diagonal, and near 0 for a difference spread evenly over the circle. *phase* is read as :func:`phase_locking_value` reads it. One node's row is formed at a time, so the memory is one array of the phase's size rather than one per pair of nodes. Folded over a run, the same quantity is the ``phase_lag_index`` reducer recipe.
+
+    Returns:
+        The node-by-node matrix, labelled as :func:`_node_pairs` labels it.
+    """
+    phase = _phase_series(phase, dim)
+    angles = phase.values
+    rows = [np.abs(np.mean(np.sign(np.sin(angles[:, [j]] - angles)), axis=0)) for j in range(angles.shape[1])]
+    return _node_pairs(np.stack(rows), phase)

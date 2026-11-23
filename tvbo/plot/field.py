@@ -10,28 +10,12 @@ from __future__ import annotations
 
 import copy
 import functools
-from pathlib import Path
 
 import numpy as np
-import yaml
-
-
-@functools.lru_cache(maxsize=64)
-def _dynamics_record(container: str) -> dict:
-    """The ``dynamics`` entry of the provenance sidecar beside *container*, parsed once per container."""
-    from tvbo.data.dataref import sidecar_path
-
-    sidecar = sidecar_path(container)
-    if not sidecar.is_file():
-        raise ValueError(f"{Path(container).name} has no provenance sidecar {sidecar.name}, so the model it was run with is unknown.")
-    record = yaml.safe_load(sidecar.read_text())
-    if not isinstance(record, dict) or not record.get("dynamics"):
-        raise ValueError(f"{sidecar.name} records no dynamics: only an experiment's result carries the model a vector field is drawn from.")
-    return record["dynamics"]
 
 
 def dynamics_of(container) -> object:
-    """The `Dynamics` an experiment result was integrated with, read from the provenance sidecar beside its container (`tvbo.data.dataref.sidecar_path`).
+    """The `Dynamics` an experiment result was integrated with, read from the provenance sidecar beside its container (`tvbo.data.dataref.run_dynamics`).
 
     The sidecar is parsed once per container, and every call builds a fresh `Dynamics` from it, so a caller that sets parameters on the model (`with_parameters`) changes no other caller's.
 
@@ -42,8 +26,9 @@ def dynamics_of(container) -> object:
         ValueError: If the container has no sidecar or the sidecar records no dynamics, which is the case for an analysis result.
     """
     from tvbo import Dynamics
+    from tvbo.data.dataref import run_dynamics
 
-    return Dynamics(**copy.deepcopy(_dynamics_record(str(container))))
+    return Dynamics(**copy.deepcopy(run_dynamics(str(container))))
 
 
 def cell_key(cell: dict | None) -> tuple:
@@ -70,7 +55,9 @@ def _rhs(dynamics, x: str, y: str):
     names = list(dynamics.state_variables)
     missing = [v for v in (x, y) if v not in names]
     if missing:
-        raise ValueError(f"vector field: {', '.join(missing)} is not a state variable of {dynamics.name}; the plane is spanned by two of {names}.")
+        raise ValueError(
+            f"vector field: {', '.join(missing)} is not a state variable of {dynamics.name}; the plane is spanned by two of {names}."
+        )
     ix, iy = names.index(x), names.index(y)
     rest = ContinuationAdapter.declared_state(dynamics)
     dfun = ContinuationAdapter.vector_field(dynamics)
@@ -109,7 +96,11 @@ def _roots(f, xlim, ylim, seeds: int = 6, tol: float = 1e-9) -> np.ndarray:
                 continue
             p = sol.x
             inside = xlim[0] <= p[0] <= xlim[1] and ylim[0] <= p[1] <= ylim[1]
-            if inside and np.max(np.abs(f(p[0], p[1]))) < 1e-6 and not any(np.all(np.abs(p - q) < 1e-6 * span + 1e-12) for q in found):
+            if (
+                inside
+                and np.max(np.abs(f(p[0], p[1]))) < 1e-6
+                and not any(np.all(np.abs(p - q) < 1e-6 * span + 1e-12) for q in found)
+            ):
                 found.append(p)
     return np.array(found).reshape(-1, 2)
 
@@ -141,7 +132,9 @@ def rest_state(dynamics) -> dict:
     try:
         state = ContinuationAdapter.newton_equilibrium(dynamics, None)
     except RuntimeError as err:
-        raise RuntimeError(f"{dynamics.name} has no rest state to draw: no state where its right-hand side vanishes was found from its initial state ({err}).") from err
+        raise RuntimeError(
+            f"{dynamics.name} has no rest state to draw: no state where its right-hand side vanishes was found from its initial state ({err})."
+        ) from err
     return dict(zip(dynamics.state_variables, state, strict=True))
 
 
@@ -167,9 +160,13 @@ def window(container, output: str, x: str, y: str, pad: float = 0.25):
 
     with xr.open_dataset(container) as ds:
         da = ds[match_output(ds.data_vars, output)]
-        dim = next((d for d in da.dims if d in da.coords and {x, y} <= {str(v) for v in np.atleast_1d(da.coords[d].values)}), None)
+        dim = next(
+            (d for d in da.dims if d in da.coords and {x, y} <= {str(v) for v in np.atleast_1d(da.coords[d].values)}), None
+        )
         if dim is None:
-            raise ValueError(f"vector field: {output} carries no axis holding both {x} and {y}, so the window cannot be read off the run; declare xlim and ylim.")
+            raise ValueError(
+                f"vector field: {output} carries no axis holding both {x} and {y}, so the window cannot be read off the run; declare xlim and ylim."
+            )
         out = []
         for name in (x, y):
             vals = np.asarray(da.sel({dim: name}).values, dtype=float)
@@ -179,7 +176,21 @@ def window(container, output: str, x: str, y: str, pad: float = 0.25):
     return tuple(out)
 
 
-def stream(ax, container, output: str, x: str, y: str, *, xlim=None, ylim=None, cell: dict | None = None, density: float = 1.2, cmap=None, fixed_points=True, **kwargs):
+def stream(
+    ax,
+    container,
+    output: str,
+    x: str,
+    y: str,
+    *,
+    xlim=None,
+    ylim=None,
+    cell: dict | None = None,
+    density: float = 1.2,
+    cmap=None,
+    fixed_points=True,
+    **kwargs,
+):
     """Draw the experiment's own vector field on *ax* as streamlines coloured by speed, with its equilibria marked.
 
     Args:
@@ -215,7 +226,13 @@ def stream(ax, container, output: str, x: str, y: str, *, xlim=None, ylim=None, 
     if fixed_points:
         import matplotlib as mpl
 
-        mark = {"s": 40, "color": mpl.rcParams["text.color"], "edgecolors": mpl.rcParams["axes.facecolor"], "linewidths": 0.8, "zorder": 6}
+        mark = {
+            "s": 40,
+            "color": mpl.rcParams["text.color"],
+            "edgecolors": mpl.rcParams["axes.facecolor"],
+            "linewidths": 0.8,
+            "zorder": 6,
+        }
         mark.update(fixed_points if isinstance(fixed_points, dict) else {})
         if len(points):
             ax.scatter(points[:, 0], points[:, 1], **mark)

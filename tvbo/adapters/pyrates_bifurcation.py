@@ -451,10 +451,10 @@ for f in ["tvbo_bif.f90", "c.ivp"]:
 
     @staticmethod
     def _pyrates_yaml(model) -> str:
-        """*model*'s PyRates YAML as the AUTO-07p continuation compiles it, through PyRates's Fortran backend."""
+        """*model*'s PyRates YAML as the AUTO-07p continuation compiles it, through PyRates's Fortran backend, starting from each state variable's initial value."""
         from tvbo.codegen.pyrates import to_pyrates_yaml_string
 
-        return to_pyrates_yaml_string(model, fortran=True)
+        return to_pyrates_yaml_string(model, fortran=True, seed=None)
 
     def _load_circuit(self, model):
         """Load a PyRates CircuitTemplate from a TVBO Dynamics model."""

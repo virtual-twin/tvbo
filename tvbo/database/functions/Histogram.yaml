@@ -1,6 +1,7 @@
 name: Histogram
 label: Histogram over equal-width bins
 description: The number of values in each of n_bins bins of equal width from lower to upper, each bin closed below and open above and the last closed on both sides, as numpy.histogram cuts them. Every finite value is counted, whatever its dimensions, a value outside the range is not, and a mask restricts the count to the entries it marks. It returns count and center on `bin`, edge on `bin_edge`, the bins' width, and n, the number of values counted.
+outputs: [count, center, edge, width, n]
 arguments:
   values: {description: 'The values to count, of any shape.'}
   n_bins: {description: 'Number of bins, an integer of at least 1.'}

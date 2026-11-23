@@ -118,7 +118,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="CoombesByrne_inst" type="CoombesByrne" Delta="0.5" alpha="0.95" eta="20.0" k="1.0" v_syn="-10.0" c_glob="0" V_0="0.1" g_0="0.1" q_0="0.1" r_0="0.1"/>
+  <Component id="CoombesByrne_inst" type="CoombesByrne" Delta="0.5" alpha="0.95" eta="20.0" k="1.0" v_syn="-10.0" c_glob="0" V_0="0.1" g_0="0.1" q_0="0.1" r_0="3.821770123928726"/>
 
 
 

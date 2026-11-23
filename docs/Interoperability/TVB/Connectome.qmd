@@ -39,18 +39,17 @@ print(f"Weights range: [{net.weights_matrix.min():.4f}, {net.weights_matrix.max(
 print(f"Lengths range: [{net.lengths_matrix.min():.1f}, {net.lengths_matrix.max():.1f}] mm")
 ```
 
-All TVB per-node metadata is preserved — cortical flags, areas, hemispheres, and orientations:
+TVB's per-region cortical flags, areas, hemispheres and orientations become the node parameters `cortical`, `area`, `hemisphere` and `orientation`, and a TVB run of the network writes them back to the connectivity:
 
 ```{python}
+from tvbo.adapters.tvb import TVB_NODE_FIELDS
+
 node0 = net.nodes[0]
 print(f"Node 0: {node0.label}")
 print(f"  Position: ({node0.position.x:.1f}, {node0.position.y:.1f}, {node0.position.z:.1f})")
-if node0.parameters:
-    params = node0.parameters
-    for name in ["cortical", "area", "hemisphere"]:
-        p = getattr(params, name, None)
-        if p is not None:
-            print(f"  {name}: {p.value}")
+for name in TVB_NODE_FIELDS:
+    if name in node0.parameters:
+        print(f"  {name}: {node0.parameters[name].value}")
 ```
 
 ## 2. Visualize the Connectome

@@ -15,9 +15,13 @@ from tvbo.adapters.base import (
     BaseAdapter,
     dense_matrix,
     edge_needs,
+    post_step_resets,
+    refuse_model_events,
     refuse_observations,
     refuse_parameter_starts,
+    refuse_trial_network,
     require_edge_attributes,
+    run_seed,
 )
 from tvbo.adapters.smallscale.lowering import node_dynamics_name
 from tvbo.utils import keyed_items, network_couplings, noise_sigma, normalize_params
@@ -48,6 +52,16 @@ def solver_class(method) -> str:
             f"integration method {method!r} ({canonical}) has no tvboptim solver; it integrates by one of {sorted(SOLVER_MAP)}"
         )
     return SOLVER_MAP[canonical]
+
+
+def model_event_resets(model, *solver_classes: str) -> list:
+    """The events of *model* that `ModelEventSolver` applies after each step of the solvers named *solver_classes*, refused naming the event where one is a Diffrax solver, which steps inside diffrax where no wrapper reaches the state."""
+    resets = post_step_resets(model, "tvboptim")
+    if "DiffraxSolver" in solver_classes:
+        refuse_model_events(
+            resets, "tvboptim", "an adaptive Diffrax solver steps inside diffrax, where no per-step wrapper reaches the state"
+        )
+    return resets
 
 
 class TvboptimAdapter(BaseAdapter):
@@ -82,6 +96,24 @@ def solver_weights(network, apply_transforms: bool = False, delayed: bool | None
 
         return BCOO.from_scipy_sparse(matrix.tocoo())
     return jnp.asarray(matrix.toarray() if sparse.issparse(matrix) else matrix, dtype=float)
+
+
+def handed_network(namespace, network) -> dict:
+    """The network argument the generated module's `create_network` takes, as every caller of the module hands it over.
+
+    A weight transform whose callable takes `network` is called in process with the network it transforms (`Network._apply_transform`); the module's `create_network` then takes that object as `transform_network`, and it is decided by the module's own signature, so a frozen script decides what it is handed.
+
+    Args:
+        namespace: The executed tvboptim module.
+        network: The experiment's `Network`.
+
+    Returns:
+        `{"transform_network": network}` when `create_network` takes it, an empty dict otherwise.
+    """
+    import inspect
+
+    takes = "transform_network" in inspect.signature(namespace.create_network).parameters
+    return {"transform_network": network} if takes else {}
 
 
 def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):
@@ -224,7 +256,7 @@ def to_tvboptim(
     max_delay : float, optional
         Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to size the static history buffer. Pass it when the delays are meant to vary differentiably (e.g. ``delays = lengths / speed`` with ``speed`` optimised) so the buffer length stays static while the delays may be JAX tracers. When ``None``, derived from the concrete delays.
     interpolate_delays : bool, default=False
-        When True, enable linear interpolation between bracketing history steps on every delayed coupling, making the coupling differentiable w.r.t. the continuous delay (and hence conduction speed). Requires the ``"roll"`` buffer strategy (the default).
+        When True, enable linear interpolation between bracketing history steps on every delayed coupling, making the coupling differentiable w.r.t. the continuous delay (and hence conduction speed). Works with each of tvboptim's buffer strategies (``"roll"``, ``"circular"``, ``"preallocated"``).
     **kwargs
         Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
 
@@ -631,9 +663,16 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
 
     refuse_observations(experiment, "heterogeneous tvboptim")
     refuse_parameter_starts(experiment, "heterogeneous tvboptim")
+    refuse_trial_network(experiment, "heterogeneous tvboptim")
     adapter = TvboptimAdapter(experiment)
     network = experiment.network
     lib = dynamics_lib if dynamics_lib is not None else adapter.build_dynamics_dict()
+    for dynamics in lib.values():
+        refuse_model_events(
+            post_step_resets(dynamics, "heterogeneous tvboptim"),
+            "heterogeneous tvboptim",
+            "a grouped network steps one state per group, and the per-step event wrapper applies one model's events to one state",
+        )
     default_dyn = next(iter(lib), None) if dynamics_lib is None else None
     het = to_heterogeneous_network(network, dynamics_lib=lib, default_dynamics=default_dyn)
 
@@ -655,9 +694,7 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
 
     # One scan over (-settle, duration] on the measurement clock: the settle ends at t = 0 and `n_transient` cuts it off `.data`.
     simulate, config = prepare(het, solver, t0=-n_transient * dt, t1=window["duration"], dt=dt)
-    if seed is None:
-        seed = getattr(getattr(experiment, "execution", None), "random_seed", None)
-    _seed_group_noise(config, het, 0 if seed is None else seed)
+    _seed_group_noise(config, het, run_seed(experiment) if seed is None else seed)
     sol = simulate(config)
     da = _heterogeneous_solution_to_dataarray(sol, het, network)
     return ExperimentResult(

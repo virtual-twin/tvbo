@@ -248,14 +248,14 @@ def _afp_window_mean(p, expr):
 
 
 def _afp_subsample(p, expr):
-    """Strided slice of the leading (time) axis.
+    """Strided slice of the leading (time) axis, taking the last sample of each stride.
 
-    ``subsample(x, step)``        -> ``x[::step]`` ``subsample(x, start, step)`` -> ``x[start::step]`` The 3-arg form lets a strided downsample (e.g. tvboptim BOLD TR sampling ``data[step::step]``) be authored as a declarative equation, not ``source_code``.
+    ``subsample(x, step)`` -> ``x[step - 1::step]``, ``subsample(x, start, step)`` -> ``x[start::step]``. A sample row is the state after its step, so the two-argument form keeps the samples at ``step, 2 step, ...`` steps into the series: the grid TVB's periodic monitors, tvboptim's ``SubSampling``, the streamed stride reducer and the period-end stamp of an observation all use. The three-argument form states another phase.
     """
     a = expr.args
     if len(a) >= 3:
         return p._render_index(a[0], [(a[1], None, a[2])])
-    return p._render_index(a[0], [(None, None, a[1])])
+    return p._render_index(a[0], [(a[1] - 1, None, a[1])])
 
 
 def _afp_slice_axis(p, expr):
@@ -410,8 +410,10 @@ _ARRAY_FUNCTION_PRINTERS = {
     "matmul": _afp_forward("_matmul", 2, "matmul(A, B)"),
     "strided_convolve": _afp_forward("_strided_convolve", 3, "strided_convolve(X, k, s)"),
     "take": _afp_forward("_gather", 2, "take(x, idx)"),
+    "scatter_sum": _afp_forward("_scatter_sum", 3, "scatter_sum(values, index, size)"),
     "sum_axis": _afp_sum_axis,
     "pearson": _afp_forward("_pearson", 2, "pearson(x, y)"),
+    "spearman": _afp_forward("_spearman", 3, "spearman(x, y, mask)"),
     "upper_triangle": _afp_upper_triangle,
     # Graph-construction primitives (Procedural GraphGenerator DAG).
     "grid_positions": _afp_forward("_grid_positions", 4, "grid_positions(nx, ny, x_extent, y_extent)"),
@@ -533,6 +535,18 @@ class _ArrayFunctionPrinterMixin:
         """``take(x, idx)``: gather ``x`` by an integer index array; the result takes the shape of ``idx`` (a 2-D k-ring neighbour gather, a scatter-read, …)."""
         # numpy/jax: `take` with an int index array returns the index array's shape (a fancy-index gather). JuliaPrinter overrides for 1-based indexing.
         return f"{self._afn('take')}({base}, {idx})"
+
+    def _scatter_sum(self, values, index, size):
+        """``scatter_sum(values, index, size)``: ``size`` slots, each the sum of the entries of ``values`` whose entry in ``index`` names that slot, as ``numpy.add.at`` accumulates them: a slot named twice adds both entries, and a slot no entry names stays 0. ``index`` has the shape of ``values`` and names slots 0 to ``size - 1``, as a mesh's faces name the vertices a per-corner field of the faces sums onto.
+
+        NumPy accumulates into fresh zeros in place; :class:`JaxPrinter` writes the functional ``.at[index].add``.
+        """
+        accumulate = f"(lambda _z: ({self._afn('add.at')}(_z, _i, _v), _z)[1])"
+        return f"(lambda _v, _i: {accumulate}({self._slots(size)}))({values}, {index})"
+
+    def _slots(self, size):
+        """The fresh zeros ``scatter_sum`` accumulates the values ``_v`` into: ``size`` of them, in the values' dtype."""
+        return f"{self._afn('zeros')}({self._length(size, 'scatter_sum(values, index, size)', 'size')}, _v.dtype)"
 
     # --- graph-construction primitives (Procedural GraphGenerator DAG) ---
     def _pairwise_distance(self, pos):
@@ -690,6 +704,23 @@ class _ArrayFunctionPrinterMixin:
         den = f"{self._afn('sqrt')}({self._afn('sum')}({xc}**2) * {self._afn('sum')}({yc}**2))"
         return f"({num} / {den})"
 
+    def _spearman(self, x, y, mask):
+        """``spearman(x, y, mask)``: Spearman's rank correlation of ``x`` and ``y`` over the entries where ``mask`` is nonzero, ties given their average rank, which is ``scipy.stats.spearmanr`` of the kept entries alone.
+
+        The three are read flat, entry by entry, so they hold the same number of entries, as a padded group's vertices and its mask do. An entry the mask leaves out is excluded twice. It is counted in no kept entry's rank: each kept entry's rank is the number of kept entries below it, plus half the number tied with it, itself included, plus one half, as :meth:`_rankdata` counts a whole axis, so the kept entries rank 1 to n among themselves. And its own rank is set to the kept entries' mean rank, (n + 1) / 2, so it adds nothing to the Pearson correlation of the ranks (:meth:`_pearson`) and leaves the ranks' means where the kept entries put them. A left-out entry's value only ever meets a comparison, so padding needs no cleaning, NaN included; a kept entry has to hold a number. Fewer than two kept entries, or kept ranks all tied, give NaN, as scipy does. Like :meth:`_rankdata` it compares every pair, so it holds the square of the entry count.
+        """
+        kept = self._expand_dims("_m", 0)
+
+        def ranks(v):
+            others, each = self._expand_dims(v, 0), self._expand_dims(v, 1)
+            below = self._reduce_axis("sum", f"({kept} & ({others} < {each}))", 1)
+            tied = self._reduce_axis("sum", f"({kept} & ({others} == {each}))", 1)
+            return self._where3("_m", f"({below} + ({tied} + 1) / 2)", f"(({self._afn('sum')}(_m) + 1) / 2)")
+
+        flat = ", ".join(f"{self._afn('ravel')}({a})" for a in (x, y))
+        correlation = f"(lambda _rx, _ry: {self._pearson('_rx', '_ry')})({ranks('_x')}, {ranks('_y')})"
+        return f"(lambda _x, _y, _m: {correlation})({flat}, {self._afn('ravel')}({mask}) != 0)"
+
     def _upper_triangle(self, M, k):
         """``upper_triangle(M, k)``: the entries of ``M`` on and above its ``k``-th diagonal as one flat vector, row by row, which is ``M[numpy.triu_indices(n, k, m)]``.
 
@@ -801,6 +832,10 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         self.known_functions.update(_qualify(module, _MODULE_ARRAY_FUNCTIONS))
         # Context for broadcasting inference
         self._index_context = None  # Set by top-level print to enable broadcasting
+
+    def _scatter_sum(self, values, index, size):
+        """``scatter_sum`` as an ``.at[index].add`` on fresh zeros, which adds a slot named twice as ``numpy.add.at`` does and stays functional under tracing."""
+        return f"(lambda _v, _i: {self._slots(size)}.at[_i].add(_v))({values}, {index})"
 
     def _sample(self, distribution, key, substream, params, shape):
         """Draw from ``distribution`` with an explicit, functionally-pure PRNG key.
@@ -1570,6 +1605,12 @@ class Brian2Printer(PythonCodePrinter):
     def _print_sign(self, expr):
         # Brian2 has a native sign().
         return f"sign({self._print(expr.args[0])})"
+
+    def _print_Piecewise(self, expr):
+        """A comparison's 0/1 indicator, ``Piecewise((1, c), (0, True))``, as Brian2's ``int(c)``: its equations have no conditional expression, and ``int`` of a comparison is how they write one as a number. Any other ``Piecewise`` prints as :class:`PythonCodePrinter` prints it."""
+        if len(expr.args) == 2 and expr.args[0].expr == 1 and expr.args[1].expr == 0 and expr.args[1].cond == S.true:
+            return f"int({self._print(expr.args[0].cond)})"
+        return super()._print_Piecewise(expr)
 
 
 class TVBEquationPrinter(NumPyPrinter):

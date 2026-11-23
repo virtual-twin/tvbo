@@ -69,20 +69,20 @@ state_variables:
   v:
     initial_value: 0.0     # fallback if no distribution
     distribution:
-      name: Gaussian       # Gaussian or Uniform
+      name: Gaussian       # Gaussian (or Normal) or Uniform
       seed: 42             # reproducible random seed
-      domain: { lo: -3.0, hi: 3.0 }
-      parameters:
-        mean: { name: mean, value: 0.0 }
-        std:  { name: std,  value: 5.0 }
+      domain: { lo: -10.0, hi: 10.0 }
 ```
+
+A state variable's initial state is drawn by the rule every backend that draws an initial state shares: between the bounds of the distribution's `domain`, else the state variable's own `domain`, else (-1, 1), a Gaussian centred between them with a quarter of their width as its standard deviation, so the example draws `v` with mean 0 and standard deviation 5. Any other family, a `mean` or `std` among the distribution's `parameters`, and bounds that are not finite or not in order are refused when the code is rendered.
 
 ### Supported Distributions
 
-| Name | Domain | Parameters | Julia Output |
-|------|--------|------------|-------------|
-| **Gaussian** | `lo`, `hi` (clamp range) | `mean`, `std` | `mean + std * randn(rng)` |
-| **Uniform** | `lo`, `hi` | — | `lo + (hi - lo) * rand(rng)` |
+| Declared on | Name | Julia Output |
+|-------------|------|-------------|
+| state variable | **Gaussian**, **Normal** | `(lo + hi) / 2 + (hi - lo) / 4 * randn(rng)` |
+| state variable | **Uniform** | `lo + (hi - lo) * rand(rng)` |
+| parameter | **Uniform**, on its own `domain` | `lo + (hi - lo) * rand(rng)` |
 
 When a distribution is specified, the template generates per-node sampling loops with a seeded `MersenneTwister` RNG. If no distribution is present, all nodes are initialized to `initial_value`.
 

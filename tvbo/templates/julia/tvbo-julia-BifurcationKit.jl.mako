@@ -82,9 +82,18 @@ end
 record_from_sol = (x, p; k...) -> (${record_fields},)
 % endif
 
-# Bifurcation Problem
+"""The vector field's Jacobian *J*, raising where an entry is not finite, so a continuation that would build its branch through it fails instead."""
+function _finite_jacobian(J)
+    all(isfinite, J) || error("the vector field's Jacobian has a non-finite entry at this iterate")
+    return J
+end
+
+# Bifurcation Problem: BifurcationKit's own ForwardDiff Jacobian, checked by every continuation below.
 prob = BifurcationProblem(${model.name}_vf!, x0_eq, p, (@optic _.${ICS});
     record_from_solution = record_from_sol)
+prob = let vf = prob.VF
+    re_make(prob; J = (x, p) -> _finite_jacobian(BifurcationKit.jacobian(vf, x, p)))
+end
 
 # ContinuationPar
 opts_br = ContinuationPar(${cp_args_str})
@@ -205,6 +214,8 @@ for hopf_idx in _po_sources
             ${br0['po_kwargs_str']},
         )
 % endif
+        # An orbit's period is positive, so a branch that reaches a non-positive one is not an orbit.
+        minimum(br_po.branch.period) > 0 || error("the branch's period reaches $(minimum(br_po.branch.period))")
         push!(po_branches, br_po)
     catch e
         @warn "PO continuation from Hopf $hopf_idx failed" exception=(e, catch_backtrace())
@@ -265,6 +276,40 @@ po_results = (hopf_indices = hopf_indices, branches = po_branches, profiles = po
 ## Codim-2 continuation
 codim2_results = Any[]
 
+_describe(points) = join(["$(sp.type) ($(sp.status)) at step $(sp.step), $(sp.printsol)" for sp in points], "; ")
+
+"""Whether special points `a` and `b` of curve `br` are one point: the same type, and the same second parameter and primary `ics` within the two C-intervals they were located to together, carried to the primary by the curve's slope at `a`."""
+function _coincide(a, b, br, ics)
+    rows = (br.branch[max(a.idx - 1, 1)], br.branch[min(a.idx + 1, length(br))])
+    slope = abs((rows[2][ics] - rows[1][ics]) / (rows[2].param - rows[1].param))
+    δ = a.precision + b.precision
+    return a.type == b.type && abs(a.param - b.param) <= δ && abs(getproperty(a.printsol, ics) - getproperty(b.printsol, ics)) <= δ * slope
+end
+
+"""The special points codim-2 curve `br` reports, by their location and values, whatever BifurcationKit labels them: a point whose bisection did not converge is warned about and dropped, wherever it sits; on a curve that records the Hopf frequency ωₕ, a converged point is a Bogdanov-Takens point exactly when its |ωₕ| is below 1e-3 of the curve's median |ωₕ|, and a `bt` at or above that is warned about and dropped; points that `_coincide` are one point, the one located most precisely. `source` names the point the curve started from."""
+function _report_codim2_points!(br, ics, source)
+    unlocated = findall(sp -> sp.status != :converged, br.specialpoint)
+    isempty(unlocated) || @warn "Codim-2 curve from $source (steps $(first(br.branch.step)) to $(last(br.branch.step))): not reporting $(_describe(br.specialpoint[unlocated])), whose bisection did not converge"
+    deleteat!(br.specialpoint, unlocated)
+    if hasproperty(first(br.branch), :ωₕ)
+        ω = sort(abs.(br.branch.ωₕ))
+        ω_bt = 1e-3 * ω[cld(length(ω), 2)]
+        not_bt = findall(sp -> sp.type == :bt && abs(sp.printsol.ωₕ) >= ω_bt, br.specialpoint)
+        isempty(not_bt) || @warn "Codim-2 curve from $source: not reporting $(_describe(br.specialpoint[not_bt])) as a Bogdanov-Takens point, its |ωₕ| at or above $ω_bt"
+        deleteat!(br.specialpoint, not_bt)
+        for (i, sp) in pairs(br.specialpoint)
+            sp.type != :endpoint && abs(sp.printsol.ωₕ) < ω_bt && (br.specialpoint[i] = setproperties(sp; type = :bt))
+        end
+    end
+    order = sortperm(br.specialpoint; by = sp -> sp.precision)
+    copies = Int[]
+    for (n, i) in enumerate(order), j in order[1:(n - 1)]
+        j in copies || i in copies || _coincide(br.specialpoint[i], br.specialpoint[j], br, ics) && push!(copies, i)
+    end
+    deleteat!(br.specialpoint, sort(copies))
+    return br
+end
+
 % for c2 in codim2_branches:
 <%
 src_type = c2['source_type']
@@ -292,12 +337,20 @@ begin
 
     for _bif_idx in _bif_indices
         try
+% if c2['is_fold']:
+            # Detection without bisection stores the step past the fold, so the curve starts from the fold newton_fold locates from there.
+            local _fold = BifurcationKit.newton_fold(br, _bif_idx; normN = norminf, options = _opts_c2.newton_options, start_with_eigen = true, bdlinsolver = MatrixBLS(), usehessian = false)
+            _fold.converged || error("newton_fold did not locate the fold from special point $_bif_idx")
+            local _source = @set br.specialpoint[_bif_idx] = setproperties(br.specialpoint[_bif_idx]; x = _fold.u.u, param = _fold.u.p)
+% else:
+            local _source = br
+% endif
             local _br_c2 = continuation(
-                br, _bif_idx, (@optic _.${c2['ICS2']}),
+                _source, _bif_idx, (@optic _.${c2['ICS2']}),
                 _opts_c2;
                 ${c2['codim2_kwargs_str']},
             )
-            push!(codim2_results, _br_c2)
+            push!(codim2_results, _report_codim2_points!(_br_c2, :${ICS}, "${src_type} $_bif_idx"))
         catch e
             @warn "Codim-2 continuation from ${src_type} $_bif_idx failed" exception=(e, catch_backtrace())
         end

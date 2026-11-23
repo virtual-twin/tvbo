@@ -85,8 +85,8 @@ print(exp.render_code("networkdynamics-julia"))
 ### CLI
 
 ```bash
-tvbo export jax experiment:JR_MEG_FrequencyGradient_Optimization
-tvbo export jax experiment:JR_MEG_FrequencyGradient_Optimization -o solve.py
+tvbo export jax experiment:ThreeNode_JansenRit1995_Parity
+tvbo export jax experiment:ThreeNode_JansenRit1995_Parity -o solve.py
 ```
 
 ::::

@@ -775,6 +775,40 @@ def test_a_kit_stages_an_analysis_a_parameter_reads(root, tmp_path):
     assert dataref.locate_analysis_container(staged_dir, "toy_mean").is_file()
 
 
+def _on_an_observer_producer_argument(experiment, ref):
+    """An observer constant built by a producer that reads *ref*, as a mesh producer reads its parcel mesh."""
+    producer = {"callable": {"name": "operators", "module": "toy_mesh"}, "arguments": {"vertices": {"used": ref}}}
+    observer = {"name": "waves", "parameters": {"faces": {"producer": {**producer, "output": "faces"}}}}
+    experiment["observations"] = {"waves": {"source": ["x"], "dynamics": observer}}
+
+
+def test_a_kit_stages_an_analysis_a_producer_argument_reads_and_its_run_reads_it_there(root, tmp_path):
+    """A producer's `used:` argument is a reference of the experiment: the kit stages its container, and a run of the kit binds the network the producer reads through to the kit's results."""
+    from tvbo.cli import workflow as kit
+    from tvbo.utils.study_layout import study_path
+
+    (tmp_path / "dataset_description.json").write_text('{"Name": "ToyCohort", "BIDSVersion": "1.9.0"}')
+    analysis_io.run_analyses(_analyses(), study_path("results", root=tmp_path), datasets=[_dataset(root)])
+    ref = {"analysis": "toy_mean", "output": "toy_mean"}
+    experiment = _reading_outside_its_network(root, tmp_path, _on_an_observer_producer_argument, ref=ref)
+    assert experiment.referenced_analyses() == ["toy_mean"]
+    staged_dir = tmp_path / "kit/derivatives/tvbo"
+    assert kit._stage_reference_containers(experiment, staged_dir) == ["toy_mean"]
+
+    experiment._bind_network_references(staged_dir)
+
+    assert experiment.network.reference_results_root() == staged_dir
+
+
+def test_a_producer_argument_read_from_another_experiment_orders_the_plan_after_it(root, tmp_path):
+    from tvbo.run.workflow import result_dependencies
+
+    ref = {"experiment": 3, "output": "weight"}
+    experiment = _reading_outside_its_network(root, tmp_path, _on_an_observer_producer_argument, ref=ref)
+
+    assert result_dependencies(experiment) == ["3"]
+
+
 def _pinned(member, **extra):
     """A reference to the cohort's weights pinned to *member*: one subject, or a list of them."""
     return _member("weight", sel={"subject": member}, **extra)
