@@ -5,6 +5,8 @@ A per-region map that omits some regions on purpose, the target a quantity is me
 
 from __future__ import annotations
 
+import inspect
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -49,3 +51,16 @@ def test_unset_leaves_every_uncovered_vertex_to_the_base_grey(monkeypatch):
     drawn = _drawn(monkeypatch, {})
     assert drawn["mask"] is None
     assert drawn["mask_colour"] is None
+
+
+def test_each_sided_spelling_places_its_own_hemisphere_across_both(monkeypatch):
+    """Across ``hemi: both`` the right hemisphere's parcels are offset past the left's, and ``ctx-lh-`` and ``ctx-rh-`` each land on their own side."""
+    monkeypatch.setattr(
+        bsplot, "load_atlas_labels", lambda **kwargs: (np.array([0, 1]), ["bankssts", "cuneus"]), raising=False
+    )
+    monkeypatch.setattr(adapter, "_surface_atlas", inspect.unwrap(adapter._surface_atlas))
+    names = {"lh_bankssts": "ctx-lh-bankssts", "rh_bankssts": "ctx-rh-bankssts"}
+    monkeypatch.setattr(adapter, "_atlas_crosswalk", lambda atlas, base_dir: (names, {}))
+    labels, table = adapter._surface_parcellation.__wrapped__("dk", None, "aparc", "fsaverage", "164k", "both")
+    assert table == {"lh_bankssts": 0, "rh_bankssts": 1000}
+    assert labels.tolist() == [0, 1, 1000, 1001]

@@ -25,35 +25,47 @@ from tvbo.run.backends import BackendSpec, axis_kind_of, effective_backend, reso
 
 logger = logging.getLogger(__name__)
 
-# Canonical published tvbo image. CI (``.github/workflows/docker.yml``) pushes this on every ``main``/``dev`` commit, tagged ``:<branch>``, ``:<version>``, ``:<sha>`` and ``:latest`` (default branch), so a registry reference tracks the source rather than a local file that goes stale.
+# Canonical published tvbo image. CI (``.github/workflows/docker.yml``) pushes this on every ``main``/``dev`` commit, tagged ``:<branch>``, ``:<sha>`` and ``:latest`` (default branch), and each release as its semver ``:<version>`` (:func:`container_tag`), so a registry reference tracks the source rather than a local file that goes stale.
 DEFAULT_CONTAINER_IMAGE = "ghcr.io/virtual-twin/tvbo"
 
 
-def _default_container_tag() -> str:
-    """Tag matching the running CLI, so a kit pulls the image built from its source.
+def container_tag(version: str) -> str:
+    """The tag the docker workflow publishes the tvbo image of *version* under: the release's semver spelling (``0.9.0``, ``0.9.0-rc.1``, ``1.0.0-beta.2``), or ``latest`` for a development, post or local build, which no image is published for."""
+    release = re.fullmatch(r"(\d+\.\d+\.\d+)(?:(a|b|rc)(\d+))?", version)
+    if release is None:
+        return "latest"
+    base, kind, number = release.groups()
+    return f"{base}-{ {'a': 'alpha', 'b': 'beta', 'rc': 'rc'}[kind] }.{number}" if kind else base
 
-    Overridable with ``TVBO_CONTAINER_TAG``.
-    """
+
+def default_container_tag() -> str:
+    """The tag of the image built from the running CLI's source (:func:`container_tag` of its version), so a kit or a study's CI pulls that image; ``TVBO_CONTAINER_TAG`` overrides it."""
     from tvbo import __version__
 
-    return os.environ.get("TVBO_CONTAINER_TAG") or __version__
+    return os.environ.get("TVBO_CONTAINER_TAG") or container_tag(__version__)
+
+
+def _container_repository() -> str:
+    """The repository tvbo's image is pulled from: ``TVBO_CONTAINER_IMAGE``, else `DEFAULT_CONTAINER_IMAGE`."""
+    return os.environ.get("TVBO_CONTAINER_IMAGE") or DEFAULT_CONTAINER_IMAGE
 
 
 def _tvbo_images() -> set[str]:
     """The repositories that hold tvbo's own image: `DEFAULT_CONTAINER_IMAGE`, and the one ``TVBO_CONTAINER_IMAGE`` names when it is set."""
-    return {DEFAULT_CONTAINER_IMAGE, os.environ.get("TVBO_CONTAINER_IMAGE") or DEFAULT_CONTAINER_IMAGE}
+    return {DEFAULT_CONTAINER_IMAGE, _container_repository()}
+
+
+def default_container_image() -> str:
+    """``<repository>:<tag>`` of the tvbo image built from the running CLI's source, as a registry names it; each part follows its environment override (:func:`default_container_tag`, ``TVBO_CONTAINER_IMAGE``)."""
+    return f"{_container_repository()}:{default_container_tag()}"
 
 
 def default_container_ref() -> str:
     """The tvbo container reference used when a recipe asks for container-based execution without pinning a concrete image.
 
-    The tag matches the running CLI's version (see :func:`_default_container_tag`) so a kit runs against the image built from the same source it was emitted with. Every part is overridable from the environment: ``TVBO_CONTAINER`` supplies a full reference verbatim, otherwise ``TVBO_CONTAINER_IMAGE`` sets the repository.
+    It pulls :func:`default_container_image`, so a kit runs against the image built from the same source it was emitted with; ``TVBO_CONTAINER`` supplies a full reference verbatim instead.
     """
-    full = os.environ.get("TVBO_CONTAINER")
-    if full:
-        return full
-    image = os.environ.get("TVBO_CONTAINER_IMAGE") or DEFAULT_CONTAINER_IMAGE
-    return f"docker://{image}:{_default_container_tag()}"
+    return os.environ.get("TVBO_CONTAINER") or f"docker://{default_container_image()}"
 
 
 _LOCAL_IMAGE_SUFFIXES = (".sif", ".simg", ".img")
@@ -92,7 +104,7 @@ def resolve_container_ref(raw: Any) -> str | None:
     if _is_bare_registry_reference(val):
         val = f"docker://{val}"
     if val.startswith("docker://") and val.removeprefix("docker://") in _tvbo_images():
-        return f"{val}:{_default_container_tag()}"
+        return f"{val}:{default_container_tag()}"
     return val
 
 
@@ -658,18 +670,15 @@ def fan_expand_kwargs(ep: dict) -> str:
     return ", ".join("{}={}".format(a["name"], ep["rule_name"].upper() + "_" + a["name"].upper()) for a in ep["axes"])
 
 
-def fan_input_expr(ep: dict) -> str:
-    """A Snakemake input expression matching ALL of *ep*'s output files.
+def rule_output_expr(ep: dict) -> str:
+    """A Snakemake input expression naming ALL of *ep*'s output files through its rule, so a reading rule plugs into the experiment's rule instead of restating where it writes.
 
-    A group run (no axes) is the single ``f"{OUT_DIR}/<key>/<stem>.h5"``; a fanned experiment is the ``expand()`` over its wildcard-value lists — every cell. Emitted verbatim into a rule's ``input:``, so a figure that reads a fanned experiment depends on its whole grid.
+    A group run and a cohort are ``rules.<rule>.output``; a fanned experiment is the ``expand()`` of that rule's output pattern over its wildcard-value lists, so the reader waits for every cell. Snakemake resolves ``rules.<rule>`` when the reading rule is parsed, so the experiment's rule must be defined first, as it is for the figure rules ``rules/figures.smk`` adds at the end of the Snakefile.
     """
-    cohort = cohort_out_relpaths(ep)
-    if cohort:
-        return "[" + ", ".join('f"{{OUT_DIR}}/{}/{}"'.format(ep["key"], r) for r in cohort) + "]"
-    single = 'f"{{OUT_DIR}}/{}/{}"'.format(ep["key"], cell_out_relpath(ep))
-    if not ep["axes"]:
-        return single
-    return f"expand({single}, {fan_expand_kwargs(ep)})"
+    ref = f"rules.{ep['rule_name']}.output"
+    if cohort_out_relpaths(ep) or not ep["axes"]:
+        return ref
+    return f"expand({ref}[0], {fan_expand_kwargs(ep)})"
 
 
 def result_dependencies(experiment) -> list[str]:

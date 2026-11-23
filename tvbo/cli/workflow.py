@@ -67,11 +67,12 @@ def _parse_overrides(items: list[str]) -> dict[str, Any]:
 
 
 def _load_spec(spec: str):
-    """Load a Study or Experiment *spec* as ``(study_or_none, obj, study_key)``; the key falls back to the spec's kind."""
+    """Load a Study or Experiment *spec* as ``(study_or_none, obj, study_key)``; a spec without a ``key`` is keyed by its file's name (``MyStudy.yaml`` is ``MyStudy``), so its kit lands in ``.tvbo/kits/MyStudy/`` and its rules read ``MyStudy_exp_1``, and a spec that is no file by its kind."""
     kind, obj = _common.resolve_spec(spec)
     if kind not in ("study", "experiment"):
         _common.die(f"`tvbo workflow` requires a Study or Experiment SPEC; got kind={kind!r}.")
-    return (obj if kind == "study" else None), obj, getattr(obj, "key", None) or kind
+    named = Path(str(spec))
+    return (obj if kind == "study" else None), obj, getattr(obj, "key", None) or (named.stem if named.is_file() else kind)
 
 
 def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
@@ -1011,6 +1012,27 @@ def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: st
         return None
 
 
+def _spec_stamps(out_dir: Path) -> dict[Path, tuple[str, int]]:
+    """Every file under the kit's ``spec/`` and its frozen figure declarations with its content digest and modification time in nanoseconds."""
+    from tvbo.adapters.figure_workflow import FIGURE_SPECS
+    from tvbo.data.provenance import digest_of
+
+    return {
+        f: (digest_of(f).value, f.stat().st_mtime_ns)
+        for root in (out_dir / "spec", out_dir / FIGURE_SPECS)
+        for f in root.rglob("*")
+        if f.is_file()
+    }
+
+
+def _keep_unchanged_spec_times(out_dir: Path, before: dict[Path, tuple[str, int]]) -> None:
+    """Give every spec file a re-emission rewrote with the same content its earlier modification time back, so Snakemake reruns only the rules whose spec changed."""
+    for f, (digest, _) in _spec_stamps(out_dir).items():
+        old_digest, old_time = before.get(f, (None, 0))
+        if digest == old_digest:
+            os.utime(f, ns=(old_time, old_time))
+
+
 def _rule_key(name) -> str:
     """*name* spelled as the identifier part of a Snakemake rule name: every character that is not an ASCII letter or digit becomes ``_``."""
     return re.sub(r"[^0-9A-Za-z]", "_", str(name))
@@ -1035,6 +1057,7 @@ def _emit_snakemake_study(
     out_dir = output or _kits_root(spec) / str(study_key) / "snakemake"
     if not stdout:
         out_dir.mkdir(parents=True, exist_ok=True)
+    stamps = {} if stdout else _spec_stamps(out_dir)
     parsed = _parse_overrides(override)
     # Run modifiers rather than workflow-block fields, so they leave the overrides before any plan or freeze reads them.
     max_iterations = parsed["merged"].pop("max_iterations", None)
@@ -1066,7 +1089,7 @@ def _emit_snakemake_study(
             _read_from_the_study(plan, spec)
         # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
         _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
-        scripts_relpath = None
+        scripts_relpath, inputs = None, []
         if stdout:
             spec_relpath, select = spec, key
         else:
@@ -1081,6 +1104,7 @@ def _emit_snakemake_study(
                 or bundled_code
             )
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
+            inputs = sorted(str(f.relative_to(out_dir)) for f in edir.rglob("*") if f.is_file())
             _stage_reference_containers(exp, out_dir / plan.out_dir, plan.depends_on, in_kit=_key_of, written=written)
             # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no codegen on the node. A render failure is non-fatal — the spec path still works; the rule falls back to it when the script is absent.
             if not _fanned_parameter:
@@ -1097,6 +1121,8 @@ def _emit_snakemake_study(
                 "key": key,
                 "rule_name": ("exp_" + exp_rule) if study_rule == exp_rule else (study_rule + "_exp_" + exp_rule),
                 "spec_relpath": spec_relpath,
+                # The frozen spec files the rule declares as input, so Snakemake reruns it when one is edited; empty in --stdout mode, where no kit is written.
+                "inputs": inputs,
                 # Pre-rendered backend script (frozen alongside the spec); None in --stdout mode or if the render failed, in which case the rule always uses the spec.
                 "scripts_relpath": scripts_relpath,
                 # Emit-time default code source baked into the rule (overridable at run time via $TVBO_CODE_SOURCE); a fanned-parameter experiment is spec-only.
@@ -1144,8 +1170,10 @@ def _emit_snakemake_study(
             if fig_bundled:
                 bundled_code = True
                 _common.info(f"bundled figure modules → code/: {', '.join(fig_bundled)}")
+        src = getattr(study, "_source_file", None)
+        fig_records = figure_workflow.figure_records(src) if src and not stdout else None
         fig_ctxs = figure_workflow.figure_contexts(
-            figs, base_dir=fig_base, workflow=fig_workflow, exp_plans=exp_plans, bundled_code=bundled_code
+            figs, base_dir=fig_base, workflow=fig_workflow, exp_plans=exp_plans, bundled_code=bundled_code, records=fig_records
         )
         figure_outputs = [c["output"] for c in fig_ctxs if c["kit_satisfiable"]]
         stranded = [c["name"] for c in fig_ctxs if not c["kit_satisfiable"]]
@@ -1170,6 +1198,8 @@ def _emit_snakemake_study(
                     include_all=True,
                     exp_plans=exp_plans,
                     bundled_code=bundled_code,
+                    records=fig_records,
+                    contexts=fig_ctxs,
                 )
             )
         return None
@@ -1197,7 +1227,7 @@ def _emit_snakemake_study(
             out_dir, engine="snakemake", plans=plans, script_relpath=None, spec_layout="spec/<experiment>/experiment.yaml"
         )
     if figs:
-        # A study is its experiments PLUS the figures that read their results: freeze each figure's self-contained plot.py + the render rules, then wire them in. The figure outputs were already added to `rule all` (see figure_outputs above), so the default target renders them right after the grid — a fanned figure's `input:` is the expand() over its experiment's cells, so it waits for the whole sweep.
+        # A study is its experiments PLUS the figures that read their results: freeze each figure's declaration and self-contained plot.py + the render rules, then wire them in. The figure outputs were already added to `rule all` (see figure_outputs above), so the default target renders them right after the grid — a fanned figure's `input:` is the expand() over its experiment's cells, so it waits for the whole sweep.
         figure_workflow.write_figure_kit(
             figs,
             base_dir=fig_base,
@@ -1206,10 +1236,15 @@ def _emit_snakemake_study(
             include_all=True,
             exp_plans=exp_plans,
             bundled_code=bundled_code,
+            records=fig_records,
+            contexts=fig_ctxs,
         )
         with (out_dir / "Snakefile").open("a", encoding="utf-8") as fh:
-            fh.write('\n\ninclude: "figures.smk"\n')
-        _common.info(f"wrote figures.smk + {len(figs)} figure plot script(s) (run: `snakemake all_figures`)")
+            fh.write(f'\n\ninclude: "{figure_workflow.FIGURE_RULES.as_posix()}"\n')
+        _common.info(
+            f"wrote {figure_workflow.FIGURE_RULES} + {sum(1 for c in fig_ctxs if c['script'])} figure plot script(s) (run: `snakemake all_figures`)"
+        )
+    _keep_unchanged_spec_times(out_dir, stamps)
     return out_dir
 
 
@@ -1289,7 +1324,9 @@ def _warn_unsatisfiable_figure_inputs(out_dir: Path) -> None:
     A figure's PROV ``used`` edges become its rule's ``input:``, and those resolve against the author's tree — right at author time, wrong the moment the kit travels. Analysis containers are the common case: the kit runs experiments, so ``derivatives/tvbo/ana-<name>_result.h5`` has no rule to make it and is an absolute path that does not exist on the target host.
     Such figures are kept out of ``rule all`` and ``all_figures`` (so no advertised target is unsatisfiable), which turns a confusing failure into a listable one — this is the list, and staging these paths is what makes those rules runnable.
     """
-    smk = out_dir / "figures.smk"
+    from tvbo.adapters.figure_workflow import FIGURE_RULES
+
+    smk = out_dir / FIGURE_RULES
     if not smk.is_file():
         return
     import re
@@ -1446,6 +1483,14 @@ def _resolve_launcher(name: str) -> str | None:
     if sibling.is_file() and os.access(sibling, os.X_OK):
         return str(sibling)
     return shutil.which(name)
+
+
+def datalad_launcher() -> str:
+    """The ``datalad`` launcher :func:`_resolve_launcher` finds, which ``--datalad`` runs; aborts the CLI when DataLad is not installed."""
+    found = _resolve_launcher("datalad")
+    if found is None:
+        _common.die("--datalad needs the `datalad` command, which is not on PATH; install DataLad or leave out --datalad.")
+    return found
 
 
 def _experiment_targets(kit_dir: Path, experiment: str) -> list:

@@ -38,9 +38,27 @@ files:
     template_variants: {replication: README.replication.md.tmpl, collection: README.collection.md.tmpl}
     description: What the study does, and how to run it.
   - name: CITATION.cff
+    description: How to cite the study, in the Citation File Format.
     role: citation
     level: recommended
     template: CITATION.cff.tmpl
+  - name: CHANGES
+    role: changelog
+    level: recommended
+    template: CHANGES.tmpl
+    description: "The dataset's version history, in the BIDS `CHANGES` format."
+  - name: AGENTS.md
+    level: recommended
+    template: AGENTS.md.tmpl
+    bids: out_of_scope
+    description: >-
+      What a coding agent needs before it edits the study: who does what, the commands, the rules, and this layout.
+  - name: REUSE.toml
+    level: recommended
+    template: REUSE.toml.tmpl
+    bids: out_of_scope
+    description: >-
+      Which licence covers which path, in the REUSE format: the study's data, documents and results under the licence `tvbo study init --license` names, `code/` under MIT.
   - name: "{study}.yaml"
     role: recipe
     level: required
@@ -73,6 +91,12 @@ files:
     generated: true
 
 subdirs:
+  - name: LICENSES
+    level: recommended
+    bids: out_of_scope
+    description: >-
+      The full text of every licence `REUSE.toml` names, one file per SPDX identifier.
+
   - name: spec
     role: spec
     level: recommended
@@ -145,6 +169,7 @@ subdirs:
         template_variants: {replication: _quarto.replication.yml.tmpl, collection: _quarto.collection.yml.tmpl}
       - name: references.bib
         level: recommended
+        template: references.bib.tmpl
       - name: manuscript.qmd
         level: required
         template: manuscript.qmd.tmpl

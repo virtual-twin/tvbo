@@ -909,13 +909,21 @@ def run_named_analyses(study, spec: str, wanted: str, out_dir: Path | None = Non
 def figure_outputs(figure, out_dir: Path) -> tuple[str, Path, Path]:
     """``(name, image, script)`` for *figure* under *out_dir* — where the render writes, named once.
 
-    The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up.
+    The renderer and every consumer that has to find a rendered figure afterwards ask this, so a figure's file name is derived in one place rather than re-spelled wherever it is looked up; :func:`figure_still` names the still an animation writes beside its image.
     """
     from tvbo.adapters import bsplot
     from tvbo.utils import sanitize_name
 
     name = getattr(figure, "name", None) or "figure"
     return name, out_dir / f"{name}.{bsplot.output_format(figure)}", out_dir / "scripts" / f"plot_{sanitize_name(name)}.py"
+
+
+def figure_still(figure, image: Path) -> Path | None:
+    """The PNG an animated *figure* that declares a ``still`` frame writes beside its movie *image*, or ``None`` when it writes none."""
+    from tvbo.adapters import bsplot
+
+    animation = bsplot._animation(figure)
+    return image.with_suffix(".png") if animation and animation["still"] is not None else None
 
 
 def register_figure_code(base: Path) -> None:
@@ -935,7 +943,7 @@ def render_figures(figures, base_dir: Path, out_dir: Path, origins: dict[str, Pa
 
     The single home for the per-figure render loop, shared by the ``tvbo figure render`` command and by a study run (which renders a study's figures after its experiments, so one command closes the replication loop). ``base_dir`` is the study root each layer's ``used`` IRI resolves against, whose results directory holds the containers; ``origins`` overrides it per figure, for a record ``!include``d from another study (see :func:`tvbo.cli.figures.figure_origins`).
 
-    Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them.
+    Every figure is attempted before anything is raised, so one broken declaration reports itself alongside the others rather than hiding the thirteen behind it; the run still fails, naming all of them. A figure's previous image (and an animation's still) is removed before it renders, so a figure that fails has no image at all rather than the last run's.
 
     The image lands directly in ``out_dir`` — the one place the report and every other consumer reads a figure from — while its self-contained, editable ``plot_<name>.py`` goes to ``out_dir/scripts/``. Both are regenerable and gitignored together; separating them just keeps a study with many figures from interleaving twice as many files in the directory people actually browse. The subdirectory is deliberately NOT called ``code``: in a study that name means the authored, tracked, importable code the recipe references by bare module name, which this is not.
     """
@@ -952,6 +960,8 @@ def render_figures(figures, base_dir: Path, out_dir: Path, origins: dict[str, Pa
         name, outfile, script_path = figure_outputs(figure, out_dir)
         base = (origins or {}).get(name, base_dir)
         register_figure_code(Path(base))
+        for stale in filter(None, (outfile, figure_still(figure, outfile))):
+            stale.unlink(missing_ok=True)  # a render that fails must leave no earlier image to be read as this run's
         try:
             bsplot.render(figure, base_dir=str(base), outfile=str(outfile), script_path=str(script_path))
         except Exception as e:  # noqa: BLE001 — every figure is attempted, then the whole set of failures is raised at once
@@ -1132,7 +1142,7 @@ def run_tree(
 ) -> None:
     """Run a study-of-studies: every nested study depth first, then this study's own content, then the results manifest the manuscript reads.
 
-    Each study runs through :func:`run_study` with the recipe's own settings and *backend*, in its own directory, so its results land in its own layout rather than the aggregating study's. ``skip`` drops named studies at any depth (and everything they hold); ``dry_run`` lists what would run and emits nothing; ``manifest_only`` runs nothing and emits the manifest from the containers already on disk. The manifest lands at ``<study-dir>/manuscript_results.yml`` — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers.
+    Each study runs through :func:`run_study` with the recipe's own settings and *backend*, in its own directory, so its results land in its own layout rather than the aggregating study's. ``skip`` drops named studies at any depth (and everything they hold); ``dry_run`` lists what would run and emits nothing; ``manifest_only`` runs nothing and emits the manifest from the containers already on disk. The manifest lands at ``<study-dir>/manuscript_results.yml``, and only for a study that declares ``results:`` (one that declares none has an earlier manifest removed) — a committed derived artifact (the seam Quarto reads as ``{{< meta results.* >}}``), so the build never needs the generated run containers.
 
     ``base`` redirects everything this run WRITES, leaving what it READS alone: nested recipes still resolve against their own directories, while each one's results land in a subdirectory of ``base`` named for its label. Defaults to the recipe's directory, which is the CLI's behaviour. *out_dir* moves this study's own results only.
 
@@ -1164,6 +1174,11 @@ def run_tree(
     manifest_results = results_root(spec, out_dir, base=base)
 
     def _emit() -> None:
+        if not n_results:
+            if (base / MANIFEST_NAME).is_file():
+                (base / MANIFEST_NAME).unlink()  # an earlier run's numbers, for keys the recipe no longer declares
+                logger.info(f"removed {base / MANIFEST_NAME}: the study declares no results")
+            return
         out_path, problems = emit_manifest(inv, manifest_results, base / MANIFEST_NAME)
         if problems:
             raise StudyRunError("results manifest has unresolved key(s):\n  - " + "\n  - ".join(problems))

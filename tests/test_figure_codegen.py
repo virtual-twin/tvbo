@@ -511,6 +511,32 @@ def test_render_code_bar_mark():
     assert "ax.plot(_x," not in code
 
 
+def test_render_code_atlas_strip_only_where_declared():
+    """A heatmap panel with ``atlas_strip`` draws the strip along the declared node axis after its axes are formatted; a panel without one emits no strip, and an axis a 2-D panel does not have is refused."""
+    fig = _cartesian_figure()
+    fig.panels["a"].kind = "heatmap"
+    assert "_atlas_strip(ax" not in bsplot.render_code(fig, TAHER_BASE, "out.png")
+    fig.panels["a"].atlas_strip = P.AtlasStrip(atlas="tvbo:atlases/x", surface_atlas="Destrieux2009")
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_atlas_strip(ax, _da, _y, {" in code
+    assert code.index("_apply_axopts(ax") < code.index("_atlas_strip(ax, _da")
+    assert "'axis': 'y'" in code
+    fig.panels["a"].atlas_strip.axis = "x"
+    code = bsplot.render_code(fig, TAHER_BASE, "out.png")
+    assert "_atlas_strip(ax, _da, _x, {" in code
+    assert "'axis': 'x'" in code
+    with pytest.raises(ValueError, match="axis"):
+        P.AtlasStrip(atlas="tvbo:atlases/x", surface_atlas="Destrieux2009", axis="z")
+
+
+def test_atlas_strip_refused_beside_a_line():
+    """A line places no node axis for an ``atlas_strip`` to line up with, so the panel is refused by name rather than generating a script that reads positions it never set."""
+    fig = _cartesian_figure()
+    fig.panels["a"].atlas_strip = P.AtlasStrip(atlas="tvbo:atlases/x", surface_atlas="Destrieux2009")
+    with pytest.raises(ValueError, match="atlas_strip"):
+        bsplot.render_code(fig, TAHER_BASE, "out.png")
+
+
 def test_render_code_band_mark():
     """``mark: band`` emits ``fill_between`` across two edges, not the line fallback.
 
@@ -2289,8 +2315,8 @@ def test_the_migration_rewrites_a_builtin_kind_s_options_into_its_object():
 
 
 def test_a_scale_on_a_panel_s_own_bar_is_refused_where_it_is_written():
-    """`Colorbar` carries the scale fields for the standalone `kind: colorbar` panel, which is the only one that has a scale of its own. A bar attached to a panel keys the field beside it, so a `colormap` there would be read by nothing — it is refused, naming where it belongs."""
-    with pytest.raises(ValueError, match=r"keys the field beside it"):
+    """`Colorbar` carries the scale fields for the standalone `kind: colorbar` panel, which is the only one that has a scale of its own. A bar attached to a panel keys the field beside it, so a `colormap` there would be read by nothing — it is refused, naming where it belongs: the layer's `style.opts`, since `Style` has no scale slot of its own."""
+    with pytest.raises(ValueError, match=r"keys the field beside it.*`style: \{opts: \{vmin"):
         bsplot._declared_kind(P.Panel(panel_key="a", kind="heatmap", colorbar=P.Colorbar(label="FC", colormap="viridis")))
     assert bsplot._declared_kind(
         P.Panel(panel_key="b", kind="colorbar", colorbar=P.Colorbar(colormap="diverging", vmin=-1.0))

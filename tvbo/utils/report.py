@@ -1937,7 +1937,7 @@ def experiment_facts(experiment, shared_parameters=()):
 def experiment_table(experiments, shared_parameters=(), orient="auto", caption_only_varying=True):
     """One table comparing a family's experiments, carrying only what actually varies.
 
-    Every quantity constant across the experiments is dropped: it is stated once in the symbol table or the settings sentence, and repeating it down a column says nothing.
+    Every quantity constant across the experiments is dropped: it is stated once in the symbol table or the settings sentence, and repeating it down a column says nothing. When nothing varies (a single experiment, or several that agree), there is no table.
 
     Orientation is chosen to keep the table narrow, because columns are the axis that cannot be paged: whichever of the two axes is shorter becomes the columns, ties going to experiments-as-rows (the conventional study-design layout). Pass ``orient`` as ``"rows"`` or ``"columns"`` — meaning where the *experiments* go — to pin it, so a study's Methods keeps its shape when a seventh experiment lands.
     """
@@ -1947,6 +1947,8 @@ def experiment_table(experiments, shared_parameters=(), orient="auto", caption_o
     keys = list(facts[0])
     if caption_only_varying:
         keys = [k for k in keys if k in ("Exp",) or len({f.get(k, "") for f in facts}) > 1]
+    if len(keys) < 2:
+        return ""
     if orient == "auto":
         orient = "rows" if len(facts) >= len(keys) - 1 else "columns"
     if orient == "rows":
@@ -2007,21 +2009,29 @@ _SAMPLING_SLOTS = (
 )
 
 
-def pipeline_text(pipeline):
-    """A pipeline as arrow-separated step names.
+def step_name(call):
+    """What a function call — a pipeline step, a loss, an observable — is called, or ``None`` when nothing names it.
 
-    A step is named by what the recipe *calls* it, not by the library function it happens to dispatch to. Reading ``callable`` first printed Deco2014's five-step BOLD pipeline as ``? → ? → fftconvolve → ? → ?`` — every step declares a ``name`` and only the convolution also names an implementation, so the one step that resolved showed a scipy entry point where the reader wanted "convolve".
+    A call is named by what the recipe *calls* it, its ``name`` or ``label``; a call that declares neither is named by what it runs (:func:`step_function`): the function, callable or class it dispatches to, or the expression it evaluates.
     """
-    steps = as_list(pipeline or None)
-    names = [
-        slot(s, "name", None)
-        or slot(s, "label", None)
-        or slot(s, "function", None)
-        or slot(slot(s, "callable", None), "name", None)
-        or slot(slot(s, "class_call", None), "name", None)
-        for s in steps
-    ]
-    return " → ".join(str(n) if n else "?" for n in names)
+    name = slot(call, "name") or slot(call, "label")
+    return str(name) if name else step_function(call)
+
+
+def step_function(call):
+    """What a function call runs — the function, callable or class it dispatches to, or the expression it evaluates — or ``None`` when it names none, for a table column that says how a step is computed rather than what the recipe calls it (:func:`step_name`)."""
+    function = (
+        slot(call, "function")
+        or slot(slot(call, "callable"), "name")
+        or slot(slot(call, "class_call"), "name")
+        or slot(slot(call, "equation"), "rhs")
+    )
+    return str(function) if function else None
+
+
+def pipeline_text(pipeline):
+    """A pipeline as arrow-separated step names, as :func:`step_name` reads them, with ``?`` for a step nothing names."""
+    return " → ".join(step_name(s) or "?" for s in as_list(pipeline or None))
 
 
 def _id_text(ids):
@@ -2148,6 +2158,10 @@ class Equations:
         self.n = 0
         self.anchors = {}
         self._used = set()
+
+    def heading_anchor(self, anchor):
+        """The `` {#anchor}`` a heading carries in Quarto, unique in this report; other formats have no heading attributes, so nothing."""
+        return f" {{#{self.unique_anchor(anchor)}}}" if self.format == "qmd" else ""
 
     def unique_anchor(self, anchor):
         """*anchor*, suffixed if this report already used it.

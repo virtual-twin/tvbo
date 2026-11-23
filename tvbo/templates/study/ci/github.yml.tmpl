@@ -1,0 +1,10 @@
+# Checks the study on every push in the tvbo image the study was scaffolded with; change the tag together with the tvbo version the study is run against.
+name: study
+on: [push, pull_request]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    container: {image}
+    steps:
+      - uses: actions/checkout@v4
+      - run: tvbo validate study .

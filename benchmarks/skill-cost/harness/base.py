@@ -4,16 +4,15 @@ A *harness* is an agent runner (Claude Code, Codex, …). Each harness knows how
 
 The benchmark compares three conditions:
 
-``control``   No TVBO skills present. The agent discovers everything from the
-              installed package (the expensive baseline).
-``implicit``  TVBO skills installed in the workspace but *not* mentioned in the
-              prompt — the agent must trigger them from their descriptions.
+``control``   No TVBO skills present. The agent discovers everything from the installed package (the expensive baseline).
+``implicit``  TVBO skills installed in the workspace but *not* mentioned in the prompt — the agent must trigger them from their descriptions.
 ``explicit``  TVBO skills installed *and* the prompt points the agent at them.
 """
 
 from __future__ import annotations
 
 import abc
+import sys
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -28,12 +27,8 @@ class Task:
     Attributes:
         name: Short identifier used in result keys and filenames.
         prompt: The task text handed to every condition verbatim.
-        explicit_hint: Appended to the system prompt only in the ``explicit``
-            condition — this is the *only* per-condition difference in what the
-            agent is told.
-        verify: ``(workdir) -> (success, detail)``. Run after the agent exits to
-            check the task was actually accomplished, so a fast failure is not
-            mistaken for a cheap success.
+        explicit_hint: Appended to the system prompt only in the ``explicit`` condition — this is the *only* per-condition difference in what the agent is told.
+        verify: ``(workdir) -> (success, detail)``. Run after the agent exits to check the task was actually accomplished, so a fast failure is not mistaken for a cheap success.
     """
 
     name: str
@@ -86,6 +81,10 @@ class Harness(abc.ABC):
     """Base class for an agent runner."""
 
     name: str
+    wrapper: tuple[str, ...] = ()
+    """A command the agent's command line is handed to, run in the run's directory, such as a script that starts it under ``sandbox-exec`` with its own HOME and TMPDIR to hide local data, code and other runs from a condition that must start from nothing."""
+    skills_installer: Path = Path(sys.executable).with_name("tvbo")
+    """The ``tvbo`` executable that renders the skills into a skilled workspace; by default the one beside the harness's Python, another one when the agent's environment has no tvbo, so the skills are tested on their own."""
 
     @abc.abstractmethod
     def prepare_workspace(self, workdir: Path, condition: str) -> None:

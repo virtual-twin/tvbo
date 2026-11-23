@@ -3,7 +3,7 @@
 
 For each (harness, model, condition, rep) it spins up a fresh, repo-free scratch workspace, makes the TVBO skills available (or not, for ``control``), drives the agent on the task, verifies the result by executing the agent's script, and appends one normalized row to a JSONL results file. Re-running skips cells that already have a row (resume), so an interrupted matrix continues cleanly.
 
-Run it with the repo's virtualenv Python so the agent's ``python`` / ``tvbo`` resolve to an environment where ``tvbo`` is importable:
+Run it with the Python of the environment the agent should use; its ``python`` and ``tvbo`` are put first on the agent's PATH, so a wheel install in a separate venv measures what a ``pip install tvbo`` user gets:
 
     .venv/bin/python benchmarks/skill-cost/run_matrix.py --reps 5
 
@@ -22,7 +22,6 @@ import sys
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parents[1]
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
@@ -34,13 +33,12 @@ DEFAULT_RUNS_DIR = Path(os.environ.get("TMPDIR", "/tmp")) / "tvbo-skillcost-runs
 
 
 def build_agent_env() -> dict[str, str]:
-    """Inherit the current env but put the repo venv first so tvbo is importable."""
+    """Inherit the current env with the environment of the interpreter running the matrix first, so the agent's ``python`` and ``tvbo`` are the ones the verifier runs."""
     env = dict(os.environ)
-    venv_bin = REPO_ROOT / ".venv" / "bin"
-    if venv_bin.exists():
-        env["PATH"] = f"{venv_bin}{os.pathsep}{env.get('PATH', '')}"
-        env["VIRTUAL_ENV"] = str(REPO_ROOT / ".venv")
-        env.pop("PYTHONHOME", None)
+    venv_bin = Path(sys.executable).parent
+    env["PATH"] = f"{venv_bin}{os.pathsep}{env.get('PATH', '')}"
+    env["VIRTUAL_ENV"] = str(venv_bin.parent)
+    env.pop("PYTHONHOME", None)
     return env
 
 
@@ -140,12 +138,26 @@ def main() -> None:
     ap.add_argument("--results", type=Path, default=DEFAULT_RESULTS)
     ap.add_argument("--force", action="store_true", help="Re-run cells even if already present in results.")
     ap.add_argument("--dry-run", action="store_true", help="List the cells that would run, then exit.")
+    ap.add_argument(
+        "--skills-installer",
+        type=Path,
+        help="The tvbo executable that installs the skills into a skilled workspace, for an agent environment without tvbo (default: the one beside this Python).",
+    )
+    ap.add_argument(
+        "--wrapper",
+        type=Path,
+        help="An executable the agent's command line is handed to, run in the run's own directory, such as a script that gives the run its own HOME and TMPDIR and starts it under a macOS sandbox-exec profile, so the agent finds only what the condition's environment and the network give it.",
+    )
     args = ap.parse_args()
 
     conditions = [c.strip() for c in args.conditions.split(",") if c.strip()]
     cells = parse_cells(args.cell, conditions, args.reps)
     task = TASKS[args.task]
     harness = HARNESSES[args.harness]()
+    if args.wrapper:
+        harness.wrapper = (str(args.wrapper),)
+    if args.skills_installer:
+        harness.skills_installer = args.skills_installer
     done = set() if args.force else load_done_keys(args.results)
     env = build_agent_env()
 

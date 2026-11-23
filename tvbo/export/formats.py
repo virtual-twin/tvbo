@@ -136,6 +136,8 @@ def _render_tvboptim(exp, **kw):
     kw.setdefault("settle", adapter.get_integration_info())
     # And the seed the run draws from (`run_seed`), which the template reads and never resolves itself.
     kw.setdefault("random_seed", adapter.get_execution_info()["random_seed"])
+    # And the observations a fit evaluates at each saved iterate, with the closure an iterate traces.
+    kw["trajectory_observations"], kw["trajectory_closure"] = adapter.resolve_trajectory_observations()
     # Resolve network- and dataset-sourced observation pointers once, in Python, and hand the {obs_name: measure} mapping to the template (which only emits code). Both bind at run_experiment time via _bind_network_observations.
     measures = dict(exp.network_observation_measures)
     measures.update(exp.dataset_observation_targets)

@@ -125,3 +125,14 @@ def test_a_declared_tick_outside_the_scale_is_dropped_not_drawn_off_the_bar(stud
     bar = next(ax for ax in fig.axes if ax.get_label() == "<colorbar>")
     np.testing.assert_allclose(bar.get_yticks(), [0.0, 0.2])
     np.testing.assert_allclose(sorted(bar.get_ylim()), [FIELD.min(), FIELD.max()])
+
+
+@pytest.mark.parametrize(("label", "rotation"), [("V", 0.0), ("Pearson r", 90.0)])
+def test_a_symbol_on_a_bar_reads_upright_and_a_phrase_runs_along_it(study, label, rotation):
+    """Turned along a vertical bar a one-letter symbol reads as another glyph, ``V`` as ``>``, so a label of one or two characters is set upright as journals set it; a longer label still runs along the bar."""
+    spec = _figure()
+    spec.panels["a"].colorbar = P.Colorbar(label=label)
+    fig = bsplot.render(spec, str(study), str(study / "out.png"))
+    bar = next(ax for ax in fig.axes if ax.get_label() == "<colorbar>")
+    assert bar.yaxis.label.get_text() == label
+    assert bar.yaxis.label.get_rotation() == rotation

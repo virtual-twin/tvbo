@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import inspect
+
 import matplotlib
 
 matplotlib.use("Agg")
@@ -29,6 +31,7 @@ def _parcellation(monkeypatch, keys, hemi):
     """`_surface_parcellation` over a surface atlas carrying `unknown`, `x` and `y` on each side, joined to atlas entities keyed by *keys*."""
     monkeypatch.setattr(bsplot, "load_atlas_labels", lambda **kw: (np.array([0, 1, 1, 2]), ["unknown", "x", "y"]))
     monkeypatch.setattr(adapter, "_atlas_crosswalk", lambda atlas, base_dir: ({key: key for key in keys}, {}))
+    monkeypatch.setattr(adapter, "_surface_atlas", inspect.unwrap(adapter._surface_atlas))
     return adapter._surface_parcellation.__wrapped__("tvbo:atlases/Test", ".", "Desikan2006", "fsaverage", "164k", hemi)
 
 

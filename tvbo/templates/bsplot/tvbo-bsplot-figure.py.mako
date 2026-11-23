@@ -20,7 +20,8 @@ from tvbo.adapters.bsplot import (TRANSFORMS as _TF, CUSTOM_PANELS as _CP,
                                   load_scalar as _load_scalar, registered as _registered,
                                   significance_marks as _significance_marks,
                                   scale_colormap as _scale_cmap, heatmap_orientation as _orient,
-                                  to_display as _display)
+                                  to_display as _display, label_colorbar as _label_colorbar,
+                                  atlas_strip as _atlas_strip)
 from tvbo.data.dataref import match_output as _match_output, output_array as _output_array, select_labeled as _select
 from tvbo.plot import axis_rule as _axis_rule, field as _field, palette as _palette
 
@@ -584,6 +585,12 @@ def _channel(ds, da, name, axis=0):
     return _coord(da, name, axis)
 
 
+def _along(da, dim):
+    """*da*'s values with the axis *dim* first, other length-1 axes dropped by name and *dim* kept whatever its length, so a one-sample trail still plots against its one abscissa."""
+    keep = (dim,) if dim in getattr(da, "dims", ()) else ()
+    return np.asarray(da.squeeze([d for d in da.dims if da.sizes[d] == 1 and d not in keep]).transpose(*keep, ...).values)
+
+
 def _cut_to(arr, coords):
     """*arr* at the plotted array's own place on every axis the two share, so a quantity read beside the plotted one is the one recorded with it.
 
@@ -725,7 +732,7 @@ ${ind}    fig.set_layout_engine("tight")
 % if p['colorbar']:
     _cb = fig.colorbar(_im, ax=ax, **${repr(p['colorbar_kwargs'])})   # one scale per panel, not per layer
 % if p['colorbar_label']:
-    _cb.set_label(${repr(p['colorbar_label'])})
+    _label_colorbar(_cb, ${repr(p['colorbar_label'])})
 % endif
 % if p['colorbar_ticks'] is not None:
     _cb.set_ticks(_ticks_in_scale(_cb, ${repr(p['colorbar_ticks'])}))
@@ -865,16 +872,19 @@ ${load_layer(L)}\
     _dim, _labels, _colours = _fan_entries(_ds, _da, ${repr(L['color'])}, ${repr(L['cmap'])}, ${repr(bool(L.get('cmap_declared')))})   # one line per entry
     for _i, _lab in enumerate(_labels):
         _line = _da.isel({_dim: _i})
-        ax.plot(_channel(_ds, _line, ${repr(L['x'])}, 0), np.asarray(_line.values).squeeze(),
+        ax.plot(_channel(_ds, _line, ${repr(L['x'])}, 0), _along(_line, ${repr(L['x'])}),
                 color=_colours[_i], label=_lab, **${repr(L['style'])})
 % else:
     _x = _channel(_ds, _da, ${repr(L['x'])}, 0)
-    ax.plot(_x, np.asarray(_da.values).squeeze(), **${repr(L['style'])})
+    ax.plot(_x, _along(_da, ${repr(L['x'])}), **${repr(L['style'])})
 % endif
 % endif
 % endfor
 ${colorbar(p)}\
     _apply_axopts(ax, ${repr(p['axopts'])})
+% if p['atlas_strip']:
+    _atlas_strip(ax, _da, ${p['atlas_strip']['positions']}, ${repr(p['atlas_strip'])})
+% endif
 % endif
 % if p['title']:
     ax.set_title(${repr(p['title'])})

@@ -114,7 +114,7 @@ def render(
         return
 
     figures = _select(figures, name, spec_path)
-    _study_run.render_figures(figures, base, out_dir, figure_origins(spec_path))
+    _study_run.render_figures(figures, base, out_dir, None if base_dir else figure_origins(spec_path))
 
 
 def _select(figures, name: str | None, spec_path: Path) -> list:

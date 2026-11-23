@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Map every sidebar page to the phase or chapter it sits under.
 
-Reads the spine declared in ``_static/phases.yml`` and the sidebar in ``_toc.yml``, and writes ``_static/phase_map.lua`` — a Lua table the phase-badge filter loads directly, so the filter needs no JSON decoder and no Python at render time.
+Reads the spine declared in ``_static/phases.yml``, each phase's look from the lifecycle stages in ``tvbo/plot/lifecycle.yaml``, and the sidebar in ``_toc.yml``, and writes ``_static/phase_map.lua`` — a Lua table the phase-badge filter loads directly, so the filter needs no JSON decoder and no Python at render time.
 
 A page's phase comes from the PART header it sits beneath, and the directory tree mirrors that: each part declares the directories it owns, and a page filed outside them is reported so the layout cannot drift away from the sidebar unnoticed. The generated ``api/`` and ``datamodel/`` trees live in their own sidebars rather than in ``_toc.yml``, so they are mapped to the REFERENCE chapter by directory instead; every other page outside the curated sidebar carries a ``phase:`` key in its own frontmatter, which the filter prefers over anything written here.
 
@@ -23,11 +23,28 @@ GENERATED = {"api": "API reference", "datamodel": "Data model"}
 
 
 def spine() -> dict[str, dict]:
-    """Every phase and chapter, keyed by the PART header text that introduces it, with its colour resolved to a hex."""
+    """Every phase and chapter, keyed by the PART header text that introduces it, with its colour resolved to a hex; a phase's number, name, colour and icon are its lifecycle stage's."""
+    from tvbo.plot.lifecycle import stages
+
     decl = yaml.safe_load((DOCS / "_static" / "phases.yml").read_text())
+    lifecycle = stages()
+    if list(decl["phases"]) != list(lifecycle):
+        raise SystemExit(
+            f"_static/phases.yml lists phases {list(decl['phases'])}, but the lifecycle's stages are {list(lifecycle)}"
+        )
     by_part: dict[str, dict] = {}
-    for entry in decl["phases"]:
-        by_part[entry["part"]] = {**entry, "color": colour(entry["color"]), "kind": "phase"}
+    for number, (key, entry) in enumerate(decl["phases"].items(), start=1):
+        stage = lifecycle[key]
+        by_part[entry["part"]] = {
+            **entry,
+            "number": number,
+            "key": key,
+            "name": stage["name"],
+            "icon": stage["fa"]["class"],
+            "glyph": stage["fa"],
+            "color": colour(stage["color"]),
+            "kind": "phase",
+        }
     for entry in decl["chapters"]:
         by_part[entry["part"]] = {**entry, "color": colour(entry["color"]), "number": None, "kind": "chapter"}
     return by_part
@@ -46,9 +63,9 @@ def colour(slot: str) -> str:
         hues = palette.palette()
         index = int(str(slot).split(".", 1)[1])
         if not 0 <= index < len(hues):
-            raise SystemExit(f"_static/phases.yml asks for {slot}, but the palette has {len(hues)} hue(s)")
+            raise SystemExit(f"colour {slot} asked for, but the palette has {len(hues)} hue(s)")
     elif slot not in palette.ROLES:
-        raise SystemExit(f"_static/phases.yml asks for colour {slot!r}, which {palette.PATH} does not define")
+        raise SystemExit(f"colour {slot!r} asked for, which {palette.PATH} does not define")
     return palette.color(str(slot))
 
 
@@ -57,7 +74,7 @@ def walk(
 ) -> str | None:
     """Descend the sidebar, remembering the PART header and the nearest enclosing section.
 
-    A chapter heading is a text-only row and the pages under it are its siblings. The five numbered phases are sections instead: the label is a declared part, the href is that phase's overview page, and the contents are the phase's pages. Either form names the part everything beneath it belongs to, and a linked one has its href recorded for ``write_css``.
+    A chapter heading is a text-only row and the pages under it are its siblings. The six phases are linked rows instead: the label is a declared part, the href is that phase's overview page, and a phase with pages of its own is a section whose contents are those pages. Either form names the part everything beneath it belongs to, and a linked one has its href recorded for ``write_css``.
 
     ``group`` is the spine's own heading, the one row that introduces the numbered phases rather than a set of pages; it owns nothing, so it is skipped without becoming the part its neighbours inherit.
     """
@@ -153,7 +170,7 @@ def owned(href: str, dirs: list[str]) -> bool:
 def write_css(by_part: dict[str, dict], index_pages: dict[str, str], first_href: str | None) -> None:
     """Emit the phase palette as custom properties plus the sidebar rules for the linked PART headers.
 
-    A chapter heading is a text-only row that ``styles.css`` styles as a bare ``<span class="menu-text">``. The five numbered phases sit one tier below the spine's own heading, so they are styled here instead: smaller, wearing their phase colour, and without the rule that separates one chapter from the next. Selectors match by href suffix, because Quarto writes the sidebar's paths relative to each page's depth.
+    A chapter heading is a text-only row that ``styles.css`` styles as a bare ``<span class="menu-text">``. The six phases sit one tier below the spine's own heading, so they are styled here instead: smaller, wearing their phase colour and their stage's icon (its Font Awesome glyph from ``tvbo/plot/lifecycle.yaml``, drawn as a mask in the text colour), and without the rule that separates one chapter from the next. Selectors match by href suffix, because Quarto writes the sidebar's paths relative to each page's depth.
 
     ``first_href`` is the href of the sidebar's topmost PART header, or ``None`` when that header is text-only; only a linked one needs its rule and gap suppressed here, because ``styles.css`` already does it positionally for the bare-span form.
     """
@@ -177,7 +194,24 @@ def write_css(by_part: dict[str, dict], index_pages: dict[str, str], first_href:
             "}",
             "",
         ]
+        glyphs = [(entry, href) for entry, href in linked if entry.get("glyph")]
+        if glyphs:
+            lines += [
+                ",\n".join(selectors_for(href, " > span.menu-text::before") for _, href in glyphs) + " {",
+                '    content: "";',
+                "    display: inline-block;",
+                "    width: 1.05em;",
+                "    height: 1.05em;",
+                "    margin-right: 0.45em;",
+                "    vertical-align: -0.15em;",
+                "    background: currentColor;",
+                "}",
+                "",
+            ]
         for entry, href in linked:
+            if entry.get("glyph"):
+                mask = f'url("{glyph_url(entry["glyph"])}") center / contain no-repeat'
+                lines.append(selectors_for(href, " > span.menu-text::before") + f" {{ -webkit-mask: {mask}; mask: {mask}; }}")
             lines += [
                 selectors_for(href, " > span.menu-text") + f" {{ color: {entry['color']}; }}",
                 selectors_for(href, ":hover > span.menu-text")
@@ -191,6 +225,14 @@ def write_css(by_part: dict[str, dict], index_pages: dict[str, str], first_href:
                 "",
             ]
     (DOCS / "_static" / "phases.css").write_text("\n".join(lines))
+
+
+def glyph_url(glyph: dict) -> str:
+    """A stage's Font Awesome glyph from ``tvbo/plot/lifecycle.yaml`` as an SVG data URL, for a CSS mask that paints it in the text colour."""
+    from urllib.parse import quote
+
+    svg = f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='{glyph['viewbox']}'><path d='{glyph['path']}'/></svg>"
+    return "data:image/svg+xml," + quote(svg, safe="/:=' ")
 
 
 def html_href(href: str) -> str:

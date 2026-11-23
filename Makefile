@@ -5,7 +5,7 @@ IMAGE_TAG=latest
 IMAGE_FULL=$(IMAGE_NAME):$(IMAGE_TAG)
 TARBALL_PATH=/Users/leonmartin_bih/projects/TVB-O/tvbo-container/tvbo.tar.gz
 
-.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed release print-version print-tag check-tag gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto
+.PHONY: help build save run docs-test docs-pytest docs-pytest-all docs-test-all docs-preview docs-preview-guide docs-render docs-render-guide docs-render-api docs-render-datamodel docs-clean docs-publish docs-publish-changed release print-version print-tag check-tag gen-linkml gen-openminds gen-owl gen-shacl gen-studies gen-abox gen-merged gen-neuroml gen-all all check-runtime-onto readme
 
 help: ## Show this help
 	@echo "TVBO Makefile"
@@ -38,6 +38,9 @@ help: ## Show this help
 	@echo "  make docs-test-all      Full test pipeline (jupyter → test → quarto)"
 	@echo "  make docs-test-to-debug Test and move fixed notebooks from to_debug/"
 	@echo ""
+	@echo "README:"
+	@echo "  make readme             Run docs/0-SimulationStudyLifecycle/study.yaml and render README.md from it"
+	@echo ""
 	@echo "Release:"
 	@echo "  make release [BUMP=patch|minor|major | VERSION=x.y.z[a|b|rcN]] [DRYRUN=1]"
 	@echo "                          Preview, confirm + publish a GitHub release; with neither, the version in tvbo/__init__.py"
@@ -48,6 +51,9 @@ help: ## Show this help
 	@echo "  make all                Build + save Docker image"
 
 all: build save
+
+readme: ## README.md and its assets, rendered from the lifecycle study's document after running it
+	python -c 'from tvbo import SimulationStudy; SimulationStudy.from_file("docs/0-SimulationStudyLifecycle/study.yaml").run().report("gfm", outputfile="README.md")'
 
 # LinkML schema generation
 SCHEMA_PATH = schema/tvbo_datamodel.yaml

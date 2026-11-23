@@ -32,13 +32,14 @@ SOURCE_NAME = "schema/study_layout.yaml"
 """Where a person edits the layout, named in every file this module generates."""
 
 _TRACK_ALL, _TRACK_DECLARED, _TRACK_NONE = "all", "declared_files", "none"
-_BIDS_UNSANCTIONED, _BIDS_PROPOSED, _BIDS_NESTED, _BIDS_HIDDEN = (
+_BIDS_UNSANCTIONED, _BIDS_PROPOSED, _BIDS_OUT_OF_SCOPE, _BIDS_NESTED, _BIDS_HIDDEN = (
     "unsanctioned",
     "proposed",
+    "out_of_scope",
     "nested_dataset",
     "hidden",
 )
-_NEEDS_BIDSIGNORE = (_BIDS_UNSANCTIONED, _BIDS_PROPOSED)
+_NEEDS_BIDSIGNORE = (_BIDS_UNSANCTIONED, _BIDS_PROPOSED, _BIDS_OUT_OF_SCOPE)
 
 
 @lru_cache(maxsize=1)
@@ -302,9 +303,15 @@ def interpolate(name: str, study: str | None) -> str:
     return name.replace("{study}", study)
 
 
-def _ancestor_untracked(rel: str, entries: list[tuple[str, StudyDirectory]]) -> bool:
+def _tracked(d: StudyDirectory, annex: bool = False) -> str:
+    """What version control keeps of ``d``: under a git-annex dataset a ``declared_files`` directory is kept whole, its undeclared contents going to the annex instead of being ignored."""
+    tracked = str(d.tracked)
+    return _TRACK_ALL if annex and tracked == _TRACK_DECLARED else tracked
+
+
+def _ancestor_untracked(rel: str, entries: list[tuple[str, StudyDirectory]], annex: bool = False) -> bool:
     """True when a strict parent of ``rel`` is already ignored, which decides for ``rel``."""
-    return any(rel.startswith(f"{other}/") and str(d.tracked) != _TRACK_ALL for other, d in entries)
+    return any(rel.startswith(f"{other}/") and _tracked(d, annex) != _TRACK_ALL for other, d in entries)
 
 
 def is_tracked(rel: str, layout: StudyLayout | None = None, templates: tuple[str, ...] = ()) -> bool:
@@ -323,18 +330,19 @@ def gitignore_lines(
     layout: StudyLayout | None = None,
     templates: tuple[str, ...] = (),
     study: str | None = None,
+    annex: bool = False,
 ) -> list[str]:
     """The ``.gitignore`` body, derived from each entry's ``tracked`` field.
 
-    A directory under an already-ignored parent is skipped, so each rule is stated once. A ``declared_files`` directory ignores its *contents* and re-includes each declared file, because a negation cannot re-include from an excluded directory.
+    A directory under an already-ignored parent is skipped, so each rule is stated once. A ``declared_files`` directory ignores its *contents* and re-includes each declared file, because a negation cannot re-include from an excluded directory. With ``annex`` (a DataLad dataset) such a directory is not ignored at all: git-annex keeps its data, and only what the record marks ``none`` stays out.
     """
     layout = layout or load_layout()
     entries = walk(layout, templates)
     lines = [_generated_header(templates)]
     files = iter_files(layout, templates)
     for rel, d in entries:
-        tracked = str(d.tracked)
-        if tracked == _TRACK_ALL or _ancestor_untracked(rel, entries):
+        tracked = _tracked(d, annex)
+        if tracked == _TRACK_ALL or _ancestor_untracked(rel, entries, annex):
             continue
         if tracked == _TRACK_NONE:
             lines.append(f"{rel}/")
@@ -368,8 +376,8 @@ def bidsignore_lines(
 ) -> list[str]:
     """The ``.bidsignore`` body, derived from each entry's standing with BIDS.
 
-    Only what a released validator does not know is listed: an entry outside the BIDS vocabulary, and one a BEP proposes but has not landed. A hidden directory is skipped by convention and a nested dataset is validated as its own type, so neither needs a line.
-    Each entry's ``expires_with`` says what would retire it, which is what keeps the surface from becoming permanent by default.
+    Only what a released validator does not know is listed: an entry outside the BIDS vocabulary, one a BEP proposes but has not landed, and repository plumbing BIDS does not set out to describe. A hidden directory is skipped by convention and a nested dataset is validated as its own type, so neither needs a line.
+    Each unsanctioned or proposed entry's ``expires_with`` says what would retire it, which is what keeps the surface from becoming permanent by default; an out-of-scope entry is permanent by declaration.
     """
     layout = layout or load_layout()
     lines = [_generated_header(templates)]
@@ -437,9 +445,9 @@ def _wrap(name: str, body: str) -> str:
     return "\n".join([begin, "", body, "", end])
 
 
-def _sentence(entry: Any) -> str:
-    """The first sentence of an entry's own ``description``, whole rather than clipped."""
-    return " ".join(str(getattr(entry, "description", None) or "").split()).split(". ")[0].rstrip(".")
+def _sentence(text: Any) -> str:
+    """The first sentence of *text*, whole rather than clipped, its whitespace collapsed; empty for no text."""
+    return " ".join(str(text or "").split()).split(". ")[0].rstrip(".")
 
 
 def exceptions_block(
@@ -459,7 +467,7 @@ def exceptions_block(
         status = str(getattr(entry, "bids", None) or "")
         if status not in _NEEDS_BIDSIGNORE:
             continue
-        waits = " ".join(str(getattr(entry, "expires_with", None) or "").split()) or "-"
+        waits = " ".join(str(getattr(entry, "expires_with", None) or "").split()) or "nothing: outside the scope of BIDS"
         rows.append(f"| `{path}` | {status} | {waits} |")
     return _wrap("BIDS EXCEPTIONS", "\n".join(rows))
 
@@ -517,7 +525,7 @@ def _note_for(entry: StudyDirectory | StudyFile | None) -> str:
 
     The first sentence of the entry's own ``description``, whole rather than clipped, so every note is a complete thought and the record stays the only place the text is written.
     """
-    head = _sentence(entry)
+    head = _sentence(getattr(entry, "description", None))
     return _uncapitalize(head) if head else ""
 
 

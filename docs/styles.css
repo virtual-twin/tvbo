@@ -608,7 +608,7 @@ body:has(.tvbo-home) .tvbo-phase { display: none; }
 .tvbo-usecases li { margin: 0.2rem 0; line-height: 1.45; }
 .tvbo-usecases li strong { white-space: nowrap; }
 
-/* Pointer from a ② SPECIFY page into the running-example thread, inserted by filters/running-example.lua. */
+/* Pointer from a SPECIFY page into the running-example thread, inserted by filters/running-example.lua. */
 .tvbo-thread {
   margin: 0 0 1.4rem;
   padding: 0.5rem 0.8rem;

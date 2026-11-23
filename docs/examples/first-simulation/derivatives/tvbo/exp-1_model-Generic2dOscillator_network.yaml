@@ -1,9 +1,18 @@
 tvbo_class: tvbo:Network
 schema_version: tvb-datamodel/0.7.0
+label: DesikanKilliany (dTOR)
 number_of_nodes: 87
 descriptor: SC
 distance_unit: mm
+time_unit: ms
 data_file: exp-1_model-Generic2dOscillator_network.h5
+bids:
+  template: MNI152NLin2009cAsym
+  cohort: HCPYA
+  reconstruction: dTOR
+  atlas: DesikanKilliany
+  desc: SC
+  suffix: relmat
 coupling:
   c_glob:
     name: c_glob
@@ -18,6 +27,8 @@ coupling:
         name: a
         value: 0.05
         description: Linear scaling factor of the coupled (delayed) input.
+        instance_of:
+        - tvbo:GlobalCouplingScaling
     sparse: false
     pre_expression:
       rhs: x_j
@@ -36,6 +47,12 @@ parameters:
     label: v
     value: 3.0
     unit: mm_per_ms
+parcellation:
+  atlas:
+    name: DesikanKilliany
+    coordinateSpace: MNI152NLin2009cAsym
+tractogram:
+  name: dTOR
 nodes:
 - id: 1
   label: left-cerebellum-cortex

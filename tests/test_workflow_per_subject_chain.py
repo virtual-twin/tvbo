@@ -89,3 +89,12 @@ def test_a_grid_source_is_still_awaited_whole():
     )
     rule = smk[smk.index("rule exp_61:") :]
     assert "expand(" in rule[rule.index("input:") : rule.index("output:")]
+
+
+def test_a_rule_declares_its_frozen_spec_as_input():
+    """Editing a frozen spec file makes it newer than the rule's output, so Snakemake reruns that rule and no other."""
+    ep = {**_ep("7", []), "inputs": ["spec/7/experiment.yaml", "spec/7/network.h5"]}
+    smk = _render_template("snakemake/study.smk.mako", exp_plans=[ep], block={}, bundled_code=False)
+    rule = smk[smk.index("rule exp_7:") :]
+    inputs = rule[rule.index("input:") : rule.index("output:")]
+    assert '"spec/7/experiment.yaml",' in inputs and '"spec/7/network.h5",' in inputs

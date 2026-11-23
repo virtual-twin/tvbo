@@ -9,6 +9,9 @@ Two subcommands, both reading the one layout record (``schema/study_layout.yaml`
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
+from datetime import date
 from pathlib import Path
 
 import typer
@@ -38,18 +41,65 @@ def _dataset_description(name: str, dataset_type: str, bids_version: str, source
     return body
 
 
-def _seed(dest: Path, template: str, study: str) -> None:
-    """Write ``dest`` from its template, substituting the study's own name.
+CI_FILES = {"github": ".github/workflows/study.yml", "gitlab": ".gitlab-ci.yml"}
+"""Where each CI service reads its configuration, keyed by the ``--ci`` value that writes it from ``ci/<service>.yml.tmpl``."""
 
-    Three spellings, because the templates predate the scaffolder and use the angle-bracket placeholders an author filled in by hand: ``{study}`` and ``<Study>`` take the name as given, ``<study>`` its lowercase form (the one that appears inside identifiers and filenames).
+LICENSE_TEXTS = TEMPLATE_DIR / "LICENSES"
+"""The licence texts a study can be given, one file per SPDX identifier."""
+
+
+def _seeded(template: str, study: str, license: str = "CC-BY-4.0") -> str:
+    """The text of ``template``, with the study's own name, its licence, the tvbo version, the tvbo image its CI runs in (:func:`~tvbo.run.workflow.default_container_image`) and today's date substituted.
+
+    The name has three spellings, because the templates predate the scaffolder and use the angle-bracket placeholders an author filled in by hand: ``{study}`` and ``<Study>`` take the name as given, ``<study>`` its lowercase form (the one that appears inside identifiers and filenames).
     """
+    from tvbo.run.workflow import default_container_image
+
     source = TEMPLATE_DIR / template
     if not source.is_file():
-        raise typer.BadParameter(f"The layout names template {template!r} for {dest.name}, but {source} does not exist.")
+        raise typer.BadParameter(f"The layout names template {template!r}, but {source} does not exist.")
     text = source.read_text(encoding="utf-8")
-    for placeholder, value in (("{study}", study), ("<Study>", study), ("<study>", study.lower())):
+    today = date.today()
+    for placeholder, value in (
+        ("{study}", study),
+        ("<Study>", study),
+        ("<study>", study.lower()),
+        ("{license}", license),
+        ("{version}", tvbo.__version__),
+        ("{image}", default_container_image()),
+        ("{year}", str(today.year)),
+        ("{date}", today.isoformat()),
+    ):
         text = text.replace(placeholder, value)
-    dest.write_text(text, encoding="utf-8")
+    return text
+
+
+def _inside_git(path: Path) -> bool:
+    """True when *path* already lies in a git work tree, so a study there needs no repository of its own."""
+    probe = subprocess.run(["git", "-C", str(path), "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True)
+    return probe.returncode == 0 and probe.stdout.strip() == "true"
+
+
+def _version_control(root: Path, git: bool, datalad: bool) -> None:
+    """Make *root* a DataLad dataset or a git repository, committing nothing the author has not decided on.
+
+    ``datalad create`` records its own configuration in one commit, which DataLad cannot skip; the scaffold's files are left for the author to save. A dataset is made only where *root* is not one already, and a plain repository only where none encloses *root*.
+    """
+    if datalad and (root / ".datalad").is_dir():
+        typer.echo("  datalad  already a dataset; none made")
+    elif datalad:
+        from tvbo.cli.workflow import datalad_launcher
+
+        subprocess.run([datalad_launcher(), "create", "--force", "-c", "text2git", str(root)], check=True, capture_output=True)
+        typer.echo("  datalad  dataset created (its configuration is DataLad's one commit; nothing of the scaffold is saved)")
+    elif git:
+        if shutil.which("git") is None:
+            typer.echo("  git      not found; no repository made")
+        elif _inside_git(root.parent):
+            typer.echo("  git      inside an existing repository; none made")
+        else:
+            subprocess.run(["git", "init", "-q", str(root)], check=True)
+            typer.echo("  git      repository made; nothing committed")
 
 
 def _checked_templates(template, record) -> tuple[str, ...]:
@@ -76,6 +126,20 @@ def init(
         help="Study kind to include, one the layout record declares. Repeatable; omit for the general study.",
     ),
     force: bool = typer.Option(False, "--force", help="Overwrite files that already exist."),
+    git: bool = typer.Option(
+        False, "--git", help="Make the study a git repository, unless one already encloses it. Nothing is committed."
+    ),
+    datalad: bool = typer.Option(
+        False,
+        "--datalad",
+        help="Make the study a DataLad dataset instead (YODA layout): text in git, `sourcedata/` and `derivatives/` in the annex. Needs the `datalad` command.",
+    ),
+    ci: str | None = typer.Option(
+        None, "--ci", help="CI configuration that validates the study on every push: github (the default), gitlab or none."
+    ),
+    license: str = typer.Option(
+        "CC-BY-4.0", "--license", help="SPDX licence for the study's data, documents and results; `code/` is MIT."
+    ),
     slim: bool = typer.Option(
         False,
         "--slim/--full",
@@ -98,8 +162,22 @@ def init(
 
     record = layout_rules.load_layout()
     templates = _checked_templates(template, record)
+    if slim and (git or datalad or ci is not None):
+        raise typer.BadParameter(
+            "--slim writes no version control and no CI; leave out --git, --datalad and --ci, or scaffold with --full."
+        )
+    ci = ci or "github"
+    if ci not in (*CI_FILES, "none"):
+        raise typer.BadParameter(f"--ci must be one of {[*CI_FILES, 'none']}, not {ci!r}.")
+    offered = sorted(p.stem for p in LICENSE_TEXTS.glob("*.txt"))
+    if license not in offered:
+        raise typer.BadParameter(f"--license {license!r} has no licence text here; choose one of {offered}.")
     root = (parent / name).resolve()
     root.mkdir(parents=True, exist_ok=True)
+    if not slim:
+        _version_control(root, git, datalad)
+
+    written: set[Path] = set()
 
     def write(rel: str, text: str) -> None:
         target = root / rel
@@ -108,6 +186,7 @@ def init(
             return
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
+        written.add(target)
         typer.echo(f"  write    {rel}")
 
     typer.echo(f"{root}")
@@ -124,7 +203,7 @@ def init(
         if slim and (role not in SLIM_ROLES or "/" in rel):
             continue
         if role == "gitignore":
-            write(rel, "\n".join(layout_rules.gitignore_lines(record, templates, name)))
+            write(rel, "\n".join(layout_rules.gitignore_lines(record, templates, name, annex=datalad)))
         elif role == "bidsignore":
             write(rel, "\n".join(layout_rules.bidsignore_lines(record, templates, name)))
         elif role == "dataset_description":
@@ -137,15 +216,13 @@ def init(
             )
             write(rel, json.dumps(body, indent=2))
         elif (seed := layout_rules.template_for(entry, templates)) is not None:
-            target = root / rel
-            if target.exists() and not force:
-                typer.echo(f"  skip     {rel} (exists; --force to overwrite)")
-            else:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                _seed(target, seed, name)
-                typer.echo(f"  write    {rel}")
+            write(rel, _seeded(seed, name, license))
 
     if not slim:
+        for spdx in dict.fromkeys((license, "MIT")):
+            write(f"LICENSES/{spdx}.txt", (LICENSE_TEXTS / f"{spdx}.txt").read_text(encoding="utf-8"))
+        if ci != "none":
+            write(CI_FILES[ci], _seeded(f"ci/{ci}.yml.tmpl", name))
         # Last, so a directory that a seed has just filled is not given a placeholder it does not need.
         for rel, _ in layout_rules.walk(record, templates):
             target = root / rel
@@ -153,10 +230,14 @@ def init(
                 (target / _KEEP).touch()
                 typer.echo(f"  keep     {rel}/{_KEEP}")
 
-        readme = root / layout_rules.file_relpath("readme", name, record)
-        if readme.is_file():
-            layout_rules.sync_layout(readme, record, name, templates)
-            typer.echo(f"  layout   {readme.name}")
+        for doc in (root / layout_rules.file_relpath("readme", name, record), root / "AGENTS.md"):
+            if not doc.is_file():
+                continue
+            if datalad and doc in written:
+                with doc.open("a", encoding="utf-8") as fh:
+                    fh.write(_seeded("datalad.md.tmpl", name, license))
+            layout_rules.sync_layout(doc, record, name, templates)
+            typer.echo(f"  layout   {doc.name}")
     typer.echo(f"\nNext: fill in {name}.yaml, then `tvbo run {name}.yaml`.")
     if slim:
         typer.echo(f"Or from Python: SimulationStudy.from_file('{name}.yaml').run()")

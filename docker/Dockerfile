@@ -67,10 +67,11 @@ ENV TEMPLATEFLOW_HOME="/opt/templateflow"
 RUN python3 -c "import bsplot; from bsplot.data.surface import get_surface_geometry; [(get_surface_geometry(template='fsaverage', hemi=h, density='164k'), bsplot.load_atlas_labels(atlas='Desikan2006', hemi=h, template='fsaverage', density='164k')) for h in ('lh', 'rh')]" \
     && chmod -R a+rw /opt/templateflow
 
-# 4. Copy real source and install tvbo only (deps already satisfied → fast).
+# 4. Copy real source and install tvbo from it, editable, so the image reads the whole curated database in /app, the networks the wheel leaves out included (deps already satisfied → fast).
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --no-deps .
+    uv pip install --no-deps -e . \
+    && cd / && python3 -c "import pathlib, tvbo; home = pathlib.Path(tvbo.__file__).parent; assert home == pathlib.Path('/app/tvbo'), f'tvbo imports from {home}, not /app/tvbo'"
 
 ENV AUTO_DIR=/auto-07p
 EXPOSE 8000 8888

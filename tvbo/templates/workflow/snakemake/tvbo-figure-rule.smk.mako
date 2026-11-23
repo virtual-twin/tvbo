@@ -10,7 +10,7 @@
 ##   include_all  bool       — prepend an aggregate `all_figures` target rule.
 ##
 ## Each figure dict: {name, rule_name, inputs (list[str], absolute container paths),
-##   output (str), figures_dir (str), script (str), threads (int),
+##   output (str), figures_dir (str), command (str), threads (int),
 ##   resources (dict[str, python-literal-str]), container (str|None),
 ##   setup (list[str]), env (list[{name, value}])}.
 <%
@@ -66,7 +66,7 @@ rule ${f["rule_name"]}:
 % endif
     shell:
 % for _line in (f.get("activation") or []):
-        ## Put the declared environment in place first, so plot.py runs in the interpreter its data came from.
+        ## Put the declared environment in place first, so the render runs in the interpreter its data came from.
         ${repr(_line + " && ")}
 % endfor
 % if f.get("pythonpath_code"):
@@ -77,6 +77,6 @@ rule ${f["rule_name"]}:
         "export ${_e['name']}=${_e['value']} && "
 % endfor
         "mkdir -p ${f['figures_dir']} && "
-        "python ${f['script']}"
+        "${f['command']}"
 
 % endfor

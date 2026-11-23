@@ -227,11 +227,19 @@ class SimulationStudyBehaviour(Catalogued):
             return self._collect(base)
 
         run_tree(self, str(spec), backend=backend, figures=figures, base=base)
-        nested_results = {}
-        for label, nested in self.nested_studies():
-            recipe = Path(getattr(nested, "_source_file", None) or spec)
-            nested_results[label] = nested._collect(nested_root(base, recipe_dir, label) or recipe.resolve().parent)
-        return self._collect(base, studies=nested_results)
+
+        def collect(study, root):
+            """*study*'s result with its sub-studies' at every depth, each read from where `run_tree` ran it."""
+            nested = {
+                label: collect(
+                    sub,
+                    nested_root(base, recipe_dir, label) or Path(getattr(sub, "_source_file", None) or spec).resolve().parent,
+                )
+                for label, sub in study.nested_studies()
+            }
+            return study._collect(root, studies=nested)
+
+        return collect(self, base)
 
     def _collect(self, base: Path, studies=None):
         """The `StudyResult` describing what a completed run left under *base*.
@@ -270,6 +278,31 @@ class SimulationStudyBehaviour(Catalogued):
         )
 
     def report(
+        self, format: str = "markdown", *, outputfile: str | None = None, result=None, reuse_assets: bool = False, **options
+    ) -> str:
+        """Render the study's report: its declared ``document`` when it has one, else its Methods.
+
+        Args:
+            format: ``markdown`` / ``md``, ``qmd`` or ``pdf``; a study with a ``document`` also takes ``gfm``, which keeps the raw HTML GitHub renders (a light and a dark figure, a folded section).
+            outputfile: Write the render here.
+            result: The study's run, for the document's figure and tree blocks; :meth:`StudyResult.report` passes its own.
+            reuse_assets: Render the document's figure and tree blocks from the files a previous render wrote, without a run.
+            **options: The Methods options of :meth:`methods`, for a study without a document.
+
+        Raises:
+            ValueError: Methods options were given to a study whose report is its document.
+        """
+        if getattr(self, "document", None) is None:
+            return self.methods(format, outputfile=outputfile, **options)
+        if options:
+            raise ValueError(
+                f"this study's report is its declared document, which takes no Methods options {sorted(options)}; a `methods` block renders the Methods inside it"
+            )
+        from tvbo.utils import document
+
+        return document.render(self, format, outputfile=outputfile, result=result, reuse_assets=reuse_assets)
+
+    def methods(
         self,
         format: str = "markdown",
         part: str = "main",

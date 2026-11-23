@@ -9,6 +9,7 @@ Every function here takes and returns plain data for ONE level of nesting. Recur
 
 from __future__ import annotations
 
+import difflib
 import os
 import warnings
 from functools import cache
@@ -547,3 +548,12 @@ def normalize(cls_name: str, data: dict) -> dict:
     _lift_one_distribution(data)
     wrap_lists(cls_name, data)
     return data
+
+
+def unknown_keys(cls, keys: list[str], slots: frozenset[str]) -> str:
+    """The error for *keys* that name none of the *slots* of *cls*, each with the closest slot it may have meant."""
+    hints = [
+        f"{key!r}" + (f" (did you mean {close[0]!r}?)" if (close := difflib.get_close_matches(key, slots, n=1)) else "")
+        for key in keys
+    ]
+    return f"{cls.__name__} has no key {', '.join(hints)}"

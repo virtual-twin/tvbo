@@ -135,9 +135,7 @@ def expand_bare_axes(fig, axes, pad: float = 0.004) -> list:
             continue  # hemmed in on both sides: the engine's own box is already the honest one
         ax.set_position([left, bottom, right - left, top - bottom])
         if ax.get_aspect() != "auto" and ax.get_images():
-            ax.set_aspect(
-                "auto"
-            )  # a picture holding its own aspect re-shrinks inside the box it was just given, which is the opposite of filling the cell
+            ax.set_aspect("auto")  # a picture keeping its own aspect would re-shrink inside the box it was just given
         # A label is placed below the lowest tick box among the axes it is aligned with, and these axes draw no ticks but still carry them. Left in place, a panel grown to the figure floor drags its neighbours' axis labels down there with it.
         ax.set_xticks([])
         ax.set_yticks([])
@@ -471,6 +469,30 @@ def surface_panel(fig, ax, ctx):
                 )
             values = _np.where(grey, _np.nan, values)  # also keeps it out of the limits
 
+    parcels = None
+    if opts.get("color") == "atlas":
+        if opts.get("markers") or smooth:
+            raise ValueError(
+                "surface panel: `color: atlas` paints each vertex in its parcel's colour, so it is refused beside `markers`, which draws the mesh flat under its dots, and beside `shading: smooth`, which splits the faces into vertices no parcel is given."
+            )
+        atlas_mesh = (
+            str(opts.get("surface_atlas", "Desikan2006")),
+            str(opts.get("template", "fsaverage")),
+            str(opts.get("density", "164k")),
+            str(opts.get("hemi", "lh")),
+        )
+        vertex_parcels, _regions = _surface_atlas(*atlas_mesh)
+        colours = _surface_atlas_colours(*atlas_mesh)
+        if len(vertex_parcels) != len(verts):
+            raise ValueError(
+                f"surface panel: `color: atlas` paints {len(vertex_parcels)} parcellated vertices but the mesh has {len(verts)}; `template:`, `density:` and `hemi:` must name the mesh the panel draws."
+            )
+        parcels = {
+            "parcel": vertex_parcels,
+            "parcel_cmap": {p: colours.get(p, _NO_PARCEL) for p in _np.unique(vertex_parcels).tolist()},
+            "filled_parcels": True,
+        }
+
     vmin, vmax = _colour_limits(_limits_source(layers, values), opts, True)
     if smooth:
         verts, faces, values, grey = _smooth_mesh(verts, faces, values, grey)
@@ -489,7 +511,7 @@ def surface_panel(fig, ax, ctx):
             "shade_intensity": 0.0,
         }
         if opts.get("markers")
-        else {"overlay": values, "mask": grey, "mask_colour": missing, "color": opts.get("color")}
+        else {"overlay": values, "mask": grey, "mask_colour": missing, "color": None if parcels else opts.get("color")}
     )
     bsplot.plot_surf(
         vertices=verts,
@@ -504,6 +526,7 @@ def surface_panel(fig, ax, ctx):
         transparency=float(opts.get("opacity", 1.0)),
         faces_kwargs=edges,
         **painted,
+        **(parcels or {}),
     )
     ax.set_aspect("equal")  # a surface's frame is anatomy, not a coordinate system
     ax.axis("off")
@@ -644,6 +667,49 @@ def _atlas_segmentation(atlas: str, base_dir):
     return nib.load(str(raster)), codes
 
 
+_SIDE_STRIDE = 1000
+"""Offset of the right hemisphere's parcel ids across ``hemi: both``: a surface atlas numbers its parcels from zero again there, so a bare index says ``lateraloccipital`` without saying whose."""
+
+_NO_PARCEL = (0.86, 0.86, 0.86, 1.0)
+"""The base grey of a node the surface atlas has no parcel for, the grey bsplot draws a surface's unparcelled vertices in."""
+
+
+def _sides(hemi: str) -> tuple[tuple[str, int], ...]:
+    """``(side, first_parcel)`` for each hemisphere *hemi* names, left first, the order a ``hemi: both`` mesh concatenates them in: a side's parcel ``i`` is numbered ``first_parcel + i``, the right hemisphere's offset by ``_SIDE_STRIDE``."""
+    names = ("lh", "rh") if hemi == "both" else (hemi,)
+    return tuple((side, offset * _SIDE_STRIDE) for offset, side in enumerate(names))
+
+
+@functools.cache
+def _surface_atlas(surface_atlas: str, template: str, density: str, hemi: str):
+    """``(vertex_parcels, {parcel: (side, region)})`` of a templateflow surface atlas over one hemisphere or both: a parcel id per vertex and the region each id stands for, numbered as :func:`_sides` states."""
+    import bsplot
+    import numpy as _np
+
+    parts, regions = [], {}
+    for side, first in _sides(hemi):
+        vertex_labels, region_names = bsplot.load_atlas_labels(
+            atlas=surface_atlas, hemi=side, template=template, density=density
+        )
+        parts.append(_np.asarray(vertex_labels) + first)
+        regions.update({first + index: (side, str(region)) for index, region in enumerate(region_names)})
+    return _np.concatenate(parts), regions
+
+
+@functools.cache
+def _surface_atlas_colours(surface_atlas: str, template: str, density: str, hemi: str) -> dict:
+    """``{parcel: rgba}``, the colour the surface atlas's own label table gives each parcel :func:`_surface_atlas` numbers; read apart from the labels, so placing a value by name needs no colour table."""
+    import bsplot
+
+    return {
+        first + index: tuple(float(c) for c in rgba)
+        for side, first in _sides(hemi)
+        for index, rgba in enumerate(
+            bsplot.load_atlas_colors(atlas=surface_atlas, hemi=side, template=template, density=density)
+        )
+    }
+
+
 @functools.cache
 def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: str, density: str, hemi: str):
     """``(vertex_labels, {node_label: parcel_index})`` for painting per-region values on a mesh.
@@ -651,23 +717,12 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
     The surface atlas supplies one integer parcel per vertex and the region names those integers stand for; the curated terminology supplies every other name each region answers to. Joining them on the entity key is what places a value by NAME on a mesh, so a parcellated map needs neither a committed ``.annot`` beside the page nor a hand-written abbreviation table.
 
     A surface atlas names a region either bare, with the side left to the file (Desikan ``bankssts``, Destrieux ``G_cuneus``), or with its side already in the name (Schaefer ``7Networks_LH_Vis_1``). A parcel therefore answers to three spellings, ``ctx-<side>-<region>``, ``ctx_<side>_<region>`` and the bare name, compared without case, so one join serves every atlas templateflow carries. A spelling two parcels share, such as a bare Desikan name under ``hemi: both``, places no value: an atlas entity keyed by it raises a ``ValueError`` naming the region and the sides that carry it, and a shared spelling no entity is keyed by (``unknown``, the medial wall) is left alone.
-
-    Across ``hemi: both`` the surface atlas numbers its parcels from zero again in the right hemisphere, so a bare index says ``lateraloccipital`` without saying whose. The side is folded into the id, which is the difference between a bilateral map and one that paints both hemispheres with the left one's values.
     """
-    import bsplot
-    import numpy as _np
-
-    SIDE_STRIDE = 1000
-
-    parts, sides_of = [], {}
-    for offset, side in enumerate(("lh", "rh") if hemi == "both" else (hemi,)):
-        vertex_labels, region_names = bsplot.load_atlas_labels(
-            atlas=surface_atlas, hemi=side, template=template, density=density
-        )
-        parts.append(_np.asarray(vertex_labels) + offset * SIDE_STRIDE)
-        for index, region in enumerate(region_names):
-            for spelling in (f"ctx-{side}-{region}", f"ctx_{side}_{region}", str(region)):
-                sides_of.setdefault(spelling.lower(), {})[index + offset * SIDE_STRIDE] = side
+    vertex_labels, regions = _surface_atlas(surface_atlas, template, density, hemi)
+    sides_of = {}
+    for parcel, (side, region) in regions.items():
+        for spelling in (f"ctx-{side}-{region}", f"ctx_{side}_{region}", region):
+            sides_of.setdefault(spelling.lower(), {})[parcel] = side
 
     names, _entities = _atlas_crosswalk(atlas, base_dir)
     parcel_of = {}
@@ -681,7 +736,39 @@ def _surface_parcellation(atlas: str, base_dir, surface_atlas: str, template: st
             )
         if parcels:
             (parcel_of[nm],) = parcels
-    return _np.concatenate(parts), parcel_of
+    return vertex_labels, parcel_of
+
+
+STRIP_SURFACE = ("fsaverage", "164k", "both")
+"""The ``(template, density, hemi)`` surface an ``atlas_strip`` reads its parcel colours from."""
+
+_STRIP_MARKS = ("heatmap", "scatter")
+"""The marks whose drawing places both axes' positions, so an ``atlas_strip`` beside either one lines up with the nodes."""
+
+
+def atlas_strip(ax, da, positions, strip: dict) -> None:
+    """Draw a panel's ``atlas_strip``: each node of *da*, at the *positions* its rows are drawn at, in the colour its region wears in the surface atlas, placed by label through the curated atlas (see the ``AtlasStrip`` class)."""
+    import bsplot
+    import numpy as _np
+
+    labels = _region_labels(da)
+    if labels is None:
+        raise ValueError(
+            "atlas_strip: the layer carries no region-label coordinate to colour its nodes by. The container must name its regions."
+        )
+    _vertices, parcel_of = _surface_parcellation(strip["atlas"], strip["base_dir"], strip["surface_atlas"], *STRIP_SURFACE)
+    colours = _surface_atlas_colours(strip["surface_atlas"], *STRIP_SURFACE)
+    if not any(nm in parcel_of for nm in labels):
+        raise ValueError(
+            f"atlas_strip: none of the layer's {len(labels)} region labels are parcels of {strip['surface_atlas']!r} through atlas {strip['atlas']!r} ({labels[:5]}). The strip would be all grey."
+        )
+    numeric = _np.issubdtype(_np.asarray(positions).dtype, _np.number)
+    bsplot.color_strip(
+        ax,
+        [colours.get(parcel_of.get(nm), _NO_PARCEL) for nm in labels],
+        axis=strip["axis"],
+        positions=positions if numeric else None,  # region names are categories, which matplotlib places at 0, 1, …
+    )
 
 
 def _check_placeable(labels, table, kind: str, atlas: str) -> None:
@@ -1042,9 +1129,7 @@ def spring_panel(fig, ax, ctx):
         "masses": masses if opts.get("mass") else None,
         "colors": colors,
         "labels": labels if opts.get("labels") else None,
-        "rule_color": resolve_color(
-            "base"
-        ),  # a rest mark is read against the motion, so it takes the secondary ink rather than the gridline's
+        "rule_color": resolve_color("base"),  # a rest mark is read against the motion, so it takes the secondary ink
     }
     if opts.get("stretch") is not None:
         common["stretch"] = float(opts["stretch"])
@@ -1140,6 +1225,14 @@ def scale_colormap(name, lo=None, hi=None, center=None):
     return mcolors.ListedColormap(base(frac))
 
 
+def label_colorbar(cb, label: str) -> None:
+    """Label the colour bar *cb* with *label*, a symbol of one or two characters set upright beside a vertical bar as journals set it, so ``V`` does not read as ``>``; a longer label runs along the bar."""
+    if cb.orientation == "vertical" and len(label) <= 2:
+        cb.ax.set_ylabel(label, rotation=0, ha="left", va="center")
+    else:
+        cb.set_label(label)
+
+
 @register_panel("colorbar")
 def colorbar_panel(fig, ax, ctx):
     """A colour scale occupying its own mosaic slot — the built-in ``kind: colorbar``.
@@ -1197,7 +1290,7 @@ def colorbar_panel(fig, ax, ctx):
     if ticklabels is not None:
         cb.set_ticklabels([str(t) for t in ticklabels])
     if opts.get("label"):
-        cb.set_label(str(opts["label"]))
+        label_colorbar(cb, str(opts["label"]))
     return cb.ax
 
 
@@ -1397,9 +1490,7 @@ def color_dim(ds, da, name):
             f"colour encoding {name!r} is neither a dim, a coord, nor a variable of this container (dims {tuple(da.dims)}, coords {tuple(da.coords)})."
         ) from None
     dims = [str(d) for d in sib.dims if d in [str(x) for x in da.dims]]
-    if (
-        len(dims) > 1
-    ):  # a length-1 axis cannot be the one the lines fan along, so a per-node quantity with a singleton `variable` axis still shades one line per node
+    if len(dims) > 1:  # a length-1 axis cannot be the fan axis, so a singleton `variable` axis still shades per node
         dims = [d for d in dims if sib.sizes[d] > 1] or dims
     if len(dims) != 1:
         raise KeyError(
@@ -1469,16 +1560,14 @@ def adopt_theme(figure, theme):
 def _stated(theme) -> dict:
     """What a Theme states, as plain Python: a slot left unset is absent, so it never hides the layer beneath it.
 
-    An unset multivalued slot arrives empty rather than None and is dropped with the rest. ``opts`` is flattened to ``{setting: value}`` whichever way it was written, as Argument records or as a plain mapping in a curated file.
+    An unset multivalued slot arrives empty rather than None and is dropped with the rest, as is a ``colormaps`` role left unset. ``opts`` is flattened to ``{setting: value}`` whichever way it was written, as Argument records or as a plain mapping in a curated file.
     """
     if theme is None:
         return {}
     opts = theme.get("opts") if isinstance(theme, dict) else getattr(theme, "opts", None)
     out = {k: v for k, v in (_plain(theme) or {}).items() if k != "opts" and v not in (None, [], {})}
     if isinstance(out.get("colormaps"), dict):
-        out["colormaps"] = {
-            role: name for role, name in out["colormaps"].items() if name is not None
-        }  # an unset role is absent too
+        out["colormaps"] = {role: name for role, name in out["colormaps"].items() if name is not None}
     if opts:
         flat = _arg_dict(opts)
         out["opts"] = {k: (v["value"] if isinstance(v, dict) and "value" in v else v) for k, v in flat.items()}
@@ -2019,9 +2108,7 @@ def retired_options(kind: str = "") -> dict[str, tuple[str, str]]:
         **{
             option: ("colorbar", attr)
             for attr, option in _KIND_DIRECTIVES["colorbar"].items()
-            if option.startswith(
-                "colorbar"
-            )  # only what was literally spelled `colorbar_*`: the scale half is a standalone bar's alone, and `vmin` is a perfectly good keyword anywhere else
+            if option.startswith("colorbar")  # only the `colorbar_*` spellings; a bare `vmin` is a good keyword anywhere else
         },
         **{option: (kind, attr) for option, attr in _RETIRED_BY_KIND.get(kind, {}).items()},
     }
@@ -2045,7 +2132,7 @@ def _declared_kind(panel) -> dict:
             if stated:
                 raise ValueError(
                     f"panel colorbar: {', '.join(stated)} names a colour scale, and a bar attached to a panel keys the "
-                    f"field beside it rather than a scale of its own — state it on that layer's `style:`, or use a "
+                    f"field beside it rather than a scale of its own — state it on that layer's `style: {{opts: {{vmin: …, vmax: …}}}}`, or use a "
                     f"standalone `kind: colorbar` panel, which does carry its own."
                 )
         for attr, raw in items:
@@ -2466,11 +2553,29 @@ def reading_results(results_dir: Path | None):
         _RESULTS_DIR.reset(token)
 
 
+_CONTAINERS: ContextVar[dict[str, str] | None] = ContextVar("containers", default=None)
+
+
+@contextmanager
+def reading_containers(paths: dict[str, str]):
+    """Read each ``used`` reference in *paths* from the container it maps to for the duration of the block, whether or not that file exists yet. A workflow kit binds its frozen figure scripts to the results its own rules will write this way."""
+    token = _CONTAINERS.set(paths)
+    try:
+        yield
+    finally:
+        _CONTAINERS.reset(token)
+
+
+def _layer_container(ref, base_dir: Path, *, planned: bool = False) -> str:
+    """The container a layer reads: the path :func:`reading_containers` binds *ref* to, else :func:`_container_path` under the study's results, with its *planned*."""
+    return (_CONTAINERS.get() or {}).get(str(ref)) or _container_path(ref, base_dir, _RESULTS_DIR.get(), planned=planned)
+
+
 @functools.cache
 def _container_path(iri, base_dir: Path, results_dir: Path | None = None, *, planned: bool = False) -> str:
     """Resolve a ``used`` edge's IRI/key to its result container under ``base_dir``, or under *results_dir* when given, which stands in for the study's own results directory (the one :func:`reading_results` names while a figure reads a sample).
 
-    One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. Both are found by :mod:`tvbo.data.dataref` — :func:`~tvbo.data.dataref.locate_exp_container` for a run, :func:`~tvbo.data.dataref.locate_analysis_container` for an analysis — the lookups every cross-experiment reader shares, so a figure cannot read a different container than a warm start or a report does.
+    One layout: the study's results directory (:mod:`tvbo.utils.study_layout`, role ``results``) holds every container flat, ``exp-<id>[_<entities>]_result.h5`` for a run and ``ana-<name>_result.h5`` for an analysis, so a figure reads the same directory the run and the analyses wrote. Both are found by :mod:`tvbo.data.dataref` — :func:`~tvbo.data.dataref.locate_exp_container` for a run, :func:`~tvbo.data.dataref.locate_analysis_container` for an analysis — the lookups every cross-experiment reader shares, so a figure cannot read a different container than a warm start or a report does. A container named by its own ``.h5`` file, such as another tree's run, is read where it lies, under ``base_dir`` before the working directory.
 
     An IRI that names a study (``tvbo:exp/<study>/exp-N``) is resolved against that study's root rather than ``base_dir``, so a figure owned by a study-of-studies can read a member's run; the name is matched within the tree the referring study belongs to and an unmatched or ambiguous one raises.
 
@@ -2483,10 +2588,7 @@ def _container_path(iri, base_dir: Path, results_dir: Path | None = None, *, pla
     from tvbo.data.dataref import experiment_id as _experiment_id
     from tvbo.utils.study_layout import sibling_study_root, study_path
 
-    for direct in (
-        Path(base_dir) / str(iri),
-        Path(str(iri)),
-    ):  # a container named by its file, the study root before the working directory: another tree's run, read where it lies
+    for direct in (Path(base_dir) / str(iri), Path(str(iri))):  # a container named by its file, read where it lies
         if direct.suffix == ".h5" and direct.is_file():
             return str(direct.resolve())
     # An IRI naming a study names a container in THAT study's results, not in the referring study's: `tvbo:exp/Jansen1995/exp-1` read from the manuscript root must not find the root's own exp-1.
@@ -2634,7 +2736,7 @@ def _mesh_container(ref: dict, base_dir) -> str:
         raise ValueError(
             f"surface panel: the mesh's `used:` names where its result is and nothing else, but states {', '.join(stated)}."
         )
-    return _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get(), planned=True)
+    return _layer_container(_used_ref(used), base_dir, planned=True)
 
 
 def _resolve_layer(layer, panel_kind, base_dir, animation=None, *, planned=False):
@@ -2665,7 +2767,7 @@ def _resolve_layer(layer, panel_kind, base_dir, animation=None, *, planned=False
     if _fans_by_color or _shades_points:
         kwargs.pop("color", None)  # a per-entry/per-point colour and a layer-wide one collide
     return {
-        "container": _container_path(_used_ref(used), base_dir, _RESULTS_DIR.get(), planned=planned),
+        "container": _layer_container(_used_ref(used), base_dir, planned=planned),
         "output": used.output,
         "mark": mark,
         "x": getattr(enc, "x", None),
@@ -2913,6 +3015,12 @@ def _inset_bounds(inset, key, i) -> list:
     return bounds
 
 
+def _strip_entry(strip, base_dir) -> dict:
+    """A panel's ``atlas_strip`` as its template entry: the recipe with its ``axis`` as plain text and ``positions``, the name of the emitted script's variable holding that axis's node positions."""
+    axis = _enum_value(strip.axis)
+    return {**_recipe_dict(strip), "axis": axis, "positions": f"_{axis}", "base_dir": str(base_dir)}
+
+
 def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
     """Resolve one drawable — a mosaic Panel or an Inset — into its template entry.
 
@@ -2977,6 +3085,11 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         from tvbo.plot.capture import capture
 
         capture(source, path, getattr(panel, "capture", None), base_dir=base_dir)
+    strip = getattr(panel, "atlas_strip", None)
+    if strip and (not layers or layers[-1]["mark"] not in _STRIP_MARKS):
+        raise ValueError(
+            f"panel {key}: `atlas_strip` is drawn beside the node axis of the panel's last layer, which only a {' or '.join(_STRIP_MARKS)} layer places; this panel's last layer is {layers[-1]['mark'] if layers else 'missing'!r}."
+        )
     return {
         "key": key,
         "kind": kind,
@@ -2999,6 +3112,7 @@ def _resolve_drawable(panel, key, base_dir, animation=None) -> dict:
         "colorbar_ticks": opts.get("colorbar_ticks"),
         # Cells of blank band between two triangle layers, so the halves read as two quantities rather than one field (the paper's own `extra_diagonal`).
         "triangle_gap": int(opts.get("triangle_gap", 0) or 0),
+        "atlas_strip": _strip_entry(strip, base_dir) if strip else None,
         "axopts": axopts,
         "post_axopts": {} if placeholder_only else post,
         "ctx": ctx,
@@ -3073,15 +3187,13 @@ def _animation_window(window) -> list[float] | None:
 
 
 def build_context(figure, base_dir, outfile: str) -> dict:
-    """Resolve a ``Figure`` into the template context (all IO paths + names resolved)."""
+    """Resolve a ``Figure`` into the template context (all IO paths + names resolved), with the figure's palette in force while the panels resolve, so a role a layer names becomes a colour here."""
     from tvbo.plot import axis_rule as _axis_rule
     from tvbo.plot import palette as _palette_mod
 
     base_dir = Path(base_dir)
     theme = theme_spec(figure, base_dir)
-    _palette_mod.use(
-        {k: v for k, v in theme.items() if k in _palette_mod.FIELDS}
-    )  # in force while the panels resolve, so a role a layer names becomes a colour here
+    _palette_mod.use({k: v for k, v in theme.items() if k in _palette_mod.FIELDS})
     animation = _animation(figure)
     panels = [_resolve_drawable(panel, key, base_dir, animation) for key, panel in _items(figure.panels)]
     if figure.layout:
@@ -3099,9 +3211,7 @@ def build_context(figure, base_dir, outfile: str) -> dict:
     reading = {key: n for n, key in enumerate(_panel_layout_order(figure))}
     seen: set[str] = set()
     for p in sorted(panels, key=lambda p: reading.get(p["key"], len(reading))):
-        override = p.pop(
-            "number", None
-        )  # overrides the mosaic key; "false" suppresses the letter (many cells = one paper panel)
+        override = p.pop("number", None)  # overrides the mosaic key; "false" drops the letter (many cells, one paper panel)
         ident = _letter_identity(override, p["key"], seen)
         if ident is None:
             p["letter"] = None

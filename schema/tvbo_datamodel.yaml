@@ -37,6 +37,7 @@ imports:
     - tvb_dbs
     - software
     - figure
+    - document
 
 default_prefix: tvbo
 default_range: string
@@ -2925,6 +2926,12 @@ classes:
                 description: >-
                     Loss function call. Uses FunctionCall to either: 1. Reference existing function: function: rmse 2. Inline callable: callable: {module: ..., name: ...} Arguments specify inputs (simulated_fc, empirical_fc, etc.)
 
+            trajectory_observations:
+                multivalued: true
+                range: string
+                description: >-
+                    Observations of the experiment, by name, evaluated at every saved iterate of a single-stage fit: one simulation per saved step at the parameters the optimizer held after that step's update, stored along the `step` axis of the loss trajectory and the parameter history as `optimization__<name>__trajectory__<observation>`. Absent, only the fitted point's observations are stored.
+
             # Multi-stage optimization (preferred for complex workflows)
             stages:
                 multivalued: true
@@ -4425,6 +4432,11 @@ classes:
                 inlined_as_list: true
                 description: >-
                     The named numbers the prose cites, each keyed by the manuscript token that stands in for it (``key``) and bound either to a computed value (``used:`` a DataRef into this study's or a nested study's analysis) or to an authored constant quoted from prior work (``value`` + ``source``). ``tvbo run`` collects these into a results manifest the document reads, so no reported figure is transcribed by hand and a stale or missing key fails the build rather than printing a wrong number.
+            document:
+                range: StudyDocument
+                inlined: true
+                description: >-
+                    The document ``report()`` renders for this study: ordered sections of prose and of blocks TVB-O produces from the study itself (spec excerpts, the code a reader types, generated code, figures, the Methods, catalogue counts, the backend matrix, the lifecycle wheel). Unset, ``report()`` writes the Methods alone.
             archive:
                 range: ArchiveConfig
                 inlined: true

@@ -285,6 +285,7 @@ from pydantic import model_validator as _model_validator
 
 from tvbo.datamodel.dialect import fold_slot as _fold_slot
 from tvbo.datamodel.dialect import normalize as _normalize_dialect
+from tvbo.datamodel.dialect import unknown_keys as _unknown_keys
 
 _ASSIGNING = _ContextVar("_ASSIGNING", default=False)
 """Whether the next dialect validator to run is the one Pydantic calls on the record being assigned to."""
@@ -293,7 +294,7 @@ _ASSIGNING = _ContextVar("_ASSIGNING", default=False)
 class _DialectBase(BaseModel):
     """Accepts the TVBO dialect — declared aliases and bare-scalar shortcuts — when a model is constructed and when one of its slots is assigned.
 
-    The validator runs before validation, once per constructed model, so Pydantic's own recursion reaches every nested member; it only ever handles its own level. Pydantic validates an assignment against the value assigned, not against the mapping the validator returns, so ``__setattr__`` folds that value first. On an assignment Pydantic hands the validator the whole record and keeps the mapping it returns as the record's other slots, unvalidated, so there the validator only checks the record and returns it as it was: folding it again would merge the curated entry its ``iri`` names back over slots already built, as raw mappings.
+    The validator runs before validation, once per constructed model, so Pydantic's own recursion reaches every nested member; it only ever handles its own level, and refuses a key that names no slot of its class with the closest slot it may mean. Pydantic validates an assignment against the value assigned, not against the mapping the validator returns, so ``__setattr__`` folds that value first. On an assignment Pydantic hands the validator the whole record and keeps the mapping it returns as the record's other slots, unvalidated, so there the validator only checks the record and returns it as it was: folding it again would merge the curated entry its ``iri`` names back over slots already built, as raw mappings.
 
     A number in a text slot is read as its text, as YAML reads a recipe's unquoted identifier ``7``, and a path as its text (`tvbo.datamodel.dialect.paths_as_text`); a mapping or a list there is refused.
     """
@@ -308,7 +309,11 @@ class _DialectBase(BaseModel):
         assigning = _ASSIGNING.get()
         _ASSIGNING.set(False)
         folded = _normalize_dialect(cls.__name__, dict(data))
-        return data if assigning else folded
+        if assigning:
+            return data
+        if unknown := sorted(str(key) for key in folded if key not in cls.model_fields):
+            raise ValueError(_unknown_keys(cls, unknown, frozenset(cls.model_fields)))
+        return folded
 
     def __setattr__(self, name, value):
         value = _fold_slot(type(self).__name__, name, value)

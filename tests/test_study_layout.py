@@ -53,12 +53,14 @@ def test_unsanctioned_entries_state_their_expiry(record):
     for rel, entry in [*layout_rules.walk(record, REPLICATION), *layout_rules.iter_files(record, REPLICATION)]:
         if str(entry.bids) in {"unsanctioned", "proposed"}:
             assert entry.expires_with, f"{rel!r} needs an `expires_with` saying what would retire its entry"
+        if str(entry.bids) == "out_of_scope":
+            assert not entry.expires_with, f"{rel!r} is out of BIDS's scope, so nothing retires it"
 
 
 def test_bidsignore_lists_exactly_the_entries_bids_does_not_know(record):
     """A hidden directory and a nested dataset need no line; everything unknown does."""
     lines = [line for line in layout_rules.bidsignore_lines(record, REPLICATION, "S") if not line.startswith("#")]
-    assert lines == ["spec/", "/S.yaml"]
+    assert lines == ["LICENSES/", "spec/", "/AGENTS.md", "/REUSE.toml", "/S.yaml"]
 
 
 def test_gitignore_is_the_copyright_gate(record):
@@ -246,9 +248,9 @@ def test_the_exceptions_table_is_exactly_what_bidsignore_exempts(record):
 
 
 def test_every_documented_exception_names_the_proposal_it_waits_on(record):
-    """An entry outside the standard without a stated expiry is a permanent divergence by default."""
+    """An entry outside the standard without a stated expiry is a permanent divergence by default, unless it is declared out of BIDS's scope."""
     for row in layout_rules.exceptions_block(record, "Demo1999", REPLICATION).splitlines():
-        if row.startswith("| `"):
+        if row.startswith("| `") and row.split("|")[2].strip() != "out_of_scope":
             assert "BEP" in row.rsplit("|", 2)[1], f"no proposal named for {row.split('`')[1]}"
 
 

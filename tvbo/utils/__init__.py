@@ -289,6 +289,15 @@ def network_couplings(network) -> dict:
     return {str(key): coupling for key, coupling in keyed_items(getattr(network, "coupling", None), "coupling")}
 
 
+def coupling_parameters_path(network, coupling) -> str:
+    """Where generated code reads *coupling*'s parameters in the experiment's parameter collection: ``coupling`` when *network* declares one coupling, ``coupling.<role>`` when it declares several, as `tvbo.classes.experiment._hoist_coupling_parameters` keys them."""
+    couplings = network_couplings(network)
+    if len(couplings) <= 1:
+        return "coupling"
+    role = next((key for key, value in couplings.items() if value is coupling), str(coupling.name))
+    return f"coupling.{role}"
+
+
 def edge_param(edge, name: str, default=None):
     """A named quantity off an ``Edge``: its ``parameters`` entry, else its own slot.
 

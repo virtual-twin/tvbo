@@ -681,9 +681,9 @@ def test_full_container_env_override_wins_verbatim(monkeypatch):
     assert _workflow.resolve_container_ref("tvbo") == "docker://mirror.local/tvbo:pinned"
 
 
-def test_fan_input_expr_expands_over_every_fanned_cell():
-    """A figure (or cross-experiment dep) that reads a FANNED experiment must depend on ALL its cells, so it waits for the whole sweep — the input is the `expand()` over the fan's value lists. A group run (no axes) is its single result path."""
-    from tvbo.run.workflow import fan_input_expr
+def test_a_reader_of_an_experiment_plugs_into_its_rule_rather_than_its_paths():
+    """A figure that reads an experiment names that experiment's rule output, never a restated path, so moving where the rule writes cannot desync the reader. A fanned experiment is the ``expand()`` of the rule's output pattern over the fan's value lists, so the reader waits for the whole sweep; a group run is the rule's output itself."""
+    from tvbo.run.workflow import rule_output_expr
 
     fanned = {
         "key": "41",
@@ -694,14 +694,10 @@ def test_fan_input_expr_expands_over_every_fanned_cell():
             {"name": "conduction_speed", "parameter": "network.conduction_speed", "values": [6]},
         ],
     }
-    expr = fan_input_expr(fanned)
-    assert expr.startswith("expand(")
-    # the cell pattern (doubled wildcards for the carrying f-string) + the fan value lists
-    assert ('f"{OUT_DIR}/41/a={{a}}/conduction_speed={{conduction_speed}}/exp-41_desc-Kuramoto_result.h5"') in expr
-    assert "a=EXP_41_A" in expr and "conduction_speed=EXP_41_CONDUCTION_SPEED" in expr
+    assert rule_output_expr(fanned) == "expand(rules.exp_41.output[0], a=EXP_41_A, conduction_speed=EXP_41_CONDUCTION_SPEED)"
 
     group = {"key": "9", "rule_name": "exp_9", "result_stem": "exp-9_result", "axes": []}
-    assert fan_input_expr(group) == 'f"{OUT_DIR}/9/exp-9_result.h5"'
+    assert rule_output_expr(group) == "rules.exp_9.output"
 
 
 def test_setup_sh_layers_requirements_onto_the_image_via_system_site_venv():
@@ -1573,8 +1569,8 @@ def test_pack_warns_when_figure_inputs_live_outside_the_kit(tmp_path: Path, monk
     monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
 
     kit = tmp_path / "kit"
-    kit.mkdir()
-    (kit / "figures.smk").write_text(
+    (kit / "rules").mkdir(parents=True)
+    (kit / "rules" / "figures.smk").write_text(
         "rule fig_a:\n"
         "    input:\n"
         "        '/elsewhere/study/output/results/fig1_curves/result.h5',\n"
@@ -1598,8 +1594,8 @@ def test_no_figure_warning_when_every_input_is_in_the_kit(tmp_path: Path, monkey
     monkeypatch.setattr("tvbo.cli._common.warn", lambda m: warned.append(m))
 
     kit = tmp_path / "kit"
-    kit.mkdir()
-    (kit / "figures.smk").write_text(
+    (kit / "rules").mkdir(parents=True)
+    (kit / "rules" / "figures.smk").write_text(
         f"rule fig_a:\n    input:\n        '{kit.resolve()}/results/3/exp-3_result.h5'\n",
         encoding="utf-8",
     )
@@ -1660,6 +1656,31 @@ def test_a_hyphenated_figure_id_emits_a_valid_rule_name(monkeypatch):
     assert "figures/fig-02_desc-frameworkSchematic.png" in text, "the output file keeps the figure id"
 
 
+def test_a_frozen_figure_renders_with_tvbo_from_its_declaration(monkeypatch, tmp_path: Path):
+    """A figure whose declaration the kit freezes renders with `tvbo figure render` on that file and reruns when it is edited, and the kit freezes no plot.py for it; one without a frozen declaration keeps running its frozen plot.py."""
+    from tvbo.adapters import figure_workflow as fw
+
+    monkeypatch.setattr(fw, "_figure_inputs", lambda figure, base, keys: [])
+
+    class _Fig:
+        def __init__(self, name):
+            self.name, self.format, self.panels, self.workflow_overrides, self.code_modules = name, "png", [], None, []
+
+    plans = [{"key": "1", "out_dir": "derivatives/tvbo"}]
+    records = {"declared": {"name": "declared", "panels": {}}}
+    text = fw.emit_figure_rules([_Fig("declared"), _Fig("bare")], base_dir=".", exp_plans=plans, records=records)
+    declared, bare = text.split("rule fig_declared:")[1].split("rule fig_bare:")
+    assert "tvbo figure render figures/specs/declared.yaml --base-dir . -o figures" in declared
+    assert "'figures/specs/declared.yaml'" in declared.split("output:")[0], "the declaration is an input"
+    assert "python figures/scripts/plot_bare.py" in bare
+
+    monkeypatch.setattr(fw.bsplot, "render_code", lambda figure, base_dir, outfile: f"# {figure.name}\n")
+    fw.write_figure_kit([_Fig("declared"), _Fig("bare")], out_dir=tmp_path, exp_plans=plans, records=records)
+    assert (tmp_path / "figures" / "specs" / "declared.yaml").read_text().startswith("name: declared")
+    assert (tmp_path / "figures" / "scripts" / "plot_bare.py").read_text() == "# bare\n"
+    assert not (tmp_path / "figures" / "scripts" / "plot_declared.py").exists()
+
+
 def test_the_kit_lists_the_input_files_it_names_but_does_not_carry(tmp_path: Path):
     """Producer-sourced inputs — a surface mesh, a parcellation — are read at run time and were never staged or even listed, so a kit landed on the cluster looking complete and failed on the first rule that opened one. The manifest turns that into an rsync list."""
     from tvbo.cli import workflow as workflow_cli
@@ -1695,21 +1716,21 @@ def test_the_kit_lists_the_input_files_it_names_but_does_not_carry(tmp_path: Pat
     assert referenced == "spec/experiment.yaml"
 
 
-def test_figure_kit_rebases_author_container_to_the_kit_path(monkeypatch):
-    """The kit's frozen ``plot.py`` must read the result where the KIT stores it (``results/<key>/<stem>`` — the same path the render rule's ``input:`` uses), not the author's absolute ``output/nc`` path ``bsplot.render_code`` bakes, which does not exist on a compute node."""
+def test_figure_kit_binds_each_container_to_the_kit_path(monkeypatch):
+    """The kit's frozen ``plot.py`` reads the result where the KIT stores it (``results/<key>/<stem>``, the path the render rule's ``input:`` uses), including when the study has never run where the kit is emitted, so no author-time container exists."""
     from tvbo.adapters import figure_workflow as fw
 
     figure = SimpleNamespace(panels=[SimpleNamespace(layers=[SimpleNamespace(used={"experiment": "3"})], annotations=[])])
     keys = {"3": {"key": "3", "axes": [], "out_dir": "results"}}
     monkeypatch.setattr(fw.bsplot, "_used_ref", lambda used: "3")
     monkeypatch.setattr(fw, "_exp_key_of", lambda iri, ks: "3" if iri in ks else None)
-    monkeypatch.setattr(fw.bsplot, "_container_path", lambda iri, base: "/abs/study/output/nc/exp-3_result.h5")
     monkeypatch.setattr(fw._wf, "cell_out_relpath", lambda ep: "exp-3_result.h5")
 
-    code = "layer = {'container': '/abs/study/output/nc/exp-3_result.h5'}"
-    out = fw._rebase_containers_to_kit(code, figure, "/abs/study", keys, "results")
-    assert "/abs/study/output/nc" not in out
-    assert "'container': 'results/3/exp-3_result.h5'" in out
+    paths = fw._kit_containers(figure, keys, "results")
+    assert paths == {"3": "results/3/exp-3_result.h5"}
+    with fw.bsplot.reading_containers(paths):
+        assert fw.bsplot._layer_container("3", Path("/nonexistent/study")) == "results/3/exp-3_result.h5"
+    assert fw.bsplot._layer_container("3", Path("/nonexistent/study")) == "", "the binding ends with the block"
 
 
 def test_workflow_run_rejects_unknown_engine():
@@ -2082,3 +2103,12 @@ def test_the_jobs_cap_is_declarable_and_survives_the_frozen_spec():
 
     assert dm.WorkflowEngineConfig(jobs=250).jobs == 250
     assert _engine_config_from_dict({"jobs": 250, "partition": "gpu"}).jobs == 250
+
+
+def test_a_spec_without_a_key_is_keyed_by_its_file_name(tmp_path: Path):
+    """A study scaffolded as ``MyStudy.yaml`` states no ``key``; its kit lands in ``.tvbo/kits/MyStudy/`` and its rules read ``MyStudy_exp_1``, named by the file the author chose, not a generic ``study``."""
+    from tvbo.cli.workflow import _load_spec
+
+    spec = tmp_path / "MyRun.yaml"
+    spec.write_text(_USED_DEP_RECIPE.format(iri="tvbo:dataset/HCP1200"))
+    assert _load_spec(str(spec))[2] == "MyRun"
