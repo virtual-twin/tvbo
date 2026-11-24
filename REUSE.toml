@@ -69,6 +69,56 @@ path = [
 SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
 SPDX-License-Identifier = "EUPL-1.2"
 
+# The licence texts `tvbo study init` copies into a new study's LICENSES/, verbatim; Creative Commons dedicates the texts of its legal tools to the public domain under CC0 1.0
+[[annotations]]
+path = ["tvbo/templates/study/LICENSES/CC-BY-4.0.txt", "tvbo/templates/study/LICENSES/CC0-1.0.txt"]
+SPDX-FileCopyrightText = "Creative Commons Corporation"
+SPDX-License-Identifier = "CC0-1.0"
+
+# The MIT licence text, with its copyright line left for the study's authors to fill in
+[[annotations]]
+path = "tvbo/templates/study/LICENSES/MIT.txt"
+SPDX-License-Identifier = "MIT"
+
+# The lifecycle wheel's stage table, which carries Font Awesome Free glyphs
+[[annotations]]
+path = "tvbo/plot/lifecycle.yaml"
+SPDX-FileCopyrightText = ["Charité Universitätsmedizin Berlin", "Font Awesome Free 6.5.1 by @fontawesome (https://fontawesome.com), Fonticons, Inc."]
+SPDX-License-Identifier = "EUPL-1.2 AND CC-BY-4.0"
+
+# What tvbo offers at each scientific-operations maturity level
+[[annotations]]
+path = "tvbo/plot/maturity.yaml"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "EUPL-1.2"
+
+# The TVB-O logo as a vector
+[[annotations]]
+path = "tvbo/plot/assets/tvbo-logo.svg"
+SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
+SPDX-License-Identifier = "EUPL-1.2"
+
+# Drawings and run outputs of the dTOR-985 Desikan-Killiany connectome (weights, tract lengths, MNI ICBM 2009c centres, FreeSurfer labels), on fsaverage where a surface is shown
+[[annotations]]
+path = [
+    "tvbo/plot/assets/lifecycle-brain.svg",
+    "docs/0-SimulationStudyLifecycle/assets/lifecycle-*.svg",
+    "docs/0-SimulationStudyLifecycle/assets/figure-FirstSimulation-*.png",
+    "docs/examples/first-simulation/derivatives/tvbo/*.h5",
+    "docs/examples/first-simulation/derivatives/tvbo/*.yaml",
+    "docs/examples/first-simulation/docs/figures/*.png",
+    "docs/examples/first-simulation/docs/figures/*.gif",
+]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "2024 Gavin Elias, Jürgen Germann, Suresh Joel, Ningfei Li, Andreas Horn, Alexandre Boutet, Andres Lozano (dTOR-985, https://doi.org/10.6084/m9.figshare.c.6844890)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+]
+SPDX-License-Identifier = "EUPL-1.2 AND CC0-1.0 AND LicenseRef-HCP-WU-Minn-Open-Access AND LicenseRef-MNI-ICBM152 AND LicenseRef-FreeSurfer"
+
 # Copies of the LinkML schema the package ships, and its table of renamed record stems
 [[annotations]]
 path = ["tvbo/rules/study_layout.yaml", "tvbo/datamodel/tvbo_datamodel.schema.json", "tvbo/data/renamed_stems.yaml"]
@@ -484,3 +534,184 @@ SPDX-License-Identifier = "CC-BY-4.0"
 path = "tvbo/data/tvbo_data/hcpmmp1_ordered.txt"
 SPDX-FileCopyrightText = "Copyright (c) 2008-2022 the MRtrix3 contributors"
 SPDX-License-Identifier = "MPL-2.0"
+
+# Files quoting TVB's model, coupling and parameter descriptions verbatim carry TVB's licence beside their own; tests/test_licence_tvb_text.py lists them and fails on one missing here
+[[annotations]]
+path = [
+    "README.md",
+    "docs/Interoperability/experiment.jsonld",
+    "tests/reference_data/codegen/CoombesByrne.tvb.txt",
+    "tests/reference_data/codegen/CoombesByrne2D.tvb.txt",
+    "tests/reference_data/codegen/DecoBalancedExcInh.tvb.txt",
+    "tests/reference_data/codegen/DumontGutkin.tvb.txt",
+    "tests/reference_data/codegen/Epileptor.tvb.txt",
+    "tests/reference_data/codegen/Epileptor2D.tvb.txt",
+    "tests/reference_data/codegen/Epileptor5D.tvb.txt",
+    "tests/reference_data/codegen/EpileptorCodim3.tvb.txt",
+    "tests/reference_data/codegen/EpileptorCodim3SlowMod.tvb.txt",
+    "tests/reference_data/codegen/EpileptorRestingState.tvb.txt",
+    "tests/reference_data/codegen/GastSchmidtKnosche_SD.tvb.txt",
+    "tests/reference_data/codegen/GastSchmidtKnosche_SF.tvb.txt",
+    "tests/reference_data/codegen/Generic2dOscillator.tvb.txt",
+    "tests/reference_data/codegen/Hopfield.tvb.txt",
+    "tests/reference_data/codegen/JansenRit.tvb.txt",
+    "tests/reference_data/codegen/LarterBreakspear.tvb.txt",
+    "tests/reference_data/codegen/Linear.tvb.txt",
+    "tests/reference_data/codegen/MontbrioPazoRoxin.tvb.txt",
+    "tests/reference_data/codegen/ReducedWongWangExcInh.tvb.txt",
+    "tests/reference_data/codegen/WilsonCowan.tvb.txt",
+    "tests/reference_data/codegen/ZerlautAdaptationFirstOrder.tvb.txt",
+    "tests/reference_data/codegen/ZerlautAdaptationSecondOrder.tvb.txt",
+    "tests/reference_data/codegen/ZetterbergJansen.tvb.txt",
+    "tests/reference_data/database/coupling_functions__Linear.yaml",
+    "tests/reference_data/database/experiments__RateML_ReducedWongWang.yaml",
+    "tests/reference_data/database/experiments__Stimulation_Bayesian_Inference.yaml",
+    "tests/reference_data/database/experiments__neuroml__Epileptor2D_LEMS.yaml",
+    "tests/reference_data/database/experiments__neuroml__Generic2dOscillator_LEMS.yaml",
+    "tests/reference_data/database/experiments__neuroml__JansenRit_LEMS.yaml",
+    "tests/reference_data/database/experiments__neuroml__WilsonCowan_LEMS.yaml",
+    "tests/reference_data/database/models__CoombesByrne.yaml",
+    "tests/reference_data/database/models__CoombesByrne2D.yaml",
+    "tests/reference_data/database/models__DecoBalancedExcInh.yaml",
+    "tests/reference_data/database/models__DumontGutkin.yaml",
+    "tests/reference_data/database/models__Epileptor.yaml",
+    "tests/reference_data/database/models__Epileptor2D.yaml",
+    "tests/reference_data/database/models__Epileptor5D.yaml",
+    "tests/reference_data/database/models__EpileptorCodim3.yaml",
+    "tests/reference_data/database/models__EpileptorCodim3SlowMod.yaml",
+    "tests/reference_data/database/models__EpileptorRestingState.yaml",
+    "tests/reference_data/database/models__GastSchmidtKnosche_SD.yaml",
+    "tests/reference_data/database/models__GastSchmidtKnosche_SF.yaml",
+    "tests/reference_data/database/models__Generic2dOscillator.yaml",
+    "tests/reference_data/database/models__Hopfield.yaml",
+    "tests/reference_data/database/models__JansenRit.yaml",
+    "tests/reference_data/database/models__KIonEx.yaml",
+    "tests/reference_data/database/models__Kuramoto.yaml",
+    "tests/reference_data/database/models__Kuramoto2.yaml",
+    "tests/reference_data/database/models__LarterBreakspear.yaml",
+    "tests/reference_data/database/models__Linear.yaml",
+    "tests/reference_data/database/models__MontbrioPazoRoxin.yaml",
+    "tests/reference_data/database/models__ReducedWongWangExcInh.yaml",
+    "tests/reference_data/database/models__WilsonCowan.yaml",
+    "tests/reference_data/database/models__ZerlautAdaptationFirstOrder.yaml",
+    "tests/reference_data/database/models__ZerlautAdaptationSecondOrder.yaml",
+    "tests/reference_data/database/models__ZetterbergJansen.yaml",
+    "tests/reference_data/database_pydantic/coupling_functions__Linear.yaml",
+    "tests/reference_data/database_pydantic/experiments__RateML_ReducedWongWang.yaml",
+    "tests/reference_data/database_pydantic/experiments__Stimulation_Bayesian_Inference.yaml",
+    "tests/reference_data/database_pydantic/experiments__neuroml__Epileptor2D_LEMS.yaml",
+    "tests/reference_data/database_pydantic/experiments__neuroml__Generic2dOscillator_LEMS.yaml",
+    "tests/reference_data/database_pydantic/experiments__neuroml__JansenRit_LEMS.yaml",
+    "tests/reference_data/database_pydantic/experiments__neuroml__WilsonCowan_LEMS.yaml",
+    "tests/reference_data/database_pydantic/models__CoombesByrne.yaml",
+    "tests/reference_data/database_pydantic/models__CoombesByrne2D.yaml",
+    "tests/reference_data/database_pydantic/models__DecoBalancedExcInh.yaml",
+    "tests/reference_data/database_pydantic/models__DumontGutkin.yaml",
+    "tests/reference_data/database_pydantic/models__Epileptor.yaml",
+    "tests/reference_data/database_pydantic/models__Epileptor2D.yaml",
+    "tests/reference_data/database_pydantic/models__Epileptor5D.yaml",
+    "tests/reference_data/database_pydantic/models__EpileptorCodim3.yaml",
+    "tests/reference_data/database_pydantic/models__EpileptorCodim3SlowMod.yaml",
+    "tests/reference_data/database_pydantic/models__EpileptorRestingState.yaml",
+    "tests/reference_data/database_pydantic/models__GastSchmidtKnosche_SD.yaml",
+    "tests/reference_data/database_pydantic/models__GastSchmidtKnosche_SF.yaml",
+    "tests/reference_data/database_pydantic/models__Generic2dOscillator.yaml",
+    "tests/reference_data/database_pydantic/models__Hopfield.yaml",
+    "tests/reference_data/database_pydantic/models__JansenRit.yaml",
+    "tests/reference_data/database_pydantic/models__KIonEx.yaml",
+    "tests/reference_data/database_pydantic/models__Kuramoto.yaml",
+    "tests/reference_data/database_pydantic/models__Kuramoto2.yaml",
+    "tests/reference_data/database_pydantic/models__LarterBreakspear.yaml",
+    "tests/reference_data/database_pydantic/models__Linear.yaml",
+    "tests/reference_data/database_pydantic/models__MontbrioPazoRoxin.yaml",
+    "tests/reference_data/database_pydantic/models__ReducedWongWangExcInh.yaml",
+    "tests/reference_data/database_pydantic/models__WilsonCowan.yaml",
+    "tests/reference_data/database_pydantic/models__ZerlautAdaptationFirstOrder.yaml",
+    "tests/reference_data/database_pydantic/models__ZerlautAdaptationSecondOrder.yaml",
+    "tests/reference_data/database_pydantic/models__ZetterbergJansen.yaml",
+]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others',
+]
+SPDX-License-Identifier = "EUPL-1.2 AND GPL-3.0-or-later"
+
+[[annotations]]
+path = [
+    "docs/examples/first-simulation/derivatives/tvbo/exp-1_model-Generic2dOscillator_network.yaml",
+    "docs/examples/first-simulation/derivatives/tvbo/exp-1_model-Generic2dOscillator_result.yaml",
+]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "2024 Gavin Elias, Jürgen Germann, Suresh Joel, Ningfei Li, Andreas Horn, Alexandre Boutet, Andres Lozano (dTOR-985, https://doi.org/10.6084/m9.figshare.c.6844890)",
+    "Data were provided [in part] by the Human Connectome Project, WU-Minn Consortium (Principal Investigators: David Van Essen and Kamil Ugurbil; 1U54MH091657) funded by the 16 NIH Institutes and Centers that support the NIH Blueprint for Neuroscience Research; and by the McDonnell Center for Systems Neuroscience at Washington University.",
+    "Copyright (C) 1993-2004 Louis Collins, McConnell Brain Imaging Centre, Montreal Neurological Institute, McGill University.",
+    "The General Hospital Corporation (FreeSurfer)",
+    'All or portions of this licensed product (such portions are the "Software") have been obtained under license from The General Hospital Corporation "MGH" and are subject to the following terms and conditions:',
+    '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others',
+]
+SPDX-License-Identifier = "EUPL-1.2 AND CC0-1.0 AND LicenseRef-HCP-WU-Minn-Open-Access AND LicenseRef-MNI-ICBM152 AND LicenseRef-FreeSurfer AND GPL-3.0-or-later"
+
+[[annotations]]
+path = [
+    "ontology/tvbo.owl",
+    "tvbo/data/ontology/tvb-o.owl",
+    "tvbo/data/ontology/tvbo.owl",
+]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "Gene Ontology Consortium, release 2023-07-27, CC BY 4.0",
+    "QUDT, Quantities, Units, Dimensions and Types, by QUDT.org (https://qudt.org), licensed under CC BY 4.0",
+    "UCUM codes: Regenstrief Institute, Inc. and The UCUM Organization (https://ucum.org/license)",
+    "NeuroML2 CoreTypes, NeuroML contributors (https://github.com/NeuroML/NeuroML2)",
+    '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND GPL-3.0-or-later"
+
+[[annotations]]
+path = [
+    "tvbo/data/_tvb-o.csv",
+]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    "Gene Ontology Consortium, release 2023-07-27, CC BY 4.0",
+    '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND GPL-3.0-or-later"
+
+[[annotations]]
+path = [
+    "tvbo/database/coupling_functions/Linear.yaml",
+    "tvbo/database/experiments/RateML_ReducedWongWang.yaml",
+    "tvbo/database/models/CoombesByrne.yaml",
+    "tvbo/database/models/CoombesByrne2D.yaml",
+    "tvbo/database/models/DecoBalancedExcInh.yaml",
+    "tvbo/database/models/DumontGutkin.yaml",
+    "tvbo/database/models/Epileptor.yaml",
+    "tvbo/database/models/Epileptor2D.yaml",
+    "tvbo/database/models/Epileptor5D.yaml",
+    "tvbo/database/models/EpileptorCodim3.yaml",
+    "tvbo/database/models/EpileptorCodim3SlowMod.yaml",
+    "tvbo/database/models/EpileptorRestingState.yaml",
+    "tvbo/database/models/GastSchmidtKnosche_SD.yaml",
+    "tvbo/database/models/GastSchmidtKnosche_SF.yaml",
+    "tvbo/database/models/Generic2dOscillator.yaml",
+    "tvbo/database/models/Hopfield.yaml",
+    "tvbo/database/models/JansenRit.yaml",
+    "tvbo/database/models/KIonEx.yaml",
+    "tvbo/database/models/Kuramoto.yaml",
+    "tvbo/database/models/Kuramoto2.yaml",
+    "tvbo/database/models/LarterBreakspear.yaml",
+    "tvbo/database/models/Linear.yaml",
+    "tvbo/database/models/MontbrioPazoRoxin.yaml",
+    "tvbo/database/models/ReducedWongWangExcInh.yaml",
+    "tvbo/database/models/WilsonCowan.yaml",
+    "tvbo/database/models/ZerlautAdaptationFirstOrder.yaml",
+    "tvbo/database/models/ZerlautAdaptationSecondOrder.yaml",
+    "tvbo/database/models/ZetterbergJansen.yaml",
+]
+SPDX-FileCopyrightText = [
+    "Charité Universitätsmedizin Berlin",
+    '(c) 2012-2025, Baycrest Centre for Geriatric Care ("Baycrest") and others',
+]
+SPDX-License-Identifier = "CC-BY-4.0 AND GPL-3.0-or-later"

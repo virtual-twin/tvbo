@@ -111,3 +111,28 @@ def test_the_wrappers_own_time_grid_stamps_the_axis():
         observation_dims={"recorded_ts": ("time",)},
     )
     assert list(res.observations["recorded_ts"].ys.coords["time"].values) == [0.0, 3.0, 6.0]
+
+
+@pytest.mark.parametrize(
+    ("output_names", "tail", "dims"),
+    [(["x", "y"], (5, 2, 3), ("time", "variable", "node")), (["x"], (5, 3), ("time", "node"))],
+    ids=["several-variables", "one-variable"],
+)
+def test_a_swept_trajectory_names_its_axes_from_the_recorded_outputs(output_names, tail, dims):
+    """A keyed sweep's trajectory carries the axes of what it recorded: several variables keep their names on `variable`, and one variable, whose state axis the backend drops, leaves a `node` axis rather than a node axis named `variable`."""
+    from tvbo.data.types import ExplorationResult
+    from tvbo.utils import Bunch
+
+    values = np.array([0.1, 0.2])
+    sweep = ExplorationResult(
+        name="sweep",
+        results=np.zeros((2, *tail)),
+        axes=[Bunch(name="SupHopf.a", n=2, explored_values=values)],
+        dt=0.5,
+        output_names=output_names,
+        cell_coords={"SupHopf.a": values},
+    )
+    grid = sweep.as_grid()
+    assert grid.dims == ("SupHopf.a", *dims)
+    if "variable" in dims:
+        assert grid.coords["variable"].values.tolist() == output_names

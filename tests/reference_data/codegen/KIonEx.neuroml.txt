@@ -181,7 +181,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="KIonEx_inst" type="KIonEx" Cm="1.0" Delta="1.0" E="0.0" J="0.1" K_bath="5.5" R_minus="0.5" R_plus="-0.5" Vstar="-31.0" c_minus="-40.0" c_plus="-20.0" epsilon="0.001" eta="0.0" gamma="0.04" tau_n="4.0" Chn="0.4" Ckp="5.5" Cl_i0="5.0" Cl_o0="112.0" Cmna="-24.0" Cnap="21.0" Cnk="-19.0" DChn="-8.0" DCkp="1.0" DCmna="12.0" DCnap="2.0" DCnk="18.0" K_i0="130.0" K_o0="4.8" Na_i0="16.0" Na_o0="138.0" g_Cl="7.5" g_K="22.0" g_Kl="0.12" g_Na="40.0" g_Nal="0.02" rho="250.0" w_i="2160.0" w_o="720.0" c_glob="0" DKi_0="0.1" Kg_0="0.1" V_0="0.1" n_0="0.1" x_0="0.1"/>
+  <Component id="KIonEx_inst" type="KIonEx" Cm="1.0" Delta="1.0" E="0.0" J="0.1" K_bath="5.5" R_minus="0.5" R_plus="-0.5" Vstar="-31.0" c_minus="-40.0" c_plus="-20.0" epsilon="0.001" eta="0.0" gamma="0.04" tau_n="4.0" Chn="0.4" Ckp="5.5" Cl_i0="5.0" Cl_o0="112.0" Cmna="-24.0" Cnap="21.0" Cnk="-19.0" DChn="-8.0" DCkp="1.0" DCmna="12.0" DCnap="2.0" DCnk="18.0" K_i0="130.0" K_o0="4.8" Na_i0="16.0" Na_o0="138.0" g_Cl="7.5" g_K="22.0" g_Kl="0.12" g_Na="40.0" g_Nal="0.02" rho="250.0" w_i="2160.0" w_o="720.0" c_glob="0" DKi_0="-3.630383126785457" Kg_0="-6.653918130827986" V_0="-81.91759608268126" n_0="0.8949727407898387" x_0="0.8830719356077292"/>
 
 
 

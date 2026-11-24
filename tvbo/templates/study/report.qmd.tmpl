@@ -8,7 +8,7 @@ from pathlib import Path
 from tvbo.utils.study_layout import study_path, study_root
 
 ROOT = study_root(Path.cwd())   # every path comes from the layout record, so moving a directory there moves it here
-sys.path.insert(0, str(study_path("code", root=ROOT)))
+sys.path.insert(0, str(study_path("code_source", root=ROOT)))
 SOURCEDATA = study_path("sourcedata", root=ROOT)
 RESULTS = study_path("results", root=ROOT)
 FIGS = study_path("figures", root=ROOT)
@@ -21,7 +21,7 @@ from tvbo.utils.report import (
 from tvbo.classes.study import SimulationStudy
 
 STUDY = SimulationStudy.from_file("../{study}.yaml")
-EXP = STUDY.get_experiment(<exp_id>)
+EXP = STUDY.get_experiment(1)
 
 
 def param(exp_id, name):
@@ -32,16 +32,17 @@ def param(exp_id, name):
 def peak_rate(exp_id):
     """One study-specific metric, as an example: open the container a run produced, return a number."""
     ds = open_result(RESULTS, str(exp_id))
-    return None if ds is None else float(ds["r_E"].max())
+    return None if ds is None else float(ds["integration"].sel(variable="V").max())
 
 
 M = dict(
-    K=param(<exp_id>, "K"),
+    a=param(1, "a"),
+    peak=peak_rate(1),
     # peak=peak_rate("<exp_id>"), tau=analysis_scalar(RESULTS, "<analysis>", "<variable>"), ...
 )
 ```
 
-<!-- Every reported number is computed in the chunk above, from the result container or the recipe metadata, and referenced from the prose and the captions as inline `{python} fmt(M["..."])`. No value below this line may be typed by hand: an asserted number and a computed one look identical on the page and only one of them stays true when the study is re-run.
+<!-- Every reported number is computed in the chunk above, from the result container or the recipe metadata, and referenced from the prose and the captions as an inline Python expression such as fmt(M[key]). No value below this line may be typed by hand: an asserted number and a computed one look identical on the page and only one of them stays true when the study is re-run.
 
      The structure is a paper (IMRAD), not a walk through the figures: Abstract, Introduction, Methods, Results, Discussion, Conclusion. There is no manual References heading — Quarto appends the bibliography from the `@key` citations and the `bibliography:` set in _quarto.yml. Write mathematics as LaTeX; xelatex drops Unicode. Hold the prose to the writing-reports anti-slop standard before shipping: at most one em-dash per paragraph, no "robust/comprehensive/seamless/leverage/furthermore/moreover/in conclusion" filler, no rule-of-three lists or stacked adjectives, active voice, one idea per sentence. -->
 
@@ -77,7 +78,7 @@ print(EXP.dynamics.render("markdown", citeformat="quarto"))
 from IPython.display import Markdown
 # Every cell is computed from M or a result container; the verdict column is derived from those values, never asserted beside them.
 rows = [
-    ("<quantity>", fmt(M.get("K"), 0), "<what it establishes>"),
+    ("<quantity>", fmt(M.get("a"), 1), "<what it establishes>"),
 ]
 hdr = "| Quantity | Value | |\n|:--|:--:|:--|\n"
 Markdown(hdr + "\n".join("| " + " | ".join(map(str, r)) + " |" for r in rows))

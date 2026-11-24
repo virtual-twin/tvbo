@@ -73,6 +73,10 @@ branches:
           name: mesh_adaptation
           value: false
       method: collocation
+      linear_solver:
+        method: COPBLS
+        abs_tol: 1.0e-10
+        rel_tol: 1.0e-10
       mesh_intervals: 50
       degree: 4
       n_sections: 3
@@ -80,10 +84,6 @@ branches:
       - name: jacobian
         value: DenseAnalyticalInplace
     bothside: true
-    options:
-      linear_solver:
-        name: linear_solver
-        value: COPBLS
 bothside: true
 execution:
   n_workers: 1

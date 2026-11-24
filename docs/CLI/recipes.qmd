@@ -18,24 +18,24 @@ tvbo export openminds ./study.yaml -o ./bundle.jsonld
 tvbo import ./bundle.jsonld --format openminds -o ./roundtrip.yaml
 ```
 
-## Generate runnable scripts for every backend
+## Generate runnable scripts for the tvb, tvboptim and jax backends
 
 ```bash
-for fmt in tvb tvboptim jax pde networkdynamics modelingtoolkit; do
-    tvbo export "$fmt" experiment:JR_MEG -o "./scripts/${fmt}/"
+for fmt in tvb tvboptim jax; do
+    tvbo export "$fmt" experiment:ThreeNode_JansenRit1995_Parity -o "./scripts/${fmt}/"
 done
 ```
 
 ## Quickly check a Markdown report
 
 ```bash
-tvbo export markdown experiment:JR_MEG | less
+tvbo export markdown experiment:ThreeNode_JansenRit1995_Parity | less
 ```
 
 ## Run one experiment from a multi-experiment study
 
 ```bash
-tvbo run study:Schirner2023 --experiment JR_MEG -b jax -o ./out
+tvbo run ./study.yaml --experiment 3 -b jax -o ./out
 ```
 
 ## Sweep G locally with the JAX backend (vectorized — single process)
@@ -60,7 +60,7 @@ The kit's `README.md` will report `workflow cells: <N>, array tasks: <N>`.
 ## Snakemake kit, JAX backend, GPU container
 
 ```bash
-tvbo workflow snakemake experiment:JR_MEG -b jax \
+tvbo workflow snakemake experiment:ThreeNode_JansenRit1995_Parity -b jax \
     --set container=ghcr.io/the-virtual-brain/tvbo:0.7.0-gpu \
     --set retries=1 \
     -o ./kit-jax-gpu
@@ -96,8 +96,8 @@ After copying the kit:
 
 ```bash
 # Plain Python — no tvbo needed at runtime
-python ./kit/scripts/JR_MEG_FrequencyGradient_Optimization.py \
-    --spec ./kit/spec/JR_MEG_FrequencyGradient_Optimization.yaml \
+python ./kit/scripts/ThreeNode_JansenRit1995_Parity.py \
+    --spec ./kit/spec/ThreeNode_JansenRit1995_Parity.yaml \
     --output ./reproduced
 
 # Or fire the engine
@@ -109,7 +109,7 @@ nextflow run ./kit/main.nf
 ## Print only the artefact (no kit) — useful for piping
 
 ```bash
-tvbo workflow slurm experiment:JR_MEG -b jax --stdout > run.sbatch
+tvbo workflow slurm experiment:ThreeNode_JansenRit1995_Parity -b jax --stdout > run.sbatch
 ```
 
 ## See also

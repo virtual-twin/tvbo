@@ -132,6 +132,19 @@ def resolve_exploration_n_pmap(grid_n, n_vmap) -> int:
     return n_pmap
 
 
+def device_split(n_parallel, n_items) -> tuple[int, int]:
+    """``(n_pmap, n_vmap)`` that runs *n_parallel* lanes of a ``ParallelExecution`` on the devices this process has.
+
+    The width is *n_parallel* capped at *n_items*; ``"auto"`` takes one lane per device present, which gives ``(min(devices, n_items), 1)`` and so vectorises nothing and needs no memory estimate. The pmap takes at most ``jax.local_device_count()`` replicas of the width and each replica vectorises ``ceil(width / n_pmap)`` lanes, so a declared width runs on one device as on eight and only the share each device holds changes. A width the device count does not divide is padded, not refused: ``ParallelExecution`` fills every replica's share up to ``ceil(n_items / n_pmap)`` items and its result drops the filler, so fewer than ``n_pmap`` lanes run on padding.
+    """
+    import jax
+
+    devices = jax.local_device_count()
+    width = max(1, min(devices if n_parallel == "auto" else int(n_parallel), int(n_items)))
+    n_pmap = min(width, devices)
+    return n_pmap, -(-width // n_pmap)
+
+
 def estimate_per_cell_bytes(observable_fn, state) -> int | None:
     """Best-effort per-cell peak working-memory estimate for ``n_parallel: auto``.
 

@@ -4,6 +4,7 @@ Extracts Python logic from Mako templates for cleaner, testable code.
 """
 
 import keyword
+import math
 from typing import Any
 
 from tvbo.utils import as_list, keyed_items
@@ -79,16 +80,18 @@ def gathered_states(model, coupling=None):
     The delay history, the ``x_j`` gather and the history write-back must all agree on this one order, so all three read it from here. Disagreeing would not raise: a delayed source would silently be read from another state's row.
 
     Args:
-        model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states.
+        model: The :class:`~tvbo.classes.dynamics.Dynamics` declaring the states, or ``None`` for a coupling rendered on its own, whose ``incoming_states`` are then taken as declared.
         coupling: The coupling whose ``incoming_states`` overrides the default, or ``None`` to use the model's ``coupling_variable`` states.
 
     Returns:
         list[str]: State-variable names, ordered as the gathered rows are.
     """
-    names = list(model.state_variables.keys())
     declared = as_list(getattr(coupling, "incoming_states", None))
-    declared = [s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared]
-    declared = [s for s in dict.fromkeys(declared) if s in names]
+    declared = list(dict.fromkeys(s if isinstance(s, str) else getattr(s, "name", str(s)) for s in declared))
+    if model is None:
+        return declared
+    names = list(model.state_variables.keys())
+    declared = [s for s in declared if s in names]
     if declared:
         return declared
     return [n for n, sv in model.state_variables.items() if sv.coupling_variable]
@@ -117,12 +120,20 @@ def referenced(names, *expressions):
     return [n for n in names if re.search(rf"\b{re.escape(str(n))}\b", text)]
 
 
-def time_series_inputs(candidates, body):
+def time_series_inputs(candidates, body, where="a pipeline step"):
     """Which of *candidates* the function *body* reads as its incoming samples.
 
     A pipeline function names the samples either ``X`` (the generator's own convention) or by an argument the spec declared without a default — ``data`` in a body written as ``jnp.mean(data[...])``. Both must resolve to ``ts.data``; binding only ``X`` left the spec's name pointing at an unfilled positional parameter, so calling the function raised :class:`TypeError`.
+
+    One name stands for the samples. A body that reads two of the candidates reads an argument nothing supplies, ``spatial_mean`` in ``spatial_mean @ X``, and binding that to the samples as well would compute ``X @ X``, so it is refused by name under *where*.
     """
-    return referenced(list(dict.fromkeys(candidates)), body)
+    inputs = referenced(list(dict.fromkeys(candidates)), body)
+    if len(inputs) > 1:
+        raise ValueError(
+            f"{where}: {inputs} would all be bound to the incoming samples. One name stands for them, `X` or the one "
+            "argument declared without a value; give each of the others a `value`."
+        )
+    return inputs
 
 
 def retime(body, inputs):
@@ -196,7 +207,7 @@ def coupling_bindings(model, coupling):
     A difference coupling (``u_j - u_i``) needs the last two together, which is why the bare name cannot stand in for either. Word-boundary matching keeps the three apart: ``\\bu\\b`` does not match the ``u`` inside ``u_j``, so a pre-expression written only in subscripts binds no unread bare name. This mirrors ``state_aliases_j`` / ``state_aliases_i`` in :func:`tvbo.templates.tvboptim.utils.resolve_coupling_spec`.
 
     Args:
-        model: The dynamics declaring the state variables.
+        model: The dynamics declaring the state variables, or ``None`` for a coupling rendered on its own, whose declared incoming and local states stand for them.
         coupling: The coupling whose expressions are being emitted; its ``incoming_states`` and ``local_states`` declare the source and target-local state names.
 
     Returns:
@@ -209,7 +220,7 @@ def coupling_bindings(model, coupling):
 
     incoming = as_list(getattr(coupling, "incoming_states", None))
     local = as_list(getattr(coupling, "local_states", None))
-    states = list(model.state_variables.keys())
+    states = list(model.state_variables.keys()) if model is not None else list(dict.fromkeys(incoming + local))
     sv_index = {name: i for i, name in enumerate(states)}
     cvar_names = gathered_states(model, coupling)
     cvar_index = {name: i for i, name in enumerate(cvar_names)}
@@ -352,15 +363,45 @@ def resolve_distribution(
     }
 
 
+def initial_state_distribution(sv: Any, random_seed: int) -> dict[str, Any]:
+    """How a state variable's declared `distribution` draws its initial state, the one definition read by every backend that draws an initial state.
+
+    The bounds are the distribution's own `domain`, else the state variable's, else (-1, 1) (`resolve_distribution`). A normal (`distribution_family`) is centred between them with a spread of a quarter of their width, ``{"family": "normal", "loc", "scale"}``; a uniform draws between them, ``{"family": "uniform", "lo", "hi"}``. ``seed`` is the seed `resolve_distribution` keys the draw with, the distribution's own or *random_seed*, the run's.
+
+    Raises:
+        ValueError: Naming the variable, where the declaration says something this draw would not do: a family other than uniform or normal, a `mean` or `std` the bounds stand in for, or bounds that are not finite or not in order, from which a draw would be infinite or empty.
+    """
+    spec = resolve_distribution(sv.distribution, random_seed, fallback_domain=getattr(sv, "domain", None), bounds=(-1.0, 1.0))
+    family = distribution_family(spec["dist"])
+    if family not in ("uniform", "normal"):
+        raise ValueError(
+            f"{sv.name}: an initial-state distribution draws uniform or normal; `{sv.distribution.name}` is not drawn here."
+        )
+    if spec["mean"] is not None or spec["std"] is not None:
+        raise ValueError(
+            f"{sv.name}: an initial-state distribution draws from its bounds; `mean`/`std` are not read here; declare `domain`."
+        )
+    lo, hi = spec["lo"], spec["hi"]
+    if not (math.isfinite(lo) and math.isfinite(hi) and lo <= hi):
+        raise ValueError(
+            f"{sv.name}: its distribution draws the initial state between {lo} and {hi}, from "
+            f"{'its own domain' if getattr(sv.distribution, 'domain', None) else 'the state variable domain'}, which is not a finite interval in order. "
+            "Declare `distribution.domain` with finite bounds, lo not above hi."
+        )
+    if family == "normal":
+        return {"family": "normal", "loc": (lo + hi) / 2, "scale": (hi - lo) / 4.0, "seed": spec["seed"]}
+    return {"family": "uniform", "lo": lo, "hi": hi, "seed": spec["seed"]}
+
+
 def collect_sv_distributions(model):
-    """Collect state variables that have a distribution for random ICs.
+    """Every state variable that declares a distribution, from which `initial_state_distribution` draws its initial state, whether or not the distribution has a `domain` of its own.
 
     Returns list of (index, StateVariable, Distribution).
     """
     result = []
     for i, sv in enumerate(model.state_variables.values()):
         d = getattr(sv, "distribution", None)
-        if d and getattr(d, "domain", None):
+        if d:
             result.append((i, sv, d))
     return result
 
@@ -395,67 +436,10 @@ def get_distribution_seed(model, default=0):
     return default
 
 
-def _dist_params(dist):
-    """Extract mean/std from distribution parameters dict."""
-    params = getattr(dist, "parameters", None) or {}
-    mu = sigma = None
-    for p in params.values() if hasattr(params, "values") else params:
-        name = str(getattr(p, "name", ""))
-        val = getattr(p, "value", None)
-        if name == "mean" and val is not None:
-            mu = float(val)
-        elif name == "std" and val is not None:
-            sigma = float(val)
-    return mu, sigma
-
-
-def sample_expression(dist, backend="julia"):
-    """Generate a sampling expression string for a Distribution.
-
-    Args:
-        dist: Distribution object with .name, .domain, .parameters
-        backend: 'julia', 'numpy', or 'jax'
-
-    Returns:
-        str: code expression that samples one value from the distribution.
-    """
-    name = str(dist.name) if dist.name else "Uniform"
-    lo = dist.domain.lo
-    hi = dist.domain.hi
-
-    if backend == "julia":
-        return _sample_julia(name, lo, hi, dist)
-    elif backend in ("numpy", "jax"):
-        mod = "jnp" if backend == "jax" else "np"
-        return _sample_numpy(name, lo, hi, dist, mod)
-    else:
-        return _sample_numpy(name, lo, hi, dist, "np")
-
-
-def _sample_julia(name, lo, hi, dist):
-    if name == "Uniform":
-        return f"{lo} .+ ({hi} - {lo}) .* rand(rng)"
-    elif name == "Gaussian":
-        mu, sigma = _dist_params(dist)
-        if mu is None:
-            mu = f"({lo} + {hi}) / 2"
-        if sigma is None:
-            sigma = f"({hi} - {lo}) / 6"
-        return f"{mu} .+ {sigma} .* randn(rng)"
+def sample_expression(dist):
+    """Julia drawing one value of a per-node parameter uniform on its *dist*'s `domain` from the NetworkDynamics.jl module's `rng`, the one parameter draw that backend makes: another family is refused (`refuse_undrawn_starts`), and so is a draw over time (`refuse_draws_over_time`)."""
+    lo, hi = dist.domain.lo, dist.domain.hi
     return f"{lo} .+ ({hi} - {lo}) .* rand(rng)"
-
-
-def _sample_numpy(name, lo, hi, dist, mod="np"):
-    if name == "Uniform":
-        return f"rng.uniform({lo}, {hi}, size=n_nodes)"
-    elif name == "Gaussian":
-        mu, sigma = _dist_params(dist)
-        if mu is None:
-            mu = f"({lo} + {hi}) / 2"
-        if sigma is None:
-            sigma = f"({hi} - {lo}) / 6"
-        return f"rng.normal({mu}, {sigma}, size=n_nodes)"
-    return f"rng.uniform({lo}, {hi}, size=n_nodes)"
 
 
 # ── Graph generator utilities: dispatch is database-driven, one YAML per generator type ──

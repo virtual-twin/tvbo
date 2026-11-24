@@ -117,6 +117,11 @@ def test_is_local_ref():
     assert not dr.is_local_ref(_ref(iri="tvbo:exp/S/exp-1"))
 
 
+def test_experiment_zero_is_a_where_not_a_local_reference():
+    """Experiment id 0 names an experiment; read by truthiness it read as no WHERE, and the reference fell out of plans and kits (G208)."""
+    assert not dr.is_local_ref(_ref(experiment=0))
+
+
 def test_skip_network_sidecar(tmp_path):
     """The frozen connectome companion shares the directory and must never be opened as the result."""
     (tmp_path / "exp-7_model-M_network.h5").write_bytes(b"")
@@ -289,6 +294,14 @@ def test_reconcile_skips_non_node_string_axis():
     np.testing.assert_allclose(out.sel(node="A").values, [0.0, 3.0])
 
 
+@pytest.mark.parametrize("node_dims", [None, ["node"]], ids=["found-node-axes", "named-node-axes"])
+def test_reconcile_on_a_network_with_no_nodes_is_refused_by_name(node_dims):
+    """An empty node order matched no axis, so the array came back in its source's order, or the named axis came back empty, and nothing raised (G210)."""
+    da = xr.DataArray([10.0, 20.0, 30.0], dims=["node"], coords={"node": ["A", "B", "C"]})
+    with pytest.raises(ValueError, match=r"`reconcile: by_label` on the reference to experiment '5'.* has no nodes"):
+        dr.reconcile_by_label(da, {}, [], node_dims=node_dims, what="the reference to experiment '5'")
+
+
 # --------------------------------------------------------------------------- sel/mode helpers
 
 
@@ -325,6 +338,19 @@ def test_resolve_dataref_with_reconcile(vec_h5):
     out = dr.resolve_dataref(ref, results_root=root, alias_map={k: k for k in "ABC"}, model_labels=["C", "A", "B"])
     np.testing.assert_allclose(out.values, [30.0, 10.0, 20.0])
     assert list(out.coords["node"].values) == ["C", "A", "B"]
+
+
+def test_by_label_with_no_node_order_to_lay_out_on_is_refused_by_name(vec_h5):
+    """Given no network's order, a `by_label` reference came back in its source's order as if aligned (G207)."""
+    root, _ = vec_h5
+    with pytest.raises(ValueError, match=r"`reconcile: by_label` on the reference to experiment '5', output 'g'"):
+        dr.resolve_dataref(_ref(experiment="5", output="g", reconcile="by_label"), results_root=root)
+
+
+def test_a_caller_that_lays_out_by_label_itself_gets_the_source_order(vec_h5):
+    root, _ = vec_h5
+    out = dr.resolve_dataref(_ref(experiment="5", output="g", reconcile="by_label"), results_root=root, reconcile=False)
+    assert list(out.coords["node"].values) == ["A", "B", "C"]
 
 
 # --------------------------------------------------------------------------- transform

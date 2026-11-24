@@ -239,6 +239,17 @@ def test_an_unimplemented_boundary_condition_raises(mesh_path):
         field_assembly_plan(exp)
 
 
+def test_a_declared_initial_distribution_is_refused(mesh_path):
+    """A field opens at one value over its whole mesh, which has no place for a draw, so a declared distribution is refused, naming the field, rather than dropped."""
+    field = {**_sv("u", "D * laplacian(u)"), "distribution": {"name": "Uniform", "domain": {"lo": 0.0, "hi": 1.0}}}
+    exp = _experiment(mesh_path, [field], {"D": {"name": "D", "value": 0.01}})
+    with pytest.raises(
+        NotImplementedError,
+        match="the pde backend opens each field at one value over its whole mesh, so the initial-state distribution declared on 'u'",
+    ):
+        field_assembly_plan(exp)
+
+
 def test_the_equation_drives_the_operator_not_the_operators_list(mesh_path):
     """The regression that motivated the rewrite: changing only the coefficient in the EQUATION must change the result, even when ``operators:`` says something else."""
     plans = []

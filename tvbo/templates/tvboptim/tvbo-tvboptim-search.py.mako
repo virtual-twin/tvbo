@@ -11,12 +11,7 @@ monolithic experiment template and inserted only when the strategy is present:
     ${search.nsga2_body(expl)}
     % endif
 
-Resolution (axis→state-path, log10 decode, free-param bounds, metric observations)
-is done in the experiment template's context blocks (`exp_info['nsga2_axes']`,
-`refine_infos`); these defs only lay out the code from that clean metadata. The
-heavy imports (`_np`, `_Problem`, `_NSGA2`, `_pymoo_minimize`, `_HV`) live at the top
-of the generated module gated by `has_nsga2`; `DataAxis`/`Space`/`ParallelExecution`
-(has_explorations) and `Parameter`/`BoundedParameter` (has_optimization) are reused.
+Resolution (axis→state-path, log10 decode, free-param bounds, metric observations) is done in the experiment template's context blocks (`exp_info['nsga2_axes']`, `refine_infos`); these defs only lay out the code from that clean metadata. The heavy imports (`_np`, `_Problem`, `_NSGA2`, `_pymoo_minimize`, `_HV`) and `device_split` live at the top of the generated module gated by `has_nsga2`; `DataAxis`/`Space`/`ParallelExecution` (has_explorations) and `Parameter`/`BoundedParameter` (has_optimization) are reused. Each `ParallelExecution` takes its pmap and vmap widths from `device_split` at run time, so a declared width runs on the devices that process has.
 </%doc>
 <%!
 def obs_acc(oa, name):
@@ -55,8 +50,9 @@ def axis_value(expr, transform, col):
         def _obj_fn(_s):
             _oa = compute_all_observations(model_fn(_s), _s)
             return Bunch(${obj_bunch})
+        _n_pmap, _n_vmap = device_split(${repr(expl['n_parallel'])}, _X.shape[0])
         # One gather for the whole population: the execution already returns it stacked, and pulling it apart per individual costs a device round trip each, once per generation.
-        _pop = stack_grid_cells(ParallelExecution(_obj_fn, _space, n_pmap=${expl['n_workers']}).run())
+        _pop = stack_grid_cells(ParallelExecution(_obj_fn, _space, n_pmap=_n_pmap, n_vmap=_n_vmap).run())
         _F = _np.stack([_np.asarray(getattr(_pop, _n), dtype=float).reshape(_X.shape[0]) for _n in _obj_names], axis=1)
         for _i in range(_X.shape[0]):
             _all_evals.append({'x': [float(v) for v in _np.asarray(_X[_i])], 'F': [float(v) for v in _F[_i]]})
@@ -120,6 +116,7 @@ def axis_value(expr, transform, col):
                 _final, _ = _refine_opt.run(_s, max_steps=${refine['max_steps']}, chunk_size=${refine['max_steps']}, mode='${refine['opt_mode']}')
                 _oa = compute_all_observations(model_fn(_final), _final)
                 return Bunch(${', '.join(rets)})
-            _refine_rows = list(ParallelExecution(_optimize_from_seed, Space(_seed, mode='zip'), n_pmap=${refine['n_workers']}).run())
+            _n_pmap, _n_vmap = device_split(${refine['n_workers']}, len(_pareto_X))
+            _refine_rows = list(ParallelExecution(_optimize_from_seed, Space(_seed, mode='zip'), n_pmap=_n_pmap, n_vmap=_n_vmap).run())
             stage_results['${refine['name']}'] = Bunch(seeds=_refine_rows, pareto=_pareto, pareto_X=_pareto_X)
 </%def>\

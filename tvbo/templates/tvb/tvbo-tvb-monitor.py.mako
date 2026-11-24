@@ -3,6 +3,8 @@
 # Each Observation carries a class_reference that maps to the exact TVB Monitor class.
 # For projection monitors (EEG, MEG, iEEG), sensor data is loaded from the
 # sensor network referenced by observation.data_source.
+from tvbo.utils import keyed_items as _keyed_items
+
 observations = getattr(experiment, 'observations', None) or {}
 
 # HRF kernel class names that need import from tvb.datatypes.equations
@@ -36,7 +38,7 @@ projection_imports_needed = set()
 sensor_setup_lines = []  # Code lines for sensor/projection loading
 monitor_exprs = []
 
-for obs_name, obs in (observations.items() if hasattr(observations, 'items') else []):
+for obs_name, obs in _keyed_items(observations, 'observations'):
     cr = getattr(obs, 'class_reference', None)
     if cr is None:
         continue

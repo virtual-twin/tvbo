@@ -28,6 +28,7 @@
 
     dt = integration.step_size if integration is not None else 0.1
     from tvbo.templates.base.utils import gathered_state_indices
+    from tvbo.utils import coupling_parameters_path
     cvar = gathered_state_indices(model, coupling)
     vois = [sv.name for sv in experiment.dynamics.state_variables.values() if getattr(sv, 'record', True)]
 
@@ -200,7 +201,7 @@ def kernel(state):
 % else:
     p = Bunch()  # No parameters for this model
 % endif
-    params_integrate = (p, ${'state.parameters.coupling' if coupling else 'Bunch()'}, state.stimulus)
+    params_integrate = (p, ${'state.parameters.' + coupling_parameters_path(experiment.network, coupling) if coupling else 'Bunch()'}, state.stimulus)
 
     op = lambda ics, external_input: integrate(ics, weights, dt, params_integrate, delay_indices, external_input)
     latest_carry, res = jax.lax.scan(op, ics, (time_steps, noise))

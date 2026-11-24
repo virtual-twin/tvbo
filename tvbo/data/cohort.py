@@ -14,7 +14,7 @@ from pathlib import Path
 from tvbo.data.analysis_io import _slot
 from tvbo.data.dataref import SUBJECT_DIM, sel_dict
 from tvbo.data.registry import stem_entities
-from tvbo.utils import as_list, keyed_items
+from tvbo.utils import as_list, keyed_items, normalize_params
 
 BIDS_ENTITY_SHORT_KEYS = {
     "template": "tpl",
@@ -512,15 +512,23 @@ def read_member(root: Path, subject: str, query, output: str):
     return network_array(Network.load(str(path)), output, path.name)
 
 
+def _column_labels(net, spellings: set) -> list[str] | None:
+    """The labels an edge layer states for its columns, for a layer that routes to another network (a gain matrix, sensors by regions); None for a layer between the network's own nodes."""
+    for edge in net.edges or []:
+        if str(getattr(edge, "label", "")).lower() in spellings and getattr(edge, "dimension_labels", None):
+            return [str(lbl) for lbl in edge.dimension_labels]
+    return None
+
+
 def network_array(net, output: str, name: str):
     """*output* of the network *net* as a labelled ``DataArray``, as the network delivers it; *name* is how an error names the network.
 
-    An edge layer comes back on ``(node_i, node_j)`` with the transforms the network declares on it applied, and a per-node quantity on ``node``. Both carry the network's own node labels, so whatever consumes the array aligns by name.
+    An edge layer comes back on ``(node_i, node_j)`` with the transforms the network declares on it applied, a per-node quantity on ``node``, and ``positions`` on ``node`` and ``coordinate`` (``x``, ``y``, ``z``). ``nodes.<name>`` names a per-node quantity, never an edge layer of that name. Each carries the network's own node labels, so whatever consumes the array aligns by name; a layer that routes to another network carries that network's labels on ``node_j``, as the layer's ``dimension_labels`` state them.
     """
     import numpy as np
     import xarray as xr
 
-    from tvbo.data.param_io import resolve_network_node
+    from tvbo.data.param_io import _NODE_MEASURES, resolve_network_node
 
     labels = [str(lbl) for lbl in net.node_labels]
     repeated = sorted(lbl for lbl, n in Counter(labels).items() if n > 1)
@@ -528,7 +536,7 @@ def network_array(net, output: str, name: str):
         raise ValueError(f"{name}: node labels {repeated[:5]} occur more than once, so its arrays cannot be aligned by label.")
     # `matrix` answers a weight name with zeros on a file that holds none, which would read as an unconnected subject.
     spellings = set(net._matrix_names(output))
-    held = (
+    held = not output.startswith("nodes.") and (
         any(str(n).lower() in spellings for n in net.matrix_names)
         or bool(net._placed_edges() and net.carries(output))
         or net._declares_layer(
@@ -537,11 +545,21 @@ def network_array(net, output: str, name: str):
     )
     matrix = net.matrix(output, format="dense") if held else None
     if matrix is not None:
-        return xr.DataArray(np.asarray(matrix), dims=("node_i", "node_j"), coords={"node_i": labels, "node_j": labels})
-    vector = resolve_network_node(net, output)
+        return xr.DataArray(
+            np.asarray(matrix),
+            dims=("node_i", "node_j"),
+            coords={"node_i": labels, "node_j": _column_labels(net, spellings) or labels},
+        )
+    attribute = output.removeprefix("nodes.")
+    vector = resolve_network_node(net, attribute)
     if vector is None:
+        carried = sorted({str(key) for node in net.nodes or [] for key in normalize_params(getattr(node, "parameters", None))})
         raise KeyError(
-            f"{name} holds neither an edge matrix nor a per-node quantity named {output!r} (edge matrices: {list(net.matrix_names)})."
+            f"{name} holds neither an edge matrix nor a per-node quantity named {output!r} (edge matrices: {list(net.matrix_names)}; per-node quantities: {[*_NODE_MEASURES, *carried]})."
+        )
+    if attribute == "positions":
+        return xr.DataArray(
+            np.asarray(vector), dims=("node", "coordinate"), coords={"node": labels, "coordinate": ["x", "y", "z"]}
         )
     return xr.DataArray(np.asarray(vector), dims=("node",), coords={"node": labels})
 

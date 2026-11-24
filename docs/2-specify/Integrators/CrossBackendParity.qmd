@@ -7,19 +7,23 @@ aliases:
   - /Usage/CrossBackendParity.html
 ---
 
-A single TVBO `SimulationExperiment` can be executed on multiple code-generation backends: `tvboptim`, `jax` (autodiff) and `tvb`. When the experiment is fully deterministic, **all three backends produce the same trajectory to within float64 round-off** (rmse $\sim 10^{-14}$, corr $= 1.000000$).
+A single TVBO `SimulationExperiment` can be executed on multiple code-generation backends: `tvboptim`, `jax` (autodiff) and `tvb`. When the experiment is fully deterministic, the three backends integrate the same trajectory up to floating-point round-off. This page computes that agreement on a curated experiment built for it, `ThreeNode_JansenRit1995_Parity`: three Jansen-Rit columns, each declaring its own opening state, coupled with delays, with no noise and nothing drawn.
 
 This page documents:
 
 1. The conditions a YAML must satisfy for bit-comparable cross-backend output.
-2. The two backend conventions you must align before computing rmse / correlation.
+2. How to align the backends' samples before computing rmse / correlation.
 3. A reusable `strip_stochastics` helper.
 
 ## TL;DR
 
-```python
+```{python}
 import numpy as np
 from tvbo import SimulationExperiment
+
+EXPERIMENT = "ThreeNode_JansenRit1995_Parity"
+BACKENDS = ("tvboptim", "jax", "tvb")
+
 
 def strip_stochastics(exp):
     """Make an experiment fully deterministic for cross-backend comparison."""
@@ -38,33 +42,30 @@ def strip_stochastics(exp):
         exp.integration.state_wise_sigma = []
     exp.integration.transient_time = 0.0
 
-results = {}
-for backend in ("tvboptim", "jax", "tvb"):
-    # A fresh copy per backend, so `strip_stochastics` never edits an object another run already read.
-    exp = SimulationExperiment.from_db("JR_MEG_FrequencyGradient_Optimization")
+
+def pyramidal_potential(backend):
+    """``y1 - y2`` per node on *backend*, keyed by the integration step each sample is stamped at."""
+    exp = SimulationExperiment.from_db(EXPERIMENT)
     strip_stochastics(exp)
-    r = exp.run(backend)
-    d = r.integration.data
-    results[backend] = np.asarray(
-        d.sel(variable="y0") if "variable" in d.coords else d
-    ).flatten()
+    dt = float(exp.integration.step_size)
+    d = exp.run(backend).integration.data
+    if "mode" in d.dims:
+        d = d.isel(mode=0)
+    v = (d.sel(variable="y1") - d.sel(variable="y2")).transpose("time", ...)
+    return dict(zip(np.rint(v["time"].values / dt).astype(int).tolist(), v.values))
 
-# tvboptim records the IC at sample 0; jax/tvb start at post-first-step.
-# Align by dropping sample 0 from tvboptim and the last sample from the others.
-opt, jax_, tvb_ = results["tvboptim"][1:], results["jax"][:-1], results["tvb"][:-1]
-n = min(len(opt), len(jax_), len(tvb_))
-for ref_name, ref in (("jax", jax_[:n]), ("tvb", tvb_[:n])):
-    rmse = float(np.sqrt(np.mean((opt[:n] - ref) ** 2)))
-    corr = float(np.corrcoef(opt[:n], ref)[0, 1])
-    print(f"tvboptim vs {ref_name}: rmse={rmse:.2e}  corr={corr:.6f}")
+
+traces = {backend: pyramidal_potential(backend) for backend in BACKENDS}
+shared = sorted(set.intersection(*(set(trace) for trace in traces.values())))
+stacked = {backend: np.array([traces[backend][step] for step in shared]) for backend in BACKENDS}
+parity = {}
+for other in ("jax", "tvb"):
+    a, b = stacked["tvboptim"], stacked[other]
+    parity[other] = {"rmse": float(np.sqrt(np.mean((a - b) ** 2))), "corr": float(np.corrcoef(a.ravel(), b.ravel())[0, 1])}
+parity
 ```
 
-Expected output on the curated Jansen-Rit experiment:
-
-```
-tvboptim vs jax: rmse=1.43e-14  corr=1.000000
-tvboptim vs tvb: rmse=3.32e-14  corr=1.000000
-```
+Over the `{python} len(shared)` steps every backend reports, the pyramidal potential `y1 - y2` of the three columns differs between tvboptim and jax by an rmse of `{python} f"{parity['jax']['rmse']:.2e}"` (correlation `{python} f"{parity['jax']['corr']:.6f}"`), and between tvboptim and tvb by `{python} f"{parity['tvb']['rmse']:.2e}"` (correlation `{python} f"{parity['tvb']['corr']:.6f}"`). The signal itself spans `{python} f"{np.ptp(stacked['tvboptim']):.2f}"` mV.
 
 ## What breaks parity
 
@@ -72,7 +73,7 @@ If you run the same YAML on three backends and get rmse on the order of the sign
 
 ### 1. Stochastic time-varying parameter inputs
 
-A model parameter declared with `distribution: { axis: time }` is not a constant. tvboptim pre-generates a per-step random trajectory and indexes it inside the `dfun`. Other backends use a frozen scalar (`p.value`). See [Stochastic time-varying parameter inputs](../Models/Noise.qmd#stochastic-time-varying-parameter-inputs) for the YAML schema and code-generation details.
+A model parameter declared with `distribution: { axis: time }` is not a constant. tvboptim pre-generates a per-step random trajectory and indexes it inside the `dfun`. A backend draws such a parameter only where it declares that it draws that kind at every step, and refuses it by name when it renders or runs otherwise, rather than holding it at one value for the whole run. tvboptim declares a dynamics parameter, and the one such parameter of a stimulus whose signal is an equation of time; it refuses a coupling parameter, and an event parameter of a state-triggered, recorded or sourced event or one of several on one event. Every other backend, the continuation backends included, refuses all of them. See [Stochastic time-varying parameter inputs](../Models/Noise.qmd#stochastic-time-varying-parameter-inputs) for the YAML schema and code-generation details.
 
 The Jansen-Rit `p` parameter is the canonical example:
 
@@ -107,38 +108,27 @@ Every backend now reads this the same way: `duration` is the **measured** window
 
 That makes a run with a settle directly comparable across backends. It does not make it comparable to a run *without* one: a settle changes the state the measured window opens from, and on a stochastic model it also consumes noise. Compare like for like.
 
-## Backend sample-0 convention
+## Aligning the samples
 
-Even when the dynamics is deterministic and the ICs are identical, the first sample of the recorded trajectory differs between backends:
+Each backend stamps a sample with the time it was taken on the measurement clock, so samples are matched by stamp, not by position: `pyramidal_potential` keys every sample by its integration step, and the comparison runs over the steps all three report. The first step each backend reports, and how many it reports:
 
-| Backend    | Sample 0 in `result.integration.data` |
-| ---------- | ------------------------------------- |
-| `tvboptim` | The initial condition itself ($X_0$)  |
-| `jax`      | The state after one integration step ($X_1$) |
-| `tvb`      | The state after one integration step ($X_1$) |
-
-So a fair element-wise comparison is
-
-```
-tvboptim[1:]  ↔  jax[:-1]  ↔  tvb[:-1]
+```{python}
+{backend: (min(trace), len(trace)) for backend, trace in traces.items()}
 ```
 
-(All three then start at $X_1$ and run for $N-1$ samples.)
+The first shared step is `{python} shared[0]`, where `y1 - y2` of column `c0` reads `{python} f"{stacked['tvboptim'][0, 0]:.6f}"` on tvboptim, `{python} f"{stacked['jax'][0, 0]:.6f}"` on jax and `{python} f"{stacked['tvb'][0, 0]:.6f}"` on tvb.
 
-`jax` and `tvb` use the same convention and align without the shift:
-`jax[:]  ↔  tvb[:]`.
+## Verifying the openings are identical
 
-## Verifying ICs are identical
+Before debugging dynamics, confirm every backend starts from the same state. In this experiment each node declares its whole opening state. Its longest tract takes 80 steps, so for the first 80 steps the coupling reads the delay history, and a backend that filled the history with anything but the opening would disagree there. The recipe:
 
-Before debugging dynamics, confirm the ICs match. After `exp.configure()`, inspect `exp.dynamics.state_variables.<name>.initial_value`, since every backend reads from this single source.
+```{python}
+from importlib.resources import files
 
-```python
-exp.configure()
-for n, sv in exp.dynamics.state_variables.items():
-    print(f"  {n}: {sv.initial_value}")
+print((files("tvbo") / "database" / "experiments" / f"{EXPERIMENT}.yaml").read_text())
 ```
 
-For the JR YAML used above, every `y0..y5` is `0.1`, and the first integrated sample of `v_pyr = y1 - y2` is `0.36244...` for both `jax` and `tvb`, matching `tvboptim[1]`.
+Its step is 2^-13 s, the model's own clock, so each tract's delay and the duration are whole numbers of steps in floating point and no backend's rounding of a delay to steps can differ from another's.
 
 ## Reference: full parity test
 

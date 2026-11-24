@@ -113,14 +113,16 @@ def lane_parameters(experiment, lanes: xr.Dataset | None = None, *, results_root
 
 
 def build_network(experiment, namespace):
-    """The emitted module's network over the spec's own weights, and its tract lengths where `create_network` takes them."""
+    """The emitted module's network over the spec's own weights, its tract lengths where `create_network` takes them, and the experiment's network where a weight transform reads it (`tvbo.adapters.tvboptim.handed_network`)."""
     import inspect
 
     import jax.numpy as jnp
 
+    from tvbo.adapters.tvboptim import handed_network
+
     weights = jnp.asarray(np.asarray(experiment.network.matrix("weight", format="dense", apply_transforms=False), dtype=float))
     lengths = experiment.network.matrix("length", format="dense", apply_transforms=False)
-    kwargs = {}
+    kwargs = handed_network(namespace, experiment.network)
     if lengths is not None and "distances" in inspect.signature(namespace.create_network).parameters:
         kwargs["distances"] = jnp.asarray(np.asarray(lengths, dtype=float))
     return namespace.create_network(weights, **kwargs)
@@ -131,11 +133,12 @@ def settle(experiment, namespace, network):
     import jax
     import jax.numpy as jnp
 
+    from tvbo.adapters.base import run_seed
+
     sim = namespace.run_simulation(network, run_main=False)
     state = sim.state
     if getattr(state, "noise", None) is not None:
-        seed = int(getattr(getattr(experiment, "execution", None), "random_seed", None) or 0)
-        state.noise.key = jax.random.key(jnp.asarray(seed, dtype=jnp.uint32))
+        state.noise.key = jax.random.key(jnp.asarray(run_seed(experiment), dtype=jnp.uint32))
     return sim.model_fn, state
 
 

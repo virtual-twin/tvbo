@@ -427,6 +427,15 @@ def test_a_pipeline_step_is_named_by_what_the_recipe_calls_it():
     assert pipeline_text(steps) == "hemodynamic_response → convolve"
 
 
+def test_a_step_table_names_the_function_each_step_runs():
+    """The per-step table's Function column says how a step is computed, so a named step still shows its implementation, and one that names none shows its name."""
+    from tvbo.utils.report import step_function, step_name
+
+    convolve = SimpleNamespace(name="convolve", callable=SimpleNamespace(name="fftconvolve"))
+    named = SimpleNamespace(name="hemodynamic_response")
+    assert [step_function(s) or step_name(s) for s in (convolve, named)] == ["fftconvolve", "hemodynamic_response"]
+
+
 # ── The observation table stays dense ───────────────────────────────────────────────────
 
 

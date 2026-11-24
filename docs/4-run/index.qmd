@@ -20,4 +20,4 @@ Where it runs is a deployment detail, not a modelling one. A single subject on a
 
 ## Next
 
-A finished run is worth publishing: [⑤ Share](../5-share/index.qmd).
+A finished run becomes a document: [⑤ Report](../5-report/index.qmd).

@@ -1,0 +1,34 @@
+name: HierarchicalClustering
+label: Ward clustering of correlation profiles
+description: Ward hierarchical clustering of the units of one dimension by their correlation
+  profiles. The rows of a feature matrix, one per unit, are correlated over the features
+  with Pearson's r as numpy's corrcoef computes it, each unit is described by its
+  row of that correlation matrix, and Ward's linkage on the Euclidean distances between
+  those rows builds the tree, as scipy's linkage with method ward does on the correlation
+  matrix. The rows are put in the order of their labels first, positions standing
+  in where the dimension has none, so the result, a tie included, depends on the labels
+  and not on the order the rows come in. The clusters are the subtrees whose merges
+  all lie below cut times the highest merge, as scipy's dendrogram colours the links
+  below its threshold, numbered from 1 in the order their units come in the dendrogram
+  from the left; a unit that no merge below the cut joins to another is 0. A row that
+  is constant or not finite throughout is refused by its label. It returns correlation
+  on the dimension and the dimension with _j appended, both in dendrogram order; linkage,
+  scipy's linkage matrix of the label-sorted rows on merge and field; leaf_order,
+  each unit's position in the dendrogram; and cluster, each unit's cluster.
+arguments:
+  features:
+    name: features
+    description: One row per unit along `dim` and one column per feature along its
+      one other dimension, such as the components of several NMF fits concatenated
+      along `component` against the region pairs.
+  dim:
+    name: dim
+    description: Name of the dimension whose units are clustered.
+  cut:
+    name: cut
+    description: 'The height the tree is cut at, as a multiple of its highest merge:
+      a merge below it joins its units into one cluster. 0.7 is the multiple scipy
+      colours a dendrogram below by default.'
+callable:
+  name: hierarchical_clustering
+  module: tvbo.analysis.statistics

@@ -134,6 +134,10 @@ def _render_tvboptim(exp, **kw):
     kw.setdefault("all_couplings", adapter.resolve_couplings())
     # And so is the window it integrates: which part settles and which is measured, in time and in steps. See `_codegen_context`, which hands the same answer to the backends that share it.
     kw.setdefault("settle", adapter.get_integration_info())
+    # And the seed the run draws from (`run_seed`), which the template reads and never resolves itself.
+    kw.setdefault("random_seed", adapter.get_execution_info()["random_seed"])
+    # And the observations a fit evaluates at each saved iterate, with the closure an iterate traces.
+    kw["trajectory_observations"], kw["trajectory_closure"] = adapter.resolve_trajectory_observations()
     # Resolve network- and dataset-sourced observation pointers once, in Python, and hand the {obs_name: measure} mapping to the template (which only emits code). Both bind at run_experiment time via _bind_network_observations.
     measures = dict(exp.network_observation_measures)
     measures.update(exp.dataset_observation_targets)
@@ -274,10 +278,21 @@ _BUILTINS = [
         _render_neuroml,
         aliases=("nml",),
         language="xml",
+        events="integrated",
+        model_events=True,
     ),
-    ExportFormat("lems", "LEMS (custom components)", ".xml", "application/xml", _render_lems, language="xml"),
+    ExportFormat(
+        "lems",
+        "LEMS (custom components)",
+        ".xml",
+        "application/xml",
+        _render_lems,
+        language="xml",
+        events="integrated",
+        model_events=True,
+    ),
     # code: python
-    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python"),
+    ExportFormat("tvb", "TVB Python", ".py", "text/x-python", _render_tvb, language="python", events="integrated"),
     ExportFormat(
         "tvboptim",
         "tvboptim Python",
@@ -286,14 +301,41 @@ _BUILTINS = [
         _render_tvboptim,
         aliases=("tvb-optim",),
         language="python",
-        parameter_starts=tuple(StartKind),
-    ),
-    ExportFormat("jax", "JAX Python", ".py", "text/x-python", _render_jax, aliases=("autodiff",), language="python"),
-    ExportFormat(
-        "pde", "PDE-FEM Python", ".py", "text/x-python", _render_pde, aliases=("pde-fem", "pde-python"), language="python"
+        parameter_starts=tuple(k for k in StartKind if k not in (StartKind.COUPLING_TIME, StartKind.EVENT_TIME)),
+        events="integrated",
+        model_events=True,
     ),
     ExportFormat(
-        "brian2", "Brian2 Python (spiking)", ".py", "text/x-python", _render_brian2, aliases=("brian",), language="python"
+        "jax",
+        "JAX Python",
+        ".py",
+        "text/x-python",
+        _render_jax,
+        aliases=("autodiff",),
+        language="python",
+        events="integrated",
+        model_events=True,
+    ),
+    ExportFormat(
+        "pde",
+        "PDE-FEM Python",
+        ".py",
+        "text/x-python",
+        _render_pde,
+        aliases=("pde-fem", "pde-python"),
+        language="python",
+        events="integrated",
+    ),
+    ExportFormat(
+        "brian2",
+        "Brian2 Python (spiking)",
+        ".py",
+        "text/x-python",
+        _render_brian2,
+        aliases=("brian",),
+        language="python",
+        events="integrated",
+        model_events=True,
     ),
     # code: julia
     ExportFormat(
@@ -314,6 +356,7 @@ _BUILTINS = [
         aliases=("nd", "networkdynamics.jl"),
         language="julia",
         parameter_starts=(StartKind.NODE,),
+        events="integrated",
     ),
     ExportFormat(
         "modelingtoolkit",
@@ -332,6 +375,7 @@ _BUILTINS = [
         _render_bifurcationkit,
         aliases=("bifurcationkit.jl", "bifurcation", "bifurcation-julia"),
         language="julia",
+        events="continuation",
     ),
     ExportFormat(
         "pyrates-bifurcation",
@@ -341,6 +385,7 @@ _BUILTINS = [
         _render_pyrates_bifurcation,
         aliases=("pyrates-bif", "pycobi", "bifurcation-pyrates"),
         language="python",
+        events="continuation",
     ),
     ExportFormat(
         "numcont",
@@ -349,6 +394,7 @@ _BUILTINS = [
         "text/x-fortran",
         _render_numcont,
         aliases=("auto", "auto-07p", "auto07p", "bifurcation-auto7p", "bifurcation-numcont"),
+        events="continuation",
     ),
     # code: rateml
     ExportFormat(

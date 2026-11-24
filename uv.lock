@@ -661,7 +661,7 @@ wheels = [
 
 [[package]]
 name = "bsplot"
-version = "0.0.12"
+version = "0.0.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cmap" },
@@ -674,9 +674,9 @@ dependencies = [
     { name = "scipy" },
     { name = "templateflow" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4a/b6/7123f2788b69723ca75c630c96c1a3efb737677244ab39d925de8aef3125/bsplot-0.0.12.tar.gz", hash = "sha256:1eaf7554b3cbafe9a114b12d2f5c053b0e7ba01395d4ba61c0f944b6846b14f8", size = 6229480, upload-time = "2026-10-26T13:47:29.799Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/e9/cc0c8b109863bc65dab8f4c86f79bf21a538a858bef990871b7024ebb11d/bsplot-0.0.14.tar.gz", hash = "sha256:9d5423e437da42a977e51fc5ee5a2e649cbcd601c12125b36769bce97ac0ea20", size = 6246253, upload-time = "2026-11-23T09:21:44.407Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/78/14/c0d37e46ddea540cc8199f3fee203e21ea382460eb897e0e080a5c7838a7/bsplot-0.0.12-py3-none-any.whl", hash = "sha256:81b742090b7299baa97e8181aa6312c91772e9382bed324567f2d6ae999f641b", size = 6251530, upload-time = "2026-10-26T13:47:27.546Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/a4/176d4cc381c1dd9e6bf1a93b1710492d28ea9fcb3d9838907756e29ca1e1/bsplot-0.0.14-py3-none-any.whl", hash = "sha256:ba0114805b2786df32a8be52d4308d284618ad79b836d3da0d96538e3b24e273", size = 6263414, upload-time = "2026-11-23T09:21:42.822Z" },
 ]
 
 [[package]]
@@ -6533,11 +6533,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "82.0.0"
+version = "80.10.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/82/f3/748f4d6f65d1756b9ae577f329c951cda23fb900e4de9f70900ced962085/setuptools-82.0.0.tar.gz", hash = "sha256:22e0a2d69474c6ae4feb01951cb69d515ed23728cf96d05513d36e42b62b37cb", size = 1144893, upload-time = "2026-02-08T15:08:40.206Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/95/faf61eb8363f26aa7e1d762267a8d602a1b26d4f3a1e758e92cb3cb8b054/setuptools-80.10.2.tar.gz", hash = "sha256:8b0e9d10c784bf7d262c4e5ec5d4ec94127ce206e8738f29a437945fbc219b70", size = 1200343, upload-time = "2026-01-25T22:38:17.252Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e1/c6/76dc613121b793286a3f91621d7b75a2b493e0390ddca50f11993eadf192/setuptools-82.0.0-py3-none-any.whl", hash = "sha256:70b18734b607bd1da571d097d236cfcfacaf01de45717d59e6e04b96877532e0", size = 1003468, upload-time = "2026-02-08T15:08:38.723Z" },
+    { url = "https://files.pythonhosted.org/packages/94/b8/f1f62a5e3c0ad2ff1d189590bfa4c46b4f3b6e49cef6f26c6ee4e575394d/setuptools-80.10.2-py3-none-any.whl", hash = "sha256:95b30ddfb717250edb492926c92b5221f7ef3fbcc2b07579bcd4a27da21d0173", size = 1064234, upload-time = "2026-01-25T22:38:15.216Z" },
 ]
 
 [[package]]
@@ -7501,6 +7501,7 @@ all = [
     { name = "quartodoc" },
     { name = "ruff" },
     { name = "scikit-fem" },
+    { name = "setuptools" },
     { name = "simple-colors" },
     { name = "snakemake" },
     { name = "snakemake-executor-plugin-slurm" },
@@ -7558,6 +7559,7 @@ knowledge = [
     { name = "goatools" },
     { name = "pybel" },
     { name = "python-levenshtein" },
+    { name = "setuptools" },
     { name = "simple-colors" },
     { name = "wget" },
 ]
@@ -7610,7 +7612,7 @@ requires-dist = [
     { name = "black", specifier = ">=26.5,<27" },
     { name = "brian2", marker = "extra == 'all'", specifier = ">=2.5.0" },
     { name = "brian2", marker = "extra == 'brian2'", specifier = ">=2.5.0" },
-    { name = "bsplot", specifier = ">=0.0.12" },
+    { name = "bsplot", specifier = ">=0.0.14" },
     { name = "dipy", marker = "extra == 'all'", specifier = ">=1.10.0" },
     { name = "dipy", marker = "extra == 'data'", specifier = ">=1.10.0" },
     { name = "docker", marker = "extra == 'all'", specifier = ">=7.1.0" },
@@ -7704,6 +7706,8 @@ requires-dist = [
     { name = "scikit-fem", marker = "extra == 'docs'", specifier = ">=8.0.0" },
     { name = "scikit-fem", marker = "extra == 'pde'", specifier = ">=8.0.0" },
     { name = "scipy", specifier = ">=1.15.0" },
+    { name = "setuptools", marker = "extra == 'all'", specifier = "<81" },
+    { name = "setuptools", marker = "extra == 'knowledge'", specifier = "<81" },
     { name = "simple-colors", marker = "extra == 'all'", specifier = ">=0.1" },
     { name = "simple-colors", marker = "extra == 'knowledge'", specifier = ">=0.1" },
     { name = "snakemake", marker = "extra == 'all'", specifier = ">=8.0.0" },

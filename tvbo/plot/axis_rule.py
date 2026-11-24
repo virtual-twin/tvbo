@@ -288,13 +288,14 @@ def frame(fig, rule: dict, *, skip=()) -> None:
 
 
 def trim_spine(ax, name: str) -> None:
-    """End one scale-bearing spine of *ax* on the outermost ticks now inside its limits. An axis with fewer than two ticks has nothing to end on and keeps its whole spine."""
+    """End one scale-bearing spine of *ax* on the outermost ticks now inside its limits, or where the data drawn there runs past them, at the data's end within the view, so no line hangs beyond the axis that measures it. An axis with fewer than two ticks has nothing to end on and keeps its whole spine."""
     spine = ax.spines["bottom" if name == "x" else "left"]
     lo, hi = _view(ax, name)
     tol = EPS * max(hi - lo, 1.0)
     ticks = [float(t) for t in (ax.get_xticks() if name == "x" else ax.get_yticks()) if lo - tol <= float(t) <= hi + tol]
     if len(ticks) > 1:
-        spine.set_bounds(min(ticks), max(ticks))
+        data = _extent(ax, name) or (min(ticks), max(ticks))
+        spine.set_bounds(max(lo, min(min(ticks), data[0])), min(hi, max(max(ticks), data[1])))
 
 
 def _owners(fig) -> dict:

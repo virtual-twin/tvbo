@@ -1,0 +1,167 @@
+id: https://w3id.org/tvbo/document
+name: document
+title: TVB-O Study Document
+description: "The document a SimulationStudy renders: ordered sections of typed blocks, each either prose or something TVB-O produces from the study itself (an excerpt of its specification, the code a reader types, generated backend code, a declared figure, the Methods, a catalogue of curated entries, the backend matrix, the tree a run wrote, the lifecycle wheel). Nothing a block shows is pasted, so the document cannot drift from the package or the specification. Generated only as part of tvbo_datamodel.yaml, which imports it."
+
+license: https://creativecommons.org/licenses/by/4.0/
+prefixes:
+  linkml: https://w3id.org/linkml/
+  tvbo: https://w3id.org/tvbo/
+
+default_prefix: tvbo
+default_range: string
+
+imports:
+  - linkml:types
+  - common
+
+enums:
+
+  BlockKind:
+    description: "What a document block shows. Every kind but `text` is produced from the study or the installed package when the document is rendered."
+    permissible_values:
+      text: {description: "Markdown, raw HTML allowed, written in `text`."}
+      spec: {description: "The author's own lines of the study file at the dotted path `select` (keyed by declared id or name, as `tvbo run --set` writes it), comments and order kept."}
+      usage: {description: "The Python a reader types for `operation` on this study. Usage blocks are cumulative in document order: the first carries the import and the load, each later one only its own lines."}
+      generated_code: {description: "The function or class `symbol` of the code generated for `experiment` on `backend`."}
+      figure: {description: "The study's declared figure `figure`, as the run rendered it (its still when the figure is animated)."}
+      methods: {description: "The main Methods section the study's report writes."}
+      catalogue: {description: "How many curated records the database holds of each class in `of`, then one row per IRI in `entries` with its label and description."}
+      backends: {description: "What each simulation backend can do, as a table or a figure (`form`), read from the planner's own backend table."}
+      tree: {description: "The directory tree the run wrote, `depth` levels deep."}
+      lifecycle: {description: "The Simulation Study Lifecycle wheel, with `band` and `icons`."}
+
+  UsageOperation:
+    description: "An operation a reader performs on a study, for a `usage` block."
+    permissible_values:
+      load: {description: "Read the study from its file."}
+      generate: {description: "Print the code generated for `experiment` on `backend`."}
+      run: {description: "Run every experiment, analysis and figure."}
+      figure: {description: "Show the rendered figure `figure`."}
+      report: {description: "Render the study's report."}
+      share: {description: "Push `experiment` to the TVB-O platform."}
+
+  WheelBand:
+    description: "What the band of the lifecycle wheel carries."
+    permissible_values:
+      icons: {description: "Each cell's stage icon, with the numbered stage names outside the ring."}
+      numbers: {description: "Each cell's number, with each stage's icon beside its name outside the ring."}
+
+  IconSet:
+    description: "Which icons the lifecycle wheel draws."
+    permissible_values:
+      line: {description: "TVB-O's 24-pixel line icons."}
+      fa: {description: "The Font Awesome Free glyphs the documentation sidebar uses."}
+
+  DocumentFormat:
+    description: "A format a study document renders to, for a block that belongs in some of them only."
+    permissible_values:
+      gfm: {description: "GitHub-flavoured Markdown, which `report()` also writes for `markdown` and `md`."}
+      qmd: {description: "Quarto Markdown, as the documentation renders it."}
+      pdf: {description: "PDF through pandoc."}
+
+  MatrixForm:
+    description: "How a `backends` block shows the backend matrix."
+    permissible_values:
+      table: {description: "A Markdown table."}
+      figure: {description: "An SVG figure written into the document's assets."}
+
+classes:
+
+  StudyDocument:
+    class_uri: tvbo:StudyDocument
+    description: "The document a study's `report()` renders, in place of the Methods alone: a title and ordered sections. Files the render writes (figures, the wheel, the backend matrix) go into `assets`, linked through `asset_url` when the document is read somewhere relative paths do not resolve."
+    attributes:
+      title:
+        range: string
+        description: "The document's top-level heading. Unset, the document has none, so its first text block can open it with a title of its own."
+      assets:
+        range: string
+        description: "Directory the render writes its files into, relative to the study file. Tracked, unlike the study's figures directory, because a reader of the rendered document has no run to reproduce them from."
+      asset_url:
+        range: string
+        description: "Base URL the Markdown render (`gfm`, `markdown`) links every asset by, for a document read where relative paths do not resolve (the README on PyPI). Quarto links assets relative to the rendered file, which the site resolves, and so does Markdown when this is unset."
+      sections:
+        range: DocumentSection
+        multivalued: true
+        inlined_as_list: true
+        description: "The sections, in reading order."
+
+  DocumentSection:
+    class_uri: tvbo:DocumentSection
+    description: "One section of a study document: a heading and the blocks under it."
+    attributes:
+      title:
+        range: string
+        description: "The section heading; a section without one continues the one before."
+      level:
+        range: integer
+        ifabsent: "int(2)"
+        description: "Heading depth."
+      stage:
+        range: string
+        description: "The lifecycle stage the section walks through, by its key in `tvbo/plot/lifecycle.yaml` (`explore` … `share`); its heading then opens with the stage's icon in the stage's colour."
+      collapsed:
+        range: boolean
+        description: "Render the body folded under its heading (an HTML `<details>`), so a long document reads short above the fold."
+      blocks:
+        range: DocumentBlock
+        multivalued: true
+        inlined_as_list: true
+        description: "The blocks, in order."
+
+  DocumentBlock:
+    class_uri: tvbo:DocumentBlock
+    description: "One block of a study document. `kind` says what it shows; each kind reads only the slots its description names, and the renderer refuses a slot its kind does not read."
+    attributes:
+      kind:
+        range: BlockKind
+        required: true
+      formats:
+        range: DocumentFormat
+        multivalued: true
+        description: "The formats the block is rendered in; unset, every format. Read by every kind, so a README's logo and badges can belong to the GitHub render and not to the documentation page that renders the same study."
+      study:
+        range: string
+        description: "The nested study a block addresses, by the label it goes by (its citekey); unset, the study that holds the document. Read by every kind that shows something of a study: `spec`, `usage`, `generated_code`, `figure`, `methods` and `tree`."
+      text:
+        range: string
+        description: "Markdown, for a `text` block."
+      select:
+        range: string
+        description: "Dotted path into the study file, keyed by declared id or name (`experiments.1.dynamics`), for a `spec` block."
+      operation:
+        range: UsageOperation
+        description: "What the reader does, for a `usage` block."
+      experiment:
+        range: string
+        description: "The experiment, by its declared id or label, for a `generated_code` block and a `generate` or `share` usage."
+      backend:
+        range: string
+        description: "The backend the code is generated for, for a `generated_code` block and a `generate` usage."
+      symbol:
+        range: string
+        description: "The function or class shown from the generated code, dotted for a method (`Model.dynamics`), for a `generated_code` block."
+      figure:
+        range: string
+        description: "The declared figure's name, for a `figure` block and a `figure` usage; unset, the study's only figure."
+      of:
+        range: string
+        multivalued: true
+        description: "Curated classes counted, for a `catalogue` block (`Dynamics`, `Network`, `SimulationStudy`)."
+      entries:
+        range: string
+        multivalued: true
+        description: "Curated records listed by IRI, for a `catalogue` block."
+      depth:
+        range: integer
+        description: "How many directory levels a `tree` block shows."
+      band:
+        range: WheelBand
+        description: "What the wheel's band carries, for a `lifecycle` block; unset, the icons."
+      icons:
+        range: IconSet
+        description: "Which icons the wheel draws, for a `lifecycle` block; unset, the line icons."
+      form:
+        range: MatrixForm
+        description: "Table or figure, for a `backends` block; unset, the figure."

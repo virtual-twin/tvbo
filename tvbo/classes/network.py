@@ -56,6 +56,7 @@ from tvbo.utils.yaml_loader import resolve_edge_var_aliases
 NETWORK_DIR = database_dir("Network")
 
 _RANDOM_SEED: ContextVar[int | None] = ContextVar("tvbo_network_random_seed", default=None)
+_TRIAL: ContextVar[int | None] = ContextVar("tvbo_network_trial", default=None)
 
 
 @contextmanager
@@ -81,6 +82,31 @@ def _random_seed() -> int:
             field.default for field in dataclasses.fields(tvbo_datamodel.ExecutionConfig) if field.name == "random_seed"
         )
     return seed
+
+
+def realised_per_trial(network) -> bool:
+    """Whether *network* is built anew for each trial of an ``n_trials`` ensemble (``realisation: trial``)."""
+    return "trial" in str(getattr(network, "realisation", None) or "")
+
+
+def trial_seed(seed: int, trial: int) -> int:
+    """The seed a seeded part of a network realised per trial is called with for trial *trial*: numpy's `SeedSequence` of the declared *seed* and the trial index, a 32-bit integer that depends on that pair alone, never on the other trials or the order they run in."""
+    return int(np.random.SeedSequence([int(seed), int(trial)]).generate_state(1)[0])
+
+
+@contextmanager
+def _realising(trial: int):
+    """Within the block, a network realised per trial builds the realisation of trial *trial*."""
+    token = _TRIAL.set(int(trial))
+    try:
+        yield
+    finally:
+        _TRIAL.reset(token)
+
+
+def _realised_trial(network) -> int | None:
+    """The trial whose realisation *network* builds: the one :func:`_realising` names, else trial 0, which the base run integrates and a result freezes beside it; None on a network built once per run."""
+    return (_TRIAL.get() or 0) if realised_per_trial(network) else None
 
 
 @contextmanager
@@ -316,6 +342,21 @@ def _merge_partial_node(node, spec: dict, *, override: bool) -> None:
             current.update(value if override else {k: v for k, v in value.items() if k not in current})
         elif override or _is_unset(current):
             setattr(node, field, copy.deepcopy(value) if field == "subnetwork" else value)
+
+
+def _generated_positions(positions, n_nodes: int) -> list:
+    """The ``Coordinate`` of each of *n_nodes* generated nodes, from a graph builder's ``node_positions``: an ``(n_nodes, 2)`` or ``(n_nodes, 3)`` array in the network's ``distance_unit``, row ``i`` the position of the node whose weights are row ``i``. A 2-D position lies at ``z`` = 0, so every reader of ``Node.position`` (:meth:`Network.node_positions`, :meth:`Network.get_centers`, the companion's ``nodes/coordinates``) finds three numbers. Any other number of rows or columns is refused, naming ``node_positions``."""
+    arr = np.asarray(positions, dtype=float)
+    if arr.shape[:1] != (n_nodes,):
+        raise ValueError(
+            f"graph_generator returned node_positions of shape {arr.shape} for a {n_nodes}-node weight matrix; one position per node is required."
+        )
+    if arr.shape[1:] not in ((2,), (3,)):
+        raise ValueError(
+            f"graph_generator returned node_positions of shape {arr.shape}; each position is (x, y) or (x, y, z), 2 or 3 columns."
+        )
+    xyz = arr if arr.shape[1] == 3 else np.column_stack([arr, np.zeros(n_nodes)])
+    return [tvbo_datamodel.Coordinate(x=float(x), y=float(y), z=float(z)) for x, y, z in xyz]
 
 
 def _edge_name(key: str) -> str | None:
@@ -1007,7 +1048,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         1. Already materialised (cached weights / store / explicit edges): mark resolved and return.
         2. ``data_file`` companion (.h5 / .zarr + .yaml sidecar): load lazily via ``tvbo.data.network_io.attach_lazy_store``.
         3. ``bids_dir`` BEP017 directory: route through ``from_bids`` and copy matrices onto self.
-        4. ``graph_generator.builder`` Callable: invoke (added in A2).
+        4. ``graph_generator.builder`` Callable: invoke (added in A2). While a network realised per trial builds the realisation of one trial (:meth:`trial_realisations`), its generator comes first, ahead of a ``data_file`` that holds trial 0's.
         5. ``parcellation``, with its ``tractogram`` and the network's ``bids`` entities, on a network that lists no node of its own: the curated network they name (:meth:`_resolve_from_parcellation`), refused when none matches. On a network that lists its nodes, a ``parcellation`` and a ``bids`` block are metadata and load nothing.
         6. None of the above: no-op (Network must have been constructed via explicit ``nodes``/``edges`` or ``Network.from_matrix``).
 
@@ -1031,7 +1072,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         generated = sourced = False
         if not self._is_materialized() or self._companion_holds_dropped_nodes():
             authored = list(self.edges or [])
-            if getattr(self, "data_file", None):
+            if _TRIAL.get() is not None and realised_per_trial(self) and self._has_graph_generator():
+                generated = True  # a trial builds from its generator, ahead of a frozen companion that holds trial 0's
+                self._resolve_from_graph_generator(source_dir)
+            elif getattr(self, "data_file", None):
                 self._resolve_from_data_file(source_dir)
                 sourced = True
             elif getattr(self, "bids_dir", None):
@@ -1122,6 +1166,82 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         drawn = getattr(self, "_drawn", None)
         selection = getattr(self, "node_selection", None)
         return drawn is not None and selection is drawn[0] and list(selection.keep or []) == drawn[1] and not selection.drop
+
+    def trial_realisations(self, n_trials: int) -> dict[str, np.ndarray | None]:
+        """The weights and tract lengths of this network as realised for each trial ``0 .. n_trials - 1``, stacked on a leading trial axis, as an exploration hands them to its trials.
+
+        Each realisation is this network resolved again within :func:`_realising`, so its generator and its seeded transforms run as the network's own build runs them, each with the seed :func:`trial_seed` derives from its declared one and the trial. Outside that block the network is trial 0's realisation, and it is resolved once more afterwards to be that again. ``weights`` holds the matrix the graph integrates, transforms applied. ``lengths`` is ``None`` when every realisation keeps trial 0's tract lengths, so a stack that would repeat one matrix is not held.
+
+        Raises:
+            ValueError: The network is built once per run; nothing in it is seeded, so every trial would integrate one network; or a realisation changes a node's label, position or parameters, which every trial shares.
+        """
+        if not realised_per_trial(self):
+            raise ValueError("The network is built once per run; declare `realisation: trial` to build it for each trial.")
+        if not self._trial_seeded_parts():
+            raise ValueError(
+                "network.realisation: trial, but the network has no seeded part to build again for each trial (a graph_generator with a `seed`, or a callable transform with a `seed` argument), so every trial would integrate one network. Declare the seed, or drop `realisation: trial`."
+            )
+        source_dir = getattr(self, "_source_dir", None)
+        nodes = self._node_record()
+        weights, lengths = [], []
+        try:
+            for trial in range(n_trials):
+                with _realising(trial):
+                    self.invalidate_resolution()
+                    self._resolve(source_dir=source_dir)
+                    record = self._node_record()
+                    if record != nodes:
+                        changed = next(
+                            (new[0] for new, old in zip(record, nodes, strict=False) if new != old), "the node count"
+                        )
+                        raise ValueError(
+                            f"network.realisation: trial: the realisation of trial {trial} changes the node data of {changed!r}, which every trial shares with trial 0; a realisation per trial varies the weights and tract lengths only. Make the node labels, positions and parameters independent of the seed."
+                        )
+                    weights.append(np.asarray(self.matrix("weight", format="dense"), dtype=float))
+                    lengths.append(self.matrix("length", format="dense"))
+        finally:
+            self.invalidate_resolution()
+            self._resolve(source_dir=source_dir)
+        varied = lengths[0] is not None and any(not np.array_equal(np.asarray(m), np.asarray(lengths[0])) for m in lengths[1:])
+        return {
+            "weights": np.stack(weights),
+            "lengths": np.stack([np.asarray(m, dtype=float) for m in lengths]) if varied else None,
+        }
+
+    def varies_per_trial(self, name: str) -> bool:
+        """Whether ``network.<name>`` can differ between the trials of an ensemble: on a network realised per trial, its weights and tract lengths under any name a matrix answers to (``weight``, ``edges.length``), and the in-strength the weights give. Its node data is the same in every trial (:meth:`trial_realisations`)."""
+        if not realised_per_trial(self):
+            return False
+        label = str(name).removeprefix("edges.")
+        return label == "instrength" or label.lower() in self._matrix_names("weight") or _is_length_name(label)
+
+    def _trial_seeded_parts(self) -> list[str]:
+        """What a realisation per trial builds again, by name: the graph generator when it declares a seed, and each callable transform with a ``seed`` argument."""
+        gg = getattr(self, "graph_generator", None)
+        declared = normalize_params(getattr(gg, "parameters", None)) if gg is not None else {}
+        seeded = (
+            ["graph_generator"]
+            if gg is not None
+            and (getattr(gg, "seed", None) is not None or getattr(declared.get("seed"), "value", None) is not None)
+            else []
+        )
+        return seeded + [
+            f"transform {transform_target(t)!r}"
+            for t in self.transforms or []
+            if getattr(t, "callable", None) is not None
+            and "seed" in {str(n) for n, _ in keyed_items(t.arguments, "arguments")}
+        ]
+
+    def _node_record(self) -> list[tuple]:
+        """Each node's label, position and parameter values: the node data every realisation per trial shares (:meth:`trial_realisations`)."""
+        return [
+            (
+                node.label,
+                None if node.position is None else (node.position.x, node.position.y, getattr(node.position, "z", None)),
+                {str(k): getattr(p, "value", p) for k, p in normalize_params(node.parameters).items()},
+            )
+            for node in self.nodes or []
+        ]
 
     def _has_graph_generator(self) -> bool:
         """True if this Network has a resolvable GraphGenerator.
@@ -1232,6 +1352,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def _resolve_from_graph_generator(self, source_dir: str | Path | None) -> None:
         """Materialise the GraphGenerator and copy its result onto self.
 
+        On a network realised per trial, a generator that declares a `seed` is called with the seed :func:`trial_seed` derives from it and the trial it builds, trial 0 outside :meth:`trial_realisations`, and a library generator that declares one is refused, since it draws from that seed itself.
+
         Four routes, in priority order:
 
         * **Typed `procedure:` DAG** (preferred) — the curated entry's backend-independent steps, resolved to SymPy and rendered through the printer tables. No per-generator Python.
@@ -1239,10 +1361,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         * **`bindings.python.callable`** — the library-wrapper / documented escape hatch for constructions the primitive set cannot express.
         * **`bindings.networkx`** — a library generator (Cycle, Watts–Strogatz, …), built by `tvbo.graph_generators.catalog.library_weights`, the construction every backend integrates.
 
-        Each route yields a `Network`, a dict with at least a `weights` key, or a tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
+        Each route yields a `Network`, a dict with a `weights` key and optionally `lengths`, `node_parameters`, `node_labels` and `node_positions`, or a tuple `(weights, lengths)` / `(weights, lengths, node_params)`.
         `source_dir` is forwarded so Python builders can load companion artefacts.
 
-        The generator supplies the connectome, never the nodes a recipe declares: declared nodes keep their dynamics, parameters and labels, a builder's `node_labels` fills only a label a declared node leaves unset, and its per-node parameters only those a node does not declare. Without declared nodes, a generated node keeps a positional label (`node_<i>`) unless the builder names it through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC pair) has to be able to say so: every keyed selection downstream — an observation's node coord, a figure's `sel: {node: ...}` — resolves against these labels, and `node_0` forces the reader back to binding by index.
+        The generator supplies the connectome, never the nodes a recipe declares: declared nodes keep their dynamics, parameters, labels and positions, a builder's `node_labels` fills only a label a declared node leaves unset, its `node_positions` only a position, and its per-node parameters only those a node does not declare. `node_positions` is an `(n_nodes, 2)` or `(n_nodes, 3)` array in the network's `distance_unit`, row `i` the position of the node whose weights are row `i`; a 2-D position lies at `z` = 0, and any other shape is refused (:func:`_generated_positions`). Without declared nodes, a generated node keeps a positional label (`node_<i>`) unless the builder names it through a `node_labels` key. A motif whose nodes ARE particular regions (a PPC-PFC pair) has to be able to say so: every keyed selection downstream — an observation's node coord, a figure's `sel: {node: ...}` — resolves against these labels, and `node_0` forces the reader back to binding by index.
         """
         from tvbo.graph_generators.catalog import declared_defaults, library_weights
 
@@ -1275,6 +1397,13 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             and self._db_python_binding_for(gg) is None
             and self._db_networkx_binding_for(gg) is not None
         )
+        trial = _realised_trial(self)
+        if trial is not None and kwargs.get("seed") is not None:
+            if library:
+                raise ValueError(
+                    f"GraphGenerator {gg.type!r} is a library generator, which draws from the `seed` it declares itself, so it cannot be built anew for each trial (`realisation: trial`). Build it through a `builder:` that takes `seed`."
+                )
+            kwargs["seed"] = seed = trial_seed(kwargs["seed"], trial)
 
         # Size is the network's, never the generator's: a generator parameter for it would be a second source of truth that can disagree with the network it builds. `_resolve` sets number_of_nodes before reaching here. `not` rather than `is None`: a declared 0 would otherwise fail deep inside the construction on an empty matrix, naming the step rather than the empty network that caused it.
         if (procedure is not None or library) and not self.number_of_nodes:
@@ -1339,8 +1468,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 self._store = store
             self._get_arrays().update(result._get_arrays())
         else:
-            # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`), or tuple `(weights, lengths[, node_params])`.
-            node_labels = None
+            # Two shapes accepted: dict with `weights` (and optional `lengths`, `node_parameters`, `node_labels`, `node_positions`), or tuple `(weights, lengths[, node_params])`.
+            node_labels = node_positions = None
             if isinstance(result, dict):
                 if "weights" not in result:
                     raise TypeError("graph_generator materialiser dict must include a `weights` key.")
@@ -1350,6 +1479,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 node_labels = result.get("node_labels")
                 if node_labels is not None and len(node_labels) == 0:  # emptiness by length: a label array has no truth value
                     node_labels = None
+                node_positions = result.get("node_positions")
             elif isinstance(result, tuple) and len(result) in (2, 3):
                 weights = _resident_form(result[0])
                 lengths = _resident_form(result[1]) if result[1] is not None else None
@@ -1367,6 +1497,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     f"graph_generator returned {len(node_labels)} node_labels for a "
                     f"{n_nodes}-node weight matrix; one label per node is required."
                 )
+            positions = None if node_positions is None else _generated_positions(node_positions, n_nodes)
             labels = [str(lbl) for lbl in node_labels] if node_labels is not None else [f"node_{i}" for i in range(n_nodes)]
             authored = [] if getattr(self, "_placeholder_nodes", False) else list(self.nodes or [])
             if authored and len(authored) != n_nodes:
@@ -1377,6 +1508,10 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 if node.label is None and node_labels is not None:
                     node.label = label
             self.nodes = authored or [tvbo_datamodel.Node(id=i, label=labels[i]) for i in range(n_nodes)]
+            if positions is not None:
+                for node, position in zip(self.nodes, positions, strict=True):
+                    if node.position is None:
+                        node.position = position
             # The generator supplies the internal weight matrix only. Preserve any declared edges (e.g. cross-layer routing edges on a subnetwork); only default to empty when none were authored.
             if not getattr(self, "edges", None):
                 self.edges = []
@@ -2266,7 +2401,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         # Arbitrary named edge properties
         sc = np.array([[0, 1], [1, 0]])
         fc = np.array([[1, 0.8], [0.8, 1]])
-        network = Network.from_matrix(sc=sc, fc=fc, labels=["L", "R"])
+        network = Network.from_matrix(sc=sc, fc=fc, primary_weight="sc", labels=["L", "R"])
         network.plot_overview()
         ```
         """
@@ -3307,7 +3442,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
     @property
     def node_parameter_vectors(self) -> dict[str, np.ndarray]:
-        """Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order.
+        """Per-node parameters as ``{name: (n_nodes,) array}``, in declared node order; a parameter whose value on each node is a vector of ``k`` numbers, such as the ``orientation`` `from_tvb` stores, is an ``(n_nodes, k)`` array.
 
         Only parameters that *every* node declares are returned (a partial vector has no well-defined value for the gaps). Consumed by symbolic weight/length transforms, which expose each as an ``(n, 1)`` column so an expression like ``W / roi_size`` normalises per target region.
         """
@@ -3319,7 +3454,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         for name in names:
             vals = [getattr(nd.parameters[name], "value", None) for nd in nodes]
             if all(v is not None for v in vals):
-                out[str(name)] = np.asarray([float(v) for v in vals], dtype=np.float64)
+                out[str(name)] = np.asarray(vals, dtype=np.float64)
         return out
 
     def node_positions(self) -> np.ndarray:
@@ -3466,7 +3601,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
     def as_data_file_reference(self, data_file: str):
         """A compact datamodel ``Network`` that points at *data_file* and still IS this network.
 
-        Freezing a connectome writes its matrices to a companion file and replaces the network in the rendered spec with this reference, so what travels beside ``data_file`` has to be everything the reloaded network needs in order to behave identically: the inline coupling / transforms / parameters, the scalar identity, the measure declarations — ``Network.observations`` and the structural resolution gate on those, so a companion holding ``BoldCorrelation`` data is invisible unless the reference also declares ``observational_measures: [BoldCorrelation]`` — and the ``parcellation``, which names the atlas that a ``by_label`` node crosswalk resolves against. Carrying the parcellation cannot re-expand the node set, because ``data_file`` makes the loader defer connectivity to the companion store.
+        Freezing a connectome writes its matrices to a companion file and replaces the network in the rendered spec with this reference, so what travels beside ``data_file`` has to be everything the reloaded network needs in order to behave identically: the inline coupling / transforms / parameters, the scalar identity, the measure declarations — ``Network.observations`` and the structural resolution gate on those, so a companion holding ``BoldCorrelation`` data is invisible unless the reference also declares ``observational_measures: [BoldCorrelation]`` — and the ``parcellation``, which names the atlas that a ``by_label`` node crosswalk resolves against. Carrying the parcellation cannot re-expand the node set, because ``data_file`` makes the loader defer connectivity to the companion store. The ``realisation`` travels too, and on a network realised per trial so does its ``graph_generator``: the companion holds trial 0's realisation, and each trial's realisation builds from the generator and the seeded transforms again (:meth:`trial_realisations`), so a kit run from the frozen spec integrates the realisations the recipe does.
 
         Note that ``observations`` is deliberately NOT copied: it is a runtime view over the companion's measures, not a schema slot, and ``observational_measures`` is what reconstructs it.
 
@@ -3500,10 +3635,13 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             "structural_measures",
             "observational_measures",
             "parcellation",
+            "realisation",
         ):
             value = getattr(self, field, None)
             if value is not None:
                 setattr(ref, field, list(value) if isinstance(value, (list, tuple)) else value)
+        if realised_per_trial(self):
+            ref.graph_generator = self.graph_generator
         return ref
 
     @property
@@ -4669,7 +4807,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
         log_weights: bool = False,
         plot_brain: bool | None = None,
         brain_kwargs: dict[str, Any] | None = None,
-        cmap: str = "magma",
+        cmap: str | dict[str, str] = "magma",
         edge_percentile: float = 0,
         show_nodes: bool = True,
         show_edges: bool = True,
@@ -4697,8 +4835,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
             If *False*, use matrix-only layout.  If *None* (default), auto-detect: use brain surface when ``bsplot`` is installed and atlas coordinates are available.
         brain_kwargs : dict, optional
             Keyword arguments passed to `plot_brain_surface` when the brain surface panel is used.
-        cmap : str, default="magma"
-            Default colormap for matrix heatmaps.
+        cmap : str or dict, default="magma"
+            Colormap of every row, or one per edge property (``{"weight": "viridis", "length": "magma"}``) so two quantities are not read on one scale; a property the dict leaves out takes ``"magma"``.
         edge_percentile : float, default=0
             Only show edges above this percentile of weights in the brain surface and graph panels.  ``0`` (default) plots all connections.
         show_nodes : bool, default=True
@@ -4786,6 +4924,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 mat = np.zeros((1, 1))
 
             use_log = prop == "weight" and log_weights
+            prop_cmap = cmap.get(prop, "magma") if isinstance(cmap, dict) else cmap
             norm = None
             if use_log:
                 nonzero = mat[mat > 0]
@@ -4815,8 +4954,8 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                     "edge_radius": 0.12,
                     "edge_color": "auto",
                     "edge_data_key": "weight",
-                    "edge_cmap": cmap,
-                    "node_cmap": cmap,
+                    "edge_cmap": prop_cmap,
+                    "node_cmap": prop_cmap,
                     "edge_scale": {"weight": 6},
                     "threshold_percentile": edge_percentile,
                     "show_nodes": show_nodes,
@@ -4873,7 +5012,7 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
 
             # --- Matrix panel ---
             ax_mat = axs[row, col]
-            im = ax_mat.imshow(mat, cmap=cmap, interpolation="none", norm=norm)
+            im = ax_mat.imshow(mat, cmap=prop_cmap, interpolation="none", norm=norm)
             ax_mat.set_title(prop)
             ax_mat.set_box_aspect(1)
             cb = fig.colorbar(im, ax=ax_mat, shrink=0.5, label=label)
@@ -5778,6 +5917,9 @@ class Network(RuntimeAttributes, tvbo_datamodel.Network):
                 kwargs = {str(name): getattr(arg, "value", None) for name, arg in keyed_items(func.arguments, "arguments")}
                 for name, arg in self._sourced_arguments(func).items():
                     kwargs[name] = self._sourced(arg.used, f"transform {transform_target(func)!r}, argument {name!r}")
+                trial = _realised_trial(self)
+                if trial is not None and kwargs.get("seed") is not None:
+                    kwargs["seed"] = trial_seed(kwargs["seed"], trial)
                 sig = inspect.signature(fn)
                 accepts_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
                 if "network" in sig.parameters or accepts_var_kw:

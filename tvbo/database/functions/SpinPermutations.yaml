@@ -1,0 +1,11 @@
+name: SpinPermutations
+label: Spin permutations of network nodes within groups
+description: A table of n spin permutations of the network nodes (Alexander-Bloch et al. 2018, doi:10.1016/j.neuroimage.2018.05.070), the null family of the directed-wave test of Koller et al. (2024, doi:10.1038/s41467-024-47860-x). Each row turns the sphere positions of the nodes by one random rotation, uniform over rotations and drawn as the SpinPermutations of BrainSpace draws it from its random state, and the same rotations turn every group. Each node then takes the nearest node of its own group to its turned position, so a row may repeat a node and leave another out, as BrainSpace does by default, and never crosses groups; the groups therefore decide which nodes share one reassignment. The table is in gather form and indexes network nodes, and the nodes of a group are ordered by label, so no order of the nodes or the groups changes it. It returns index, the n by N table, and group, the group label of each node in network order.
+outputs: [index, group]
+arguments:
+  sphere: {description: 'The position of each node on a sphere centred at the origin, one row of three coordinates per node, labelled on `node` or in network order. It is turned as given and never built here.'}
+  node_labels: {description: 'The labels of the network nodes in network order, network.labels.'}
+  groups: {description: 'The group of each node, labelled on `node` or in network order, or one label for all nodes; a node is reassigned only to nodes of its own group. A node without a group and a group of one node are refused.'}
+  n: {description: 'The number of rotations, the rows of the table, at least 1.'}
+  seed: {description: 'The seed of the rotations, read as BrainSpace reads its random state; the same seed, positions and groups give the same table.'}
+callable: {name: spin_permutations, module: tvbo.analysis.mesh}

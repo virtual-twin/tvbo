@@ -238,6 +238,9 @@ continuations:
             degree:
               name: degree
               value: 4
+            mesh_adaptation:
+              name: mesh_adaptation
+              value: true
           method: collocation
           mesh_intervals: 50
           degree: 4
@@ -259,6 +262,8 @@ continuations:
           ds: 0.5
           ds_max: 5.0
           max_steps: 500
+          n_inversion: 10
+          max_bisection_steps: 60
           algorithm: PALC
         bothside: true
       hopf_p_C:
@@ -275,8 +280,10 @@ continuations:
               hi: 500
               log_scale: false
           ds: 0.5
-          ds_max: 5.0
-          max_steps: 500
+          ds_max: 1.0
+          max_steps: 4000
+          n_inversion: 10
+          max_bisection_steps: 60
           algorithm: PALC
         bothside: true
     bothside: true

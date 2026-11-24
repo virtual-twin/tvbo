@@ -1,0 +1,7 @@
+name: PhaseLagIndex
+label: Phase lag index
+description: The phase lag index of every two nodes, the modulus of the mean over the samples of sign(sin(phase_j - phase_k)), for a phase in radians (Stam et al. 2007). It is 1 for two nodes whose phase difference stays strictly inside (0, pi) or strictly inside (-pi, 0), 0 for a zero difference and on the diagonal, and near 0 for a difference spread evenly over the circle. It returns the node-by-node matrix on the phase's node dimension and the same name with _j appended, labelled as the phase is. A grid streams the same quantity through the reducer recipe phase_lag_index, which replaces this function in an observation marked reduce streaming.
+arguments:
+  phase: {description: 'The phase in radians, along `dim` and one node dimension; a bare array is read with `dim` first.'}
+  dim: {value: time, description: 'Name of the dimension the samples run along.'}
+callable: {name: phase_lag_index, module: tvbo.analysis.statistics}

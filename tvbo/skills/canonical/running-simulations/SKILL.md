@@ -90,6 +90,16 @@ result.data  # xarray DataArray, dims (time, state_variable, node)
 
 For a real connectome, point `network` at a curated relmat, e.g. `{"iri": "tvbo:networks/tpl-MNI152NLin6Asym_cohort-HCPYA_rec-dTOR_atlas-Schaefer2018_seg-17Networks_scale-100_desc-SC_relmat"}`.
 
+**A curated relmat carries the raw tractography weights, so scale them before coupling.** The HCP-YA Desikan-Killiany connectome holds streamline counts up to about 4.6e5, a row sum near 1.7e5, and with the model's default coupling every Reduced Wong-Wang node saturates at S_e = 1 within 20 ms. Rescale the weights in the network itself, so the spec states it, and check that the trajectory is not pinned at a bound before you plot it:
+
+```python
+network = {
+    "iri": "tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat",
+    "transforms": [{"name": "weight", "equation": {"rhs": "weight / mean(weight[weight > 0])"}}],  # mean non-zero weight -> 1
+    "coupling": {"Linear": {"name": "Linear", "iri": "tvbo:coupling_functions/Linear"}},
+}
+```
+
 ### The single-node quick path
 
 For a bare `Dynamics` with no network (single node), the minimal form still holds:

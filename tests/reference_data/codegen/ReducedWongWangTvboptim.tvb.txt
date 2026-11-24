@@ -101,13 +101,15 @@ class ReducedWongWangTvboptim(Model):
     _R = None
     _stimulus = 0.0
     use_numba = False
+    _first_evaluation = None
 
     def _build_observer(self):
         template = (
             "def observe(state):\n"
             "    {svars} = state\n"
-            "    H_x = H(x)\n"
-            "    return numpy.array([{voi_names}])"
+            "    H_x, = model._first_evaluation\n"
+            "    model._first_evaluation = None\n"
+            "    return np.array([{voi_names}])"
         )
         svars = ",".join(self.state_variables)
         if len(self.state_variables) == 1:
@@ -115,8 +117,9 @@ class ReducedWongWangTvboptim(Model):
         code = template.format(
             svars=svars, voi_names=",".join(self.variables_of_interest)
         )
-        namespace = {"numpy": np, "np": np, "pi": np.pi, "sin": np.sin}
-        namespace.update(self.__dict__)
+        # the namespace dfun runs in, plus this model's parameters
+        namespace = {**globals(), **self.__dict__}
+        namespace["model"] = self
         self.log.debug("building observer with code:\n%s", code)
         exec(code, namespace)
         self.observe = namespace["observe"]
@@ -148,6 +151,8 @@ class ReducedWongWangTvboptim(Model):
         # Derived Variables
         self.x = x = I_o + J_N * delayed + J_N * instant + J_N * S * w
         self.H_x = H_x = H(x)
+        if self._first_evaluation is None:
+            self._first_evaluation = (H_x,)
 
         # Time Derivatives
         # Broadcast every derivative to a common per-node shape so constant

@@ -6,3 +6,4 @@
 
 tvbc:study-Yang2015 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/ReducedWongWang> .
 tvbc:study-Mana2023 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/SupHopf> .
+tvbc:study-Stefanovski2019 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/JansenRit> .

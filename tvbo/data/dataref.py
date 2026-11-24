@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from contextlib import contextmanager
 from contextvars import ContextVar
+from functools import lru_cache
 from pathlib import Path
 from typing import NamedTuple
 
@@ -229,6 +230,12 @@ def sidecar_path(container) -> Path:
     return Path(container).with_suffix(".yaml")
 
 
+def network_companion_path(container) -> Path:
+    """The frozen connectome a run writes beside its result container: the result's stem with ``_network`` in place of its last suffix (``exp-1_model-M_result.h5`` gives ``exp-1_model-M_network.yaml``), the rule `SimulationExperiment.get_network_stem` names it by."""
+    path = Path(container)
+    return path.with_name(f"{path.stem.rsplit('_', 1)[0]}_network.yaml")
+
+
 def source_producers(container) -> list[str]:
     """The algorithms a result container's run declared, last-declared first, read from its sidecar.
 
@@ -246,6 +253,26 @@ def source_producers(container) -> list[str]:
     algs = spec.get("algorithms") if isinstance(spec, dict) else None
     names = list(algs.keys()) if isinstance(algs, dict) else [a.get("name") for a in algs or [] if isinstance(a, dict)]
     return [str(n) for n in reversed(names) if n]
+
+
+@lru_cache(maxsize=64)
+def run_dynamics(container: str) -> dict:
+    """The ``dynamics`` entry of the provenance sidecar beside *container* (:func:`sidecar_path`), the model its run was integrated with; parsed once per container, so a caller that changes it works on a copy.
+
+    Raises:
+        ValueError: If the container has no sidecar or the sidecar records no dynamics, which is the case for an analysis result.
+    """
+    import yaml
+
+    sidecar = sidecar_path(container)
+    if not sidecar.is_file():
+        raise ValueError(
+            f"{Path(container).name} has no provenance sidecar {sidecar.name}, so the model it was run with is unknown."
+        )
+    record = yaml.safe_load(sidecar.read_text(encoding="utf-8"))
+    if not isinstance(record, dict) or not record.get("dynamics"):
+        raise ValueError(f"{sidecar.name} records no dynamics: only an experiment's result carries the model it was run with.")
+    return record["dynamics"]
 
 
 _TRANSIENT: dict[tuple[str, str], Path] = {}
@@ -315,7 +342,7 @@ def is_local_ref(ref) -> bool:
     Such a reference names one of *this* experiment's own outputs (the local end of the reference spectrum, subsuming an ``Argument.value: "observations.x"``); it is resolved by the in-run observation machinery, not by opening a sibling container.
     Consumers test this to route a local reference to the right resolver.
     """
-    return not any(getattr(ref, w, None) for w in ("experiment", "analysis", "cohort", "iri"))
+    return all(getattr(ref, w, None) is None for w in ("experiment", "analysis", "cohort", "iri"))
 
 
 def _where(ref, results_root=None, fallback_experiment=None) -> tuple:
@@ -466,6 +493,83 @@ def match_output(keys: Iterable[str], output: str, prefer: Iterable[str] = ()) -
     )
 
 
+def output_array(ds, container, output, trial=None):
+    """The array ``output`` names in the result container at *container*, open as *ds*: the one reading of a reference's WHICH that :func:`resolve_dataref`, a figure layer and a custom panel's ``load_layer`` share.
+
+    ``network.<name>`` and ``dynamics.<name>`` read what the run used from what it wrote beside its container, never by building it again: the network it froze (:func:`_run_network`) and a parameter value its recipe declares (:func:`_run_parameter`). Any other name is a data-variable of *ds*, found by :func:`match_output`. *trial* is the trial a reference's `sel` names for a ``network.`` output, which :func:`_run_network` checks against the trial the frozen network holds.
+    """
+    text = str(output)
+    if text.startswith("network."):
+        return _run_network(container, text.removeprefix("network."), trial)
+    if text.startswith("dynamics."):
+        return _run_parameter(container, ds, text.removeprefix("dynamics."))
+    return ds[match_output(ds.data_vars, output)]
+
+
+def _frozen_network(container):
+    """The network the run that wrote *container* froze beside it (:func:`network_companion_path`), loaded where it stands."""
+    from tvbo.data.network_io import load_network
+
+    companion = network_companion_path(container)
+    if not companion.is_file():
+        raise ValueError(
+            f"{Path(container).name}: its run wrote no network beside it ({companion.name}), so a `network.` output has nothing to read. A single-node run writes none, an analysis result is no run, and a run written before its network was frozen under that name gains one when it runs again."
+        )
+    return load_network(companion)
+
+
+def _run_network(container, name: str, trial=None):
+    """``network.<name>`` of the run that wrote *container*: what the network it froze (:func:`_frozen_network`) delivers as *name* (:func:`tvbo.data.cohort.network_array`), such as ``weight``, ``positions``, ``instrength`` or ``nodes.<attribute>``.
+
+    A network that takes a layer or a transform argument through a ``used:`` reference is frozen with the reference, not with what the run read, so it is refused: reading it would read that source as it is now. On a network realised anew for each trial the companion holds trial 0's realisation, so what can differ from trial to trial, the weights, the tract lengths and the in-strength, is served only to a read whose *trial* is the one it holds and refused otherwise (:func:`tvbo.data.param_io.refuse_per_trial_read`); the node data every trial shares is served.
+    """
+    from tvbo.data.cohort import network_array
+    from tvbo.data.param_io import refuse_per_trial_read
+
+    net, companion = _frozen_network(container), network_companion_path(container).name
+    references = net.declared_references()
+    if references:
+        raise ValueError(
+            f"{companion}: the network its run froze takes {'; '.join(map(_reference_text, references))} when it is bound to a run, and keeps the reference rather than what the run read, so `network.{name}` is not read from it; read that source where it is kept."
+        )
+    refuse_per_trial_read(net, name, companion, trial)
+    return network_array(net, name, companion)
+
+
+def _run_parameter(container, ds, name: str):
+    """``dynamics.<name>`` of the run that wrote *container*, open as *ds*: the value its recipe declares for parameter *name* (:func:`run_dynamics`), as a 0-d ``DataArray``.
+
+    Only a value the run held is answered. A parameter the run varied is refused, naming where its values are: under a name of its own in *ds* (an axis or coordinate a sweep or a continuation ran along, named ``<Model>.<name>`` or ``<name>``, an ``estimate__`` an algorithm tuned, an optimization's ``__fitted__`` value), a ``distribution`` it is drawn from, or the nodes of the network the run froze (``network.nodes.<name>``).
+    """
+    import xarray as xr
+
+    from tvbo.data.param_io import resolve_network_node
+    from tvbo.utils import normalize_params
+
+    where = Path(container).name
+    declared = normalize_params(run_dynamics(str(container)).get("parameters"))
+    if name not in declared:
+        raise KeyError(f"{where}: the run's dynamics declares no parameter {name!r}; it declares {sorted(declared)}.")
+    record = declared[name]
+    fits = [k for k in ds.data_vars if str(k).startswith("estimate__") or "__fitted__" in str(k)]
+    recorded = sorted(
+        {str(k) for k in [*ds.sizes, *ds.coords, *fits] if str(k).rsplit("__", 1)[-1].rsplit(".", 1)[-1] == name}
+    )
+    varied = [f"`{k}`" for k in recorded]
+    if record.get("distribution") is not None:
+        varied.append("its `distribution`")
+    if network_companion_path(container).is_file() and resolve_network_node(_frozen_network(container), name) is not None:
+        varied.append(f"`network.nodes.{name}`")
+    if varied:
+        raise ValueError(
+            f"{where}: the run did not hold {name!r} at the one value its recipe declares; its values are in {', '.join(varied)}."
+        )
+    value = record.get("value")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError(f"{where}: the run's recipe declares {value!r} for {name!r}, not one number.")
+    return xr.DataArray(float(value), name=name)
+
+
 # --------------------------------------------------------------------------- SLICE
 
 
@@ -505,6 +609,21 @@ def resolve_sel_keys(da, sel: Mapping[str, object] | None) -> dict:
     return {resolve_dim(da, str(k)): v for k, v in (sel or {}).items()}
 
 
+def index_bare_axes(da, sel: Mapping[str, object] | None):
+    """*da* with a ``0 .. n-1`` coordinate on every axis *sel* selects that carries none.
+
+    A container written without labels on an axis (a sweep's ``point``, a node axis of a network that named no regions) still has to be selectable by name, and an unlabelled axis's only labels are its positions, which is what xarray itself numbers it by. An axis that has a coordinate keeps it, so a labelled selection is never read positionally.
+    """
+    import numpy as np
+
+    bare = {
+        d: np.arange(da.sizes[d])
+        for d in (resolve_dim(da, str(k)) for k in (sel or {}))
+        if d in da.dims and d not in da.coords
+    }
+    return da.assign_coords(bare) if bare else da
+
+
 def select_labeled(da, sel: Mapping[str, object] | None):
     """Apply a label-keyed ``.sel`` to ``da``, never positional.
 
@@ -515,6 +634,7 @@ def select_labeled(da, sel: Mapping[str, object] | None):
         return da
     import numpy as np
 
+    da = index_bare_axes(da, sel)
     for dim, value in sel.items():
         dim = resolve_dim(da, dim)
         if dim in da.dims:
@@ -564,6 +684,11 @@ def _reference_text(ref) -> str:
     return f"the reference to {where}" + (f", output {str(output)!r}" if output else "") if where else "a reference"
 
 
+def node_axes(da) -> list:
+    """The axes of ``da`` that can carry node labels: every dimension with string coordinates, except the one a whole cohort is stacked along (:data:`SUBJECT_DIM`), whose labels are member identifiers even where they coincide with node labels."""
+    return [d for d in da.dims if d != SUBJECT_DIM and d in da.coords and da.coords[d].dtype.kind in "USO"]
+
+
 def reconcile_by_label(
     da,
     alias_map: Mapping[str, str],
@@ -571,29 +696,25 @@ def reconcile_by_label(
     node_dims: Sequence[str] | None = None,
     what: str | None = None,
 ):
-    """Align every labelled node axis of ``da`` to the model's node order, by label.
+    """Align every labelled node axis of ``da`` (:func:`node_axes`) to the model's node order, by label.
 
-    A node axis is any dimension carrying string coordinates, except the one a whole cohort is stacked along (:data:`SUBJECT_DIM`), whose labels are member identifiers even where they coincide with node labels. Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix.
-    Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every such axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
+    Each is relabelled source -> canonical through ``alias_map`` (alias-aware, so a divergent nomenclature or a hemisphere-swapped convention still matches) then restricted to ``model_labels`` in the model's order — on *both* axes of a per-edge matrix. Unlabelled axes are left untouched (assumed already in model order). Pass ``node_dims`` to restrict reconciliation to a known set of node axes (so a labelled *non-node* dimension is not mistaken for one); the default reconciles every node axis that shares a label with the model. This is the ``reconcile: by_label`` path; ``none`` skips it.
 
-    A model label a node axis does not carry raises a ``ValueError`` that names the labels, the axis, *what* is being reconciled and the labels the axis offers: all of them on a short axis, the nearest by spelling on a long one (:func:`tvbo.utils.labels_offered`).
+    A model label a node axis does not carry raises a ``ValueError`` that names the labels, the axis, *what* is being reconciled and the labels the axis offers: all of them on a short axis, the nearest by spelling on a long one (:func:`tvbo.utils.labels_offered`). An empty ``model_labels``, a network with no nodes, raises naming *what*, since there is no order to lay anything out on.
     """
-    import numpy as np
-
+    if len(model_labels) == 0:
+        raise ValueError(
+            f"`reconcile: by_label` on {what or 'an array'} lays it out on the network's node order by label, and the network has no nodes to lay it out against. "
+            "Give the network its `nodes`, or drop `reconcile`."
+        )
     model_set = set(str(m) for m in model_labels)
-    for d in list(da.dims):
+    for d in node_axes(da):
         if node_dims is not None and d not in node_dims:
             continue
-        if d not in da.coords:
-            continue
-        vals = np.asarray(da.coords[d].values)
-        if vals.dtype.kind not in ("U", "S", "O"):
-            continue
-        mapped = [alias_map.get(str(v), str(v)) for v in vals]
+        mapped = [alias_map.get(str(v), str(v)) for v in da.coords[d].values]
         offered = set(mapped)
-        # Only a real node axis, one with overlapping labels that no cohort is stacked along; forcing another through .sel raises.
-        if node_dims is None and (d == SUBJECT_DIM or not (model_set & offered)):
-            continue
+        if node_dims is None and not (model_set & offered):
+            continue  # an axis sharing no label with the model is not a node axis, and forcing it through .sel raises
         absent = [str(m) for m in model_labels if str(m) not in offered]
         if absent:
             from tvbo.utils import labels_offered
@@ -647,10 +768,11 @@ def resolve_dataref(
     datasets=None,
     source_dir=None,
     transient: bool = True,
+    reconcile: bool = True,
 ):
     """Resolve a container-backed ``DataRef`` to a labelled :class:`xarray.DataArray`.
 
-    Runs the four steps in order — WHERE (:func:`locate_container`), WHICH (:func:`match_output`), SLICE (:func:`select_labeled`), RECONCILE (:func:`reconcile_by_label`, only when the reference asks for ``by_label`` and a network context is supplied) — and returns the array detached from the source file. ``alias_map`` / ``model_labels`` are the consuming network's ``region_alias_map()`` and node order, injected so this stays network-agnostic.
+    Runs the four steps in order — WHERE (:func:`locate_container`), WHICH (:func:`match_output`), SLICE (:func:`select_labeled`), RECONCILE (:func:`reconcile_by_label`, only when the reference asks for ``by_label``) — and returns the array detached from the source file. ``alias_map`` / ``model_labels`` are the consuming network's ``region_alias_map()`` and node order, injected so this stays network-agnostic. A ``by_label`` reference resolved without them raises, naming it, since returning it in its source's order would pass for an alignment that never happened; *reconcile* False leaves the step to a caller that lays several references out on one node order itself, as a study analysis does with its ``by_label`` arguments (:mod:`tvbo.data.analysis_io`).
 
     An ``output`` naming a DataFrame-backed container as a whole returns the frame instead (:func:`as_table`). SLICE and RECONCILE do not apply to a table, so a reference that declares one of them against that shape raises rather than returning something the directive was never applied to.
 
@@ -659,6 +781,8 @@ def resolve_dataref(
     A reference to a dataset ``cohort`` follows the same rule one level down, on the members' own files instead of result shards (:func:`tvbo.data.cohort.read_cohort`): *datasets* are the study's, where the cohort is declared, and *source_dir* resolves a relative ``bids_root``.
 
     A reference whose ``iri`` names a network (:func:`network_file`) reads ``output`` as that network delivers it, an edge layer with its declared transforms applied or a per-node quantity, and follows the cohort rule when the network itself reads per subject (:func:`tvbo.data.cohort.read_network`).
+
+    An ``output`` under ``network.`` or ``dynamics.`` reads what the run of an experiment used, from what it wrote beside its container (:func:`output_array`), and a per-subject cohort's from beside each shard.
 
     An analysis reference reads a transient analysis this process computed (:func:`locate_analysis_container`) unless *transient* is False, which a reader of kept results (a report's number) passes to be refused it by name.
 
@@ -675,7 +799,7 @@ def resolve_dataref(
         sel = sel_dict(ref)
         sel.pop(SUBJECT_DIM, None)  # the members a `sel` names are the ones `read_cohort` reads
         da = select_labeled(read_cohort(ref, datasets, subject=subject, source_dir=source_dir), sel)
-        return _finish(da, ref, alias_map, model_labels)
+        return _finish(da, ref, alias_map, model_labels, reconcile)
 
     network = names_a_network(ref, source_dir)
     if network is not None:
@@ -684,7 +808,7 @@ def resolve_dataref(
         sel = sel_dict(ref)
         sel.pop(SUBJECT_DIM, None)  # the members a `sel` names are the ones `read_network` reads
         da = read_network(ref, network, subject=subject, datasets=datasets, results_root=results_root, source_dir=source_dir)
-        return _finish(select_labeled(da, sel), ref, alias_map, model_labels)
+        return _finish(select_labeled(da, sel), ref, alias_map, model_labels, reconcile)
 
     where = _where(ref, results_root, fallback_experiment)
     candidates = _exp_candidates(where[1], where[2]) if where[0] == "exp" else None
@@ -693,32 +817,39 @@ def resolve_dataref(
         parts = [_read_one(xr, path, ref, stacking=True) for path in shards.values()]
         da = xr.concat(parts, dim=SUBJECT_DIM, coords="minimal", compat="override", join="outer")
         da = da.assign_coords({SUBJECT_DIM: list(shards)})
-        return _finish(da, ref, alias_map, model_labels)
+        return _finish(da, ref, alias_map, model_labels, reconcile)
 
     out = _read_one(xr, _container_at(where, subject, candidates, transient=transient), ref)
     if not isinstance(out, xr.DataArray):
         return out
-    return _finish(out, ref, alias_map, model_labels)
+    return _finish(out, ref, alias_map, model_labels, reconcile)
 
 
-def _finish(da, ref, alias_map, model_labels):
-    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container. RECONCILE lays out the node axes only, so a stacked cohort keeps its members in their order (:func:`reconcile_by_label`)."""
+def _finish(da, ref, alias_map, model_labels, reconcile=True):
+    """TRANSFORM then RECONCILE, the two steps a resolved array takes after it leaves its container. RECONCILE runs when *reconcile* is set and lays out the node axes only, so a stacked cohort keeps its members in their order (:func:`reconcile_by_label`); a ``by_label`` reference given no node order to lay out on is refused by name."""
     da = apply_transform(da, getattr(ref, "transform", None))
-    if reconcile_mode(ref) == "by_label" and alias_map is not None and model_labels is not None:
-        da = reconcile_by_label(da, alias_map, model_labels, what=_reference_text(ref))
-    return da
+    if not reconcile or reconcile_mode(ref) != "by_label":
+        return da
+    if alias_map is None or model_labels is None:
+        raise ValueError(
+            f"`reconcile: by_label` on {_reference_text(ref)} lays it out on a node order by label, and nothing gave it one, so it would come back in its source's order. "
+            "A network gives one to its layers and transform arguments and to a parameter's, producer's or exploration builder's argument, and a study analysis lays its `by_label` arguments out on one order between them; anywhere else, drop `reconcile`."
+        )
+    return reconcile_by_label(da, alias_map, model_labels, what=_reference_text(ref))
 
 
 def _read_one(xr, path, ref, *, stacking=False):
     """WHICH and SLICE on one container: the selected array loaded and detached, or a whole table.
 
-    A table cannot be stacked into a cohort, so a cohort read that meets one raises rather than returning one subject's table.
+    A table cannot be stacked into a cohort, so a cohort read that meets one raises rather than returning one subject's table. The `trial` a reference's `sel` names for a ``network.`` output goes to the per-trial check (:func:`output_array`) rather than to the selection, since the network a run froze has no trial axis.
     """
     ds = xr.open_dataset(path, engine="h5netcdf")
     try:
         output = getattr(ref, "output", None)
+        sel = sel_dict(ref)
+        trial = sel.pop("trial", None) if str(output).startswith("network.") else None
         try:
-            da = ds[match_output(ds.data_vars, output)]
+            da = output_array(ds, path, output, trial)
         except KeyError:
             table = as_table(ds, output)
             if table is None:
@@ -739,7 +870,7 @@ def _read_one(xr, path, ref, *, stacking=False):
                     "consuming callable."
                 ) from None
             return table
-        da = select_labeled(da, sel_dict(ref))
+        da = select_labeled(da, sel)
         return da.load()
     finally:
         ds.close()

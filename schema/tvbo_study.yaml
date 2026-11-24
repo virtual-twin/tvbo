@@ -531,6 +531,9 @@ enums:
         description: >-
           Outside the BIDS vocabulary. Must be listed in ``.bidsignore``, and
           ``expires_with`` must say what would retire the entry.
+      out_of_scope:
+        description: >-
+          Repository plumbing BIDS does not set out to describe, such as instructions to coding agents or per-path licence metadata. Listed in ``.bidsignore`` like an unsanctioned entry, but no proposal will retire it, so it states no ``expires_with``.
       hidden:
         description: >-
           Dot-prefixed, so validators skip it by convention and no ``.bidsignore`` entry

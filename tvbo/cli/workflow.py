@@ -8,6 +8,7 @@ import os
 import re
 import shlex
 import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Annotated, Any
 
@@ -66,11 +67,12 @@ def _parse_overrides(items: list[str]) -> dict[str, Any]:
 
 
 def _load_spec(spec: str):
-    """Load a Study or Experiment *spec* as ``(study_or_none, obj, study_key)``; the key falls back to the spec's kind."""
+    """Load a Study or Experiment *spec* as ``(study_or_none, obj, study_key)``; a spec without a ``key`` is keyed by its file's name (``MyStudy.yaml`` is ``MyStudy``), so its kit lands in ``.tvbo/kits/MyStudy/`` and its rules read ``MyStudy_exp_1``, and a spec that is no file by its kind."""
     kind, obj = _common.resolve_spec(spec)
     if kind not in ("study", "experiment"):
         _common.die(f"`tvbo workflow` requires a Study or Experiment SPEC; got kind={kind!r}.")
-    return (obj if kind == "study" else None), obj, getattr(obj, "key", None) or kind
+    named = Path(str(spec))
+    return (obj if kind == "study" else None), obj, getattr(obj, "key", None) or (named.stem if named.is_file() else kind)
 
 
 def _resolve_study_and_experiment(spec: str, experiment_arg: str | None):
@@ -459,10 +461,39 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
     return bool(bundled)
 
 
+def _module_file(name: str) -> str | None:
+    """The file *name* is loaded from, found without running the module (:func:`importlib.util.find_spec`), or ``None`` when no module of that name can be found; a module already imported answers from :data:`sys.modules`, which also knows a helper its importer put on ``sys.path`` at run time."""
+    import importlib.util
+    import sys
+
+    loaded = sys.modules.get(name)
+    if loaded is not None:
+        return getattr(loaded, "__file__", None)
+    try:
+        spec = importlib.util.find_spec(name)
+    except (ImportError, ValueError):
+        return None
+    return spec.origin if spec is not None else None
+
+
+def _local_module(name: str, f: str | None) -> bool:
+    """Whether *f*, the file module *name* loads from, is a recipe's own helper the kit has to carry: a plain local ``.py`` that is not a package's ``__init__``, not under the interpreter's own roots or a ``site-packages``/``dist-packages`` (the stdlib and installed dependencies, which the kit's requirements provision) and not ``tvbo`` itself."""
+    import sys
+
+    if not f or not f.endswith(".py") or Path(f).name == "__init__.py":
+        return False
+    top = name.split(".")[0]
+    if top == "tvbo" or top in sys.stdlib_module_names:
+        return False
+    rf = str(Path(f).resolve())
+    py_roots = tuple(str(Path(p).resolve()) for p in {sys.base_prefix, sys.prefix, sys.exec_prefix})
+    return not (rf.startswith(py_roots) or "site-packages" in rf or "dist-packages" in rf)
+
+
 def _bundle_modules(names, out_dir: Path, *, seen: set[str] | None = None) -> list[str]:
     """Copy each LOCAL ``.py`` module in *names* (and its transitive local imports) into the kit's ``code/``; return the bundled filenames.
 
-    A local module (not under ``site-packages``/``dist-packages`` — those are provisioned via ``requirements``) is a study helper that must travel with the kit. *seen* threads across calls so a study bundles its experiment callables and its figure ``code_modules`` into one ``code/`` without copying a shared helper twice.
+    A local module (:func:`_local_module`) is a study helper that must travel with the kit. Each is located by :func:`_module_file`, without importing it, so a module whose import fails at emit time (a dependency the emitting environment lacks) is still carried. It is still imported first, since a module may reach a helper of its own through a ``sys.path`` insert it runs on import; a failed import is reported with its error and with the warning that such helpers could not be followed; a name no module answers to is reported too, since the kit's run would fail on it. *seen* threads across calls so a study bundles its experiment callables and its figure ``code_modules`` into one ``code/`` without copying a shared helper twice.
     """
     import importlib
     import shutil
@@ -480,37 +511,42 @@ def _bundle_modules(names, out_dir: Path, *, seen: set[str] | None = None) -> li
     for name in sorted(set(names)):
         if name in seen:
             continue
-        try:
-            mod = importlib.import_module(name)
-        except Exception:
+        f = _module_file(name)
+        if f is None:
+            _common.warn(
+                f"the recipe names module {name!r}, which is neither on its code path nor installed, so the kit does not carry it and a run that calls it fails."
+            )
             continue
-        f = getattr(mod, "__file__", None) or ""
-        if not f.endswith(".py") or "site-packages" in f or "dist-packages" in f:
-            continue  # installed package — comes from the emitted requirements, not bundled
+        if not _local_module(name, f):
+            continue  # stdlib or installed — comes from the emitted requirements, not bundled
         _copy(name, f)
-        # A callable often imports a LOCAL helper of its own (e.g. Koller's wave_detection_methods, pulled in via a runtime sys.path insert) — not a `module:` reference and not an installed package, so nothing else carries it and the kit is not self-contained. Follow those transitive local, standalone imports too.
-        for dep_name, dep_f in _local_module_deps(mod, seen):
+        try:
+            importlib.import_module(name)  # runs the sys.path inserts by which it reaches helpers of its own
+            failure = None
+        except Exception as exc:
+            failure = exc
+        for dep_name, dep_f in _local_module_deps(f, seen):
             _copy(dep_name, dep_f)
+        if failure is not None:
+            _common.warn(
+                f"module {name!r} ({f}) is in the kit's code/ but does not import here: {type(failure).__name__}: {failure}. The node needs what it imports, and the helpers it reaches only once imported could not be followed, so the kit may still miss some of them."
+            )
     return bundled
 
 
-def _local_module_deps(mod, seen: set[str]):
-    """Yield (name, file) for the LOCAL, STANDALONE modules ``mod`` transitively imports.
+def _local_module_deps(src: str, seen: set[str]):
+    """Yield (name, file) for the LOCAL, STANDALONE modules the module in *src* transitively imports.
 
-    Resolves each imported name through ``sys.modules`` (``mod`` is already imported, so its dependencies are populated) and keeps only those backed by a plain local ``.py`` — NOT an installed package (``site-packages``), NOT a package with an ``__init__`` (those ship via requirements), and NOT ``tvbo`` itself. This is exactly the shape of a recipe's own helper module, so following it makes the emitted kit self-contained without vendoring the helper into the recipe tree.
+    A callable often imports a local helper of its own (Koller's ``wave_detection_methods``), which no ``module:`` reference names and no requirement installs, so it is followed too. Each imported name is located by :func:`_module_file` and kept when it is a local module (:func:`_local_module`), the shape of a recipe's own helper, so following it makes the emitted kit self-contained without vendoring the helper into the recipe tree.
     """
     import ast
-    import sys
 
-    src = getattr(mod, "__file__", None)
     if not src or not src.endswith(".py"):
         return
     try:
         tree = ast.parse(Path(src).read_text(encoding="utf-8"))
     except Exception:
         return
-    # Everything under the interpreter's own roots is stdlib or an installed dep (both live in the Python install / its site-packages); a recipe's helper lives in the study tree, outside them. That single check excludes the whole stdlib AND every installed package, so only genuine local helpers survive.
-    py_roots = tuple(str(Path(p).resolve()) for p in {sys.base_prefix, sys.prefix, sys.exec_prefix})
     imported: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -518,18 +554,14 @@ def _local_module_deps(mod, seen: set[str]):
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             imported.add(node.module.split(".")[0])
     for name in sorted(imported):
-        if name in seen or name == "tvbo" or name in sys.stdlib_module_names:
+        if name in seen:
             continue
-        dep = sys.modules.get(name)
-        f = getattr(dep, "__file__", None) if dep is not None else None
-        if not f or not f.endswith(".py") or Path(f).name == "__init__.py":
-            continue  # missing, a C-extension, or a package (provisioned via requirements)
-        rf = str(Path(f).resolve())
-        if rf.startswith(py_roots) or "site-packages" in rf or "dist-packages" in rf:
-            continue  # stdlib or installed — not a local recipe helper
+        f = _module_file(name)
+        if not _local_module(name, f):
+            continue
         seen.add(name)
         yield name, f
-        yield from _local_module_deps(dep, seen)
+        yield from _local_module_deps(f, seen)
 
 
 def _bundle_request(items: list[str]) -> dict[str, str]:
@@ -698,7 +730,7 @@ def _emit_kit(*, engine: str, plan, experiment, out_dir: Path, bundle_select: di
 
         out_dir/
           <artefact>            # Snakefile / run.sbatch / main.nf (with nextflow.config)
-          scripts/<exp>.<ext>   # frozen backend code from experiment.render(backend)
+          scripts/<exp>.<ext>   # frozen backend code from experiment.render_code(backend)
           spec/<exp>.yaml       # frozen YAML snapshot of the experiment
           data/<dataset_id>/    # the dataset files the experiment reads (see _bundle_dataset)
           README.md             # provenance + how-to-run
@@ -987,14 +1019,16 @@ def _bundle_script_artifacts(code: str, out_dir: Path) -> int:
 def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: str) -> str | None:
     """Freeze *experiment*'s pre-rendered backend script under ``out_dir/scripts/<key>.<ext>``, staging every array it loads into ``constants/``.
 
-    The rendered tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a kit executes it as-is via ``tvbo run … --rendered`` — no code generation on the node. Returns the kit-relative path, or ``None`` when the render fails, in which case the kit falls back to re-rendering from the frozen spec.
+    The rendered tvboptim/jax/… code imports only stable tvbo runtime modules (never codegen), so a kit executes it as-is via ``tvbo run … --rendered`` — no code generation on the node. Returns the kit-relative path, or ``None`` when the render fails, in which case the kit falls back to re-rendering from the frozen spec and a warning names the experiment and the error, since that run is no longer the frozen code the kit was meant to carry.
+
+    The script is rendered as a run renders it, through :meth:`SimulationExperiment.render_code`, which configures the experiment first, so it is the code ``run()`` executes: a network whose delays all vanish (an infinite conduction speed, or tract lengths of zero) freezes the instantaneous coupling a run integrates, not the delayed coupling its couplings declare.
     """
     from tvbo import export as _export
 
     try:
         fmt = _export.resolve(backend_name)
         ext = (fmt.extension or ".py").lstrip(".")
-        code = experiment.render(format=backend_name)
+        code = experiment.render_code(backend_name)
         scripts_dir = out_dir / "scripts"
         scripts_dir.mkdir(parents=True, exist_ok=True)
         path = scripts_dir / f"{key}.{ext}"
@@ -1006,8 +1040,29 @@ def _freeze_backend_script(experiment, out_dir: Path, backend_name: str, key: st
             _common.info(f"staged {staged} producer constant(s) → constants/")
         return rel
     except Exception as exc:
-        _common.info(f"(could not render backend script for {backend_name!r}: {exc})")
+        _common.warn(f"experiment {key}: its {backend_name!r} script did not render ({exc}), so its kit runs it in spec mode")
         return None
+
+
+def _spec_stamps(out_dir: Path) -> dict[Path, tuple[str, int]]:
+    """Every file under the kit's ``spec/`` and its frozen figure declarations with its content digest and modification time in nanoseconds."""
+    from tvbo.adapters.figure_workflow import FIGURE_SPECS
+    from tvbo.data.provenance import digest_of
+
+    return {
+        f: (digest_of(f).value, f.stat().st_mtime_ns)
+        for root in (out_dir / "spec", out_dir / FIGURE_SPECS)
+        for f in root.rglob("*")
+        if f.is_file()
+    }
+
+
+def _keep_unchanged_spec_times(out_dir: Path, before: dict[Path, tuple[str, int]]) -> None:
+    """Give every spec file a re-emission rewrote with the same content its earlier modification time back, so Snakemake reruns only the rules whose spec changed."""
+    for f, (digest, _) in _spec_stamps(out_dir).items():
+        old_digest, old_time = before.get(f, (None, 0))
+        if digest == old_digest:
+            os.utime(f, ns=(old_time, old_time))
 
 
 def _rule_key(name) -> str:
@@ -1034,6 +1089,7 @@ def _emit_snakemake_study(
     out_dir = output or _kits_root(spec) / str(study_key) / "snakemake"
     if not stdout:
         out_dir.mkdir(parents=True, exist_ok=True)
+    stamps = {} if stdout else _spec_stamps(out_dir)
     parsed = _parse_overrides(override)
     # Run modifiers rather than workflow-block fields, so they leave the overrides before any plan or freeze reads them.
     max_iterations = parsed["merged"].pop("max_iterations", None)
@@ -1065,7 +1121,7 @@ def _emit_snakemake_study(
             _read_from_the_study(plan, spec)
         # A fanned `parameters` sweep can't be frozen (see the docstring's fan-out note).
         _fanned_parameter = any(ax.kind == "parameters" for ax in plan.workflow_axes)
-        scripts_relpath = None
+        scripts_relpath, inputs = None, []
         if stdout:
             spec_relpath, select = spec, key
         else:
@@ -1080,6 +1136,7 @@ def _emit_snakemake_study(
                 or bundled_code
             )
             spec_relpath, select = f"spec/{key}/experiment.yaml", None
+            inputs = sorted(str(f.relative_to(out_dir)) for f in edir.rglob("*") if f.is_file())
             _stage_reference_containers(exp, out_dir / plan.out_dir, plan.depends_on, in_kit=_key_of, written=written)
             # Freeze the pre-rendered backend script ALONGSIDE the spec, so the SAME kit runs either way: `--code-source frozen` runs `scripts/<key>.<ext>` with no codegen on the node. A render failure is non-fatal — the spec path still works; the rule falls back to it when the script is absent.
             if not _fanned_parameter:
@@ -1096,6 +1153,8 @@ def _emit_snakemake_study(
                 "key": key,
                 "rule_name": ("exp_" + exp_rule) if study_rule == exp_rule else (study_rule + "_exp_" + exp_rule),
                 "spec_relpath": spec_relpath,
+                # The frozen spec files the rule declares as input, so Snakemake reruns it when one is edited; empty in --stdout mode, where no kit is written.
+                "inputs": inputs,
                 # Pre-rendered backend script (frozen alongside the spec); None in --stdout mode or if the render failed, in which case the rule always uses the spec.
                 "scripts_relpath": scripts_relpath,
                 # Emit-time default code source baked into the rule (overridable at run time via $TVBO_CODE_SOURCE); a fanned-parameter experiment is spec-only.
@@ -1143,8 +1202,10 @@ def _emit_snakemake_study(
             if fig_bundled:
                 bundled_code = True
                 _common.info(f"bundled figure modules → code/: {', '.join(fig_bundled)}")
+        src = getattr(study, "_source_file", None)
+        fig_records = figure_workflow.figure_records(src) if src and not stdout else None
         fig_ctxs = figure_workflow.figure_contexts(
-            figs, base_dir=fig_base, workflow=fig_workflow, exp_plans=exp_plans, bundled_code=bundled_code
+            figs, base_dir=fig_base, workflow=fig_workflow, exp_plans=exp_plans, bundled_code=bundled_code, records=fig_records
         )
         figure_outputs = [c["output"] for c in fig_ctxs if c["kit_satisfiable"]]
         stranded = [c["name"] for c in fig_ctxs if not c["kit_satisfiable"]]
@@ -1169,6 +1230,8 @@ def _emit_snakemake_study(
                     include_all=True,
                     exp_plans=exp_plans,
                     bundled_code=bundled_code,
+                    records=fig_records,
+                    contexts=fig_ctxs,
                 )
             )
         return None
@@ -1179,7 +1242,8 @@ def _emit_snakemake_study(
     if head is not None:
         _write_env_files(out_dir, head, setup=head.needs_env_layer)
         # A differing per-experiment image becomes that rule's own `container:` directive, but binds reach Apptainer through Snakemake's single `--apptainer-args`, which is per-run and cannot vary per rule, so say so rather than drop them silently.
-        _divergent = sorted({p.experiment_key for p in plans[1:] if p.container_exec_flags != head.container_exec_flags})
+        _declared = (head.container_binds, head.container_args)
+        _divergent = sorted({p.experiment_key for p in plans[1:] if (p.container_binds, p.container_args) != _declared})
         if _divergent:
             _common.warn(
                 f"experiments {', '.join(_divergent)} declare container_binds/container_args "
@@ -1187,13 +1251,15 @@ def _emit_snakemake_study(
                 f"--apptainer-args per run, so {head.experiment_key}'s are used for all "
                 "rules. Emit those experiments as their own kit if they need different binds."
             )
+        # The one --apptainer-args carries --nv when any rule uses a GPU; a CPU rule's declared accelerator keeps its JAX on the CPU.
+        head = replace(head, gpu=any(p.gpu for p in plans))
     _write_snakemake_profile(out_dir, block, plan=head)
     if plans:
         _write_readme(
             out_dir, engine="snakemake", plans=plans, script_relpath=None, spec_layout="spec/<experiment>/experiment.yaml"
         )
     if figs:
-        # A study is its experiments PLUS the figures that read their results: freeze each figure's self-contained plot.py + the render rules, then wire them in. The figure outputs were already added to `rule all` (see figure_outputs above), so the default target renders them right after the grid — a fanned figure's `input:` is the expand() over its experiment's cells, so it waits for the whole sweep.
+        # A study is its experiments PLUS the figures that read their results: freeze each figure's declaration and self-contained plot.py + the render rules, then wire them in. The figure outputs were already added to `rule all` (see figure_outputs above), so the default target renders them right after the grid — a fanned figure's `input:` is the expand() over its experiment's cells, so it waits for the whole sweep.
         figure_workflow.write_figure_kit(
             figs,
             base_dir=fig_base,
@@ -1202,10 +1268,15 @@ def _emit_snakemake_study(
             include_all=True,
             exp_plans=exp_plans,
             bundled_code=bundled_code,
+            records=fig_records,
+            contexts=fig_ctxs,
         )
         with (out_dir / "Snakefile").open("a", encoding="utf-8") as fh:
-            fh.write('\n\ninclude: "figures.smk"\n')
-        _common.info(f"wrote figures.smk + {len(figs)} figure plot script(s) (run: `snakemake all_figures`)")
+            fh.write(f'\n\ninclude: "{figure_workflow.FIGURE_RULES.as_posix()}"\n')
+        _common.info(
+            f"wrote {figure_workflow.FIGURE_RULES} + {sum(1 for c in fig_ctxs if c['script'])} figure plot script(s) (run: `snakemake all_figures`)"
+        )
+    _keep_unchanged_spec_times(out_dir, stamps)
     return out_dir
 
 
@@ -1285,7 +1356,9 @@ def _warn_unsatisfiable_figure_inputs(out_dir: Path) -> None:
     A figure's PROV ``used`` edges become its rule's ``input:``, and those resolve against the author's tree — right at author time, wrong the moment the kit travels. Analysis containers are the common case: the kit runs experiments, so ``derivatives/tvbo/ana-<name>_result.h5`` has no rule to make it and is an absolute path that does not exist on the target host.
     Such figures are kept out of ``rule all`` and ``all_figures`` (so no advertised target is unsatisfiable), which turns a confusing failure into a listable one — this is the list, and staging these paths is what makes those rules runnable.
     """
-    smk = out_dir / "figures.smk"
+    from tvbo.adapters.figure_workflow import FIGURE_RULES
+
+    smk = out_dir / FIGURE_RULES
     if not smk.is_file():
         return
     import re
@@ -1442,6 +1515,14 @@ def _resolve_launcher(name: str) -> str | None:
     if sibling.is_file() and os.access(sibling, os.X_OK):
         return str(sibling)
     return shutil.which(name)
+
+
+def datalad_launcher() -> str:
+    """The ``datalad`` launcher :func:`_resolve_launcher` finds, which ``--datalad`` runs; aborts the CLI when DataLad is not installed."""
+    found = _resolve_launcher("datalad")
+    if found is None:
+        _common.die("--datalad needs the `datalad` command, which is not on PATH; install DataLad or leave out --datalad.")
+    return found
 
 
 def _experiment_targets(kit_dir: Path, experiment: str) -> list:

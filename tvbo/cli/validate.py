@@ -242,7 +242,7 @@ def study(
 ) -> None:
     """Check a study dataset against the one layout record.
 
-    Three things, none of which any other check catches: the tree matches the record (:mod:`tvbo.utils.study_layout`), each spec fragment's BIDS suffix agrees with the class its envelope declares, and its entity values are legal BIDS. Every rule the record generates must still be present in the ignore files; a study may add its own rules and order them as git requires, but silently dropping one of the record's is reported.
+    Four things, none of which any other check catches: the entry recipe loads, the tree matches the record (:mod:`tvbo.utils.study_layout`), each spec fragment's BIDS suffix agrees with the class its envelope declares, and its entity values are legal BIDS. Every rule the record generates must still be present in the ignore files; a study may add its own rules and order them as git requires, but silently dropping one of the record's is reported. A DataLad dataset (a ``.datalad/`` directory at the root) is held to the ignore rules of an annexed study.
     """
     import json
 
@@ -263,6 +263,15 @@ def study(
         if str(entry.level) == "required" and not (root / rel).is_file():
             problems.append(f"{rel}: required by the layout but missing")
 
+    recipe = root / layout_rules.file_relpath("recipe", name, record)
+    if recipe.is_file():
+        from tvbo import SimulationStudy
+
+        try:
+            SimulationStudy.from_file(recipe)
+        except Exception as exc:
+            problems.append(f"{recipe.name} does not load: {str(exc) or type(exc).__name__}")
+
     description = root / "dataset_description.json"
     if description.is_file():
         declared_type = (json.loads(description.read_text(encoding="utf-8")) or {}).get("DatasetType")
@@ -270,7 +279,7 @@ def study(
             problems.append(f"dataset_description.json declares DatasetType {declared_type!r}, not {record.dataset_type!r}")
 
     for role, lines in (
-        ("gitignore", layout_rules.gitignore_lines(record, templates, name)),
+        ("gitignore", layout_rules.gitignore_lines(record, templates, name, annex=(root / ".datalad").is_dir())),
         ("bidsignore", layout_rules.bidsignore_lines(record, templates, name)),
     ):
         generated = root / layout_rules.file_relpath(role, name, record)
@@ -312,4 +321,6 @@ def study(
         for p in problems:
             typer.echo(f"  {p}", err=True)
         _common.die(f"{len(problems)} problem(s) in {root}.")
-    typer.echo(f"OK — {root} conforms to the layout ({n_spec} spec fragment(s), {n_results} result file(s)).")
+    typer.echo(
+        f"OK — {recipe.name} loads and {root} conforms to the layout ({n_spec} spec fragment(s), {n_results} result file(s))."
+    )

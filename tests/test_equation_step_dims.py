@@ -40,6 +40,7 @@ def _expr(rhs, *names):
         ("welch(x, 100, 1.0)", ("frequency", "variable", "node")),
         ("rfftfreq(100, 1.0)", ("frequency",)),
         ("pearson(x, x)", ()),
+        ("spearman(x, x, x)", ()),
         ("shape(x, node)", ()),
         ("x[0]", ("variable", "node")),
         ("x[0, 1]", ("node",)),
@@ -55,7 +56,15 @@ def test_the_axes_of_an_expression_follow_its_operations(rhs, expected):
 
 @pytest.mark.parametrize(
     "rhs",
-    ["upper_triangle(x, 1)", "diag(x)", "hann(10)", "x + y", "sum_axis(x, 0) + sum_axis(x, 1)", "f(x)"],
+    [
+        "upper_triangle(x, 1)",
+        "diag(x)",
+        "hann(10)",
+        "scatter_sum(x, x, 3)",
+        "x + y",
+        "sum_axis(x, 0) + sum_axis(x, 1)",
+        "f(x)",
+    ],
 )
 def test_axes_nothing_can_name_are_unknown_not_guessed(rhs):
     """A primitive without a rule, an operand with unknown axes, or two operands whose axes disagree leave the value unknown, never a positional guess."""

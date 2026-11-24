@@ -10,7 +10,7 @@ process.container = '${plan.container}'
 singularity.enabled = true
 ## Binds the work directories Nextflow stages each task through.
 singularity.autoMounts = true
-## The kit itself, where a task reads the results tree, then the host paths the recipe declares beyond the runtime's defaults (container_binds/args).
+## The kit itself, where a task reads the results tree, then the host paths the recipe declares beyond the runtime's defaults (container_binds/args), and --nv when the run uses a GPU.
 singularity.runOptions = "--bind ${'${projectDir}'}${(" " + plan.container_exec_flags.replace("\\", "\\\\").replace("$", "\\$").replace('"', '\\"')) if plan.container_exec_flags else ""}"
 % endif
 % if block.get("executor"):

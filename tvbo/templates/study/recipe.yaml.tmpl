@@ -1,28 +1,73 @@
-# The study's entry recipe: `tvbo run <Study>.yaml`. Its directory is the study root.
+# The study's entry recipe: `tvbo run <Study>.yaml`. Its directory is the study root, and it runs as seeded: replace the example experiment with your own.
 tvbo_class: tvbo:SimulationStudy
 
 citekey: <Study>
-title: "<Paper title>"
-label: "<Author> (<Year>): <one line on what the study shows>"
+title: "<Study title>"
+label: "<one line on what the study shows>"
 description: >-
-  What this study simulates and what it claims. Reproduced quantities and their published
-  values belong in docs/analysis/targets.md, not here.
+  What this study simulates and what it claims.
 
 # The look every figure is drawn in; without it a figure draws native matplotlib axes. State differences beside the iri.
 theme: {iri: tvbo:themes/bsplot}
 
 experiments:
-    - name: "1"
-      description: <what this experiment shows>
+    - id: 1
+      label: "A whole-brain simulation"
       dynamics:
-          iri: tvb-o:<ModelName>
+          iri: tvbo:models/Generic2dOscillator
+          parameters: {a: 2.0}
+      network:
+          iri: tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
+          transforms:
+              - name: weight
+                equation: {rhs: "weight / mean(weight[weight > 0])"}
+          coupling:
+              c_glob:
+                  iri: tvbo:coupling_functions/Linear
+                  delayed: true
+                  incoming_states: [V]
+                  parameters: {a: 0.05}
       integration:
-          method: heun
+          method: Heun
           step_size: 0.1
-          duration: 1000.0
-      observations:
-          - name: signal
-            record: <state variable>
+          duration: 800.0
+          transient_time: 300.0
 
-# A fragment under spec/ is included, never inlined twice: `- !include spec/exp-2_experiment.yaml`.
-# A package this study's own code needs goes in `requires:`, keyed by name with its version.
+# What `tvbo run` draws once the experiment has run: the activity on the cortex and, beside it, every region's course written up to the instant shown, as a movie and its still.
+figures:
+    - name: fig-1_desc-firstSimulation
+      label: "A first whole-brain simulation"
+      layout: "ab"
+      width_ratios: [1.0, 1.4]
+      width: 170
+      height: 70
+      animation: {over: time, frames: 24, fps: 8, format: mp4, still: 23}
+      panels:
+          a:
+              kind: surface
+              label: "On the cortex"
+              layers:
+                  - used: {experiment: 1, output: integration, sel: {variable: V}}
+              surface:
+                  atlas: tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-DesikanKilliany_dseg
+                  template: fsaverage
+                  hemi: both
+                  view: dorsal
+                  colormap: magma
+                  symmetric: false
+          b:
+              kind: cartesian
+              label: "Regional activity"
+              layers:
+                  - used: {experiment: 1, output: integration, sel: {variable: V}}
+                    mark: line
+                    frame: trail
+                    encoding: {x: time}
+                    style: {opts: {linewidth: 0.4, alpha: 0.6}}
+              xlim: [0, 800]
+              xticks: [0, 400, 800]
+              ylim: [-2, 5]
+              xlabel: "Time [ms]"
+              ylabel: "V [a.u.]"
+
+# Fragments under spec/ are included, never inlined twice (`- !include spec/exp-2_experiment.yaml`); a package the study's own code needs goes in `requires:` with its version.

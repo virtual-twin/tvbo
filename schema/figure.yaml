@@ -32,7 +32,8 @@ enums:
       grid:      {description: "A composite of sub-panels inside ONE lettered panel, labelled once per row and column. What a paper's lettered panel usually is: a row of mode surfaces under a single (a), or a Data/Reconstruction matrix whose task name is written once at the left. Declaring each cell as its own mosaic entry instead would repeat those labels in every cell and renumber panels the paper letters once. Cells come from `cells:` or, in the common case, from `layers:` — one cell per layer, all drawn by the shared `cell:` template."}
       colorbar:  {description: "A colour scale in its own slot, for panels that share one. Attaching it to any single panel steals that panel's width and implies the scale is local to it. Limits come from opts or, with a layer bound, from the data. Built in."}
       legend:    {description: "A key in its own slot, for a convention several panels share. Entries are parallel `labels`/`colors`/`linestyles` lists. Built in."}
-      network:   {description: "The connectome as a node-link graph: one marker per region at its anatomical centre, edges drawn for the connections that survive `edge_percentile`. A layer supplies one value per region and colours the markers with it, so what the panel shows is a state living ON the network rather than beside it. Geometry comes from the `network:` the panel names, values are placed BY LABEL through the node labels, and `projection` picks the anatomical plane the centres flatten onto. Needs no code_modules — the drawing is built in."}
+      network:   {description: "The connectome on the cortical surface: one sphere per region at its anatomical centre and a tube for each connection that survives `edge_percentile`, drawn with a translucent `plot_surf` cortex as bsplot draws a brain network. A layer with one value per region colours the spheres, so what the panel shows is a state living ON the network rather than beside it; a layer with one value per pair of regions (`node_i`, `node_j`) colours the tubes instead, so a connectome's weights or tract lengths are read on the brain. Geometry comes from the `network:` the panel names, or from the network a bound experiment ran on, which the run writes beside its result; values are placed BY LABEL through the node labels, and `projection` picks the side the brain is seen from. Needs no code_modules — the drawing is built in."}
+      spring:    {description: "Masses on coil springs drawn where a layer's displacement puts them: one mass per entry along the layer's `color` dim, side by side on their own walls or joined into a chain or a ring (`spring:`). Under an animation the masses move with the frame, so the mechanism and its time series beside it are one picture. The rest position is read from the experiment's own dynamics. Needs no code_modules — the drawing is built in."}
       image:     {description: "An external raster/vector file placed in the grid cell."}
       custom:    {description: "A registered callable fn(container, ax, **opts)."}
 
@@ -46,6 +47,7 @@ enums:
       errorbar: {description: "One vertical bar per x between two edges (a group's mean ± SD at each discrete group). The data contract of `band`, drawn as separate segments, because a band filled between discrete groups implies values between them that were never measured."}
       area:    {description: "Series filled down to the baseline (a density/pdf, a cumulative share). Distinct from `band`, which spans two series, and from `bar`, which asserts the x values are discrete categories."}
       bar:     {description: "Vertical bars, one per x (spectrum, per-category magnitude). Distinct from `line` because a spectrum read as a line implies interpolation between mode numbers that do not exist."}
+      stream:  {description: "The vector field of the experiment's own dynamics on the plane its `x` and `y` channels name (two state variables), drawn as streamlines coloured by speed with its equilibria marked. The model is read from the result's provenance sidecar and evaluated on a grid over the panel's `xlim`/`ylim`, or over the range the run covers; state variables off the plane are held at their initial values and a swept parameter takes the selected cell's value. So the arrows a phase plane is read against come from the model that traced the orbits, not from a second recording. Static under an animation."}
 
   FrameRole:
     description: "What a layer does while a figure animates. Read only under `Figure.animation`; a still figure ignores it. Unset, a layer whose data carries the animated dimension is sliced and one that does not is static, which is the reading that needs no annotation in the common case."
@@ -53,12 +55,19 @@ enums:
       slice:  {description: "Redraw the layer at the current frame's position along the animated dimension — the moving quantity itself."}
       static: {description: "Draw the layer whole in every frame — the full trace a cursor sweeps across, or a fixed reference the moving quantity is read against."}
       cursor: {description: "Draw a rule at the current frame's coordinate value rather than at the data. What marks *now* on a panel that shows the whole time course, so a reader can see which instant the other panels are at."}
+      trail:  {description: "Draw the layer from the start of the animated dimension up to the current frame — a trajectory that grows as it is traced, a time series written as the clock runs. What a phase-plane orbit or an optimiser's path needs, where the history up to now is the point and a single slice would be one dot."}
 
   AnnotationPlacement:
     description: "Where an annotation's text appears."
     permissible_values:
       panel:   {description: "Drawn on the panel at its position. The default."}
       caption: {description: "Written into the figure's composed caption, as part of its panel's clause, and not drawn. A sample size or a test statistic the reader needs but the panel need not carry; with `used:` the number is read from the result when the caption is composed, as a drawn annotation's is when the figure renders."}
+
+  AnnotationCoordinateSystem:
+    description: "The units an annotation's position is given in."
+    permissible_values:
+      axes: {description: "Fractions of the axes: 0 is the left or bottom edge, 1 the right or top. The default."}
+      data: {description: "The panel's data coordinates, the values its axes show, so the label stays on its place in the data when the limits move."}
 
   TickPrune:
     description: "Which end ticks to drop where a corner tick would collide with its neighbour panel's."
@@ -80,6 +89,12 @@ enums:
       right: {description: "The right edge."}
       top: {description: "The top edge."}
       bottom: {description: "The bottom edge."}
+
+  CartesianAxis:
+    description: "One of a 2-D panel's two axes."
+    permissible_values:
+      x: {description: "The horizontal axis."}
+      y: {description: "The vertical axis."}
 
   AxisScale:
     description: "How an axis maps values to distance. Part of what a panel claims, not decoration: a straight line on a log axis is a power law, and the same points on a linear axis are not."
@@ -113,6 +128,12 @@ enums:
       ventral:   {description: "From below."}
       anterior:  {description: "From the front."}
       posterior: {description: "From behind."}
+
+  SurfaceShading:
+    description: "How a cortical surface's faces are coloured and lit."
+    permissible_values:
+      flat:   {description: "Each face in one colour, the mean of its corners' values, lit by its own normal. The default."}
+      smooth: {description: "Colours and light blended across the faces, as a renderer's smooth shading draws a coarse mesh."}
 
   VolumeView:
     description: "Which anatomical plane a labelled volume is projected along."
@@ -210,6 +231,14 @@ enums:
       horizontal: {description: "Constant y, at a single value."}
       vertical: {description: "Constant x, at a single value."}
       diagonal: {description: "Slope and intercept — the identity line `[1, 0]` a target-versus-simulated panel is read against."}
+
+  SpringArrangement:
+    description: "How the masses of a `spring` panel are mounted."
+    permissible_values:
+      hanging: {description: "Each mass hangs from its own ceiling, the springs in a row; a positive displacement moves the mass up, as its trace rises."}
+      lying:   {description: "Each mass lies on its own wall, the springs stacked; a positive displacement moves the mass to the right, away from the wall."}
+      chain:   {description: "The masses in one row, neighbours joined by coupling springs and the ends held by walls: coupled oscillators."}
+      ring:    {description: "The masses on a circle, each joined to its two neighbours: a ring a wave can travel round."}
 
   Triangle:
     description: "Which half of a square matrix a layer fills, leaving the other half to a sibling layer, so two quantities read as one image. The conventional way to show a model-vs-data (or data-vs-reconstruction) connectivity matrix. Named for the drawn halves: with the matrix convention (row 0 at top, set invert_y) 'upper' is the top-right triangle."
@@ -527,6 +556,9 @@ classes:
       frame:
         range: boolean
         description: "Whether the panel keeps its frame and its ticks. `false` strips both, for a panel with no measurable axis: an image, a schematic, a connectivity matrix shown as a picture. Unset keeps them."
+      hide_yaxis:
+        range: boolean
+        description: "Draw no y axis: no spine, no ticks, no tick numbers, while the x axis stays. For a trace read for its shape rather than off a scale, such as one row of a stack of recordings that share only their time axis. A declared `ylabel` still prints."
       legend:
         range: Legend
         inlined: true
@@ -543,6 +575,10 @@ classes:
         range: Surface
         inlined: true
         description: "Geometry and colour scale of a `kind: surface` panel. Ignored by every other kind."
+      atlas_strip:
+        range: AtlasStrip
+        inlined: true
+        description: "The colour of each node's region beside the node axis of a heatmap or cartesian panel, as the parcellation is drawn on the cortex. See `AtlasStrip`."
       volume:
         range: Volume
         inlined: true
@@ -555,6 +591,10 @@ classes:
         range: Grid
         inlined: true
         description: "How a `kind: grid` panel tiles its cells. Ignored by every other kind."
+      spring:
+        range: Springs
+        inlined: true
+        description: "Mounting and marks of a `kind: spring` panel. Ignored by every other kind."
       fill_cell:
         range: boolean
         description: "Keep the position the layout engine gave this panel, rather than letting a later pass move it. For a panel whose position carries meaning — aligned with the one above it, or sized to match a sibling."
@@ -723,6 +763,9 @@ classes:
       frame:
         range: boolean
         description: "Whether the panel keeps its frame and its ticks. `false` strips both, for a panel with no measurable axis: an image, a schematic, a connectivity matrix shown as a picture. Unset keeps them."
+      hide_yaxis:
+        range: boolean
+        description: "Draw no y axis: no spine, no ticks, no tick numbers, while the x axis stays. For a trace read for its shape rather than off a scale, such as one row of a stack of recordings that share only their time axis. A declared `ylabel` still prints."
       legend:
         range: Legend
         inlined: true
@@ -751,6 +794,10 @@ classes:
         range: Grid
         inlined: true
         description: "How a `kind: grid` panel tiles its cells. Ignored by every other kind."
+      spring:
+        range: Springs
+        inlined: true
+        description: "Mounting and marks of a `kind: spring` panel. Ignored by every other kind."
       fill_cell:
         range: boolean
         description: "Keep the position the layout engine gave this panel, rather than letting a later pass move it. For a panel whose position carries meaning — aligned with the one above it, or sized to match a sibling."
@@ -819,13 +866,32 @@ classes:
         inlined: true
 
   Encoding:
-    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form."
+    description: "Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel's numbers are shown at a factor of the stored values through `display`, which converts what is drawn and never what is stored."
     attributes:
       x: {range: string}
       y: {range: string}
       z: {range: string, description: "Depth channel for a line3d panel (the third phase-space axis); ignored by 2-D kinds."}
       color: {range: string, description: "Dim/coord/var whose values SEPARATE the marks by colour — a field name, never a colour. `color: node` draws one line per node from the cycler; to fix a mark's colour, use `Style.color`."}
       detail: {range: string, description: "Non-visual grouping dim (e.g. the hue/iterate dim)."}
+      display:
+        range: DisplayScale
+        multivalued: true
+        inlined: true
+        description: "The channels whose numbers are shown at a factor of the stored values, keyed by channel: `{y: {factor: 1000}}` prints a coupling at the 1000 times its simulated value a paper prints, `{x: {factor: 0.001}}` a time stored in ms in seconds, under a label the panel declares. A channel converts the coordinate it names, or, where the layer's array has no such coordinate, the layer's own values on the channel that draws them (y of a line, x of a vertical rule or a horizontal bar, the colour of a heatmap or a brain map), so a colour bar keying them prints the converted numbers. The conversion runs when the figure is drawn, after the layer's `sel`, which therefore selects in the stored values, as `Animation.window` does; every number the panel declares about the converted axis (`xlim`, `xticks`, `rules`, `regions`, an annotation in data coordinates, a colour bar's limits and ticks) is in the displayed values, the ones the reader reads, and the theme's tick rule places its ticks on the displayed values. Nothing is written back to the result container. Two layers drawn on one axis each declare the conversion, and a coordinate two channels of one layer name is declared on one of them."
+
+  DisplayScale:
+    description: "How one channel's numbers are shown: at a `factor` of the stored values. A channel other than `x`, `y`, `z` or `color` and a factor that is not positive are refused when the figure's script is generated."
+    attributes:
+      channel:
+        key: true
+        range: string
+        annotations:
+          collection_key: true
+        description: "The channel converted: `x`, `y`, `z` or `color`."
+      factor:
+        range: float
+        required: true
+        description: "The positive number the stored values are multiplied by for display. It states no unit: a panel that declares no label prints it before the quantity's name (`1000 × KuramotoCoupling.a`), and a unit the axis reads in is named by the declared `xlabel` or `ylabel`. An axis runs the other way through `invert_x` or `invert_y`, never through a sign."
 
   Animation:
     description: "A figure rendered as a movie over one dimension of its data. The dimension is named, never positional, so the frames advance along the axis the spec means rather than along whatever happens to be axis 0; and because the frame is the same mosaic the still would draw, an animated figure and its still cannot disagree about what they show."
@@ -846,9 +912,13 @@ classes:
       still:
         range: integer
         description: "Which frame is also saved as a still image beside the movie, for the contexts a movie cannot reach — a printed page, a PDF report, a thumbnail. Unset saves no still."
+      window:
+        range: float
+        multivalued: true
+        description: "The stretch `[start, end]` of the animated dimension the frames advance through, in that dimension's own coordinate (seconds or milliseconds of simulated time, as recorded). A run kept long for a statistic, twenty minutes for a correlation matrix, is shown a minute at a time without a second, shorter run that would draw a different noise realisation. Unset, the frames cover the whole dimension."
 
   Annotation:
-    description: "A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
+    description: "A positioned text label on a panel, placed in axes fractions or, with `coordinate_system: data`, in the panel's data coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel's printed statistic (an r, a p-value) from drifting away from the run that produced it."
     attributes:
       text:
         range: string
@@ -861,20 +931,23 @@ classes:
         description: "Bind the annotation to a scalar in a result container (same reference form a Layer uses, and the same PROV edge). The referenced value is formatted through `text` at render time, so a statistic printed on a panel is computed, never transcribed."
       x:
         range: float
-        description: "x in axes fraction (0 = left, 1 = right); defaults to 0.5."
+        description: "x in axes fraction (0 = left, 1 = right), defaulting to 0.5; in the data's units under `coordinate_system: data`, where it is required."
       y:
         range: float
-        description: "y in axes fraction (0 = bottom, 1 = top); defaults to 0.95."
+        description: "y in axes fraction (0 = bottom, 1 = top), defaulting to 0.95; in the data's units under `coordinate_system: data`, where it is required."
+      coordinate_system:
+        range: AnnotationCoordinateSystem
+        description: "The units `x`, `y` and an `arrow`'s offset are given in: `axes` fractions (unset) or the panel's `data` coordinates, where a paper places a label beside its points with `ax.text(80, 3, ...)`. Data coordinates need both `x` and `y` and are refused beside `loc`, which names a corner of the axes."
       loc:
         range: string
         description: "Named corner ('upper right', 'upper left', 'center', ...) as an alternative to x/y."
       arrow:
         range: float
         multivalued: true
-        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
+        description: "Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in the units `coordinate_system` gives (axes fractions unless it says `data`) — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper's callout arrowheads are declared instead of drawn in code."
       tail_x:
         range: float
-        description: "Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
+        description: "Start the arrow at this x in DATA coordinates instead of at an `arrow` offset. Pair with tail_used, which supplies the y: together they anchor the arrow's tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set."
       tail_used:
         range: DataRef
         inlined: true
@@ -892,9 +965,15 @@ classes:
       size:
         range: float
         description: "Text size in points, overriding the figure's font size for this label alone."
+      font_weight:
+        range: FontWeight
+        description: "How heavy the label is set, overriding the figure's font weight for this label alone."
       color:
         range: string
         description: "Text colour; defaults to the current text colour."
+      backdrop:
+        range: boolean
+        description: "Whether a label that reads its number through `used:` sits on a box in the page colour, which keeps a statistic printed over its own scatter readable. Unset is true; false prints the label bare, for a plot that fills its whole area, such as a density whose empty cells take the colormap's light end, where the box shows as a patch."
       placement:
         range: AnnotationPlacement
         description: "Where the text appears: on the panel (absent, or `panel`) or in the figure's composed caption (`caption`), where the position and text style slots do not apply."
@@ -952,6 +1031,9 @@ classes:
       background:
         range: string
         description: "The page the figure is printed on."
+      surface:
+        range: string
+        description: "A raised face standing on the page: a legend box, an inset panel, a card. Slightly apart from `background` in either direction, so what sits on it reads as a layer and not as a hole."
       palette:
         range: string
         multivalued: true
@@ -1032,6 +1114,10 @@ classes:
       font_weight:
         range: FontWeight
         description: "Weight of body text."
+      mono_font:
+        range: string
+        multivalued: true
+        description: "The typefaces code, identifiers and tabular numbers are set in, most-wanted first (`[Menlo, DejaVu Sans Mono]`), wherever a figure or the document drawn from this theme writes any; the backend's monospace family."
       label_scale:
         range: float
         description: "Size of an axis label as a multiple of the body size. Unset draws it at the body size."
@@ -1227,7 +1313,7 @@ classes:
       ticklabels:
         range: string
         multivalued: true
-        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
+        description: "Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. With `ticks` the labels name those ticks one to one, and lists of different lengths are refused; without them the labels are spread evenly from the bar's lower end to its upper end, so `[low, high]` marks its two ends. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`."
       decimals:
         range: integer
         description: "How many decimal places the tick numbers are written to."
@@ -1253,16 +1339,37 @@ classes:
         range: float
         description: "Pin the map's neutral colour to this value and truncate the map to the half-range the data reaches, keeping the data's own limits: a unit of change is the same colour distance either side, and the bar shows no colour the field never takes."
 
+  AtlasStrip:
+    description: "A strip of one colour per node beside the node axis of a heatmap panel, each node in the colour its region wears in a surface atlas, so a heatmap of every node's activity reads against a surface panel of the same parcellation region by region with no name printed. Colours are placed BY LABEL: each node's region label goes through the curated `atlas` to its parcel of `surface_atlas`, never by row position. A node the surface atlas has no parcel for, a subcortical one, takes the base grey."
+    attributes:
+      axis:
+        range: CartesianAxis
+        ifabsent: "CartesianAxis(y)"
+        description: "The axis that runs over the nodes."
+      atlas:
+        range: string
+        required: true
+        description: "The curated atlas the layer's region labels are named in, such as `tvbo:atlases/tpl-MNI152NLin2009cAsym_atlas-Destrieux_desc-ranked_dseg`."
+      surface_atlas:
+        range: string
+        required: true
+        description: "The templateflow surface atlas whose label table states each region's colour, such as `Destrieux2009`."
+
   Surface:
-    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
+    description: "A cortical surface panel's geometry and how a field is painted on it. One object, so the four mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, the result of the analysis that derived it, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination."
     is_a: ColorScale
     attributes:
       connectome:
         range: string
         description: "A tvbo `Network` whose companion carries a mesh group. Geometry belongs to the network, so a study that has one needs no mesh file beside it."
+      used:
+        range: DataRef
+        inlined: true
+        slot_uri: prov:used
+        description: "The result whose `vertices` (V, 3) and `faces` (F, 3) are the mesh, for one an analysis derived (a parcel mesh, a reconstructed surface), bound as a layer is bound to its data rather than written out to a file by hand. It names only where the result is, since a mesh is both arrays together. When the vertices carry a label coordinate, a layer's values are placed on them by label, and a vertex the layer holds no value for is drawn as missing."
       mesh:
         range: string
-        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces` for a mesh an analysis derived rather than measured."
+        description: "A surface mesh file — GIFTI, VTK, FreeSurfer, or an `.npz` holding `vertices`/`faces`."
       mesh_format:
         range: string
         description: "The mesh file's format, where the extension does not say."
@@ -1292,7 +1399,16 @@ classes:
         description: "Read the layer as (V, 3) vertex COORDINATES rather than as a field: what the panel then shows is the surface a reconstruction rebuilt, not a quantity living on a fixed one."
       color:
         range: string
-        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry."
+        description: "Draw the mesh itself in one flat colour instead of painting a map on it. With no layer, that is the bare geometry; with `markers`, it is the mesh under the dots. `atlas` paints every parcel of `surface_atlas` in the colour the atlas's own label table gives it: the parcellation itself, as a heatmap's `atlas_strip` colours its nodes."
+      shading:
+        range: SurfaceShading
+        description: "How the faces are coloured and lit. Unset is `flat`: each face takes the mean of its corners' values and is lit by its own normal, so a coarse mesh shows its faces. `smooth` blends the colours and the light across the faces, as a renderer's smooth shading does: each face is split into 16 on the curved surface its corners' normals describe, a new vertex taking the mean of its edge's two values, so it is meant for a coarse mesh such as a parcel mesh of a few hundred vertices, where 16 times the faces still draws quickly. Refused beside `markers`, whose mesh is flat and unlit under the dots, and beside `edge_color`, which would outline triangles the mesh does not have."
+      markers:
+        range: boolean
+        description: "Draw the layer as a dot at each vertex over the mesh instead of painting its faces: one dot per region on a parcel mesh, as a plot of region centres shows a parcellated quantity. Dots and faces are depth-sorted together, so the mesh hides the dots behind it. The dots are unlit, so a dot's colour is the colour on the bar keying it, and the mesh under them is flat, in `color` or else in the page colour, so that it only hides what lies behind it. A vertex the layer holds no value for gets a dot in `missing_color`."
+      marker_size:
+        range: float
+        description: "Radius of each dot in the mesh's own coordinate units. Unset is half the median edge length, so neighbouring dots just touch."
       missing_color:
         range: string
         description: "The colour of the atlas regions the layer carries no value for, so a region a map leaves out on purpose, such as the target the mapped quantity is measured in, reads apart from the medial wall and the rest of the mesh no region covers, which stay the base grey. Only with `atlas:`; unset, both are grey."
@@ -1321,42 +1437,76 @@ classes:
         description: "How voxels collapse along the view axis (`absmax` by default)."
 
   Graph:
-    description: "A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on it. The geometry is the network's own — one marker per region at its anatomical centre — and a layer supplies one value per region, placed by label."
+    description: "A node-link panel's graph and how it is drawn: the connectome the model actually ran on, with a state living on it, rendered on the cortical surface. The geometry is the network's own — one sphere per region at its anatomical centre, one tube per kept connection — and a layer supplies one value per region or one per pair of regions, placed by label."
     is_a: ColorScale
     attributes:
       connectome:
         range: string
-        description: "The network whose nodes and edges are drawn, as a curated IRI (`tvbo:DesikanKilliany`) or a path beside the study. Required: the panel draws the network, not the result."
+        description: "The network whose nodes and edges are drawn, as a curated IRI (`tvbo:DesikanKilliany`) or a path beside the study. Unset, the panel draws the network its layer's experiment ran on, the frozen copy the run writes beside the result; a panel with neither is refused, since it draws the network, not the result."
       projection:
         range: Projection
-        description: "Which plane the region centres flatten onto."
+        description: "Which side the brain is seen from: axial from above, coronal from the front, sagittal from the left."
       labels:
         range: boolean
         description: "Annotate each node with its region name. Off by default — 87 names on one panel is a block of text, not a figure."
+      label_size:
+        range: float
+        description: "Type size of the node names in points. Unset is 4, small enough for a whole parcellation; a graph of a few named regions states a readable size."
+      surface_color:
+        range: string
+        description: "Colour of the translucent cortex the network is drawn in, a palette role or any colour; unset is the theme's `base`."
+      surface_alpha:
+        range: float
+        description: "Opacity of that cortex; unset is 0.12, enough to place the nodes in a brain without hiding the ones behind it."
       color:
         range: string
         description: "One flat colour for every node, for a panel whose subject is the network rather than a state on it."
       node_size:
         range: float
-        description: "Marker size for the regions."
-      node_edge_color:
-        range: string
-        description: "Outline colour of the region markers."
-      node_edge_width:
-        range: float
-        description: "Outline weight of the region markers."
+        description: "Radius of each region's sphere in millimetres of the brain; unset is 2.5."
       edge_color:
         range: string
-        description: "Colour of the connections that survive `edge_percentile`."
+        description: "Colour of the connections that survive `edge_percentile`, when no per-edge layer colours them; `weight` shades every connection by its weight on a ramp from a faint `base` to the theme's `ink`."
       edge_alpha:
         range: float
         description: "Opacity of those connections."
       edge_width:
         range: float
-        description: "Base line weight of the connections; the drawn widths scale with the weight, so a strong connection reads as strong."
+        description: "Radius of the thinnest connection tube in millimetres; the radii grow with the weight up to three times it, so a strong connection reads as strong. Unset is 0.35."
       edge_percentile:
         range: float
         description: "Keep only edges above this percentile of the weights. A dense connectome drawn whole is a filled square, not a graph."
+
+  Springs:
+    description: "How a `spring` panel mounts its masses. The masses themselves come from the layers: one per entry along a layer's `color` dim, coloured as a line fan over that dim is, so a mass and its trace in the panel beside it share a colour."
+    attributes:
+      arrangement:
+        range: SpringArrangement
+        description: "Hanging from ceilings (the default), lying on walls, a chain or a ring."
+      equilibrium:
+        range: float
+        description: "Where each mass rests, drawn as a dashed mark. Unset, it is read from the experiment's own dynamics, the state where its right-hand side vanishes at the selected cell's parameters, so a loaded spring's shifted rest is computed rather than typed."
+      mass:
+        range: string
+        description: "A coordinate holding each entry's mass (`Spring.m`); the boxes are drawn with area proportional to it. Unset draws equal boxes."
+      labels:
+        range: boolean
+        description: "Write each entry's coordinate value (or the layer's `label`) by its spring, in its colour."
+      label_format:
+        range: string
+        description: "Python format string for those labels, e.g. `'m = {} kg'`. Defaults to the value as it is."
+      walls:
+        range: boolean
+        description: "Hold a chain's ends by walls (the default). Off, the chain is free."
+      radial:
+        range: boolean
+        description: "On a ring, move the masses out from the centre rather than along the ring."
+      stretch:
+        range: float
+        description: "The largest displacement as a fraction of a spring's rest length (or of the spacing in a chain or ring)."
+      coupling_color:
+        range: string
+        description: "Colour of the springs joining masses in a chain or a ring, the coupling, so it stands apart from the springs each mass has alone."
 
   Grid:
     description: "How a `grid` panel tiles its cells, and what the strips around them are labelled with. Rows and columns are labelled ONCE, at the left and the top — the whole reason a paper's composite panel is one lettered panel rather than n of them.\n\nThe reserved label strips are taken out of the drawable area, so declaring one shrinks the cells to make room instead of being drawn over them. The axis labels the cells SHARE are the panel's own `xlabel`/`ylabel`, one word at two levels, not slots of this object.\n\nA directive that varies down the rows or across the columns is still written as `row.<name>` / `col.<name>` in `opts`: it supplies one value per row or column of ANY directive, so it cannot be a fixed slot of anything."

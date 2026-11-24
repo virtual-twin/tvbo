@@ -29,7 +29,7 @@ from tvbo.templates.base.utils import (
     samples_over_time,
     samples_per_trial,
 )
-from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma
+from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma, normalize_params
 
 
 def dense_matrix(network, name: str, dtype=float) -> np.ndarray | None:
@@ -142,9 +142,9 @@ def dynamics_library(experiment) -> OrderedDict:
 
 
 class ParameterStart(NamedTuple):
-    """One dynamics or coupling parameter whose value is declared by something other than a literal: a distribution sampled over space, or an equation.
+    """One dynamics, coupling or event parameter whose value is declared by something other than a literal: a distribution, or an equation.
 
-    ``kind`` is the `StartKind` a backend must honour: a dynamics parameter drawn per node, a coupling parameter drawn per node or per connection, or an equation evaluated once from the other parameters of its owner. A draw whose distribution declares ``axis: trial`` is drawn again for each trial of an ``n_trials`` ensemble (`per_trial`), which a backend honours only by listing `StartKind.TRIAL` as well.
+    ``kind`` is the `StartKind` a backend must honour: a dynamics parameter drawn per node, a coupling parameter drawn per node or per connection, or an equation evaluated once from the other parameters of its owner. A draw whose distribution declares ``axis: trial`` is drawn again for each trial of an ``n_trials`` ensemble (`per_trial`), which a backend honours only by listing `StartKind.TRIAL` as well. A distribution declared with ``axis: time`` is drawn again at every step (`per_step`), by the kind its owner gives it.
     """
 
     owner_kind: str
@@ -159,38 +159,103 @@ class ParameterStart(NamedTuple):
         return self.kind != StartKind.EQUATION and samples_per_trial(self.parameter.distribution)
 
     @property
+    def per_step(self) -> bool:
+        """Whether the start is a draw redrawn at every integration step, a stochastic input."""
+        return self.kind in (StartKind.TIME, StartKind.COUPLING_TIME, StartKind.STIMULUS_TIME, StartKind.EVENT_TIME)
+
+    @property
+    def named(self) -> str:
+        """The parameter with its owner, as a message names it."""
+        return f"parameter {self.name!r} of {self.owner_kind} {self.owner!r}"
+
+    @property
     def label(self) -> str:
         """The parameter as a message names it, with what it declares."""
-        declares = "an equation" if self.kind == StartKind.EQUATION else "a distribution sampled over space"
-        return f"parameter {self.name!r} of {self.owner_kind} {self.owner!r} ({declares}{', drawn per trial' if self.per_trial else ''})"
+        sampled = f"a distribution sampled over {'time' if self.per_step else 'space'}"
+        declares = "an equation" if self.kind == StartKind.EQUATION else sampled
+        return f"{self.named} ({declares}{', drawn per trial' if self.per_trial else ''})"
+
+
+def declared_parameters(experiment) -> list[tuple[str, str, str, Any]]:
+    """Every parameter of *experiment*'s dynamics and couplings as ``(owner_kind, owner, name, parameter)``, in declaration order."""
+    owners = [("dynamics", str(name), dyn) for name, dyn in dynamics_library(experiment).items()]
+    owners += [("coupling", str(key), c) for key, c in network_couplings(getattr(experiment, "network", None)).items()]
+    return [
+        (owner_kind, owner, str(getattr(parameter, "name", None) or key), parameter)
+        for owner_kind, owner, holder in owners
+        for key, parameter in keyed_items(getattr(holder, "parameters", None), "parameters")
+    ]
+
+
+SPACE_KINDS = {"dynamics": StartKind.NODE, "coupling": StartKind.COUPLING}
+TIME_KINDS = {"dynamics": StartKind.TIME, "coupling": StartKind.COUPLING_TIME}
+
+
+def stimulus_of_time(event) -> bool:
+    """Whether *event* is a stimulus whose signal is an equation of time: not triggered by a state condition, and read neither from a recording (`dataLocation`) nor from another run's output (a `data` parameter)."""
+    kind = str(getattr(event, "event_type", None) or "stimulus").lower()
+    names = {str(getattr(p, "name", None) or key) for key, p in keyed_items(getattr(event, "parameters", None), "parameters")}
+    return "stimul" in kind and not getattr(event, "dataLocation", None) and "data" not in names
+
+
+def event_draws_over_time(experiment) -> list[ParameterStart]:
+    """Every event parameter of *experiment* whose distribution declares ``axis: time``: `StartKind.STIMULUS_TIME` where it is the only one of a stimulus that is an equation of time (`stimulus_of_time`), else `StartKind.EVENT_TIME`, so that which of several is drawn never rests on declaration order."""
+    found = []
+    for key, event in keyed_items(getattr(experiment, "events", None), "events"):
+        over_time = [
+            (str(getattr(p, "name", None) or name), p)
+            for name, p in keyed_items(getattr(event, "parameters", None), "parameters")
+            if samples_over_time(getattr(p, "distribution", None))
+        ]
+        kind = StartKind.STIMULUS_TIME if len(over_time) == 1 and stimulus_of_time(event) else StartKind.EVENT_TIME
+        found += [ParameterStart("event", str(key), name, kind, p) for name, p in over_time]
+    return found
 
 
 def parameter_starts(experiment) -> list[ParameterStart]:
-    """Every parameter of *experiment*'s dynamics and couplings that declares where its value starts, in declaration order.
+    """Every parameter of *experiment*'s dynamics and couplings that declares where its value starts, and every event parameter drawn over time (`event_draws_over_time`), in declaration order.
 
-    A parameter with an ``equation`` is listed as ``equation`` whatever else it declares, so a backend that cannot evaluate one refuses it; a parameter with a ``distribution`` whose axis is not time is a draw. A distribution over time is a stochastic input, which is another capability and is not listed.
+    A parameter with an ``equation`` is listed as ``equation`` whatever else it declares, so a backend that cannot evaluate one refuses it; a parameter with a ``distribution`` is a draw, over space or, declared with ``axis: time``, again at every step (`TIME_KINDS`).
     """
-    owners = [("dynamics", str(name), dyn) for name, dyn in dynamics_library(experiment).items()]
-    owners += [("coupling", str(key), c) for key, c in network_couplings(getattr(experiment, "network", None)).items()]
     found = []
-    for owner_kind, owner, holder in owners:
-        for key, parameter in keyed_items(getattr(holder, "parameters", None), "parameters"):
-            name = str(getattr(parameter, "name", None) or key)
-            distribution = getattr(parameter, "distribution", None)
-            if getattr(parameter, "equation", None) is not None:
-                found.append(ParameterStart(owner_kind, owner, name, StartKind.EQUATION, parameter))
-            elif distribution is not None and not samples_over_time(distribution):
-                kind = StartKind.NODE if owner_kind == "dynamics" else StartKind.COUPLING
-                found.append(ParameterStart(owner_kind, owner, name, kind, parameter))
-    return found
+    for owner_kind, owner, name, parameter in declared_parameters(experiment):
+        distribution = getattr(parameter, "distribution", None)
+        if getattr(parameter, "equation", None) is not None:
+            found.append(ParameterStart(owner_kind, owner, name, StartKind.EQUATION, parameter))
+        elif distribution is not None:
+            kind = (TIME_KINDS if samples_over_time(distribution) else SPACE_KINDS)[owner_kind]
+            found.append(ParameterStart(owner_kind, owner, name, kind, parameter))
+    return found + event_draws_over_time(experiment)
+
+
+def refuse_draws_over_time(starts: list[ParameterStart], backend: str, lowered: tuple[str, ...]) -> None:
+    """Raise where *backend* would hold at one value for the whole run a start of *starts* drawn at every step (`per_step`) whose kind it does not list among *lowered*.
+
+    tvboptim lists a dynamics parameter (`StartKind.TIME`) and the one such parameter of a stimulus that is an equation of time (`StartKind.STIMULUS_TIME`); no backend lists a coupling parameter or any other event's. The message names what the backend does honour: `axis: space` where it lowers that kind's draw over space (`SPACE_KINDS`), a `value` everywhere, and tvboptim where it draws every held one.
+    """
+    held = [start for start in starts if start.per_step and start.kind not in lowered]
+    if not held:
+        return
+    over_space = {time: SPACE_KINDS[owner] for owner, time in TIME_KINDS.items()}
+    hint = (
+        "with `axis: space`, which this backend draws when it builds the network, or by `value`"
+        if all(over_space.get(start.kind) in lowered for start in held)
+        else "by `value`"
+    )
+    tvboptim = all(start.kind in (StartKind.TIME, StartKind.STIMULUS_TIME) for start in held) and StartKind.TIME not in lowered
+    raise NotImplementedError(
+        f"the {backend} backend sets these parameters once and never per step, so {', '.join(start.named for start in held)}, declared with `axis: time`, would hold one value for the whole run. "
+        f"Declare each {hint}{', or run the experiment on tvboptim, which draws it at every step' if tvboptim else ''}."
+    )
 
 
 def refuse_parameter_starts(experiment, backend: str, lowered: tuple[str, ...] = ()) -> None:
     """Raise where *backend* would accept a parameter that declares its start and integrate one constant in its place.
 
-    A backend whose templates read a parameter's ``value`` alone runs a declared distribution at that value on every node and in every seed, and a parameter defined by an equation at whatever its fallback is, and still reports success; one that draws a start once per run gives every trial of an ensemble the same draw. *lowered* names the kinds of `ParameterStart` the backend does honour; every other one, and a start drawn per trial where `StartKind.TRIAL` is not among them, is refused by name.
+    A backend whose templates read a parameter's ``value`` alone runs a declared distribution at that value on every node and in every seed, and a parameter defined by an equation at whatever its fallback is, and still reports success; one that draws a start once per run gives every trial of an ensemble the same draw. *lowered* names the kinds of `ParameterStart` the backend does honour; every other one, a draw at every step first (`refuse_draws_over_time`), and a start drawn per trial where `StartKind.TRIAL` is not among them, is refused by name.
     """
     starts = parameter_starts(experiment)
+    refuse_draws_over_time(starts, backend, lowered)
     dropped = [start.label for start in starts if start.kind not in lowered]
     if dropped:
         raise NotImplementedError(
@@ -202,6 +267,17 @@ def refuse_parameter_starts(experiment, backend: str, lowered: tuple[str, ...] =
         raise NotImplementedError(
             f"the {backend} backend draws a parameter start once per run, so {'; '.join(once)} would start every trial of an ensemble from one draw. "
             "Declare `axis: space` to share the draw between the trials, or run the experiment on tvboptim, which draws it for each trial."
+        )
+
+
+def refuse_trial_network(experiment, backend: str, lowered: tuple[str, ...] = ()) -> None:
+    """Raise where *backend*, which builds one network per run, would run every trial of an ensemble on the one realisation of a network declared ``realisation: trial``; a backend honours it by listing `StartKind.TRIAL` in *lowered*, as it does for a parameter start drawn per trial."""
+    from tvbo.classes.network import realised_per_trial
+
+    if StartKind.TRIAL not in lowered and realised_per_trial(getattr(experiment, "network", None)):
+        raise NotImplementedError(
+            f"the {backend} backend builds one network per run, so `network.realisation: trial` would run every trial of an ensemble on one realisation. "
+            "Run the experiment on tvboptim, which builds the network for each trial, or drop `realisation: trial`."
         )
 
 
@@ -250,6 +326,115 @@ def refuse_second_definition(start: ParameterStart, experiment: Any) -> None:
         )
 
 
+def run_seed(experiment) -> int:
+    """The seed *experiment* runs on: its `execution.random_seed`, 0 where it declares none. A distribution with its own `seed` overrides it (`resolve_distribution`)."""
+    return int(getattr(getattr(experiment, "execution", None), "random_seed", None) or 0)
+
+
+def refuse_state_distribution(state_variables, backend: str, reason: str) -> None:
+    """Raise where any of *state_variables*, a mapping by name, declares an initial-state distribution the *backend* has no place for, saying why in *reason*."""
+    drawn = [str(name) for name, sv in state_variables.items() if getattr(sv, "distribution", None)]
+    if drawn:
+        raise NotImplementedError(
+            f"the {backend} backend {reason}, so the initial-state distribution declared on {', '.join(map(repr, drawn))} cannot reach the run. "
+            "Run the experiment on a backend that draws it for each node (tvb, jax, tvboptim), or declare an initial value instead."
+        )
+
+
+def affect_assignments(event) -> list[tuple[str, str]]:
+    """The ``(lhs, rhs)`` assignments the affect of *event* makes, in declared order, each side stripped: ``v = c; u = u + d`` gives ``[("v", "c"), ("u", "u + d")]``."""
+    affect = getattr(getattr(event, "affect", None), "rhs", None)
+    pieces = (piece.split("=", 1) for piece in str(affect or "").split(";") if "=" in piece)
+    return [(lhs.strip(), rhs.strip()) for lhs, rhs in pieces]
+
+
+def pure_resets(assignments) -> set[str]:
+    """The variables *assignments* set without reading them (``v = reset``, not ``w = w + b``): the ones a refractory period holds."""
+    return {lhs for lhs, rhs in assignments if not re.search(r"\b" + re.escape(lhs) + r"\b", rhs)}
+
+
+class ModelReset(NamedTuple):
+    """One event of a model as a backend applies it after an integration step: its name, its condition and its assignments in declared order."""
+
+    name: str
+    condition: str
+    assignments: list[tuple[str, str]]
+
+
+def unapplied_event_reason(event, assignments, states, readable, kinds: str) -> str | None:
+    """Why a backend cannot apply *event*, or None where it can: the backend tests a comparison as its condition, has no down-crossing for an ``affect_negative``, assigns only *states*, and evaluates only the names in *readable*, the *kinds* of variable its message names."""
+    import sympy as sp
+
+    condition = getattr(getattr(event, "condition", None), "rhs", None)
+    if not condition:
+        return "it declares no condition"
+    parsed = sp.sympify(str(condition), locals=readable)
+    if not isinstance(parsed, sp.core.relational.Relational):
+        return f"its condition {condition} is not a comparison"
+    if getattr(getattr(event, "affect_negative", None), "rhs", None):
+        return "it declares an affect_negative, a down-crossing a step has no point for"
+    unassignable = [lhs for lhs, _ in assignments if lhs not in states]
+    if unassignable:
+        return f"it assigns {', '.join(unassignable)}, which is not a state variable"
+    read = parsed.free_symbols.union(*(sp.sympify(rhs, locals=readable).free_symbols for _, rhs in assignments))
+    unread = sorted({s.name for s in read} - set(readable))
+    if unread:
+        return f"it reads {', '.join(unread)}, which is not {kinds}"
+    return None
+
+
+def post_step_resets(dynamics, backend: str) -> list[ModelReset]:
+    """The events of *dynamics* that carry an affect, read as a *backend* that applies them after each integration step reads them, or raise naming the event it cannot apply.
+
+    Such a backend tests the condition on the stepped state and, where it holds, makes the assignments in declared order. It applies an event whose condition is a comparison, which declares no ``affect_negative``, and whose assignments set state variables of *dynamics* from its state variables and parameters. Any other event is refused by its declaration, under whatever name the model carries, and so is any such event of a model with more than one mode.
+    """
+    import sympy as sp
+
+    states = list(getattr(dynamics, "state_variables", None) or {})
+    readable = {name: sp.Symbol(name) for name in [*states, *normalize_params(getattr(dynamics, "parameters", None))]}
+    resets = []
+    for name, event in keyed_items(getattr(dynamics, "events", None), "events"):
+        assignments = affect_assignments(event)
+        if not assignments:
+            continue
+        reason = unapplied_event_reason(event, assignments, states, readable, "a state variable or a parameter")
+        if reason:
+            raise NotImplementedError(
+                f"the {backend} backend applies a model's event where its condition holds after an integration step, and cannot apply event {str(name)!r}, which sets {event.affect.rhs}: {reason}."
+            )
+        resets.append(ModelReset(str(name), str(event.condition.rhs), assignments))
+    modes = int(getattr(dynamics, "number_of_modes", None) or 1)
+    if modes > 1:
+        refuse_model_events(
+            resets, backend, f"its model has {modes} modes, and a mode axis gives the condition no one value per node"
+        )
+    return resets
+
+
+def refuse_model_events(resets, backend: str, why: str) -> None:
+    """Raise naming the first of *resets* where *backend*, in the setting *why* describes, cannot apply events after each step."""
+    if resets:
+        raise NotImplementedError(
+            f"the {backend} backend cannot apply event {resets[0].name!r} ({resets[0].condition}): {why}."
+        )
+
+
+def baked_opening(model, seed: int, backend: str, instances: int = 1) -> dict[str, float]:
+    """The state *model* opens on, one number per state variable, for a backend that writes the opening into what it renders: the draw `get_initial_values` makes on *seed*, the run's seed (`run_seed`), as tvb and jax open, each declared distribution drawn and every other variable at its initial value.
+
+    The render gives each of the *instances* it builds of *model* that one opening, so a distribution on a model built more than once, which tvb and jax draw apart for each node, is refused (`refuse_state_distribution`).
+    """
+    state_variables = model.state_variables or {}
+    if instances > 1:
+        refuse_state_distribution(
+            state_variables,
+            backend,
+            f"writes one opening per state variable, shared by all {instances} instances of the model",
+        )
+    values = np.asarray(model.get_initial_values(seed=seed), dtype=float).ravel()
+    return dict(zip(state_variables, map(float, values), strict=True))
+
+
 def start_draw(start: ParameterStart, random_seed: int) -> tuple[str, dict[str, Any]]:
     """The family a drawn parameter start draws from and its resolved distribution (`resolve_distribution`), on every backend that draws one.
 
@@ -290,13 +475,13 @@ def require_observations(experiment, result, backend: str) -> None:
         refuse_observations(experiment, backend)
 
 
-def on_the_measurement_clock(data, settle: float, step: float):
+def on_the_measurement_clock(data, settle: float, step: float, opening: float = 0.0):
     """*data*, recorded on a run that opens at the start of its settle, moved onto the measurement clock, and how many of its samples are the settle.
 
-    The settle, and an initial state the run recorded, end at ``t = 0``, where the settle ends on every backend; the measured window opens one step later. Half a step of tolerance absorbs a time column's rounding.
+    The settle, and an initial state the run recorded, end at ``t = 0``, where the settle ends on every backend; the measured window opens one step later. *opening* is the time *data*'s own axis gives the run's opening: 0, except on an engine that counts steps it never integrated, as TVB counts the rows of a delay history. A sample counts as settle up to a quarter step after ``t = 0``: that absorbs a time column's rounding, and keeps out a sample stamped at the centre of its averaging window, whose first window inside the measured window is stamped half a step or more after ``t = 0``.
     """
-    shifted = data.assign_coords(time=data.time - settle)
-    return shifted, int((shifted.time <= step / 2).sum())
+    shifted = data.assign_coords(time=data.time - (opening + settle))
+    return shifted, int((shifted.time <= step / 4).sum())
 
 
 def edge_needs(
@@ -744,7 +929,7 @@ class BaseAdapter:
         execution = getattr(self.experiment, "execution", None)
         return {
             "find_fixpoint": bool(getattr(execution, "find_fixpoint", False)),
-            "random_seed": int(getattr(execution, "random_seed", None) or 0),
+            "random_seed": run_seed(self.experiment),
         }
 
     # ── Full context for templates ───────────────────────────────────────
@@ -887,6 +1072,9 @@ class ContinuationAdapter(BaseAdapter):
 
     HOLDS_PARAMETERS = False
     """Whether the backend continues a system in which a continuation's ``held_parameters`` are unknowns held to their targets."""
+
+    RENDERS_A_CONTINUATION = True
+    """Whether the backend's source is a continuation's workflow, which `render_code` refuses to render for an experiment that declares none; `False` where the source is the model alone."""
 
     def continuations(self) -> dict:
         """Every continuation the experiment declares; empty when it declares none."""
@@ -1356,9 +1544,13 @@ class ContinuationAdapter(BaseAdapter):
     def render_code(self, model=None, continuation=None, **kwargs) -> str:
         """This backend's source for one continuation.
 
-        *continuation* defaults to the experiment's first, and *model* to the dynamics `resolve_dynamics` finds for it — the dynamics `run` continues — and the pair is prepared as `run` prepares it (`prepare`), so the rendered source is the source that runs; *kwargs* is extra context for `render_continuation`.
+        *continuation* defaults to the experiment's first, and *model* to the dynamics `resolve_dynamics` finds for it — the dynamics `run` continues — and the pair is prepared as `run` prepares it (`prepare`), so the rendered source is the source that runs; *kwargs* is extra context for `render_continuation`. A backend whose source is a continuation's workflow (`RENDERS_A_CONTINUATION`) refuses an experiment that declares none.
         """
         continuation = self.resolve_continuation(continuation)
+        if continuation is None and self.RENDERS_A_CONTINUATION:
+            raise ValueError(
+                "this backend renders the source of a continuation, and the experiment declares none. Add one under `continuations`."
+            )
         model = self.prepare(model or self.resolve_dynamics(continuation), continuation)
         return self.render_continuation(model, continuation, **kwargs)
 

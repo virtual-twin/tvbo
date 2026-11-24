@@ -25,8 +25,9 @@ tstops, \
 <%!
 from tvbo.codegen import render_expression
 from sympy.parsing.sympy_parser import parse_expr as _parse_expr
+from tvbo.adapters.base import run_seed
 from tvbo.adapters.julia_model import (
-    equation_rhs_text, julia_ode_package, make_renderer, needs_special_functions, symbol_names,
+    equation_rhs_text, initial_state_stream, julia_ode_package, make_renderer, needs_special_functions, symbol_names,
 )
 %>
 <%
@@ -244,7 +245,8 @@ sys = mtkcompile(sys_model)
 <%
 # Collect initial conditions that need to be set explicitly
 # For higher-order ODEs, we may need D(x) initial conditions too
-u0_entries = []
+seed, draws = initial_state_stream(model, run_seed(experiment), "ModelingToolkit.jl")
+u0_entries = [(f'sys.{sv_name}', draw) for sv_name, draw in draws.items()]
 for sv_name, sv in model.state_variables.items():
     if sv.initial_value is not None:
         # Already set via default in @variables block
@@ -256,6 +258,10 @@ for sv_name, sv in model.state_variables.items():
         if deriv_init is not None:
             u0_entries.append((f'Dt(sys.{sv_name})', deriv_init))
 %>\
+% if draws:
+using Random
+rng = MersenneTwister(${seed})
+% endif
 % if u0_entries:
 u0 = [${', '.join(f'{name} => {val}' for name, val in u0_entries)}]
 % else:

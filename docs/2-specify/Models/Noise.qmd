@@ -190,7 +190,7 @@ The seed lives on the distribution itself (`distribution.seed`). The template wi
 
 ### Comparing to deterministic backends
 
-Only `tvboptim` currently honours `distribution: { axis: time }`. The `jax` and `tvb` codegen treats the parameter as the constant `value`. To run a deterministic baseline across all three backends, replace the distribution with the domain midpoint as a constant:
+Only `tvboptim` honours `distribution: { axis: time }`, drawing a dynamics parameter, and the one such parameter of a stimulus whose signal is an equation of time, at every step; it refuses a coupling parameter and any other event's. Every other backend refuses the declaration by name when it renders or runs, rather than integrating the parameter at its `value`. To run a deterministic baseline across all three backends, replace the distribution with the domain midpoint as a constant:
 
 ```python
 for p in exp.dynamics.parameters.values():

@@ -107,7 +107,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="CoombesByrne2D_inst" type="CoombesByrne2D" Delta="1.0" eta="2.0" k="1.0" v_syn="-4.0" c_glob="0" V_0="0.1" r_0="0.1"/>
+  <Component id="CoombesByrne2D_inst" type="CoombesByrne2D" Delta="1.0" eta="2.0" k="1.0" v_syn="-4.0" c_glob="0" V_0="0.1" r_0="1.2739233746429086"/>
 
 
 

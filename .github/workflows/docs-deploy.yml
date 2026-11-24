@@ -41,7 +41,7 @@ jobs:
     publish:
         name: Render & publish (cold build)
         runs-on: ubuntu-latest
-        timeout-minutes: 180
+        timeout-minutes: 300
 
         steps:
             # A release ref "v1.2.3" maps to the image tag "1.2.3"; a manual dispatch supplies the tag directly.

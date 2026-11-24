@@ -1,0 +1,15 @@
+first-simulation/
+├── derivatives/
+│   └── tvbo/
+│       ├── dataset_description.json
+│       ├── exp-1_model-Generic2dOscillator_network.h5
+│       ├── exp-1_model-Generic2dOscillator_network.yaml
+│       ├── exp-1_model-Generic2dOscillator_result.h5
+│       └── exp-1_model-Generic2dOscillator_result.yaml
+├── docs/
+│   └── figures/
+│       ├── scripts/
+│       ├── first_simulation.caption.qmd
+│       ├── first_simulation.gif
+│       └── first_simulation.png
+└── study.yaml

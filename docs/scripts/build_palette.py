@@ -3,7 +3,7 @@
 
 The colours live in `tvbo/database/themes/default.yaml`, the curated theme inside the package, where the figures a study renders and the manuscript's own figures already read them from, and where they validate as a `Palette` in the figure spec. The docs read that same file rather than keeping a copy, so a page and a figure beside it cannot disagree about a colour.
 
-The emitted `_static/palette.css` carries the five named roles and the categorical hues as `--palette-*`. `styles.css` maps the docs' own semantic names onto those in one block, and mixes the surface tints and hover states it needs from them, so no page introduces a colour the palette has not approved.
+The emitted `_static/palette.css` carries the six named roles and the categorical hues as `--palette-*`. `styles.css` maps the docs' own semantic names onto those in one block, and mixes the surface tints and hover states it needs from them, so no page introduces a colour the palette has not approved.
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ from tvbo.plot.palette import PATH as SOURCE
 DOCS = pathlib.Path(__file__).parent.parent
 OUT = DOCS / "_static" / "palette.css"
 UPSTREAM = pathlib.Path("figures/style/palette.yaml")
-ROLES = ("ink", "base", "muted", "highlight", "background")
+ROLES = ("ink", "base", "muted", "highlight", "background", "surface")
 
 
 def load(path: pathlib.Path) -> dict:

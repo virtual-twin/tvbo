@@ -1,4 +1,4 @@
---- Link each ② SPECIFY page back to the stage of the running example that grows its block.
+--- Link each SPECIFY page back to the stage of the running example that grows its block.
 ---
 --- Both ends come from `_static/running_example.yml`, so a page cannot point at a stage that no longer exists. The running-example page itself is skipped, and any page may opt out with `running-example: false`.
 

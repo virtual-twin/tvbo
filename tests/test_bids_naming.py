@@ -51,7 +51,7 @@ FILES = [
     path
     for folder in FOLDERS
     for path in sorted((DATABASE_ROOT / folder).iterdir())
-    if path.is_file() and path.name != "dataset_description.json"
+    if path.is_file() and path.name != "dataset_description.json" and not path.name.startswith(".")
 ]
 NAMED = [path for path in FILES if "-" in _stem(path)]
 NETWORK_RECORDS = [path for path in NAMED if path.parent.name == "networks" and path.suffix == ".yaml"]

@@ -70,30 +70,19 @@ def stim_jaxcode(expr, param_names=None):
     return render_expression(expr, format='jax', user_functions=user_functions,
                              parameters=param_names)
 
-def _time_axis_distribution(event):
-    """Return (param_name, info) for an event parameter declaring a per-step
-    (``distribution.axis == 'time'``) stochastic draw, else (None, None).
+def _time_axis_draw(event):
+    """The key of *event*'s parameter drawn afresh at every step and the source drawing it, else (None, None): the one `StartKind.STIMULUS_TIME` start the registry lets tvboptim draw (`event_draws_over_time`), read by `start_draw` on the run's seed, the reading every drawn parameter shares, so its family is drawn as declared and a family, bound or moment no draw takes is refused by name. The sequence is pre-generated once under ``jax.random.key(seed)`` and indexed per step, so a study rebuilds it from the same seed and moments."""
+    from tvbo.adapters.base import event_draws_over_time, run_seed, start_draw
+    from tvbo.export.registry import StartKind
+    from tvbo.templates.tvboptim.utils import draw_expression
 
-    This is the iid-per-step driver path (Jaeger-2002 memory-capacity input):
-    the signal is a fresh sample u[t] each integration step rather than a
-    deterministic function of t. The array is pre-generated once with a fixed
-    seed (reproducible, vmap/pmap-safe) and indexed per step. The SAME seed +
-    bounds reproduce u[t] in Python for building delayed readout targets.
-    """
     params = dict(event.parameters) if event.parameters else {}
-    for pname, pobj in params.items():
-        dist = getattr(pobj, 'distribution', None)
-        if dist is None:
-            continue
-        axis = str(getattr(dist, 'axis', 'space'))
-        if axis == 'time' or 'time' in axis:
-            domain = getattr(dist, 'domain', None)
-            return pname, {
-                'dist': str(getattr(dist, 'name', 'Uniform')).lower(),
-                'lo': float(getattr(domain, 'lo', -1.0)) if domain else -1.0,
-                'hi': float(getattr(domain, 'hi', 1.0)) if domain else 1.0,
-                'seed': int(getattr(dist, 'seed', None) or 0),
-            }
+    for start in event_draws_over_time(experiment):
+        key = next((k for k, p in params.items() if p is start.parameter), None)
+        if key is not None and start.kind == StartKind.STIMULUS_TIME:
+            family, spec = start_draw(start, run_seed(experiment))
+            moments = {field: spec[field] for field in ("lo", "hi", "mean", "std")}
+            return key, draw_expression(family, f"jax.random.key({spec['seed']})", "(self.STOCH_N_STEPS,)", **moments)
     return None, None
 %>
 
@@ -216,12 +205,9 @@ def _time_axis_distribution(event):
         channel_default = None if _ch_val is None else [float(v) for v in (_ch_val if isinstance(_ch_val, (list, tuple)) else [_ch_val])]
     else:
         eq_rhs = str(event.equation.rhs) if event.equation else '0.0'
-    # Per-step iid driver (symbolic branch only): an event parameter with
-    # distribution.axis == 'time' pre-generates a fresh sample per integration
-    # step (e.g. u ~ U(-1, 1)). Computed unconditionally; only consumed in the
-    # non-data branch below.
-    _stoch_pname, _stoch_info = (None, None) if is_continuous else _time_axis_distribution(event)
-    is_stochastic = (not is_data) and (not is_sourced) and (not is_continuous) and _stoch_pname is not None
+    # The per-step draw of a stimulus that is an equation of time (`_time_axis_draw`); every other event's is refused before rendering.
+    _stoch_pname, _stoch_draw = _time_axis_draw(event)
+    is_stochastic = _stoch_pname is not None
     # The deterministic equation parameters exclude the stochastic one (it is
     # supplied by the pre-generated array, not a scalar DEFAULT_PARAM).
     det_params = {k: v for k, v in ev_params.items() if k != _stoch_pname}
@@ -450,14 +436,8 @@ class ${class_name}(AbstractExternalInput):
     % endif
     % if is_stochastic:
 
-    # iid per-step driver: u[t] = ${_stoch_info['dist'].capitalize()}(${_stoch_info['lo']}, ${_stoch_info['hi']}),
-    # one fresh sample per integration step (axis='time'). Pre-generated once
-    # with a fixed seed (reproducible, pure array → vmap/pmap-safe). The same
-    # seed + bounds reproduce u[t] in Python for the delayed readout targets.
-    STOCH_SEED = ${_stoch_info['seed']}
+    # ${_stoch_pname} drawn afresh at every integration step (axis: time), pre-generated once in `prepare`.
     STOCH_N_STEPS = ${_n_steps_total}
-    STOCH_LO = ${_stoch_info['lo']}
-    STOCH_HI = ${_stoch_info['hi']}
     INV_DT = ${_inv_dt}
     SCAN_T0 = ${-_transient}   # the scan's own start on the measurement clock
     % endif
@@ -465,10 +445,7 @@ class ${class_name}(AbstractExternalInput):
     def prepare(self, network, dt: float):
         % if is_stochastic:
         # Pre-generate the iid per-step sequence (indexed by step = round((t - scan_t0)/dt)).
-        _u = jax.random.uniform(
-            jax.random.key(self.STOCH_SEED), (self.STOCH_N_STEPS,),
-            minval=self.STOCH_LO, maxval=self.STOCH_HI,
-        )
+        _u = ${_stoch_draw}
         % endif
         % if is_subset:
         # Pre-sample every trial's mask (pure array -> vmap/pmap-safe).

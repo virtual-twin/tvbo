@@ -64,6 +64,12 @@ def test_a_palette_loads_from_a_file(tmp_path):
     assert palette.color("palette.1") == "#222222"
 
 
+def test_a_role_can_name_a_hue_of_its_own_palette():
+    """A theme variant moves its highlight onto one of its hues by name, so the colour is written once, in the list."""
+    loaded = palette.load({**SHEET, "highlight": "palette.1"})
+    assert loaded["highlight"] == SHEET["palette"][1]
+
+
 def test_a_role_a_project_leaves_out_falls_back_rather_than_failing(tmp_path):
     path = tmp_path / "palette.yaml"
     path.write_text(yaml.safe_dump({"palette": ["#123456"]}))

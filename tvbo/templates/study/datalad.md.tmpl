@@ -1,0 +1,10 @@
+
+## DataLad
+
+This study is a DataLad dataset: text stays in git, data goes to the annex. Add each input as its own dataset and run through DataLad, so every result records the command and inputs that made it:
+
+```bash
+datalad clone -d . <url> sourcedata/<name>          # an input, versioned on its own
+datalad run -m "Run {study}" tvbo run {study}.yaml  # a run, recorded with its inputs and outputs
+datalad save -m "<what changed>"                    # commit; the author decides when
+```

@@ -815,11 +815,7 @@ def run_${algo_name}(
 % endfor
     )
 
-% if own_settle:
-    # The evaluation is the experiment at the tuned values: post_state opens at the declared initial condition and post_model_fn runs the declared settle under them, where the loop's last mid-trajectory state lands a different attractor in a multistable model.
-% else:
-    # Carries the tuned parameters but keeps post_state's settled initial conditions: the loop's last mid-trajectory state lands a different attractor in a multistable model.
-% endif
+    # The evaluation is the experiment at the tuned values: post_state opens at the experiment's own opening and post_model_fn runs any declared settle under them, where the loop's last mid-trajectory state lands a different attractor in a multistable model.
     if run_post_tuning:
 % if _pp_names:
         # ${', '.join(_pp_names)} fold into the integrator carry, so ${', '.join(_pp_deliverables)} come from the streamed value alone and no fit-scale trajectory is materialised.

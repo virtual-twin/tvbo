@@ -1,3 +1,6 @@
+using Random
+rng = MersenneTwister(0)
+
 function GastSchmidtKnosche_SD!(dx, x, p, t = 0)
 
     (;Delta, I, J, alpha, cr, cv, eta, tau_A, tau, c_glob0, c_glob1) = p
@@ -23,7 +26,7 @@ u0 = [
         0.1,
         0.1,
         0.1,
-        0.1,
+        0.0 .+ (4.0 - 0.0) .* rand(rng),
     ]
 
 # Define time span

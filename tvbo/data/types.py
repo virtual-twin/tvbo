@@ -433,6 +433,55 @@ def _stacked_to_dataarray(
     return xr.DataArray(data=arr, dims=[*grid_dims, *payload_dims], coords={**grid_coords, **payload_coords}, name=name)
 
 
+def stimulus_waveforms(experiment) -> dict:
+    """``{name: expression in t}`` for every stimulus of *experiment* that is one signal in time.
+
+    The candidates are the events the run integrates as time-domain inputs (:func:`~tvbo.templates.tvboptim.utils.active_stimulus_events`), so the target of a ``fisher`` analysis, which is never integrated, is not among them. Of those, a condition-triggered (``continuous``/``discrete``) event fires on the state and a data-driven one (``dataLocation``) is already a file, so both are left out. Each remaining equation has its scalar parameters substituted, and one that still keeps a symbol other than ``t`` (an unset or per-node parameter) has no single signal in ``t`` and is left out too. The waveform is the event's shape before its per-node ``weights``. :func:`stimulus_signals` writes exactly these, and the experiment report shows the same set as display equations.
+    """
+    from sympy import Symbol, sympify
+
+    from tvbo.parse.expression import array_syntax
+    from tvbo.templates.tvboptim.utils import active_stimulus_events, is_data_driven_event
+
+    t = Symbol("t")
+    waveforms = {}
+    for event in active_stimulus_events(experiment):
+        rhs = getattr(getattr(event, "equation", None), "rhs", None)
+        if (
+            rhs is None
+            or is_data_driven_event(event)
+            or str(getattr(event, "event_type", "")).lower() in ("continuous", "discrete")
+        ):
+            continue
+        values = {
+            str(k): float(p.value)
+            for k, p in keyed_items(getattr(event, "parameters", None), "parameters")
+            if p.value is not None and np.ndim(p.value) == 0
+        }
+        expr = sympify(array_syntax(str(rhs)), locals={k: Symbol(k) for k in [*values, "t"]}).subs(values)
+        if not expr.free_symbols - {t}:
+            waveforms[str(event.name)] = expr
+    return waveforms
+
+
+def stimulus_signals(experiment, time) -> dict:
+    """``{"event__<name>": DataArray}``, every stimulus waveform of *experiment* (:func:`stimulus_waveforms`) evaluated on *time*.
+
+    A stimulus is a symbolic equation in ``t`` and its own parameters, so the signal a run was driven with can be recomputed exactly on the recorded clock and kept beside the trajectory it drove; a figure then draws the drive and the response from one container instead of retyping the pulse. *time* is the measurement clock of the recorded trajectory, the clock the backends evaluate the equation on.
+    """
+    from sympy import Symbol, lambdify
+
+    t = np.asarray(time, dtype=float)
+    return {
+        f"event__{name}": xr.DataArray(
+            np.array(np.broadcast_to(np.asarray(lambdify(Symbol("t"), expr, modules="numpy")(t), dtype=float), t.shape)),
+            dims=["time"],
+            coords={"time": t},
+        )
+        for name, expr in stimulus_waveforms(experiment).items()
+    }
+
+
 def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes, name=None):
     """``(arr, dims, coords)`` for the per-cell payload trailing a stacked exploration array, whatever leads it.
 
@@ -454,6 +503,11 @@ def _payload_layout(arr, inner_shape, n_trials, intrinsic_ts, dims, nodes, name=
     while inner_dims and arr.shape[-1] == 1 and inner_dims != list(dims or []):
         arr = arr[..., 0]
         inner_dims = inner_dims[:-1]
+    # A recorded trajectory of one state variable arrives with that axis already gone, so the template would hand the node axis the name `variable`; the network's node count tells the two apart, and the axis then carries the node labels like every other node axis.
+    if not dims and nodes is not None and len(nodes) and "node" not in inner_dims and "variable" in inner_dims:
+        i = inner_dims.index("variable")
+        if arr.shape[arr.ndim - len(inner_dims) + i] == len(nodes):
+            inner_dims[i] = "node"
     coords.update(_node_coords(inner_dims, arr.shape[-len(inner_dims) :] if inner_dims else (), nodes))
     return arr, trial_dims + inner_dims, coords
 
@@ -721,9 +775,8 @@ class SimulationResult:
         if self.data is None:
             raise ValueError("No simulation data to convert")
 
-        raw = np.asarray(self.data.values)
-        while raw.ndim < 4:
-            raw = np.expand_dims(raw, -1)  # pad to 4D (Time, Variable, Space, Mode)
+        padded = self.data.expand_dims([d for d in ("node", "mode") if d not in self.data.dims])
+        raw = np.asarray(padded.transpose("time", ..., "node", "mode").values)
 
         labels_dimensions = {}
         names = self.state_names
@@ -1196,6 +1249,30 @@ class OptimizationResult:
                 continue
         return result
 
+    def observe_iterates(self, observe, names, batch_size=None):
+        """Store the named observations at every saved iterate as ``trajectory_observations``, each stacked along the step axis.
+
+        The parameter callback saves only the differentiable part of the state, so each iterate is recombined with the static part of the fitted state before ``observe`` maps it to its observations: every iterate is simulated as the fit saw it, with only the free parameters moved. The iterates are stacked into one batch and mapped by ``jax.lax.map``, *batch_size* of them vectorized at a time (``None``: one at a time), so ``observe`` must trace and the batch is compiled once.
+
+        Raises:
+            ValueError: If the fit saved no iterate.
+        """
+        import jax
+        from tvboptim.types.stateutils import combine_state, partition_state
+
+        if not self.state_trajectory:
+            raise ValueError(
+                f"optimization {self.name!r} saved no parameter iterate, so its trajectory_observations have nothing to observe."
+            )
+        static = partition_state(self.state)[1]
+        iterates = jax.tree.map(lambda *leaves: jnp.stack(leaves), *self.state_trajectory)
+        observed = jax.lax.map(
+            lambda diff: {name: _unwrap_observation(observe(combine_state(diff, static))[name]) for name in names},
+            iterates,
+            batch_size=batch_size,
+        )
+        self._extras["trajectory_observations"] = {name: np.asarray(observed[name], dtype=float) for name in names}
+
     def _plot_parameters(self, figsize=None, **kwargs):
         trajectories = self._get_param_trajectories()
         if not trajectories:
@@ -1657,19 +1734,25 @@ class ExplorationResult(Bunch):
         if getattr(self, "cell_coords", None):
             n_trials = int(getattr(self, "n_trials", 1) or 1)
             intrinsic_ts = None
-            if self.is_timeseries and self.dt:
-                r = self.results
-                t_dim = 1 + (1 if (n_trials > 1 and r.ndim > 1 and r.shape[1] == n_trials) else 0)
-                if r.ndim > t_dim:
-                    intrinsic_ts = np.arange(r.shape[t_dim]) * self.dt
-            return _stacked_to_dataarray(
+            dims, coords = None, {}
+            if self.is_timeseries:
+                tail = self.results.shape[1:]
+                trial_first = self._has_trial_axis(tail[0])
+                intrinsic, coords = self._intrinsic_dims(tail, trial_first=trial_first)
+                if len(intrinsic) == len(tail):
+                    dims = [d for d in intrinsic if d != "trial"]
+                if self.dt and "time" in intrinsic:
+                    intrinsic_ts = np.arange(tail[intrinsic.index("time")]) * self.dt
+            grid = _stacked_to_dataarray(
                 self._payload(self.results),
                 self.axes,
                 intrinsic_ts=intrinsic_ts,
                 n_trials=n_trials,
                 name=self.observable or None,
                 cell_coords=self.cell_coords,
+                dims=dims,
             )
+            return grid.assign_coords(variable=coords["variable"]) if dims and "variable" in coords else grid
         labelled = self.results  # already carries named dims
         data = self._payload(labelled)  # keep JAX-native; never np.asarray the payload
         names = [self._axis_name(ax) for ax in self.axes]
@@ -2236,6 +2319,10 @@ class ExperimentResult:
                 _labels_cache.append([str(lbl) for lbl in raw] if raw is not None and len(raw) else None)
             return _labels_cache[0]
 
+        def _with_node_labels(da):
+            """*da* with the node labels on whichever of its axes is a node axis (:func:`_node_coords`)."""
+            return da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+
         def _node_count():
             """How many node labels :func:`_node_labels` resolves, for a size-checked :func:`_node_array_dims`."""
             return len(_node_labels() or ())
@@ -2251,7 +2338,7 @@ class ExperimentResult:
             _shard = _is_partial_shard(expl)
             for ax_label, da in (getattr(expl, "axis_points", None) or {}).items():
                 if da is not None and hasattr(da, "dims"):
-                    da = da.assign_coords(_node_coords([str(d) for d in da.dims], da.shape, _node_labels()))
+                    da = _with_node_labels(da)
                     if _shard:
                         # On the flat shard form the axis name is a per-point COORDINATE, and a same-named sidecar dim would silently displace it — the very coordinate reassembly pivots on. The reserved suffix keeps them apart; the gather pass renames it back once the axis is a real dimension.
                         da = da.rename({da.dims[0]: f"{da.dims[0]}__point"})
@@ -2262,7 +2349,7 @@ class ExperimentResult:
                 except Exception:
                     g = None
                 if g is not None and hasattr(g, "dims"):
-                    by_output[(_san(expl_name), "results")] = g
+                    by_output[(_san(expl_name), "results")] = _with_node_labels(g)
         outputs = [o for _, o in by_output]
         data_vars = {(o if outputs.count(o) == 1 else f"{e}__{o}"): da for (e, o), da in by_output.items()}
 
@@ -2385,6 +2472,12 @@ class ExperimentResult:
                 traj_da = _numeric_da(_san(traj_name), traj_arr, dims=traj_dims)
                 if traj_da is not None:
                     data_vars[f"optimization__{_san(opt_name)}__history__{_san(traj_name)}"] = traj_da
+            for obs_name, stacked in (getattr(opt, "trajectory_observations", None) or {}).items():
+                followed = _numeric_da(
+                    _san(obs_name), stacked, dims=("step",) + tuple(_declared_dims().get(str(obs_name)) or ())
+                )
+                if followed is not None:
+                    data_vars[f"optimization__{_san(opt_name)}__trajectory__{_san(obs_name)}"] = followed
             # The `__observation__` infix keeps these clear of the sibling `optimization__<name>__final_loss` / `__fitted__*` keys, which share the prefix.
             _sim = getattr(opt, "simulation", None)
             _write_fit_observations(
@@ -2576,6 +2669,8 @@ class ExperimentResult:
             _idata = getattr(self.integration, "data", None)
             if _idata is not None and hasattr(_idata, "dims"):
                 data_vars["integration"] = _idata
+        if "integration" in data_vars and "time" in data_vars["integration"].coords:
+            data_vars.update(stimulus_signals(self.source, data_vars["integration"].coords["time"].values))
 
         stem = "result"
         if self.source is not None and hasattr(self.source, "get_result_stem"):
@@ -3026,91 +3121,73 @@ class ExperimentResult:
         )
 
     @classmethod
-    def from_tvb(cls, simulator, result=None, transient_time=0.0):
+    def from_tvb(cls, simulator, result=None, transient_time=0.0, start_step=None):
         """Create an ExperimentResult from a TVB simulator and its run output.
 
         Wraps TVB simulation output into the standard TVBO result structure:
 
         - ``result.integration`` — primary monitor as SimulationResult (xr.DataArray)
-        - ``result.integration.observations['MonitorName']`` — one TimeSeries per
-          additional monitor, keyed by the TVB monitor class name
+        - ``result.integration.observations['name']`` — one SimulationResult per additional monitor, keyed by `tvb_observation_name`: the declared name of a monitor tvbo generated, the class name of any other
+
+        Every monitor is reported as the run path reports it (`tvb_monitor_results`): on the measurement clock, with its settle on ``.transient``.
 
         Parameters
         ----------
         simulator : tvb.simulator.simulator.Simulator
             A configured TVB simulator.
         result : list of (time_array, data_array) tuples, optional
-            Output of ``simulator.run()``. If *None*, the simulator is
-            run using its ``simulation_length``.
+            Output of ``simulator.run()``. If *None*, the simulator is run using its ``simulation_length``.
         transient_time : float
-            Length of the leading settle inside the run, in the simulator's time unit. TVB
-            integrates it as part of one simulation; it is marked here so the result cuts it at
-            t=0 exactly as every other backend does.
+            Length of the leading settle inside the run, in the simulator's time unit. TVB integrates it as part of one simulation; it is marked here so the result cuts it at t=0 exactly as every other backend does.
+        start_step : int, optional
+            The simulator's ``current_step`` before the run that produced *result*. TVB stamps the sample of step k at ``k * dt``, and a configure on an initial history of H rows has already counted H - 1 steps, so the run opens at ``start_step * dt``. Read from the simulator when *result* is *None*; required with *result*.
 
         Returns:
         -------
         ExperimentResult
         """
         if result is None:
+            start_step = simulator.current_step
             result = simulator.run()
-
-        voi = list(simulator.model.variables_of_interest)
-        region_labels = list(simulator.connectivity.region_labels)
-        base_labels = {"State Variable": voi, "Region": region_labels}
-
-        primary_ts = None
-        primary_tv = None
-        primary_xv = None
-        observations = {}
-
-        for monitor, (tv, xv) in zip(simulator.monitors, result, strict=True):
-            mon_labels = deepcopy(base_labels)
-            if hasattr(monitor, "sensors") and monitor.sensors is not None:
-                mon_labels["Region"] = list(monitor.sensors.labels)
-
-            mon_name = type(monitor).__name__
-
-            ts = TimeSeries(
-                data=xv,
-                time=tv,
-                labels_dimensions=mon_labels,
-                title=mon_name,
-                sample_period=float(monitor.period),
+        elif start_step is None:
+            raise ValueError(
+                "ExperimentResult.from_tvb needs `start_step`, the simulator's `current_step` before the run that produced `result`: TVB stamps each sample by its step count, which an initial history advances before the first step, so the result's own time axis does not say where the run opened."
             )
-
-            if primary_ts is None:
-                primary_ts = ts
-                primary_tv = tv
-                primary_xv = xv
-            else:
-                observations[mon_name] = ts
-
-        # Build xr.DataArray from primary monitor TVB shape: (time, state_variables, nodes, modes) — keep mode dim
-        data_np = np.asarray(primary_xv)
-        dims = ["time", "variable", "node", "mode"][: data_np.ndim]
-        coords = {
-            "time": np.asarray(primary_tv),
-            "variable": voi,
-            "node": region_labels,
-        }
-        if "mode" in dims:
-            coords["mode"] = list(range(data_np.shape[3]))
-        # The settle ends AT t=0 and carries non-positive timestamps, so a TVB run and a tvboptim run of the same recipe report the same window on the same clock. The slack is half a sample, read off the axis rather than from `sample_period` so it survives a series that does not declare one, and it absorbs the float drift between TVB's `step * dt` and a declared settle.
-        _tv = np.asarray(primary_tv)
-        _half_sample = 0.5 * (float(_tv[1] - _tv[0]) if _tv.size > 1 else 0.0)
-        _n_transient = int(np.count_nonzero(_tv <= float(transient_time) + _half_sample)) if transient_time else 0
-        if transient_time:
-            coords["time"] = _tv - float(transient_time)
-        da = xr.DataArray(data=data_np, dims=dims, coords=coords)
-
-        sim_result = SimulationResult(
-            data=da,
-            observations=observations,
-            n_transient=_n_transient,
-        )
-        sim_result._timeseries = primary_ts
-
+        (_, sim_result), *others = tvb_monitor_results(simulator, result, float(transient_time), start_step)
+        sim_result.observations = Bunch({tvb_observation_name(monitor): series for monitor, series in others})
         return cls(integration=sim_result)
+
+
+def tvb_observation_name(monitor) -> str:
+    """The name *monitor*'s results are keyed by: the declared name of the observation tvbo generated it for (its class's ``observation_name``), else, for a monitor tvbo did not generate, its class name."""
+    return getattr(monitor, "observation_name", None) or type(monitor).__name__
+
+
+def tvb_monitor_results(simulator, result, settle: float, start_step: int) -> list:
+    """Each of *simulator*'s monitors paired with its part of *result*, a `SimulationResult` on the measurement clock, in the simulator's order.
+
+    TVB stamps a sample by the step that took it, ``k * dt``, and steps from ``current_step + 1``; *start_step* is the ``current_step`` the run started from, so the run opens at ``start_step * dt`` on TVB's axis. Every monitor is moved from there onto the measurement clock and keeps its samples at or before ``t = 0`` on ``.transient`` (`on_the_measurement_clock`), so no sample of a *settle* ms settle stays in ``.data``.
+
+    Each axis takes the simulator's own labels only where the monitor returned that many of them. A monitor is free to reduce an axis or to replace it: `GlobalAverage` collapses the regions to one signal, a projection monitor reports sensors rather than regions, and `AfferentCoupling` reports the coupled variables rather than all of them. An axis whose width does not match is numbered instead of named, which says what it is rather than mislabelling it.
+    """
+    from tvbo.adapters.base import on_the_measurement_clock
+
+    dt = float(simulator.integrator.dt)
+    labels = {
+        "variable": list(simulator.model.variables_of_interest),
+        "node": [str(r) for r in simulator.connectivity.region_labels],
+    }
+    recorded = []
+    for monitor, (times, values) in zip(simulator.monitors, result, strict=True):
+        data = np.asarray(values)
+        dims = ["time", "variable", "node", "mode"][: data.ndim]
+        coords = {"time": np.asarray(times)}
+        for axis, dim in enumerate(dims[1:], start=1):
+            declared, width = labels.get(dim), data.shape[axis]
+            coords[dim] = declared if declared is not None and len(declared) == width else list(range(width))
+        series, n_settle = on_the_measurement_clock(xr.DataArray(data, dims=dims, coords=coords), settle, dt, start_step * dt)
+        recorded.append((monitor, SimulationResult(data=series, n_transient=n_settle)))
+    return recorded
 
 
 # Time Series Classes

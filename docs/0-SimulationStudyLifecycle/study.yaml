@@ -1,0 +1,165 @@
+# The README and the lifecycle page of the documentation, rendered from one study: `make readme` writes README.md from it, and index.qmd renders it in place.
+tvbo_class: tvbo:SimulationStudy
+
+citekey: SimulationStudyLifecycle
+title: "The Simulation Study Lifecycle"
+description: >-
+    TVB-O walked through once, on the running example of the documentation: explore what is curated, specify the experiment, generate backend code, run it, report it, share it. Every code excerpt, figure, table and count below is produced from the nested study or the installed package when the document is rendered.
+
+studies:
+    - !include ../examples/first-simulation/study.yaml
+
+document:
+    assets: assets
+    asset_url: https://raw.githubusercontent.com/virtual-twin/tvbo/main/docs/0-SimulationStudyLifecycle/assets
+    sections:
+        - blocks:
+              - kind: text
+                formats: [gfm]
+                text: |
+                    <img src="https://raw.githubusercontent.com/virtual-twin/tvbo/main/imgs/tvbo_logo.png" alt="TVBO logo" title="TVBO" align="right" height="100" />
+
+                    # The Virtual Brain Ontology
+
+                    [![Lint & Test](https://github.com/virtual-twin/tvbo/actions/workflows/ci.yml/badge.svg)](https://github.com/virtual-twin/tvbo/actions/workflows/ci.yml)
+                    [![PyPI version](https://img.shields.io/pypi/v/tvbo.svg)](https://pypi.org/project/tvbo/)
+                    [![PyPI - Downloads](https://img.shields.io/pypi/dm/tvbo)](https://pypi.org/project/tvbo/)
+                    [![License](https://img.shields.io/badge/License-EUPL--1.2%20%2B%20CC%20BY%204.0-blue.svg)](#license)
+                    [![Platform](https://img.shields.io/badge/platform-tvbo.charite.de-2b6b6b.svg)](https://tvbo.charite.de)
+
+              - kind: text
+                text: |
+                    `tvbo` is a knowledge base, a metadata standard and a Python toolbox for whole-brain network simulations. You write a whole study (equations, network, coupling, integration, stimuli, observation, figures) as one typed specification grounded in an ontology. From it, `tvbo` generates code for many simulators, runs it on a laptop or a cluster, and writes the report, so the paper, the code and the documentation describe the same experiment.
+
+              - kind: lifecycle
+
+              - kind: text
+                text: "Each step is one chapter of the [documentation](https://virtual-twin.github.io/tvbo/). The sections below walk through all six on one study, `FirstSimulation`: a Generic2dOscillator on an 87-region structural connectome."
+
+        - title: "Explore: find what is curated"
+          stage: explore
+          collapsed: true
+          blocks:
+              - kind: text
+                text: "Models, connectomes, coupling functions and published studies ship with the package, each under an IRI a specification can point at. Browse them at [tvbo.charite.de](https://tvbo.charite.de), in the [model browser](https://virtual-twin.github.io/tvbo/browser), or from Python with `Dynamics.from_db(...)`. [More on exploring](https://virtual-twin.github.io/tvbo/1-explore/)."
+              - kind: catalogue
+                of: [Dynamics, Network, Coupling, SimulationStudy]
+                entries:
+                    - tvbo:models/Generic2dOscillator
+                    - tvbo:networks/tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-DesikanKilliany_desc-SC_relmat
+
+        - title: "Specify: write the experiment"
+          stage: specify
+          collapsed: true
+          blocks:
+              - kind: text
+                text: "An experiment is YAML (or the same objects in Python). This one references a curated model and connectome by IRI and states only what it changes. [More on specifying](https://virtual-twin.github.io/tvbo/2-specify/)."
+              - kind: spec
+                study: FirstSimulation
+                select: experiments.1
+              - kind: usage
+                study: FirstSimulation
+                operation: load
+
+        - title: "Generate: compile it to a backend"
+          stage: generate
+          collapsed: true
+          blocks:
+              - kind: text
+                text: "The specification compiles to readable code for each backend. [More on generating](https://virtual-twin.github.io/tvbo/3-generate/)."
+              - kind: usage
+                study: FirstSimulation
+                operation: generate
+                experiment: "1"
+                backend: tvboptim
+              - kind: text
+                text: "The model's right-hand side, as the tvboptim backend receives it:"
+              - kind: generated_code
+                study: FirstSimulation
+                experiment: "1"
+                backend: tvboptim
+                symbol: Generic2dOscillator.dynamics
+              - kind: text
+                text: "What each backend can do:"
+              - kind: backends
+
+        - title: "Run: execute and read the result"
+          stage: run
+          collapsed: true
+          blocks:
+              - kind: text
+                text: "A run executes every experiment, analysis and figure the study declares, in process or as a cluster job (`tvbo run study.yaml`). [More on running](https://virtual-twin.github.io/tvbo/4-run/)."
+              - kind: usage
+                study: FirstSimulation
+                operation: run
+              - kind: usage
+                study: FirstSimulation
+                operation: figure
+                figure: first_simulation
+              - kind: figure
+                study: FirstSimulation
+                figure: first_simulation
+              - kind: text
+                text: "The run writes a BIDS-style study directory:"
+              - kind: tree
+                study: FirstSimulation
+                depth: 3
+
+        - title: "Report: write the Methods"
+          stage: report
+          collapsed: true
+          blocks:
+              - kind: text
+                text: "The Methods are rendered from the specification, equations and parameter values included, never typed. [More on reporting](https://virtual-twin.github.io/tvbo/5-report/)."
+              - kind: usage
+                study: FirstSimulation
+                operation: report
+              - kind: methods
+                study: FirstSimulation
+
+        - title: "Share: publish to the platform"
+          stage: share
+          collapsed: true
+          blocks:
+              - kind: text
+                text: "Push an experiment to [tvbo.charite.de](https://tvbo.charite.de), privately, to named colleagues or to the public gallery, and load it back from Python (`pip install tvbo[api]`). [More on sharing](https://virtual-twin.github.io/tvbo/6-share/)."
+              - kind: usage
+                study: FirstSimulation
+                operation: share
+                experiment: "1"
+
+        - title: Installation
+          blocks:
+              - kind: text
+                text: |
+                    ```bash
+                    pip install tvbo
+                    ```
+
+                    Requires Python 3.11 or newer. The core install compiles any specification and runs it on JAX; other backends install as extras (`pip install tvbo[tvb]`, `tvbo[julia]`, `tvbo[all]`). See [Installation](https://virtual-twin.github.io/tvbo/installation.html) for every extra and platform note.
+
+        - title: Resources
+          blocks:
+              - kind: text
+                text: |
+                    - [Documentation](https://virtual-twin.github.io/tvbo/)
+                    - [Model browser](https://virtual-twin.github.io/tvbo/browser): models, parameters and equations
+                    - [Metadata schema](https://virtual-twin.github.io/tvbo/datamodel): the TVB-O data model
+                    - [Platform](https://tvbo.charite.de): the knowledge graph and an experiment builder in the browser
+                    - [Issues](https://github.com/virtual-twin/tvbo/issues)
+                    - AI coding assistants: `tvbo skills install` gives Claude Code, Cursor and Copilot the specification format and the knowledge base
+
+        - title: Citation
+          blocks:
+              - kind: text
+                text: "A manuscript describing `tvbo` is in preparation. Until it appears, please cite the software via this repository and [tvbo.charite.de](https://tvbo.charite.de)."
+
+        - title: License
+          blocks:
+              - kind: text
+                text: "Copyright © 2025 Charité — Universitätsmedizin Berlin. The code and documentation are licensed under the European Union Public Licence (EUPL) v1.2 or later ([LICENSE](https://github.com/virtual-twin/tvbo/blob/main/LICENSE)); the ontology, the LinkML schema and the curated records under [CC BY 4.0](https://github.com/virtual-twin/tvbo/blob/main/LICENSES/CC-BY-4.0.txt). Third-party data files, and records that inline third-party labels, coordinates or values, carry their sources' licences as well, which [REUSE.toml](https://github.com/virtual-twin/tvbo/blob/main/REUSE.toml) states file by file; the licence texts are in [LICENSES](https://github.com/virtual-twin/tvbo/tree/main/LICENSES)."
+
+        - title: Funding
+          blocks:
+              - kind: text
+                text: "P.R. acknowledges support by EU Horizon Europe program Horizon EBRAINS2.0 (101147319), VirtualBrainTwin (101137289), EBRAINS-PREP 101079717, AISN 101057655, EBRAIN-Health 101058516, EIC grant PHRASE 101058240, by the Digital Europe Programme TEF-Health (101100700), Shaiped (101195135), CoordinaTEF (101168074), German Research Foundation SFB 1436 (project ID 425899996), SFB 1315 (project ID 327654276), SFB 936 (project ID 178316478), SPP Computational Connectomics RI 2073/6-1, RI 2073/10-2, RI 2073/9-1, DFG Clinical Research Group BECAUSE-Y 504745852, Berlin University Alliance OpenMake, the Virtual Research Environment at the Charité Berlin, EBRAINS Health Data Cloud, and the Berlin Institute of Health and Foundation Charité. P.R. and J.M. acknowledge additional support by the Deutsche Forschungsgemeinschaft (DFG) — Project-ID 424778381 — TRR 295."

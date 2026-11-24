@@ -1,0 +1,83 @@
+# What tvbo offers at each scientific-operations maturity level (Johnson et al. 2024, arXiv:2401.00077) and lifecycle stage; tests/test_maturity.py checks that every piece of evidence still exists.
+source: {citekey: Johnson2024, doi: 10.48550/arXiv.2401.00077}
+
+levels:
+  initial:
+    name: Initial
+    tagline: Ad hoc processes
+    traits: [bespoke development]
+  managed:
+    name: Managed
+    tagline: Established processes
+    traits: [repeatable processes, role specialization, quality control]
+  defined:
+    name: Defined
+    tagline: Sharable processes
+    traits: [open-source ecosystems, FAIR data, FAIR workflows]
+  scalable:
+    name: Scalable
+    tagline: Automated workflows
+    traits: [SciOps pipeline, collaborative environments, teamflow]
+  optimizing:
+    name: Optimizing
+    tagline: Closed-loop discovery
+    traits: [AI and human in the loop]
+
+# The levels Fig. 1 of the source brackets as SciOps; each level's tagline and traits are that figure's captions.
+sciops: [scalable, optimizing]
+
+statuses:
+  ships: "tvbo provides it today; the evidence names where."
+  partial: "tvbo provides part of it; `missing` says which part is absent."
+  not yet: "tvbo does not provide it; `missing` says what is absent."
+
+capabilities:
+  - {level: initial, stage: explore, practice: Browse existing models, tools: [ModelDB, papers], tvbo: "tvbo info", status: ships, evidence: [{cli: info}]}
+  - {level: initial, stage: specify, practice: Build an experiment interactively, tools: [Jupyter], tvbo: "SimulationExperiment in Python", status: ships, evidence: [{python: tvbo.SimulationExperiment}]}
+  - {level: initial, stage: run, practice: Run where you think, tools: [Jupyter, scripts], tvbo: "exp.run()", status: ships, evidence: [{python: tvbo.SimulationExperiment.run}]}
+  - {level: initial, stage: report, practice: Look at the result, tools: [matplotlib], tvbo: "result.plot()", status: ships, evidence: [{python: tvbo.data.types.SimulationResult.plot}]}
+
+  - {level: managed, stage: explore, practice: Curated, versioned components, tools: [lab model repositories], tvbo: "Dynamics.list_db()", status: ships, evidence: [{python: tvbo.Dynamics.list_db}]}
+  - {level: managed, stage: specify, practice: One versioned protocol, tools: [git, standard operating procedures], tvbo: "one YAML specification", status: ships, evidence: [{python: tvbo.SimulationStudy.from_file}]}
+  - {level: managed, stage: specify, practice: Project scaffold, tools: [cookiecutter, BIDS, DataLad], tvbo: "tvbo study init", status: ships, evidence: [{cli: study init}, {file: schema/study_layout.yaml}]}
+  - {level: managed, stage: specify, practice: A runnable example in the scaffold, tools: [cookiecutter templates], tvbo: "seeded recipe that runs as scaffolded", status: ships, evidence: [{file: tvbo/templates/study/recipe.yaml.tmpl}]}
+  - {level: managed, stage: specify, practice: Version control from day one, tools: [git, DataLad], tvbo: "tvbo study init --git | --datalad on request, ignore files from the layout record, nothing committed for the author", status: ships, evidence: [{cli: study init}, {file: schema/study_layout.yaml}]}
+  - {level: managed, stage: generate, practice: Inspectable code, tools: [code review], tvbo: "tvbo export", status: ships, evidence: [{cli: export}]}
+  - {level: managed, stage: run, practice: One command runs the study, tools: [make, command-line tools], tvbo: "tvbo run", status: ships, evidence: [{cli: run}]}
+  - {level: managed, stage: report, practice: The report renders from a fresh scaffold, tools: [Quarto, rrtools], tvbo: "seeded report.qmd and references.bib", status: ships, evidence: [{file: tvbo/templates/study/report.qmd.tmpl}, {file: tvbo/templates/study/references.bib.tmpl}]}
+  - {level: managed, stage: report, practice: Figures from declarations, tools: [plotting scripts], tvbo: "tvbo figure render", status: ships, evidence: [{cli: figure render}]}
+  - {level: managed, stage: share, practice: Readme and citation file, tools: [CITATION.cff], tvbo: "seeded by tvbo study init", status: ships, evidence: [{file: tvbo/templates/study/CITATION.cff.tmpl}]}
+
+  - {level: defined, stage: explore, practice: Shared vocabulary, tools: [OWL ontologies, knowledge graphs], tvbo: "TVB-O ontology and knowledge graph", status: ships, evidence: [{file: ontology/tvb-o-axioms.ttl}]}
+  - {level: defined, stage: explore, practice: Persistent identifiers, tools: [DOI, w3id], tvbo: "IRIs under w3id.org/tvbo", status: not yet, missing: "w3id.org/tvbo does not resolve and no DOI is minted for an entity."}
+  - {level: defined, stage: specify, practice: Validation against a community schema, tools: [JSON Schema, LinkML, BIDS validator], tvbo: "tvbo validate", status: ships, evidence: [{cli: validate}]}
+  - {level: defined, stage: specify, practice: Validation of the whole study, tools: [BIDS validator], tvbo: "tvbo validate study", status: ships, evidence: [{cli: validate study}]}
+  - {level: defined, stage: generate, practice: One model, many implementations, tools: [NeuroML, code generators], tvbo: "backends from one specification", status: ships, evidence: [{python: tvbo.run.backends.list_backends}]}
+  - {level: defined, stage: run, practice: Pinned environment in the study, tools: [uv.lock, conda, container digest], tvbo: "tvbo version in the derivative's GeneratedBy, the `requires:` slot, the CI image tag", status: partial, evidence: [{file: schema/study_layout.yaml}, {file: tvbo/templates/study/ci/github.yml.tmpl}], missing: "The study carries no lock file, and the CI names the image by tag, not digest; the resolved packages are recorded only per run, in each result's sidecar."}
+  - {level: defined, stage: run, practice: Reproducible environment, tools: [Docker, Apptainer, conda], tvbo: "container image ghcr.io/virtual-twin/tvbo", status: ships, evidence: [{file: docker/Dockerfile}]}
+  - {level: defined, stage: report, practice: Methods from the source, tools: [literate programming, Quarto], tvbo: "methods rendered from the specification", status: ships, evidence: [{python: tvbo.SimulationExperiment.report}]}
+  - {level: defined, stage: share, practice: Community data standards, tools: [BIDS, NWB], tvbo: "study and results as BIDS datasets", status: ships, evidence: [{file: schema/study_layout.yaml}, {python: tvbo.Network.from_bids}]}
+  - {level: defined, stage: share, practice: Licence file, tools: [LICENSE, REUSE], tvbo: "REUSE.toml and LICENSES/: data under CC-BY-4.0 unless --license says otherwise, code under MIT", status: ships, evidence: [{file: tvbo/templates/study/REUSE.toml.tmpl}, {file: tvbo/templates/study/LICENSES/MIT.txt}]}
+  - {level: defined, stage: share, practice: Community metadata, tools: [openMINDS], tvbo: "openMINDS adapter", status: partial, evidence: [{file: tvbo/adapters/openminds.py}], missing: "Most components are carried as tvbo classes rather than written in openMINDS classes."}
+  - {level: defined, stage: share, practice: Registration in a catalogue, tools: [EBRAINS Knowledge Graph, Zenodo], tvbo: "", status: not yet, missing: "Studies are not registered in the EBRAINS Knowledge Graph."}
+
+  - {level: scalable, stage: explore, practice: Machine access to the knowledge, tools: [REST, SPARQL], tvbo: "REST API", status: partial, evidence: [{file: tvbo/api/main.py}], missing: "The REST routers cover networks, dynamics, experiments and the ontology, not every entity."}
+  - {level: scalable, stage: specify, practice: Declared sweeps and cohorts, tools: [configuration grids, Hydra], tvbo: "explorations and cohorts", status: ships, evidence: [{schema: Exploration}, {schema: Cohort}]}
+  - {level: scalable, stage: generate, practice: Workflow from the study, tools: [Snakemake, Nextflow, Slurm], tvbo: "tvbo workflow snakemake | nextflow | slurm", status: ships, evidence: [{cli: workflow snakemake}, {cli: workflow nextflow}, {cli: workflow slurm}]}
+  - {level: scalable, stage: generate, practice: Portable workflow languages, tools: [CWL, Nipype], tvbo: "", status: not yet, missing: "No CWL or Nipype emitter."}
+  - {level: scalable, stage: run, practice: Cluster execution, tools: [Slurm, Snakemake profiles], tvbo: "tvbo workflow submit", status: ships, evidence: [{cli: workflow submit}]}
+  - {level: scalable, stage: run, practice: Continuous integration on every change, tools: [GitHub Actions, GitLab CI], tvbo: "tvbo study init --ci github | gitlab", status: partial, evidence: [{file: tvbo/templates/study/ci/github.yml.tmpl}, {file: tvbo/templates/study/ci/gitlab.yml.tmpl}], missing: "The seeded CI validates the study in the pinned image on every push but does not rerun it."}
+  - {level: scalable, stage: run, practice: Execution on a research platform, tools: [EBRAINS, web platforms], tvbo: "", status: not yet, missing: "The platform does not run simulations yet."}
+  - {level: scalable, stage: report, practice: Figures as workflow rules, tools: [Snakemake rules], tvbo: "one rule per declared figure", status: ships, evidence: [{file: tvbo/templates/workflow/snakemake/study.smk.mako}]}
+  - {level: scalable, stage: report, practice: Report as a workflow rule, tools: [Snakemake report, Quarto], tvbo: "", status: not yet, missing: "The emitted Snakefile has no rule that renders the report."}
+  - {level: scalable, stage: share, practice: Publish to a platform, tools: [Zenodo, EBRAINS], tvbo: "platform sharing with an API key", status: ships, evidence: [{python: tvbo.platform.TVBOPlatform}]}
+
+  - {level: optimizing, stage: explore, practice: Agents query the knowledge, tools: [MCP, skills], tvbo: "tvbo-platform skill", status: ships, evidence: [{skill: platform}]}
+  - {level: optimizing, stage: explore, practice: Specification from a paper, tools: [OCR to Markdown, LLM extraction], tvbo: "the paper as Markdown (dots.mocr), the tvbo skills write and validate the specification", status: ships, evidence: [{skill: replicating-studies}, {cli: validate study}]}
+  - {level: optimizing, stage: explore, practice: Hypothesis generation, tools: [AI scientist systems, knowledge graphs], tvbo: "proof of concept: NeuroMMSig disease genes mapped to model parameters", status: partial, evidence: [{file: tvbo/ontology/semanticweb/tvbgo.py}], missing: "A proof of concept, not yet a released workflow; needs the knowledge extra."}
+  - {level: optimizing, stage: specify, practice: "Agent drafts, validator checks", tools: [coding agents, skills, AGENTS.md], tvbo: "tvbo skills install", status: ships, evidence: [{cli: skills install}, {skill: writing-models}, {skill: replicating-studies}]}
+  - {level: optimizing, stage: specify, practice: Agent instructions in the project, tools: [AGENTS.md, CLAUDE.md], tvbo: "AGENTS.md seeded by tvbo study init, pointing to the tvbo skills", status: ships, evidence: [{file: tvbo/templates/study/AGENTS.md.tmpl}]}
+  - {level: optimizing, stage: run, practice: Model fitted in the loop, tools: [optimizers, automatic differentiation], tvbo: "optimizations run by tvboptim", status: ships, evidence: [{schema: Optimization}, {file: tvbo/templates/tvboptim}]}
+  - {level: optimizing, stage: run, practice: Closed-loop experiment control, tools: [real-time stimulation], tvbo: "", status: not yet, missing: "No coupling to a running experiment."}
+  - {level: optimizing, stage: report, practice: Agent drafts the report, tools: [skills], tvbo: "tvbo-writing-reports skill", status: ships, evidence: [{skill: writing-reports}]}
+  - {level: optimizing, stage: share, practice: Results return to the knowledge, tools: [automatic curation], tvbo: "", status: not yet, missing: "A shared study is not added to the knowledge graph automatically."}
