@@ -69,6 +69,17 @@ path = [
 SPDX-FileCopyrightText = "Charité Universitätsmedizin Berlin"
 SPDX-License-Identifier = "EUPL-1.2"
 
+# The licence texts `tvbo study init` copies into a new study's LICENSES/, verbatim; Creative Commons dedicates the texts of its legal tools to the public domain under CC0 1.0
+[[annotations]]
+path = ["tvbo/templates/study/LICENSES/CC-BY-4.0.txt", "tvbo/templates/study/LICENSES/CC0-1.0.txt"]
+SPDX-FileCopyrightText = "Creative Commons Corporation"
+SPDX-License-Identifier = "CC0-1.0"
+
+# The MIT licence text, with its copyright line left for the study's authors to fill in
+[[annotations]]
+path = "tvbo/templates/study/LICENSES/MIT.txt"
+SPDX-License-Identifier = "MIT"
+
 # The lifecycle wheel's stage table, which carries Font Awesome Free glyphs
 [[annotations]]
 path = "tvbo/plot/lifecycle.yaml"
