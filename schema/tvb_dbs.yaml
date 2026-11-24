@@ -36,8 +36,6 @@ classes:
     is_a: Subject
     description: Human or animal subject receiving DBS.
     attributes:
-      diagnosis:
-        range: string
       handedness:
         range: string
       protocols:

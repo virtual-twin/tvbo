@@ -66,6 +66,12 @@ slots:
     inlined: true
     description: "Subjects in a dataset."
 
+  diagnosis:
+    multivalued: true
+    range: uriorcurie
+    description: >-
+      Diagnosed conditions as coded terms, such as the SNOMED CT code ``sct:49049000`` for Parkinson's disease. On a Subject, what that participant is diagnosed with; on a Cohort, the condition every member has. A graded disease state, such as a UPDRS score, is a Phenotype measure instead.
+
 classes:
 
   Subject:
@@ -75,6 +81,7 @@ classes:
       to a BIDS 'sub-' entity.
     slots:
       - subject_id
+      - diagnosis
     attributes:
       label:
         range: string
@@ -144,6 +151,7 @@ classes:
       A named subset of a dataset's subjects: the unit a group-level quantity is defined over, such as a mean connectome, a per-edge presence count or a normalisation constant. A dataset may hold several, and they may overlap: the sites of a multi-centre study, a patient and a control group, the subjects a processing pipeline has finished so far. Naming the subset is what pins an aggregate. A quantity computed over ``hcpy93`` states which subjects went into it, and moving to a larger cohort is a change to one identifier rather than to every consumer.
     slots:
       - cohort_id
+      - diagnosis
     attributes:
       members:
         multivalued: true

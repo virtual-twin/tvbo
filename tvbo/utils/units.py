@@ -765,6 +765,41 @@ _DISPLAY_SYMBOLS = {
 }
 
 
+def unit_to_ucum(unit):
+    """The UCUM code of a curated unit, as its vendored QUDT record states it, or ``None`` when the unit is uncurated or QUDT gives it none.
+
+    >>> unit_to_ucum("ms")
+    'ms'
+    >>> unit_to_ucum("year")
+    'a'
+    """
+    facts = unit_facts(unit)
+    return facts["ucum_code"] if facts else None
+
+
+@cache
+def unit_from_ucum(code):
+    """The curated unit a UCUM *code* names: the one curated unit whose vendored QUDT record states that code, else what :func:`normalize_unit` reads it as, else ``None``.
+
+    >>> unit_from_ucum("a")
+    'year'
+    >>> unit_from_ucum("mV/ms")
+    'mV_per_ms'
+    """
+    owners = _by_ucum().get(code, ())
+    return owners[0] if len(owners) == 1 else normalize_unit(code)
+
+
+@lru_cache(maxsize=1)
+def _by_ucum():
+    """Curated units indexed by the UCUM code their QUDT record states."""
+    index = {}
+    for name, facts in _vendored().items():
+        if facts.get("curated") and facts.get("ucum_code"):
+            index.setdefault(facts["ucum_code"], []).append(name)
+    return index
+
+
 def unit_to_symbol(unit):
     """Return the conventional display symbol for a UnitEnum value.
 

@@ -265,7 +265,8 @@ def _companion(path: Path) -> str | None:
     """The companion file the ``Phenotype`` sidecar at *path* keeps its values in."""
     from tvbo.classes.phenotype import Phenotype
 
-    return getattr(Phenotype.from_file(path), "_h5_path", None)
+    table = Phenotype.from_file(path)
+    return str(table._data_path) if table.data_file else None
 
 
 def _read_measure(path: Path, measure: str) -> tuple[list[str], list[float]]:
