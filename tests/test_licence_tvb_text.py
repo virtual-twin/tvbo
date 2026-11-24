@@ -4,12 +4,13 @@ Curated records take their model, coupling and parameter descriptions from TVB's
 """
 
 import re
-import subprocess
 import tomllib
 from pathlib import Path
 
 import pytest
 import yaml
+
+from tests.test_reuse_license import tracked_files
 
 pytestmark = pytest.mark.backend_tvb
 
@@ -52,9 +53,8 @@ def test_files_quoting_tvb_carry_its_licence():
     assert quoted, "no record quotes TVB, so the scan is not looking where the records are"
 
     annotations = tomllib.loads((REPO / "REUSE.toml").read_text(encoding="utf-8"))["annotations"]
-    tracked = subprocess.run(["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=True).stdout.split("\n")
     unlicensed = []
-    for name in filter(None, tracked):
+    for name in tracked_files("."):
         path = REPO / name
         if path.suffix in BINARY or not path.is_file():
             continue

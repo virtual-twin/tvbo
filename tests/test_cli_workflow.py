@@ -1907,12 +1907,79 @@ def test_bundler_carries_a_callables_local_helper_but_not_stdlib_or_installed(tm
 
     a = importlib.import_module("helper_a")
     try:
-        deps = dict(_local_module_deps(a, set()))
+        deps = dict(_local_module_deps(a.__file__, set()))
         assert "helper_b" in deps and deps["helper_b"].endswith("helper_b.py")  # the local helper
         assert "os" not in deps and "json" not in deps  # stdlib excluded
     finally:
         for m in ("helper_a", "helper_b"):
             sys.modules.pop(m, None)
+
+
+def test_a_pipeline_callable_whose_import_fails_at_emit_time_still_travels_with_the_kit(tmp_path, monkeypatch):
+    """A module an observation's pipeline names (`callable: {module: ...}`) is carried with its local helper even when importing it fails where the kit is emitted, as Koller2024's wave detection did, which left the kit's Exp 1 to die on `ModuleNotFoundError` on the node (G302)."""
+    import sys
+
+    from tvbo.cli import _common
+    from tvbo.cli.workflow import _bundle_callable_modules
+
+    warned = []
+    monkeypatch.setattr(_common, "warn", warned.append)
+    code = tmp_path / "code"
+    code.mkdir()
+    (code / "wave_helper.py").write_text("SCALE = 2\n")
+    (code / "study_waves.py").write_text("import wave_helper\nimport a_package_only_the_node_has\n")
+    monkeypatch.syspath_prepend(str(code))
+    spec = "observations:\n  waves:\n    pipeline:\n      - callable: {name: detect, module: study_waves}\n"
+    kit = tmp_path / "kit"
+    kit.mkdir()
+    try:
+        assert _bundle_callable_modules(spec, kit)
+        assert sorted(p.name for p in (kit / "code").iterdir()) == ["study_waves.py", "wave_helper.py"]
+        assert any("'study_waves'" in w and "does not import here: ModuleNotFoundError" in w for w in warned)
+    finally:
+        for m in ("study_waves", "wave_helper"):
+            sys.modules.pop(m, None)
+
+
+def test_a_helper_reached_through_a_runtime_sys_path_insert_travels_with_the_kit(tmp_path, monkeypatch):
+    """A recipe module that puts its helper's folder on `sys.path` when imported, as Koller2024's wave detection reaches `wave_detection_methods`, gets that helper into `code/` beside it."""
+    import sys
+
+    from tvbo.cli.workflow import _bundle_modules
+
+    code, elsewhere = tmp_path / "code", tmp_path / "original_study"
+    code.mkdir()
+    elsewhere.mkdir()
+    (elsewhere / "far_helper.py").write_text("SCALE = 3\n")
+    (code / "study_far.py").write_text(f"import sys\nsys.path.insert(0, {str(elsewhere)!r})\nimport far_helper\n")
+    monkeypatch.syspath_prepend(str(code))
+    monkeypatch.setattr(sys, "path", list(sys.path))
+    try:
+        kit = tmp_path / "kit"
+        kit.mkdir()
+        assert sorted(_bundle_modules({"study_far"}, kit)) == ["far_helper.py", "study_far.py"]
+    finally:
+        for m in ("study_far", "far_helper"):
+            sys.modules.pop(m, None)
+
+
+def test_a_stdlib_name_in_a_module_slot_is_not_bundled(tmp_path):
+    """`module: json` names the stdlib, which every node has, so nothing of it is copied into `code/`."""
+    from tvbo.cli.workflow import _bundle_modules
+
+    assert _bundle_modules({"json", "os"}, tmp_path) == []
+    assert not (tmp_path / "code").exists()
+
+
+def test_a_module_no_file_answers_to_is_reported(tmp_path, monkeypatch):
+    """A `module:` the recipe names that is neither on its code path nor installed is reported by name, since the kit's run would fail on it."""
+    from tvbo.cli import _common
+    from tvbo.cli.workflow import _bundle_modules
+
+    warned = []
+    monkeypatch.setattr(_common, "warn", warned.append)
+    assert _bundle_modules({"no_such_study_module"}, tmp_path) == []
+    assert any("'no_such_study_module'" in w for w in warned)
 
 
 def test_benchmark_and_smoke_reach_the_snakemake_rule():

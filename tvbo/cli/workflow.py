@@ -459,10 +459,39 @@ def _bundle_callable_modules(spec_yaml_text: str, out_dir: Path) -> bool:
     return bool(bundled)
 
 
+def _module_file(name: str) -> str | None:
+    """The file *name* is loaded from, found without running the module (:func:`importlib.util.find_spec`), or ``None`` when no module of that name can be found; a module already imported answers from :data:`sys.modules`, which also knows a helper its importer put on ``sys.path`` at run time."""
+    import importlib.util
+    import sys
+
+    loaded = sys.modules.get(name)
+    if loaded is not None:
+        return getattr(loaded, "__file__", None)
+    try:
+        spec = importlib.util.find_spec(name)
+    except (ImportError, ValueError):
+        return None
+    return spec.origin if spec is not None else None
+
+
+def _local_module(name: str, f: str | None) -> bool:
+    """Whether *f*, the file module *name* loads from, is a recipe's own helper the kit has to carry: a plain local ``.py`` that is not a package's ``__init__``, not under the interpreter's own roots or a ``site-packages``/``dist-packages`` (the stdlib and installed dependencies, which the kit's requirements provision) and not ``tvbo`` itself."""
+    import sys
+
+    if not f or not f.endswith(".py") or Path(f).name == "__init__.py":
+        return False
+    top = name.split(".")[0]
+    if top == "tvbo" or top in sys.stdlib_module_names:
+        return False
+    rf = str(Path(f).resolve())
+    py_roots = tuple(str(Path(p).resolve()) for p in {sys.base_prefix, sys.prefix, sys.exec_prefix})
+    return not (rf.startswith(py_roots) or "site-packages" in rf or "dist-packages" in rf)
+
+
 def _bundle_modules(names, out_dir: Path, *, seen: set[str] | None = None) -> list[str]:
     """Copy each LOCAL ``.py`` module in *names* (and its transitive local imports) into the kit's ``code/``; return the bundled filenames.
 
-    A local module (not under ``site-packages``/``dist-packages`` — those are provisioned via ``requirements``) is a study helper that must travel with the kit. *seen* threads across calls so a study bundles its experiment callables and its figure ``code_modules`` into one ``code/`` without copying a shared helper twice.
+    A local module (:func:`_local_module`) is a study helper that must travel with the kit. Each is located by :func:`_module_file`, without importing it, so a module whose import fails at emit time (a dependency the emitting environment lacks) is still carried. It is still imported first, since a module may reach a helper of its own through a ``sys.path`` insert it runs on import; a failed import is reported with its error and with the warning that such helpers could not be followed; a name no module answers to is reported too, since the kit's run would fail on it. *seen* threads across calls so a study bundles its experiment callables and its figure ``code_modules`` into one ``code/`` without copying a shared helper twice.
     """
     import importlib
     import shutil
@@ -480,37 +509,42 @@ def _bundle_modules(names, out_dir: Path, *, seen: set[str] | None = None) -> li
     for name in sorted(set(names)):
         if name in seen:
             continue
-        try:
-            mod = importlib.import_module(name)
-        except Exception:
+        f = _module_file(name)
+        if f is None:
+            _common.warn(
+                f"the recipe names module {name!r}, which is neither on its code path nor installed, so the kit does not carry it and a run that calls it fails."
+            )
             continue
-        f = getattr(mod, "__file__", None) or ""
-        if not f.endswith(".py") or "site-packages" in f or "dist-packages" in f:
-            continue  # installed package — comes from the emitted requirements, not bundled
+        if not _local_module(name, f):
+            continue  # stdlib or installed — comes from the emitted requirements, not bundled
         _copy(name, f)
-        # A callable often imports a LOCAL helper of its own (e.g. Koller's wave_detection_methods, pulled in via a runtime sys.path insert) — not a `module:` reference and not an installed package, so nothing else carries it and the kit is not self-contained. Follow those transitive local, standalone imports too.
-        for dep_name, dep_f in _local_module_deps(mod, seen):
+        try:
+            importlib.import_module(name)  # runs the sys.path inserts by which it reaches helpers of its own
+            failure = None
+        except Exception as exc:
+            failure = exc
+        for dep_name, dep_f in _local_module_deps(f, seen):
             _copy(dep_name, dep_f)
+        if failure is not None:
+            _common.warn(
+                f"module {name!r} ({f}) is in the kit's code/ but does not import here: {type(failure).__name__}: {failure}. The node needs what it imports, and the helpers it reaches only once imported could not be followed, so the kit may still miss some of them."
+            )
     return bundled
 
 
-def _local_module_deps(mod, seen: set[str]):
-    """Yield (name, file) for the LOCAL, STANDALONE modules ``mod`` transitively imports.
+def _local_module_deps(src: str, seen: set[str]):
+    """Yield (name, file) for the LOCAL, STANDALONE modules the module in *src* transitively imports.
 
-    Resolves each imported name through ``sys.modules`` (``mod`` is already imported, so its dependencies are populated) and keeps only those backed by a plain local ``.py`` — NOT an installed package (``site-packages``), NOT a package with an ``__init__`` (those ship via requirements), and NOT ``tvbo`` itself. This is exactly the shape of a recipe's own helper module, so following it makes the emitted kit self-contained without vendoring the helper into the recipe tree.
+    A callable often imports a local helper of its own (Koller's ``wave_detection_methods``), which no ``module:`` reference names and no requirement installs, so it is followed too. Each imported name is located by :func:`_module_file` and kept when it is a local module (:func:`_local_module`), the shape of a recipe's own helper, so following it makes the emitted kit self-contained without vendoring the helper into the recipe tree.
     """
     import ast
-    import sys
 
-    src = getattr(mod, "__file__", None)
     if not src or not src.endswith(".py"):
         return
     try:
         tree = ast.parse(Path(src).read_text(encoding="utf-8"))
     except Exception:
         return
-    # Everything under the interpreter's own roots is stdlib or an installed dep (both live in the Python install / its site-packages); a recipe's helper lives in the study tree, outside them. That single check excludes the whole stdlib AND every installed package, so only genuine local helpers survive.
-    py_roots = tuple(str(Path(p).resolve()) for p in {sys.base_prefix, sys.prefix, sys.exec_prefix})
     imported: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -518,18 +552,14 @@ def _local_module_deps(mod, seen: set[str]):
         elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
             imported.add(node.module.split(".")[0])
     for name in sorted(imported):
-        if name in seen or name == "tvbo" or name in sys.stdlib_module_names:
+        if name in seen:
             continue
-        dep = sys.modules.get(name)
-        f = getattr(dep, "__file__", None) if dep is not None else None
-        if not f or not f.endswith(".py") or Path(f).name == "__init__.py":
-            continue  # missing, a C-extension, or a package (provisioned via requirements)
-        rf = str(Path(f).resolve())
-        if rf.startswith(py_roots) or "site-packages" in rf or "dist-packages" in rf:
-            continue  # stdlib or installed — not a local recipe helper
+        f = _module_file(name)
+        if not _local_module(name, f):
+            continue
         seen.add(name)
         yield name, f
-        yield from _local_module_deps(dep, seen)
+        yield from _local_module_deps(f, seen)
 
 
 def _bundle_request(items: list[str]) -> dict[str, str]:
