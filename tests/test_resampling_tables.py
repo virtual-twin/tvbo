@@ -11,7 +11,7 @@ import xarray as xr
 from tvbo.analysis import mesh
 from tvbo.analysis.mesh import node_permutations, spin_permutations
 from tvbo.data import param_io
-from tvbo.datamodel.schema import FunctionCall, Parameter
+from tvbo.datamodel import FunctionCall, Parameter
 
 LABELS = np.array(["lh-d", "lh-a", "lh-f", "lh-c", "lh-e", "lh-b", "rh-c", "rh-f", "rh-a", "rh-e", "rh-b", "rh-d"])
 GROUPS = np.array([label[:2] for label in LABELS])

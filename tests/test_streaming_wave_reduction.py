@@ -198,7 +198,7 @@ def test_group_vmap_matches_numpy_group_loop():
 
 from types import SimpleNamespace
 
-from tvbo.datamodel.schema import (
+from tvbo.datamodel import (
     DerivedVariable,
     Dynamics,
     Equation,
@@ -282,11 +282,12 @@ def test_a_period_is_required_even_without_an_experiment_to_resolve_it_against()
 
 @pytest.mark.parametrize("role", ["waves", "directed", "correlation"])
 def test_every_metric_role_must_name_a_derived_variable(role):
-    """An unnamed role reached the renderer as the string 'None' and emitted `None * 1.0`."""
+    """Each role is a required name the record refuses to unset, so none reaches the renderer as the string 'None' to emit `None * 1.0`."""
+    from pydantic import ValidationError
+
     obs = _wave_observation(np.array([[0, 1], [2, 3]]), np.ones((2, 2)))
-    setattr(obs.partition, role, None)
-    with pytest.raises(ValueError, match=role):
-        resolve_reduction(obs, _stub_experiment(dt=1.0))
+    with pytest.raises(ValidationError, match=role):
+        setattr(obs.partition, role, None)
 
 
 def test_the_wave_kind_declares_its_axes():

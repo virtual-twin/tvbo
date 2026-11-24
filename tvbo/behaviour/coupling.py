@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from tvbo.behaviour._runtime import Catalogued
+from tvbo.behaviour._runtime import Catalogued, _dm
 
 
 def event_parameters(experiment) -> set[str]:
@@ -86,7 +86,6 @@ class CouplingBehaviour(Catalogued):
 
         from tvbo.classes.coupling import coupling_class2metadata
         from tvbo.data.registry import local_name
-        from tvbo.datamodel import schema as tvbo_datamodel
         from tvbo.ontology import query
 
         if isinstance(ontoclass, str):
@@ -100,18 +99,9 @@ class CouplingBehaviour(Catalogued):
             ontoclass = hits[0]
         if not isinstance(ontoclass, owlready2.entity.ThingClass):
             raise ValueError("ontoclass must be a string or an ontology Coupling class.")
-        metadata = tvbo_datamodel.Coupling(name=ontoclass.label.first())
-        coupling_class2metadata(ontoclass, metadata, overwrite=True)
-        return cls(**metadata._as_dict)
-
-    @classmethod
-    def from_datamodel(cls, datamodel_instance):
-        """Copy an existing datamodel `Coupling`'s fields into a new one."""
-        from tvbo.datamodel import schema as tvbo_datamodel
-
-        if not isinstance(datamodel_instance, tvbo_datamodel.Coupling):
-            raise ValueError("datamodel_instance must be a tvbo_datamodel.Coupling instance.")
-        return cls(**datamodel_instance._as_dict)
+        coupling = cls(name=ontoclass.label.first())
+        coupling_class2metadata(ontoclass, coupling, overwrite=True)
+        return coupling
 
     @property
     def metadata(self):
@@ -331,9 +321,7 @@ class CouplingBehaviour(Catalogued):
 
     def _default_post_expression(self, scaling):
         """The post-expression of a coupling that declares none, ``K * gx`` for its global scaling *scaling* (:meth:`global_scaling`) and ``gx`` for none."""
-        from tvbo.datamodel.dialect import peer_module
-
-        return peer_module(self).Equation(rhs=f"{scaling} * gx" if scaling else "gx")
+        return _dm().Equation(rhs=f"{scaling} * gx" if scaling else "gx")
 
     def refuse_unread(self, read_by_events):
         """Refuse the coupling when one of its parameters is read by nothing, and return it.

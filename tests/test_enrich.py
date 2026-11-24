@@ -7,10 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from tvbo.datamodel import pydantic as pyd
-from tvbo.datamodel import schema
-
-GENERATED_FORMS = pytest.mark.parametrize("model", (schema, pyd), ids=("dataclass", "pydantic"))
+from tvbo import datamodel as dm
 
 
 @pytest.mark.backend_core
@@ -21,19 +18,17 @@ def test_the_schema_says_which_classes_are_enrichable():
     """
     from tvbo.behaviour._enrich import IriEnrichable
 
-    for form in (schema, pyd):
-        for cls_name in ("Coupling", "Dynamics", "Observation", "Function", "LossFunction"):
-            assert issubclass(getattr(form, cls_name), IriEnrichable), f"{form.__name__}.{cls_name}"
+    for cls_name in ("Coupling", "Dynamics", "Observation", "Function", "LossFunction"):
+        assert issubclass(getattr(dm, cls_name), IriEnrichable), cls_name
 
-    assert "iri" not in schema.Integrator.__dataclass_fields__
-    assert not issubclass(schema.Integrator, IriEnrichable)
+    assert "iri" not in dm.Integrator.model_fields
+    assert not issubclass(dm.Integrator, IriEnrichable)
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_record_is_filled_from_what_it_names(model):
+def test_a_record_is_filled_from_what_it_names():
     """By ``name`` when it has one; a self-contained record simply gains nothing."""
-    coupling = model.Coupling(name="KuramotoCoupling")
+    coupling = dm.Coupling(name="KuramotoCoupling")
     assert coupling.pre_expression is None
 
     coupling.enrich()
@@ -42,10 +37,9 @@ def test_a_record_is_filled_from_what_it_names(model):
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_filling_never_overwrites(model):
+def test_filling_never_overwrites():
     """Gap-filling is the whole contract: what the record carries, it keeps."""
-    coupling = model.Coupling(
+    coupling = dm.Coupling(
         name="KuramotoCoupling",
         pre_expression={"rhs": "sin(x_j - x_i)"},
         parameters={"a": {"value": 99.0}},
@@ -59,8 +53,7 @@ def test_filling_never_overwrites(model):
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_the_first_source_that_resolves_answers_alone(monkeypatch, model):
+def test_the_first_source_that_resolves_answers_alone(monkeypatch):
     """Ranked, not combined — otherwise one record enriches to two different things.
 
     Topping a curated record up from the ontology adds whatever the curators left out, and only where the ontology resolves the same names: ``Sigmoidal`` filled from both came to 5 parameters locally and 10 in CI, from the same YAML.
@@ -69,56 +62,52 @@ def test_the_first_source_that_resolves_answers_alone(monkeypatch, model):
     """
     reached = []
     monkeypatch.setattr(
-        type(model.Coupling(name="probe")),
+        type(dm.Coupling(name="probe")),
         "_from_ontology",
         lambda self, key: reached.append(key) or True,
     )
 
-    coupling = model.Coupling(name="Mine", iri="tvbo:Sigmoidal").enrich()
+    coupling = dm.Coupling(name="Mine", iri="tvbo:Sigmoidal").enrich()
 
     assert coupling.parameters, "the database source did not answer"
     assert reached == [], "the ontology was consulted after the database had answered"
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_later_source_answers_when_the_first_does_not(monkeypatch, model):
+def test_a_later_source_answers_when_the_first_does_not(monkeypatch):
     """Ranked means fallback, not exclusivity: the ontology still covers what is uncurated."""
     reached = []
     monkeypatch.setattr(
-        type(model.Coupling(name="probe")),
+        type(dm.Coupling(name="probe")),
         "_from_ontology",
         lambda self, key: reached.append(key) or True,
     )
 
-    model.Coupling(name="Mine", iri="tvbo:NotCuratedAnywhere").enrich()
+    dm.Coupling(name="Mine", iri="tvbo:NotCuratedAnywhere").enrich()
 
     assert reached == ["NotCuratedAnywhere"]
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_pointer_that_resolves_nowhere_raises(model):
+def test_a_pointer_that_resolves_nowhere_raises():
     """An ``iri`` is a pointer, and one pointing at nothing is a typo worth hearing about."""
-    coupling = model.Coupling(iri="tvbo:NoSuchCouplingAnywhere")
+    coupling = dm.Coupling(iri="tvbo:NoSuchCouplingAnywhere")
 
     with pytest.raises(LookupError, match="NoSuchCouplingAnywhere"):
         coupling.enrich()
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_bare_name_that_resolves_nowhere_does_not(model):
+def test_a_bare_name_that_resolves_nowhere_does_not():
     """A self-contained record that happens to be called something is the normal case."""
-    coupling = model.Coupling(name="MyOwnPrivateCoupling")
+    coupling = dm.Coupling(name="MyOwnPrivateCoupling")
     assert coupling.enrich() is coupling
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_key_redirects_the_lookup(model):
+def test_a_key_redirects_the_lookup():
     """A record named for its role in a network still declares what it is an instance of."""
-    coupling = model.Coupling(name="ExcitatoryCoupling")
+    coupling = dm.Coupling(name="ExcitatoryCoupling")
     coupling.enrich(key="KuramotoCoupling")
 
     assert coupling.name == "ExcitatoryCoupling"
@@ -126,23 +115,18 @@ def test_a_key_redirects_the_lookup(model):
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_source_the_class_does_not_have_raises(model):
+def test_a_source_the_class_does_not_have_raises():
     """Sources dispatch on the reader the class defines, so asking for a missing one is an error."""
     with pytest.raises(ValueError, match="ontology"):
-        model.Function(name="f").enrich(source="ontology")
+        dm.Function(name="f").enrich(source="ontology")
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_filling_leaves_the_class_its_own_containers(model):
-    """Assigning a plain container into a LinkML slot is what makes a ``JsonObj``.
-
-    A keyed collection is therefore mutated, never assigned — otherwise the setter wraps what it is handed and the typed members inside stop reading as themselves.
-    """
+def test_filling_leaves_the_class_its_own_containers():
+    """A keyed collection is filled member by member, so the typed members it already holds stay what they are."""
     from tvbo.utils import keyed_items
 
-    observation = model.Observation(name="mine", iri="tvbo:BOLD_TVB")
+    observation = dm.Observation(name="mine", iri="tvbo:BOLD_TVB")
     observation.enrich(source="database")
 
     names = [name for name, _ in keyed_items(observation.parameters, "parameters")]

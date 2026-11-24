@@ -21,7 +21,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 from tvbo import SimulationExperiment
-from tvbo.datamodel.schema import Differentiation
+from tvbo.datamodel import Differentiation
 
 exp = SimulationExperiment.from_db("TBPTT_JansenRit_FC_Optimization")
 

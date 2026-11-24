@@ -35,10 +35,10 @@ from typing import Any
 
 from sympy import Symbol
 
+from tvbo import datamodel as tvbo_datamodel
 from tvbo import templates
 from tvbo.classes import equation as _equation_mod
-from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.datamodel.schema import DerivedVariable, Dynamics
+from tvbo.datamodel import DerivedVariable, Dynamics
 from tvbo.ontology import owl as ontology
 from tvbo.utils import yaml_loader
 

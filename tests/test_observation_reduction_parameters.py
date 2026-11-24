@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from mako.template import Template
 
-from tvbo.datamodel.schema import (
+from tvbo.datamodel import (
     DerivedVariable,
     Dynamics,
     Equation,

@@ -183,7 +183,7 @@ jobs:
                   gen-python schema/tvbo_datamodel.yaml > /dev/null
                   gen-pydantic schema/tvbo_datamodel.yaml > /dev/null
             - name: Lint and validate natively
-              run: pytest -v --tb=short -n auto tests/test_native_linkml.py
+              run: pytest -v --tb=short -n auto tests/test_native_linkml.py tests/test_behaviour_mixin_discovery.py
             - name: Validate every database YAML against the shipped JSON Schema
               run: |
                   uv run --isolated --no-project --python 3.12 --with "linkml>=1.12.1" python hatch_build.py
@@ -399,8 +399,6 @@ jobs:
                           tests/test_units.py
                           tests/test_database_golden_dump.py
                           tests/test_yaml_loader.py
-                          tests/test_pydantic_loader.py
-                          tests/test_linkml_compatibility.py
                           tests/test_experiment_api.py
                           tests/test_cli.py
                           tests/test_cli_workflow.py
@@ -418,6 +416,7 @@ jobs:
                           --ignore=tests/test_docs.py
                           --ignore=tests/test_database_validation.py
                           --ignore=tests/test_native_linkml.py
+                          --ignore=tests/test_behaviour_mixin_discovery.py
                           --ignore=tests/test_model_loading.py
                           --ignore=tests/test_graph.py
                           --ignore=tests/test_package_structure.py
@@ -450,8 +449,6 @@ jobs:
                           --ignore=tests/test_units.py
                           --ignore=tests/test_database_golden_dump.py
                           --ignore=tests/test_yaml_loader.py
-                          --ignore=tests/test_pydantic_loader.py
-                          --ignore=tests/test_linkml_compatibility.py
                           --ignore=tests/test_experiment_api.py
                           --ignore=tests/test_cli.py
                           --ignore=tests/test_cli_workflow.py

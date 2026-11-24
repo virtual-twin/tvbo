@@ -8,12 +8,14 @@ Endpoints:
   POST /api/v1/experiments/render      — render or save an experiment from a payload
 """
 
+import json
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
-from linkml_runtime.dumpers import json_dumper, yaml_dumper
 from pydantic import BaseModel, Field
 
 from tvbo.data.registry import database_dir
+from tvbo.utils import to_dict, to_yaml
 
 router = APIRouter(prefix="/api/v1/experiments", tags=["experiments"])
 
@@ -69,17 +71,17 @@ def list_experiments():
 
 @router.get("/{experiment_id}/sidecar")
 def get_sidecar(experiment_id: str, format: str = Query("yaml")):
-    """Download full LinkML-valid experiment definition (YAML or JSON)."""
+    """Download the full experiment record (YAML or JSON)."""
     entry = _get_experiments().get(experiment_id)
     if not entry:
         raise HTTPException(404, f"Experiment '{experiment_id}' not found")
     exp, _path = entry
 
     if format == "json":
-        content = json_dumper.dumps(exp, inject_type=False)
+        content = json.dumps(to_dict(exp), indent=2)
         return Response(content, media_type="application/json")
     else:
-        content = yaml_dumper.dumps(exp)
+        content = to_yaml(exp)
         return Response(content, media_type="application/x-yaml")
 
 

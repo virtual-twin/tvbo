@@ -9,8 +9,8 @@ import logging
 
 import numpy as np
 
-from tvbo.datamodel import schema as tvbo_datamodel
-from tvbo.datamodel.schema import Stimulus
+from tvbo import datamodel as tvbo_datamodel
+from tvbo.datamodel import Stimulus
 from tvbo.ontology import owl as ontology
 
 try:

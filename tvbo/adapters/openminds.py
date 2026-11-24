@@ -154,7 +154,7 @@ LINKML_TO_JSON_TYPE: dict[str, str] = {
 }
 
 # Fields to skip during serialization (internal/computed)
-SKIP_FIELDS = {"_as_dict", "metadata", "experiments"}
+SKIP_FIELDS = {"metadata", "experiments"}
 
 # Fields that should use snake_case in openMINDS (matching LinkML) openMINDS typically uses camelCase, but we preserve snake_case for TVBO extension
 
@@ -204,13 +204,9 @@ def _to_openminds_value(value: Any, depth: int = 0) -> Any:
                 result[k] = converted
         return result if result else None
 
-    # Objects with _as_dict (TVBO datamodel objects)
-    if hasattr(value, "_as_dict"):
+    # A TVBO record
+    if hasattr(value, "model_fields"):
         return _object_to_openminds(value, depth + 1)
-
-    # Objects with model_dump (Pydantic)
-    if hasattr(value, "model_dump"):
-        return _to_openminds_value(value.model_dump(exclude_none=True), depth + 1)
 
     # Objects with __dict__
     if hasattr(value, "__dict__"):
@@ -233,10 +229,10 @@ def _object_to_openminds(obj: Any, depth: int = 0) -> dict[str, Any] | None:
         result["@type"] = om_type
 
     # Get dict representation
-    if hasattr(obj, "_as_dict"):
-        obj_dict = obj._as_dict
-    elif hasattr(obj, "model_dump"):
-        obj_dict = obj.model_dump(exclude_none=True)
+    if hasattr(obj, "model_fields"):
+        from tvbo.utils import to_dict
+
+        obj_dict = to_dict(obj)
     elif hasattr(obj, "__dict__"):
         obj_dict = {k: v for k, v in obj.__dict__.items() if not k.startswith("_")}
     else:
@@ -322,9 +318,7 @@ def experiment_to_openminds(
     if include_context:
         result = {"@context": OPENMINDS_CONTEXT, **result}
 
-    # Clean up internal fields
-    for field in ["_as_dict", "metadata"]:
-        result.pop(field, None)
+    result.pop("metadata", None)
 
     return result
 
@@ -407,7 +401,7 @@ def study_to_openminds(
     if experiments:
         result["simulation_experiments"] = [
             experiment_to_openminds(exp, base_id=result.get("@id"), include_context=False)
-            if hasattr(exp, "_as_dict")
+            if hasattr(exp, "model_fields")
             else _to_openminds_value(exp)
             for exp in experiments
         ]

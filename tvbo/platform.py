@@ -102,7 +102,7 @@ class TVBOPlatform:
     def load_model(self, model_id: int):
         """Load a model from the platform into a `Dynamics` object.
 
-        Fetches the model's YAML and parses it with the `tvbo` pydantic loader.
+        Fetches the model's YAML and builds the record from it.
 
         Args:
             model_id: Identifier of the model to load.
@@ -110,9 +110,10 @@ class TVBOPlatform:
         Returns:
             The parsed `Dynamics` instance.
         """
-        from tvbo.utils import pydantic_loader
+        from tvbo.datamodel import Dynamics
+        from tvbo.utils import yaml_loader
 
-        return pydantic_loader.loads(self.get_model_yaml(model_id), "Dynamics")
+        return yaml_loader.loads(self.get_model_yaml(model_id), Dynamics)
 
     def push_model(self, spec, visibility: str = "private") -> dict:
         """Upload a model specification to the platform.
@@ -196,14 +197,10 @@ def _to_yaml(spec) -> str:
         import yaml
 
         return yaml.safe_dump(spec, sort_keys=False)
-    try:
-        from tvbo.utils import pydantic_loader
+    from pydantic import BaseModel
 
-        if hasattr(spec, "model_dump"):
-            return pydantic_loader.dump(spec)
-    except Exception:
-        pass
-    for attr in ("to_string", "to_yaml"):
-        if hasattr(spec, attr):
-            return getattr(spec, attr)()
+    from tvbo.utils import to_yaml
+
+    if isinstance(spec, BaseModel):
+        return to_yaml(spec)
     raise TypeError("Unsupported spec type for push; pass YAML text, a dict, or a tvbo object.")

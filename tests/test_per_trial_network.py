@@ -227,7 +227,7 @@ def test_an_experiment_realised_per_trial_writes_each_trials_network(load):
 @pytest.mark.parametrize("reference", ["network.instrength", "network.edges.weight", "network.edges.length"])
 def test_a_produced_constant_reading_what_varies_per_trial_is_refused_by_name(load, reference):
     from tvbo.data import param_io
-    from tvbo.datamodel.schema import Callable, FunctionCall, Parameter
+    from tvbo.datamodel import Callable, FunctionCall, Parameter
 
     network = load(_spec()).network
     producer = FunctionCall(
@@ -239,7 +239,7 @@ def test_a_produced_constant_reading_what_varies_per_trial_is_refused_by_name(lo
 
 def test_a_produced_constant_reading_the_node_data_is_served(load):
     from tvbo.data import param_io
-    from tvbo.datamodel.schema import Callable, FunctionCall, Parameter
+    from tvbo.datamodel import Callable, FunctionCall, Parameter
 
     param_io.clear_cache()
     producer = FunctionCall(
@@ -329,7 +329,7 @@ def _frozen_run(load, results):
 
 def _weight_at_trial(trial):
     """A reference to experiment 7's ``network.weight`` that selects *trial*, as an analysis argument declares one."""
-    from tvbo.datamodel.schema import DataRef
+    from tvbo.datamodel import DataRef
 
     return DataRef(experiment=7, output="network.weight", sel={"trial": {"name": "trial", "value": trial}})
 

@@ -15,7 +15,7 @@ from tvbo.codegen.pyrates import operator_template
 from tvbo.codegen.reducers import resolve_streaming_reducer
 from tvbo.codegen.streaming_reducers import StreamingReducerSpec
 from tvbo.data.types import stimulus_signals
-from tvbo.datamodel.schema import DerivedVariable, Dynamics, Equation, Function, Observation, StateVariable
+from tvbo.datamodel import DerivedVariable, Dynamics, Equation, Function, Observation, StateVariable
 from tvbo.parse.expression import parse_eq
 from tvbo.templates.pde import utils as pde
 from tvbo.templates.tvboptim.utils import resolve_reduction

@@ -19,7 +19,7 @@ import re
 import numpy as np
 import pytest
 
-from tvbo.datamodel import schema as tvbo_schema
+from tvbo import datamodel as tvbo_schema
 
 pytestmark = pytest.mark.backend_tvb
 

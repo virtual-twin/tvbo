@@ -16,7 +16,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from tvbo.datamodel import schema as datamodel
+from tvbo import datamodel as datamodel
 
 RUN_AUTHORED = ("date_created", "generated_by", "outputs", "digest", "activities", "environment")
 """The slots a run speaks for, cleared before its record is merged into whatever the sidecar already said. A digest is a claim about bytes: a re-run that wrote no container must leave none rather than inherit the one that last matched."""
@@ -144,11 +144,10 @@ def _study_name(path, root) -> str:
 
 
 def _as_mapping(prov: datamodel.Provenance) -> dict:
-    """The record as plain data, through the LinkML dumper so what lands on disk is schema-valid by construction and carries no empty slots."""
-    import yaml
-    from linkml_runtime.dumpers import yaml_dumper
+    """The record as plain data, through the one dumper, so what lands on disk is what the record states and carries no empty slots."""
+    from tvbo.utils import to_dict
 
-    return yaml.safe_load(yaml_dumper.dumps(prov)) or {}
+    return to_dict(prov)
 
 
 def emit(

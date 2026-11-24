@@ -96,15 +96,8 @@ Always include the `iri` — a bare name string is **not** a semantic pointer. S
 - **`label`** on a parameter is human-readable metadata (renders in the platform browser). Keep `name` machine-friendly.
 - Parameters carry **values**; state variables carry **equations**. Don't put a `value` on a state variable.
 - **Define models through the `Dynamics` class or YAML** — never by editing the generated datamodel under `tvbo/datamodel/`.
-- **Trust the slots. Never assign a raw `{}` / `[]` to a LinkML slot — a `JsonObj` in your data is the symptom of mis-configured YAML / a Python object leaking into the schema.** The active datamodel (`tvbo/datamodel/schema.py`) is the jsonasobj2 / `YAMLRoot` dataclass form. Inlined dicts/lists are coerced into typed classes **only in `__post_init__` (i.e. at construction)**. Mutating a slot afterwards does **not** re-run that coercion:
-    - **Multivalued slots** (dict- or list-backed: `parameters`, `dynamics`, `coupling`, `nodes`, `edges`, `transforms`, …) → **mutate the existing container in place**: `.update(...)` / `container["X"] = ...` for dict slots, `.append(...)` for list slots. To get a *typed* entry, insert a constructed class: `net.dynamics["X"] = Dynamics(...)`.
-        - ❌ `net.dynamics = {...}` — a raw dict goes through jsonasobj2's `JsonObj.__setattr__`, which wraps it in a bare `JsonObj`. **Silent symptom:** the slot then reads back **empty with no error** — `.items()`/`.keys()` yield nothing, a resolver returns `[]`, `for k, v in slot` doesn't run. Empty-and-silent means you assigned instead of `.update()`-ing (or should have used the constructor).
-        - ❌ `net.nodes = [{...}]` — a raw list isn't wrapped in `JsonObj`, but its entries stay **uncoerced plain dicts**, never `Node` instances.
-        - ⚠️ `.update({...})` / `["X"] = {...}` avoids the `JsonObj`, but a raw dict still isn't normalized — prefer inserting a constructed class instance.
-    - **Single-valued slots** → plain `=` is correct. Assign a scalar directly (`net.number_of_nodes = 76`); for a nested-object slot assign a **constructed LinkML class instance** (`net.coordinate_space = CommonCoordinateSpace(...)`), never a raw `{}` (which becomes a bare `JsonObj`).
-    - **Best of all:** pass everything at construction (`Network(dynamics={...}, nodes=[...])`) so `__post_init__` normalizes it into typed classes for you.
-- **Never change a datatype; only assign valid LinkML class instances.** If a slot expects a class, construct that class — don't pass a bare dict or an ad-hoc object.
-    > This holds as long as the active datamodel is the dataclass/`YAMLRoot` one. If TVBO switches to the pydantic datamodel (`tvbo/datamodel/pydantic.py`), dict-assignment may become valid (pydantic validates/coerces) — unverified.
+- **Trust the slots.** The datamodel classes are Pydantic models that validate on construction and on assignment, so a slot holds typed members however it was filled: `Network(dynamics={...}, nodes=[...])` builds typed members, `net.dynamics = {...}` validates the mapping into them, and an invalid value raises a `ValidationError` instead of being stored. Inserting into a keyed collection (`net.dynamics["X"] = Dynamics(...)`) takes a constructed member, since the mapping itself is a plain `dict`.
+- **Never change a datatype; only assign what the slot declares.** If a slot expects a class, construct that class or pass the mapping it validates from — never an ad-hoc object.
 
 ## Beyond ODEs
 

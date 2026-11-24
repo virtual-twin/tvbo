@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from tvbo.datamodel.schema import Dynamics, Node, Parameter
+from tvbo.datamodel import Dynamics, Node, Parameter
 from tvbo.utils.report import node_parameters, symbol_table
 
 

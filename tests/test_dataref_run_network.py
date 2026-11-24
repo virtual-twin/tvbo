@@ -20,7 +20,7 @@ from tvbo import Network
 from tvbo.adapters import bsplot
 from tvbo.data import analysis_io, dataref
 from tvbo.data.param_io import resolve_network_node
-from tvbo.datamodel.schema import Analysis, Coordinate, DataRef, Node, Parameter
+from tvbo.datamodel import Analysis, Coordinate, DataRef, Node, Parameter
 from tvbo.utils.study_layout import study_path
 
 LABELS = ["A", "B", "C", "D"]

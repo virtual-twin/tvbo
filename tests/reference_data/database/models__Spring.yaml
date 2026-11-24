@@ -56,6 +56,7 @@ state_variables:
     equation_order: 1
     initial_value: 0.0
 number_of_modes: 1
+system_type: continuous
 autonomous: true
 cse: false
 compile: false

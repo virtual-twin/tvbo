@@ -144,8 +144,8 @@ def _group_operators(vertices: np.ndarray, faces: np.ndarray, k_ring: int, null_
     corners = np.broadcast_to(faces.T, (3, 3, m))
     basis = np.asarray(igl.grad(vertices, faces).tocsr()[rows.ravel(), corners.ravel()]).reshape(3, 3, m)
     edges = faces[:, [0, 1, 1, 2, 2, 0]].reshape(-1, 2).T
-    adjacency = sparse.csr_matrix((np.ones(3 * m, dtype=np.int64), (edges[0], edges[1])), shape=(n, n))
-    adjacency = ((adjacency + adjacency.T) > 0).astype(np.int64)
+    both_ways = (np.concatenate([edges[0], edges[1]]), np.concatenate([edges[1], edges[0]]))
+    adjacency = (sparse.csr_matrix((np.ones(6 * m, dtype=np.int64), both_ways), shape=(n, n)) > 0).astype(np.int64)
     listed = _kring_lists(adjacency, faces, k_ring)
     width = max(len(entry) for entry in listed)
     kring_faces = np.zeros((n, width), dtype=np.int64)

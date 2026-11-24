@@ -28,11 +28,11 @@ Explore how the damping parameter μ affects oscillation behaviour.
 
 ```{python}
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Exploration, ExplorationAxis, Range
+from tvbo.datamodel import Exploration, ExplorationAxis, Range
 from IPython.display import Markdown, display
 
 # Van der Pol oscillator
-vdp = Dynamics("Dynamics")
+vdp = Dynamics(name="Dynamics")
 vdp.name = "VdP"
 vdp.add_parameter("mu", value=1.0, description="Damping parameter")
 vdp.add_state_variable("x", equation="z", initial_value=0.1)
@@ -122,7 +122,7 @@ Explore two FitzHugh-Nagumo parameters simultaneously using a full Cartesian pro
 ### Define Model and 2D Exploration
 
 ```{python}
-fhn = Dynamics("Dynamics")
+fhn = Dynamics(name="Dynamics")
 fhn.name = "FHN"
 fhn.add_parameter("a", value=0.7)
 fhn.add_parameter("b", value=0.8)
@@ -194,7 +194,7 @@ Scan the background drive η of a QIF mean-field model to find the transition fr
 ### Define Model and Sweep
 
 ```{python}
-qif = Dynamics("Dynamics")
+qif = Dynamics(name="Dynamics")
 qif.name = "QIF"
 qif.add_parameter("tau",   value=1.0)
 qif.add_parameter("eta",   value=-5.0,  description="Background drive")
@@ -278,7 +278,7 @@ TVBO's `explorations` declaration maps directly to PyRates `grid_search()`:
 
 ```python
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Exploration, ExplorationAxis, Range
+from tvbo.datamodel import Exploration, ExplorationAxis, Range
 
 exp = SimulationExperiment(dynamics=model)
 exp.integration.duration = T

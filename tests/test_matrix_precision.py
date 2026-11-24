@@ -149,7 +149,7 @@ class TestDeclaredOnTheEdge:
             assert f["edges/weight/edge_parameters/probability/data"].dtype == np.float64
 
     def test_the_slot_exists_on_the_generated_class(self):
-        from tvbo.datamodel.schema import Edge
+        from tvbo.datamodel import Edge
 
         assert Edge(label="weight", dtype="float32").dtype == "float32"
         assert Edge(label="weight").dtype is None

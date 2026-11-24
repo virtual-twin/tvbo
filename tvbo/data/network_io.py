@@ -5,7 +5,7 @@ Supported companion formats:
   .zarr/        — Zarr (cloud-native, S3-compatible)
   .csv          — CSV (one file per array, each named on the sidecar record of what it holds)
 
-Sidecars are parsed and built by tvbo's own loader (:func:`tvbo.utils.yaml_loader.load_as_dict` + :func:`~tvbo.utils.yaml_loader.construct`), the one SimulationExperiment and SimulationStudy load through, so a sidecar may use ``!include``, ``<<:`` merge keys and anchors, and construction goes through the schema's constructor classes. Never use raw yaml.safe_load → cls(**dict) for LinkML classes.
+Sidecars are parsed and built by tvbo's own loader (:func:`tvbo.utils.yaml_loader.load_as_dict` + :func:`~tvbo.utils.yaml_loader.construct`), the one SimulationExperiment and SimulationStudy load through, so a sidecar may use ``!include``, ``<<:`` merge keys and anchors, and construction goes through the generated classes. Never use raw yaml.safe_load → cls(**dict).
 
 See §12.2 of the tvbo HDF5 format proposal v0.7.
 """
@@ -20,9 +20,8 @@ from pathlib import Path
 
 import numpy as np
 import yaml as _yaml
-from linkml_runtime.dumpers import yaml_dumper
-from linkml_runtime.loaders import yaml_loader
 
+from tvbo.utils import to_dict
 from tvbo.utils import yaml_loader as tvbo_yaml_loader
 
 SCHEMA_VERSION = "tvb-datamodel/0.7.0"
@@ -66,12 +65,7 @@ SENSOR_PATTERNS = [
 
 
 def _write_dimension_labels(dataset, meta: dict, column_labels: list[str]):
-    """Attach HDF5 dimension scales to a dense matrix dataset, and nothing to a Zarr array, which has no dimension scales.
-
-    dim-0 (rows) is labelled from the parent Network's node labels.
-    dim-1 (columns) is labelled from the edge's ``dimension_labels``.
-    Scale datasets are created inside the same group as *dataset*.
-    """
+    """Attach HDF5 dimension scales to a dense matrix dataset, and nothing to a Zarr array, which has no dimension scales: dim 0 (rows) is labelled from the parent Network's node labels and dim 1 (columns) from the edge's ``dimension_labels``, the scale datasets created inside the same group as *dataset*."""
     import h5py
 
     if not isinstance(dataset, h5py.Dataset):
@@ -119,12 +113,7 @@ def _write_edges(store, meta: dict, arrays: dict, edge_params: dict):
         grp.attrs["tvbo_class"] = "tvbo:Matrix"
         for attr in ("directed", "unit"):
             if attr in m:
-                # Cast to native Python types — LinkML extended_str and extended_bool are not directly serializable by h5py.
-                val = m[attr]
-                if isinstance(val, bool):
-                    grp.attrs[attr] = val
-                else:
-                    grp.attrs[attr] = str(val)
+                grp.attrs[attr] = m[attr]
         write_matrix(grp, matrix, fmt=str(fmt), dtype=dtype)
 
         # HDF5 dimension scales for a dense layer's labelled axes (§12.2); a sparse layer's data holds its stored entries, not its axes
@@ -225,37 +214,16 @@ def _v07_postprocess(meta: dict) -> dict:
     return ordered
 
 
-def _purify(obj):
-    """Recursively convert LinkML extended types to plain Python types.
-
-    yaml_loader.load_as_dict returns extended_str, extended_int, extended_bool etc. which yaml.dump serializes with Python tags.
-    """
-    if isinstance(obj, dict):
-        return {_purify(k): _purify(v) for k, v in obj.items()}
-    if isinstance(obj, list):
-        return [_purify(v) for v in obj]
-    if isinstance(obj, bool):
-        return bool(obj)
-    if isinstance(obj, int):
-        return int(obj)
-    if isinstance(obj, float):
-        return float(obj)
-    if isinstance(obj, str):
-        return str(obj)
-    return obj
-
-
 def _write_v07_sidecar(network, sidecar_path: Path, sidecar_format: str, data_file: str = None, links: dict = None):
     """Write a strict v0.7-compliant YAML or JSON sidecar.
 
-    Dumps the network via LinkML, post-processes to v0.7 form, and writes with controlled key ordering.
+    Dumps the network as its record, post-processes to v0.7 form, and writes with controlled key ordering.
 
     The sidecar names *data_file*, the companion this save wrote, and the network is left naming the files it was read from, so a record of it written after the save, such as an experiment's export, reads back as one written before. A ``data_file``-backed connectome is materialised — its arrays live in the companion file — so the directives that only rebuild them from a source, ``bids_dir`` and ``graph_generator``, are dropped and a reload uses the companion. ``parcellation`` and ``tractogram`` are kept: they state which atlas this network's node labels belong to, which is what a ``by_label`` crosswalk resolves against, and which tractography the connectome was reconstructed from. Keeping them is safe because ``load_network`` defers connectivity until the companion store is attached and ``data_file`` precedes both in ``Network._resolve``, so a reload never rebuilds from the atlas.
 
     *links* names the CSVs of a CSV save on the records of what they hold, and every save takes the CSV links a network read from CSVs carries off its records first (:func:`_place_links`).
     """
-    meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
-    meta = _purify(meta)
+    meta = to_dict(network)
     if data_file:
         meta["data_file"] = data_file
         for _directive in ("bids_dir", "graph_generator"):
@@ -650,20 +618,11 @@ def read_embedded_metadata(path) -> dict | None:
 
     ``None`` covers every "this is not a self-describing binary" case — a YAML/JSON sidecar path, a companion written without the attribute, an unreadable or non-JSON payload — so callers can treat it as a plain feature probe.
     """
-    path = Path(path)
-    ext = path.suffix.lower()
-    raw = None
+    store = _companion_store(path)
+    if store is None:
+        return None
     try:
-        if ext in (".h5", ".hdf5"):
-            import h5py
-
-            with h5py.File(path, "r") as f:
-                raw = f.attrs.get(EMBEDDED_METADATA_ATTR)
-        # The suffix is tested first: a sidecar path must not pay a stat() to learn it is not a zarr directory, and load_network probes every load.
-        elif ext == ".zarr" or (ext == "" and path.is_dir() and (path / ".zgroup").exists()):
-            import zarr
-
-            raw = zarr.open(str(path), mode="r").attrs.get(EMBEDDED_METADATA_ATTR)
+        raw = store.attrs().get(EMBEDDED_METADATA_ATTR)
     except (ImportError, OSError, KeyError):
         # Missing backend, or a corrupt/foreign file: "not self-describing", not an error.
         return None
@@ -690,18 +649,25 @@ def write_embedded_metadata(companion_path, meta: dict) -> None:
     companion_path = Path(companion_path)
     payload = {k: v for k, v in meta.items() if k != "data_file"}
     blob = json.dumps(payload, sort_keys=False)
-    ext = companion_path.suffix.lower()
-    if ext in (".h5", ".hdf5"):
-        import h5py
-
-        with h5py.File(companion_path, "a") as f:
-            f.attrs[EMBEDDED_METADATA_ATTR] = blob
-    elif ext == ".zarr" or companion_path.is_dir():
-        import zarr
-
-        zarr.open(str(companion_path), mode="a").attrs[EMBEDDED_METADATA_ATTR] = blob
-    else:
+    store = _companion_store(companion_path, mode="a")
+    if store is None:
         raise ValueError(f"cannot embed metadata in {companion_path.suffix!r} companion")
+    with store.open() as f:
+        f.attrs[EMBEDDED_METADATA_ATTR] = blob
+
+
+def _companion_store(path, mode: str = "r"):
+    """The store on ``path``, or ``None`` for a path in no array format, which a sidecar path is; a write mode on a format tvbo does not write is refused by name."""
+    from tvbo.export.registry import _ARRAY_FORMATS, array_format_for
+
+    try:
+        fmt = array_format_for(path)
+    except ValueError:
+        return None
+    if mode != "r" and not fmt.writes:
+        written = [f.key for f in _ARRAY_FORMATS.values() if f.writes] + ["csv"]  # CSV companions are written per array
+        raise ValueError(f"tvbo writes {', '.join(written[:-1])} and {written[-1]} companions, not {fmt.key!r} ({path}).")
+    return fmt.store(path, mode=mode)
 
 
 def load_declared_network(path):
@@ -721,7 +687,9 @@ def load_declared_network(path):
     if study_layout.study_path("spec", root).resolve() not in path.parents:
         return load_network(path)
     with loading_from(root / path.name):
-        return tvbo_yaml_loader.construct(tvbo_yaml_loader.load_as_dict(path), Network)
+        net = tvbo_yaml_loader.construct(tvbo_yaml_loader.load_as_dict(path), Network)
+        net.settle()
+    return net
 
 
 def load_network(path):
@@ -771,8 +739,8 @@ def load_network(path):
         meta_dict["data_file"] = data_file  # beside an `iri` the constructor refuses it, naming both
 
     with loading_from(path):
-        # This loader attaches connectivity itself, so the constructor must not resolve it: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `_resolve` runs below, once `_store` is in place.
-        net = tvbo_yaml_loader.construct({**meta_dict, "_defer_connectivity": True}, Network)
+        # Built unsettled, as a loader builds: `data_file` is stripped above (it is an INDIRECT reference — `_resolve_from_data_file` reads the companion's own sidecar, which would recurse into this very load), and a sidecar that also declares `parcellation:` would otherwise fall through to the normative-database branch and cache an atlas connectome that shadows this file's real matrices. `settle` runs below, once `_store` is in place.
+        net = tvbo_yaml_loader.construct(meta_dict, Network)
 
         # Attach non-schema metadata as attributes (used by bids_filename)
         if bids_meta:
@@ -797,7 +765,7 @@ def load_network(path):
             net.data_file = data_file or net.data_file  # an `iri` the constructor resolved names the curated sidecar
 
         # With a store attached the network is materialised, so this expands node/edge templates and subnetworks without re-entering the connectivity branches; without one, a `data_file` or `iri` naming another sidecar and a bare `parcellation:` resolve here.
-        net._resolve(source_dir=str(path.parent))
+        net.settle(source_dir=path.parent)
 
     return net
 
@@ -809,7 +777,7 @@ def _load_mesh(network):
     attrs = network._store.attributes("mesh")
     if not attrs:
         return
-    from tvbo.datamodel import schema as tvbo_datamodel
+    from tvbo import datamodel as tvbo_datamodel
 
     et = attrs.get("element_type")
     nv, ne = attrs.get("number_of_vertices"), attrs.get("number_of_elements")
@@ -826,7 +794,7 @@ def _load_mesh(network):
 def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: str = "yaml"):
     """Save a tvbo Network as sidecar + binary companion.
 
-    Uses LinkML yaml_dumper or json_dumper for schema-valid sidecar output — no manual field unpacking or yaml.dump() calls.
+    The sidecar is the network's own record (`to_dict`), so it is schema-valid without any manual field unpacking.
 
     The generic keys `weight` and `length` that `from_matrix` and a parcellation produce are two of arbitrarily many edge attributes a sidecar may bundle (`weight_NMF_*`, `fc`, `local_connectivity`), so each is saved under the edge the network declares for it. The resident `weight` is saved under the edge `primary_weight` names, unless the network holds that edge already, and stays `weight` without one. The resident `length` is saved under the sidecar's tract-length edge (`tractLength`), unless a template edge is named `length`, so a directly-named `length` edge is never renamed away; with neither it stays `length`, which the loader resolves directly.
 
@@ -841,7 +809,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     yaml_path : str or Path
         Output path for sidecar (extension overridden by sidecar_format).
     binary_format : str
-        "h5" (default), "zarr", or "csv".
+        "h5" (default) or "zarr", the companion suffixes whose format tvbo writes (`ArrayFormat.writes`), or "csv", a CSV for each array.
     sidecar_format : str
         "yaml" (default) or "json".
     """
@@ -849,7 +817,7 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
     sidecar_ext = ".json" if sidecar_format == "json" else ".yaml"
     sidecar_path = yaml_path.with_suffix(sidecar_ext)
 
-    from tvbo.classes.network import _read_held, _unheld_weight
+    from tvbo.behaviour.network import _read_held, _unheld_weight
 
     # Every edge matrix, resident or still in the source companion (the resident one wins), keyed by edge name for the writer. Read under one open handle, and read BEFORE the companion is opened for writing: a save onto the network's own companion truncates it, and everything still lazy would be gone. A layer declared with `used:` is never read from the companion, under any spelling of its name: once frozen the companion holds no matrix for it, and its value is the one its binding read, if any. A layer the companion holds is read, and an error reading it is raised (`_read_held`); a declared layer it does not hold is carried as in memory, declared and with no matrix, except a weight with nothing in memory either, which is refused below as `matrix()` refuses it.
     store = getattr(network, "_store", None)
@@ -866,13 +834,12 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
         carried = _carry_through(network)
     arrays.update(network.edge_arrays() if hasattr(network, "edge_arrays") else {})
 
-    # Network._items() hides _cached_* attrs, so yaml_dumper works directly
-    meta = yaml_loader.load_as_dict(yaml_dumper.dumps(network))
+    meta = to_dict(network)
 
     # Save the generic `weight`/`length` keys under the edges the network declares for them — see this function's docstring.
     primary = str(network.primary_weight or "weight")
     if arrays:
-        from tvbo.classes.network import _LENGTH_MEASURES
+        from tvbo.behaviour.network import _LENGTH_MEASURES
 
         names = [edge_name(te) for te in template_edges(meta.get("edges", []))]
         nameset = set(names)
@@ -908,21 +875,12 @@ def save_network(network, yaml_path, binary_format: str = "h5", sidecar_format: 
         meta["_sidecar_name"] = sidecar_path.name
         data_file, links = companion.name, None
 
-        if binary_format in ("h5", "hdf5"):
-            import h5py
-
-            with h5py.File(companion, "w") as f:
-                _write_companion(f, network, meta, arrays, edge_params, carried)
-
-        elif binary_format == "zarr":
-            import zarr
-
-            z = zarr.open(str(companion), mode="w")
-            _write_companion(z, network, meta, arrays, edge_params, carried)
-
-        elif binary_format == "csv":
+        if binary_format == "csv":
             links = _write_csv_arrays(network, sidecar_path, staging, meta, arrays, edge_params, carried)
             data_file = next(link["file"] for link in links.values())
+        else:
+            with _companion_store(companion, mode="w").open() as f:
+                _write_companion(f, network, meta, arrays, edge_params, carried)
 
         meta.pop("_sidecar_name", None)
         # Write v0.7-compliant sidecar

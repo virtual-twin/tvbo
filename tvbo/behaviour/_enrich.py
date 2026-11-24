@@ -2,7 +2,7 @@
 
 An entity written by ``iri`` — or by a name the curated database knows — is expanded at construction by :func:`tvbo.datamodel.dialect.expand_iri`, which reads one local file and nothing else. Everything beyond that is an act the caller asks for, and this is the verb for it: ``enrich()``.
 
-Which classes carry it is read off the schema. A class the schema gives an ``iri`` slot is a class whose records may name an entity elsewhere, so ``hatch_build`` makes this a base of it in both generated forms; subclasses inherit. Nothing lists them, and adding the slot to a class is what makes its records enrichable.
+Which classes carry it is read off the schema. A class the schema gives an ``iri`` slot is a class whose records may name an entity elsewhere, so ``hatch_build`` makes this a base of it; subclasses inherit. Nothing lists them, and adding the slot to a class is what makes its records enrichable.
 
 Which sources answer is read off the class. ``database`` is implemented here and applies to every enrichable record; ``ontology`` is a ``_from_ontology`` a behaviour mixin defines, so a class reaches the ontology by knowing how to, rather than by being named in a table here. They are ranked rather than combined: the first that resolves the entity answers alone. The database is a local file whose content is curated and ordered, and the ontology answers with an unordered set, so a curated record topped up from the ontology would gain whatever the curators left out — and only in a process where the ontology happens to be loaded, which is one record enriching to two different things.
 
@@ -11,14 +11,11 @@ The mixin is deliberately not named ``*Behaviour``: that name attaches a class b
 
 from __future__ import annotations
 
-from jsonasobj2 import JsonObj
-
 #: Consulted in order; each names a ``_from_<source>(key) -> bool`` reader.
 SOURCES = ("database", "ontology")
 
 #: The container types a slot may hold; anything else is a value, array included.
-#: ``JsonObj`` is the LinkML dataclasses' own container and goes when they do.
-_CONTAINERS = (dict, list, tuple, JsonObj)
+_CONTAINERS = (dict, list, tuple)
 
 
 def _unset(value) -> bool:
@@ -29,11 +26,8 @@ def _unset(value) -> bool:
 def _schema_class(cls) -> str:
     """The schema class *cls* is, which is not always what Python calls it.
 
-    Every table read here is keyed by the schema — the curated database's categories, the keyed collections — and a runtime subclass is still the schema class it extends. The dataclasses state it outright in a ``class_name`` string; for the Pydantic models the generated class is the one that names it, and a ``class_name`` found there is a behaviour's own attribute (``IntegratorBehaviour.class_name`` is the backend class an integrator emits), so only a string is taken as the statement.
+    Every table read here is keyed by the schema — the curated database's categories, the keyed collections — and a runtime subclass is still the schema class it extends, which the generated base names.
     """
-    declared = getattr(cls, "class_name", None)
-    if isinstance(declared, str) and declared:
-        return declared
     for base in cls.__mro__:
         if base.__module__.startswith("tvbo.datamodel."):
             return base.__name__
@@ -113,8 +107,7 @@ class IriEnrichable:
     def _gap_fill(self, other) -> None:
         """Take from *other* every slot this record leaves unset.
 
-        A keyed collection is never assigned, only mutated member by member — so a record declaring one parameter of ten gains the other nine and keeps its own, and, just as importantly, the container the class built is the one that stays. Assigning a plain Python container into a LinkML slot is what produces a ``JsonObj``: the setter wraps whatever it is handed, and the typed members inside it stop reading as themselves.
-        Which slots are keyed collections is read off the schema rather than sniffed from the value, so this holds for both generated forms and for an empty collection too.
+        A keyed collection is never assigned, only mutated member by member, so a record declaring one parameter of ten gains the other nine and keeps its own. Which slots are keyed collections is read off the schema rather than sniffed from the value, so this holds for an empty collection too.
         """
         from tvbo.datamodel.dialect import KEYED_COLLECTIONS
         from tvbo.utils import keyed_items
@@ -138,9 +131,5 @@ class IriEnrichable:
 
 
 def _slots(cls) -> tuple[str, ...]:
-    """*cls*'s schema slots, whichever generated form it is — the dataclass's fields proper, not the ``ClassVar`` metadata (``class_class_uri`` and kin) that ``__dataclass_fields__`` lists beside them, and nothing at all for a class that is neither generated form, so a caller handed a plain mapping reads no slots rather than meeting an ``AttributeError``."""
-    import dataclasses
-
-    if dataclasses.is_dataclass(cls):
-        return tuple(field.name for field in dataclasses.fields(cls))
+    """*cls*'s schema slots, and none for a class that is not a generated model, so a caller handed a plain mapping reads no slots rather than meeting an ``AttributeError``."""
     return tuple(getattr(cls, "model_fields", ()))

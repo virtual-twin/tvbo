@@ -3,7 +3,7 @@
 The run replaces a sourced parameter's declared `value` with the other run's output, so a Methods table that printed the value would state a number no run integrated, and a variant that differs from its base only in where a parameter comes from would not be reported as a variant at all.
 """
 
-from tvbo.datamodel.schema import DataRef, Parameter
+from tvbo.datamodel import DataRef, Parameter
 from tvbo.utils.report import _param_signature, _value_text
 
 

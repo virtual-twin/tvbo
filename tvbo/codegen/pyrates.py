@@ -20,7 +20,7 @@ TVBO Templates (modular):
 Example:
 -------
 >>> from tvbo import Dynamics
->>> model = Dynamics("JansenRitModel")
+>>> model = Dynamics(name="JansenRitModel")
 >>>
 >>> # Export model only (OperatorTemplate)
 >>> operator_yaml = to_pyrates_model_yaml(model)

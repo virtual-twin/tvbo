@@ -20,7 +20,8 @@ data_source:
   path: acq-SEEG588_sensors.yaml
 reconcile: by_label
 pipeline:
-- equation:
+- name: compute_gain
+  equation:
     parameters:
       sigma:
         name: sigma
@@ -29,7 +30,6 @@ pipeline:
     rhs: sum(Q * (a / norm(a)**3), axis=1) / (4 * pi * sigma)
     latex: false
   description: Construct the SEEG lead field using Sarvas 1987 Eq. 12.
-  name: compute_gain
   output: gain
   arguments:
     Q:
@@ -38,7 +38,8 @@ pipeline:
     a:
       name: a
       description: Source-to-electrode vectors (n_sources, 3)
-- equation:
+- name: lead_field_projection
+  equation:
     parameters:
       period_steps:
         name: period_steps
@@ -50,7 +51,6 @@ pipeline:
           latex: false
     rhs: gain @ sum(X, axis=-1) / period_steps
     latex: false
-  name: lead_field_projection
   output: projected
   apply_on_dimension: node
   arguments:
@@ -60,10 +60,10 @@ pipeline:
     period_steps:
       name: period_steps
       description: Number of integration steps per sampling period
-- equation:
+- name: add_noise
+  equation:
     rhs: X + noise
     latex: false
-  name: add_noise
   input: lead_field_projection
   output: iEEG
   arguments:

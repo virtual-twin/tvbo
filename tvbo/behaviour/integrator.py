@@ -5,7 +5,7 @@ Only schema fields are ever stored; everything derived from the ontology is a pr
 
 Population from the ontology is NOT done at construction. It is :meth:`IntegratorBehaviour.enrich`, called explicitly and idempotent, so that resolving an integrator against the ontology stays an act the caller asks for rather than the cost of naming one. The wrapper this replaces called it from ``__init__``, which meant it ran for a directly constructed integrator and not for a loaded one; the loaded path compensated with its own call, and that call is now the only one.
 
-A mixin *can* hook construction — see :mod:`tvbo.behaviour` on ``__post_init__``, which :class:`CouplingBehaviour` uses. This one deliberately does not.
+A mixin *can* hook construction — see :mod:`tvbo.behaviour` on validators and ``model_post_init``. This one deliberately does not.
 """
 
 from __future__ import annotations
@@ -57,24 +57,8 @@ class IntegratorBehaviour(Catalogued):
 
     @property
     def noise_wrapper(self):
-        """The noise as a runtime `Noise` wrapper, or `None` when non-stochastic.
-
-        A plain datamodel `Noise` is upgraded to the runtime `Noise` subclass so it gains the computed properties and code-generation helpers.
-        """
-        from tvbo.classes.noise import Noise
-        from tvbo.datamodel import schema as tvbo_datamodel
-
-        if not self.stochastic:
-            return None
-        n = getattr(self, "noise", None)
-        if isinstance(n, Noise):
-            return n
-        if isinstance(n, tvbo_datamodel.Noise):
-            if hasattr(n, "_as_dict"):
-                data = n._as_dict if not callable(n._as_dict) else n._as_dict()
-                return Noise(**data)
-            return Noise(**getattr(n, "__dict__", {}))
-        return None
+        """The noise, or `None` when non-stochastic: a `Noise` carries its computed properties and code-generation helpers itself."""
+        return self.noise if self.stochastic else None
 
     @property
     def current_step(self):
@@ -86,7 +70,7 @@ class IntegratorBehaviour(Catalogued):
 
         The same verb as :meth:`IriEnrichable.enrich`, and the same gap-filling contract, but its own implementation and no *key*: an integrator names an ontology method rather than a curated entity, so there is nothing for the database to answer and nothing to redirect the lookup at.
         """
-        from tvbo.datamodel.schema import DerivedVariable, Equation
+        from tvbo.datamodel import DerivedVariable, Equation
         from tvbo.ontology.owl import onto
 
         if source not in (None, "ontology"):

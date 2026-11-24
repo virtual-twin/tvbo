@@ -15,7 +15,7 @@ jax.config.update("jax_enable_x64", True)
 
 from tvbo import Function
 from tvbo.codegen.streaming_reducers import is_windowed_reducer, lookup_streaming_reducer
-from tvbo.datamodel.schema import Observation
+from tvbo.datamodel import Observation
 from tvbo.templates.tvboptim.utils import resolve_reduction
 
 pytestmark = pytest.mark.skipif(

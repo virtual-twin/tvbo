@@ -6,7 +6,7 @@
 import copy
 
 from tvbo.classes.network import Network
-from tvbo.datamodel.schema import Coupling
+from tvbo.datamodel import Coupling
 
 PROJECTION = {"name": "projection", "coupling_function": {"rhs": "w * x"}, "parameters": {"w": {"value": 0.5}}}
 

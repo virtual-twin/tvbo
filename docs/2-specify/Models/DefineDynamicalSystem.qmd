@@ -31,7 +31,7 @@ bsplot.style.use('tvbo')
 ```{python}
 import yaml
 from tvbo import Dynamics, SimulationExperiment
-from tvbo.datamodel.schema import Integrator
+from tvbo.datamodel import Integrator
 
 # Pendulum System
 pendulum_dynamics = """
@@ -138,7 +138,7 @@ theta:
 An [Exploration](/datamodel/classes/Exploration.html) with `n_trials` runs them in parallel, and each trial samples a different starting point, revealing the full phase portrait without any Python loop:
 
 ```{python}
-from tvbo.datamodel.schema import Distribution, Range, Exploration
+from tvbo.datamodel import Distribution, Range, Exploration
 import numpy as np
 # Attach sampling distributions to the state variables
 pendulum.dynamics.state_variables["theta"].distribution = Distribution(

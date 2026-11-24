@@ -83,7 +83,7 @@ def test_a_record_written_beside_its_files_names_them_as_read(tmp_path):
 
 
 def test_a_file_sharing_no_directory_below_the_root_with_the_record_is_named_absolute():
-    from tvbo.classes.network import _reference_from
+    from tvbo.behaviour.network import _reference_from
 
     assert _reference_from(Path("/a/b/out"), Path("/a/b/src/n.h5")) == os.path.join("..", "src", "n.h5")
     assert _reference_from(Path("/Volumes/other/out"), Path("/a/b/src/n.h5")) == "/a/b/src/n.h5"

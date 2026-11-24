@@ -9,7 +9,7 @@ import xarray as xr
 
 from tvbo.analysis.mesh import mesh_operators
 from tvbo.data import param_io
-from tvbo.datamodel.schema import FunctionCall, Parameter
+from tvbo.datamodel import FunctionCall, Parameter
 
 EXTRA = "requires the 'mesh' extra (pip install tvbo[mesh])"
 pytest.importorskip("igl", reason=EXTRA)

@@ -12,8 +12,8 @@ Usage
 From YAML string:
 
     from tvbo.codegen.functions import generate_function, generate_loss_function
-    from linkml_runtime.loaders import yaml_loader
-    from tvbo.datamodel.schema import Function, LossFunction
+    from tvbo.utils import yaml_loader
+    from tvbo.datamodel import Function, LossFunction
 
     # Load function from YAML
     func = yaml_loader.loads(yaml_string, Function)
@@ -28,7 +28,7 @@ From YAML string:
 
 From Function object directly:
 
-    from tvbo.datamodel.schema import Function, Equation, Argument
+    from tvbo.datamodel import Function, Equation, Argument
 
     func = Function(
         name='correlation',
@@ -80,7 +80,7 @@ def generate_function(
 
     Examples:
     --------
-    >>> from tvbo.datamodel.schema import Function, Equation
+    >>> from tvbo.datamodel import Function, Equation
     >>> func = Function(
     ...     name='sigmoid',
     ...     equation=Equation(rhs='1 / (1 + exp(-x))'),
@@ -137,7 +137,7 @@ def generate_loss_function(
 
     Examples:
     --------
-    >>> from tvbo.datamodel.schema import LossFunction, Equation, Aggregation
+    >>> from tvbo.datamodel import LossFunction, Equation, Aggregation
     >>> loss = LossFunction(
     ...     name='spectral_loss',
     ...     equation=Equation(rhs='1 - correlation(sim, target)'),

@@ -143,10 +143,10 @@ For empirical connectivity (e.g., DTI-derived brain networks), use `edge_matrix_
 network:
   number_of_nodes: 90
   edge_matrix_files:
-    - Norm_G_DTI.txt
+    - {path: Norm_G_DTI.txt, dims: [source, target], delimiter: ","}
 ```
 
-The matrix is read when the network loads, target-by-source like every tvbo connectome matrix (`W[i, j]` is the edge j → i), and reaches NetworkDynamics.jl as the edges of a `SimpleDiGraph` with their weights. A file written row = source, the way Graphs.jl reads it, declares a `transpose` weight transform, as the FitzHugh–Nagumo example does.
+The matrix is read when the network loads, target-by-source like every tvbo connectome matrix (`W[i, j]` is the edge j → i), and reaches NetworkDynamics.jl as the edges of a `SimpleDiGraph` with their weights. A file written row = source, the way Graphs.jl reads it, declares `dims: [source, target]` and is transposed by name as it is read, as the FitzHugh–Nagumo example does; a comma-separated `.txt` declares its delimiter.
 
 ## Graph Results and Animation
 

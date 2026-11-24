@@ -89,7 +89,7 @@ def test_invalidate_resolution_is_idempotent():
 
 def test_a_graph_generator_parameter_is_reachable_and_invalidates():
     """The path that motivated this: swapping the connectome a builder reads."""
-    from tvbo.datamodel.schema import GraphGenerator
+    from tvbo.datamodel import GraphGenerator
 
     net = _network()
     net.graph_generator = GraphGenerator(  # attached after construction: no builder runs

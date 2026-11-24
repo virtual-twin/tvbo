@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from tvbo.datamodel.schema import Argument, Equation, Function, FunctionCall, Observation, Parameter, Range
+from tvbo.datamodel import Argument, Equation, Function, FunctionCall, Observation, Parameter, Range
 from tvbo.templates.tvboptim.utils import kernel_support_steps, kernel_time_range, resolve_reduction
 
 

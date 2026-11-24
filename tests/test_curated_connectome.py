@@ -8,7 +8,7 @@ import pytest
 import xarray as xr
 
 from tvbo import Function
-from tvbo.datamodel.schema import Analysis
+from tvbo.datamodel import Analysis
 
 
 def _threshold():

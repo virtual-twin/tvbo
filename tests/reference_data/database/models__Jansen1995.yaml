@@ -168,6 +168,7 @@ functions:
       v:
         name: v
 model_type: neural_mass
+system_type: continuous
 autonomous: true
 cse: false
 compile: false

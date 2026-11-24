@@ -26,7 +26,7 @@ class TestDynamicsExport:
 
     def test_simple_oscillator_export(self):
         """Test export of a simple oscillator model."""
-        model = Dynamics("Dynamics")
+        model = Dynamics(name="Dynamics")
         model.name = "SimpleOscillator"
         model.add_parameter("omega", value=1.0)
         model.add_state_variable("x", equation="y", initial_value=1.0)
@@ -44,7 +44,7 @@ class TestDynamicsExport:
 
     def test_van_der_pol_export(self):
         """Test export of Van der Pol oscillator (used in documentation)."""
-        vdp = Dynamics("Dynamics")
+        vdp = Dynamics(name="Dynamics")
         vdp.name = "VanDerPol"
         vdp.add_parameter("mu", value=5.0)
         vdp.add_state_variable("x", equation="z", initial_value=0.0)
@@ -62,7 +62,7 @@ class TestDynamicsExport:
 
     def test_export_with_description(self):
         """Test that model description is included in export."""
-        model = Dynamics("Dynamics")
+        model = Dynamics(name="Dynamics")
         model.name = "TestModel"
         model.description = "A test model description"
         model.add_parameter("a", value=2.0)
@@ -80,7 +80,7 @@ class TestNetworkExport:
     def test_edge_based_network_export(self):
         """Test network with edges exports correctly."""
         # Create dynamics
-        oscillator = Dynamics("Dynamics")
+        oscillator = Dynamics(name="Dynamics")
         oscillator.name = "osc"
         oscillator.add_parameter("omega", value=1.0)
         oscillator.add_state_variable("x", equation="y", initial_value=1.0)
@@ -128,7 +128,7 @@ class TestNetworkExport:
 
         edge.parameters is a dict[str, Parameter]; the codegen helper previously iterated it as a list of Parameter objects, never matched, and always emitted the default weight (any weight != 1.0 was silently lost). Covers both the keyed-parameters and scalar-field forms of the weight.
         """
-        osc = Dynamics("Dynamics")
+        osc = Dynamics(name="Dynamics")
         osc.name = "osc"
         osc.add_parameter("omega", value=1.0)
         osc.add_state_variable("x", equation="y", initial_value=1.0)
@@ -204,7 +204,7 @@ class TestNetworkExport:
         ]
 
         # Create dynamics for the network
-        dynamics = Dynamics("Dynamics")
+        dynamics = Dynamics(name="Dynamics")
         dynamics.name = "node_model"
         dynamics.add_parameter("a", value=1.0)
         dynamics.add_state_variable("x", equation="a*x", initial_value=0.0)
@@ -329,7 +329,7 @@ class TestRoundTrip:
     def test_van_der_pol_round_trip(self):
         """Test round-trip of Van der Pol oscillator."""
         # Create original model
-        vdp = Dynamics("Dynamics")
+        vdp = Dynamics(name="Dynamics")
         vdp.name = "VanDerPol"
         vdp.add_parameter("mu", value=5.0)
         vdp.add_state_variable("x", equation="z", initial_value=0.0)
@@ -361,7 +361,7 @@ class TestRoundTrip:
     def test_custom_oscillator_round_trip(self):
         """Test round-trip of a custom oscillator model."""
         # Create original model
-        model = Dynamics("Dynamics")
+        model = Dynamics(name="Dynamics")
         model.name = "CustomOsc"
         model.add_parameter("omega", value=3.14)
         model.add_parameter("gamma", value=0.1)

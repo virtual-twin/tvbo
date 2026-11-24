@@ -11,12 +11,12 @@ parameters:
 period: 0.9765625
 reconcile: by_label
 pipeline:
-- equation:
+- name: spatial_average
+  equation:
     rhs: spatial_mean @ X
     latex: false
   description: Weighted spatial average per region via a binary assignment matrix
     M[n_regions, n_nodes] derived from the spatial mask.
-  name: spatial_average
   output: region_averaged
   apply_on_dimension: node
   arguments:

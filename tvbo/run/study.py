@@ -160,8 +160,10 @@ def select_experiments(study: Any, ids: str | None = None) -> list:
 
 
 def runtime_experiment(study: Any, record: Any) -> Any:
-    """*record* materialised through ``study.get_experiment``, which is keyed on its ``id``; a `StudyRunError` names what usually stops one from loading."""
-    if hasattr(record, "run") or not hasattr(study, "get_experiment"):
+    """*record* materialised through ``study.get_experiment``, which is keyed on its ``id``; a `StudyRunError` names what usually stops one from loading. An experiment that is not one of the study's own records is already materialised and is returned as it is."""
+    from tvbo.utils import as_list
+
+    if not hasattr(study, "get_experiment") or not any(record is own for own in as_list(getattr(study, "experiments", None))):
         return record
     record_id = getattr(record, "id", None)
     try:
@@ -340,13 +342,15 @@ def apply_overrides(experiment, overrides: Iterable[tuple[str, Any]]) -> list:
 
 def _record_for_slot(holder, leaf: str, value):
     """*value* as the datamodel record the slot *leaf* of *holder* holds, built as a recipe builds it, when *value* is a mapping and the slot's type names one record class (``node_selection``, ``graph_generator``); any other value unchanged, a keyed collection included."""
-    import dataclasses
     import typing
 
-    if not isinstance(value, dict) or isinstance(holder, dict):
+    from pydantic import BaseModel
+
+    field = getattr(type(holder), "model_fields", {}).get(leaf)
+    if not isinstance(value, dict) or field is None:
         return value
-    hint = typing.get_type_hints(type(holder)).get(leaf)
-    records = [t for t in typing.get_args(hint) if isinstance(t, type) and dataclasses.is_dataclass(t)]
+    hint = field.annotation
+    records = [t for t in typing.get_args(hint) or (hint,) if isinstance(t, type) and issubclass(t, BaseModel)]
     return records[0](**value) if len(records) == 1 else value
 
 
@@ -374,10 +378,10 @@ def _invalidate_drawn_network(experiment, segs: list[str]):
 
 def rebuild_invalidated(objects, experiment=None) -> None:
     """Resolve again each object an override invalidated (:func:`apply_overrides`), from the directory of the recipe it was loaded from, so the run receives what the overridden declaration builds. A network that keeps a random subset of its source's nodes draws it from the ``execution.random_seed`` of *experiment*, as its build did."""
-    from tvbo.classes.experiment import _stated_seed
-    from tvbo.classes.network import drawing_from
+    from tvbo.behaviour.experiment import _stated_seed
+    from tvbo.behaviour.network import drawing_from
 
-    with drawing_from(_stated_seed(getattr(experiment, "execution", None))):
+    with drawing_from(_stated_seed(experiment)):
         for obj in objects:
             obj._resolve(source_dir=getattr(obj, "_source_dir", None))
 

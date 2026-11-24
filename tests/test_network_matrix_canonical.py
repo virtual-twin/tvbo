@@ -145,7 +145,7 @@ def test_a_sidecar_may_spell_lengths_any_known_way():
 
 def test_a_single_node_network_is_unconnected_not_absent():
     """The degenerate case every consumer relies on; returning None here broke 158 tests."""
-    from tvbo.datamodel.schema import Node
+    from tvbo.datamodel import Node
 
     net = Network(number_of_nodes=1, nodes=[Node(id=0, label="n0")])
     assert np.array_equal(np.asarray(net.matrix("weight")), np.zeros((1, 1)))
@@ -186,12 +186,19 @@ def test_load_matrix_keeps_a_sparse_matrix_sparse():
 
 
 def test_an_edge_matrix_file_is_read_target_by_source(tmp_path):
-    """A matrix file holds the weights the way every matrix a Network takes does, ``W[i, j]`` being the edge j -> i, so an asymmetric file is neither transposed nor mirrored."""
+    """A matrix file declared ``dims: [target, source]`` holds the weights the way every matrix a Network takes does, ``W[i, j]`` being the edge j -> i, so it is neither transposed nor mirrored; declared ``[source, target]`` it is transposed by name, and undeclared it is accepted only when symmetric."""
     matrix = np.array([[0.0, 2.0, 0.0], [5.0, 0.0, 0.0], [0.0, 7.0, 1.5]])
     np.savetxt(tmp_path / "w.csv", matrix, delimiter=",")
-    net = Network(edge_matrix_files=[str(tmp_path / "w.csv")])
+    net = Network(edge_matrix_files=[{"path": str(tmp_path / "w.csv"), "dims": ["target", "source"]}])
     np.testing.assert_array_equal(np.asarray(net.matrix("weight", apply_transforms=False)), matrix)
     assert net.number_of_nodes == 3
+    sender_row = Network(edge_matrix_files=[{"path": str(tmp_path / "w.csv"), "dims": ["source", "target"]}])
+    np.testing.assert_array_equal(np.asarray(sender_row.matrix("weight", apply_transforms=False)), matrix.T)
+    with pytest.raises(ValueError, match="no dims are declared"):
+        Network(edge_matrix_files=[str(tmp_path / "w.csv")])
+    np.savetxt(tmp_path / "s.csv", matrix + matrix.T, delimiter=",")
+    symmetric = Network(edge_matrix_files=[str(tmp_path / "s.csv")])
+    np.testing.assert_array_equal(np.asarray(symmetric.matrix("weight", apply_transforms=False)), matrix + matrix.T)
 
 
 @pytest.mark.parametrize(

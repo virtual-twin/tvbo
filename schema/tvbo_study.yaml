@@ -449,6 +449,8 @@ classes:
         description: "The ``tvbo study init --template`` name this seed belongs to."
       template:
         range: string
+        annotations:
+          simple_dict_value: true
         description: "Asset seeding the file when that variant is selected."
 
 enums:

@@ -132,11 +132,9 @@ def test_every_section_restores_to_a_slot_the_recipe_declares():
 
     The tree re-spells the writer's singular segments into the recipe's plurals from this table rather than from the schema, so a slot renamed in the schema would otherwise leave every container reading back under a path no recipe declares.
     """
-    import dataclasses
-
+    from tvbo import datamodel as dm
     from tvbo.data.experiment_result_io import _SEGMENT_SLOTS, RESULT_SECTIONS
-    from tvbo.datamodel import schema as dm
 
-    slots = {field.name for field in dataclasses.fields(dm.SimulationExperiment)}
+    slots = set(dm.SimulationExperiment.model_fields)
     assert set(RESULT_SECTIONS.values()) <= slots, set(RESULT_SECTIONS.values()) - slots
     assert set(_SEGMENT_SLOTS.values()) <= slots, set(_SEGMENT_SLOTS.values()) - slots

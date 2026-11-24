@@ -20,7 +20,7 @@ import pytest
 
 jax.config.update("jax_enable_x64", True)
 
-from tvbo.datamodel.schema import Observation
+from tvbo.datamodel import Observation
 from tvbo.templates.tvboptim.utils import observation_dims, resolve_reduction, streaming_post_eval_plan
 
 

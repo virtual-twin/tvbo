@@ -239,13 +239,13 @@ def test_a_generator_networkx_cannot_build_at_the_declared_size_raises():
 
 
 def test_a_data_file_is_read_into_the_network_and_emitted_like_its_matrix(tmp_path):
-    """An ``edge_matrix_files`` entry is target-by-source, like every matrix a Network takes: the two-node file below couples node 2 into node 1 with 0.2, and node 1 into node 2 with 3."""
+    """An ``edge_matrix_files`` entry declared ``[target, source]`` is target-by-source, like every matrix a Network takes: the two-node file below couples node 2 into node 1 with 0.2, and node 1 into node 2 with 3."""
     file = np.array([[0.0, 0.2], [3.0, 0.0]])
     np.savetxt(tmp_path / "W.csv", file, delimiter=",")
     spec = {
         "label": "two",
         "dynamics": DYNAMICS,
-        "network": {"edge_matrix_files": ["W.csv"], "coupling": LINEAR},
+        "network": {"edge_matrix_files": [{"path": "W.csv", "dims": ["target", "source"]}], "coupling": LINEAR},
         "integration": {"method": "Heun", "step_size": 0.1, "duration": 1.0},
     }
     (tmp_path / "two.yaml").write_text(yaml.safe_dump(spec, sort_keys=False))

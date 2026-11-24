@@ -151,7 +151,7 @@ def integration_step(integration):
     from sympy import Symbol, lambdify, sympify
 
     from tvbo.adapters.base import BaseAdapter
-    from tvbo.datamodel.schema import Integrator
+    from tvbo.datamodel import Integrator
     from tvbo.parse.expression import array_syntax
 
     scheme = (

@@ -107,8 +107,8 @@ def test_a_callable_transform_reaches_the_kit():
 
     Hopf_Pareto_ParallelOpt declares `normalized_graph_laplacian` this way. The codegen used to skip any transform without an `equation:`, so with `experiment.py` handing over raw weights the kit integrated the un-normalised SC — wrong numbers, no error.
     """
-    from tvbo.datamodel.schema import Callable as CallableRef
-    from tvbo.datamodel.schema import Function
+    from tvbo.datamodel import Callable as CallableRef
+    from tvbo.datamodel import Function
 
     W = np.array([[0, 2.0, 1.0], [4.0, 0, 3.0], [1.0, 5.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
@@ -127,7 +127,7 @@ def test_equation_parameters_are_substituted_like_the_runtime():
 
     Reading only `Function.arguments` emitted the bare name into the kit, where it is undefined.
     """
-    from tvbo.datamodel.schema import Equation, Function
+    from tvbo.datamodel import Equation, Function
 
     W = np.array([[0, 2.0], [4.0, 0]])
     net = Network.from_matrix(weights=W, lengths=np.zeros_like(W))
@@ -148,7 +148,7 @@ def test_an_undeclared_symbol_fails_at_render_time():
 
 def test_transforms_for_matches_the_length_alias():
     """One selector owns the `length`/`lengths` spelling for runtime and codegen alike."""
-    from tvbo.datamodel.schema import Equation, Function
+    from tvbo.datamodel import Equation, Function
 
     net = Network.from_matrix(weights=np.zeros((2, 2)), lengths=np.zeros((2, 2)))
     net.transforms = [
@@ -216,7 +216,7 @@ def test_a_per_node_vector_is_guarded_by_node_count():
 
     A cohort kit is rendered once from one subject, so an unguarded vector reaches every other subject's connectome at the wrong length.
     """
-    from tvbo.datamodel.schema import Node
+    from tvbo.datamodel import Node
 
     net = Network.from_matrix(weights=np.zeros((3, 3)), lengths=np.zeros((3, 3)))
     net.nodes = [Node(id=i, label=f"n{i}", parameters={"roi_size": {"value": float(i + 1)}}) for i in range(2)]

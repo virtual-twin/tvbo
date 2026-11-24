@@ -41,6 +41,7 @@ dynamics:
       equation_order: 1
       initial_value: -50.0
   number_of_modes: 1
+  system_type: continuous
   autonomous: true
   events:
     spike:

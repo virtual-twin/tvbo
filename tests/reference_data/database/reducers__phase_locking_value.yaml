@@ -1,9 +1,4 @@
 name: phase_locking_value
-state:
-- count
-- re
-- im
-emit: sqrt(re**2 + im**2) / count
 description: The phase locking value of every two nodes, the modulus of the mean of
   exp(i (v_j - v_k)) over the run for a node-wise phase v in radians (Lachaux et al.
   1999), folded one sample at a time from cos(v) and sin(v) so that no trajectory
@@ -13,6 +8,10 @@ replaces:
 backends:
 - tvboptim
 emit_kind: run
+state:
+- count
+- re
+- im
 add:
 - target: c
   expression: cos(v)
@@ -24,3 +23,4 @@ add:
   expression: re + outer(c, c) + outer(s, s)
 - target: im
   expression: im + outer(s, c) - outer(c, s)
+emit: sqrt(re**2 + im**2) / count

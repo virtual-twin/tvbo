@@ -14,8 +14,7 @@ There is no wrapper class: the coupling's own methods live in :mod:`tvbo.behavio
 """
 
 from tvbo.classes import equation as equations
-from tvbo.datamodel.dialect import peer_module
-from tvbo.datamodel.schema import Coupling
+from tvbo.datamodel import Coupling, Equation, Parameter
 from tvbo.ontology import owl as ontology
 
 __all__ = [
@@ -23,17 +22,7 @@ __all__ = [
     "coupling_class2metadata",
     "get_global_coupling_functions",
     "get_parameters",
-    "peer_module",
 ]
-
-
-def _ensure_parameters(coupling) -> None:
-    """Give *coupling* a parameters mapping to fill.
-
-    The LinkML dataclass defaults the slot to an empty collection; the Pydantic model defaults it to ``None``. A keyed collection is otherwise always mutated in place, so this is the one assignment.
-    """
-    if getattr(coupling, "parameters", None) is None:
-        coupling.parameters = {}
 
 
 def get_parameters(CF):
@@ -76,12 +65,7 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
     If overwrite is False (default), only fill missing fields.
     If overwrite is True, always set name and pre/post expressions.
     Parameters are added if missing; existing parameter value/description are only filled if missing regardless of overwrite.
-
-    Members are built in *metadata*'s own generated form — see :func:`peer_module`.
     """
-    peer = peer_module(metadata)
-    _ensure_parameters(metadata)
-
     try:
         if overwrite or not getattr(metadata, "name", None):
             metadata.name = ontoclass.label.first()
@@ -94,14 +78,14 @@ def coupling_class2metadata(ontoclass, metadata, overwrite: bool = False):
         eqs = None
     if eqs:
         if overwrite or getattr(metadata, "pre_expression", None) is None:
-            metadata.pre_expression = peer.Equation(rhs=str(eqs["pre"]))
+            metadata.pre_expression = Equation(rhs=str(eqs["pre"]))
         if overwrite or getattr(metadata, "post_expression", None) is None:
-            metadata.post_expression = peer.Equation(rhs=str(eqs["post"]))
+            metadata.post_expression = Equation(rhs=str(eqs["post"]))
 
     for param in get_parameters(ontoclass).values():
         label = param["label"]
         if label not in metadata.parameters:
-            metadata.parameters[label] = peer.Parameter(
+            metadata.parameters[label] = Parameter(
                 name=param["label"],
                 value=param["value"],
                 description=param["definition"],

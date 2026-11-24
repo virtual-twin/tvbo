@@ -189,7 +189,7 @@ L = Sum(1 - corr(x[i], y[i]), (i, 0, N - 1)) / N  # NOT a custom Mean() function
 ## Core Architecture
 
 - **Data Model:** `schema/tvbo_datamodel.yaml` is the LinkML schema source of truth. Use it for correct metadata handling.
-- **Generated Classes:** All major classes inherit from `tvbo.datamodel.schema.py` (auto-generated from LinkML schema).
+- **Generated Classes:** All major classes are the Pydantic models in `tvbo/datamodel/pydantic.py` (auto-generated from the LinkML schema), with their behaviour mixed in from `tvbo/behaviour/`.
 - **Entry Point:** `tvbo/export/experiment.py` contains `SimulationExperiment`, the main class for running simulations.
 
 ## Repository Overview
@@ -269,8 +269,7 @@ tvbo/
 │   │   │   └── localdynamics.py  # Core Dynamics class (~2000 LOC)
 │   │   └── ontology.py      # OWL ontology access
 │   ├── datamodel/           # AUTO-GENERATED from LinkML (do not edit manually)
-│   │   ├── tvbo_datamodel.py    # LinkML dataclasses
-│   │   └── tvbopydantic.py      # Pydantic models
+│   │   └── pydantic.py          # Pydantic models
 │   ├── export/              # Code generation & export
 │   │   ├── experiment.py    # SimulationExperiment class (~1900 LOC)
 │   │   └── templater.py     # Mako template handling

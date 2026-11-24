@@ -1,7 +1,7 @@
 import pytest
 
 from tvbo import Dynamics
-from tvbo.datamodel.schema import UnitEnum
+from tvbo.datamodel import UnitEnum
 from tvbo.utils.units import normalize_unit, unit_to_symbol
 
 
@@ -25,11 +25,6 @@ from tvbo.utils.units import normalize_unit, unit_to_symbol
 def test_normalize_unit_aliases(raw, canonical):
     assert normalize_unit(raw) == canonical
     assert str(UnitEnum(raw)) == canonical
-
-
-def test_unit_enum_attribute_aliases():
-    assert str(getattr(UnitEnum, "kg/s^2")) == "N_per_m"
-    assert str(getattr(UnitEnum, "mV/ms")) == "mV_per_ms"
 
 
 def _spring(velocity_unit, stiffness_unit):

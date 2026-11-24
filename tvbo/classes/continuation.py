@@ -21,6 +21,6 @@ eq_in_I
 >>> exp.continuations[cont.name] = cont
 """
 
-from tvbo.datamodel.schema import Continuation
+from tvbo.datamodel import Continuation
 
 __all__ = ["Continuation"]

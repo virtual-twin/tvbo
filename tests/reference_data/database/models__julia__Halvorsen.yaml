@@ -62,6 +62,7 @@ state_variables:
     initial_value: 1.0
 number_of_modes: 1
 model_type: generic
+system_type: continuous
 autonomous: true
 cse: false
 compile: false

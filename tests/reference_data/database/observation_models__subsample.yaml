@@ -5,7 +5,8 @@ description: Temporal decimation of selected state variables. Records every N-th
 period: 0.9765625
 reconcile: by_label
 pipeline:
-- equation:
+- name: subsample
+  equation:
     parameters:
       step:
         name: step
@@ -17,7 +18,6 @@ pipeline:
           latex: false
     rhs: subsample(X, step)
     latex: false
-  name: subsample
   output: subsampled
   apply_on_dimension: time
   arguments:

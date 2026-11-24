@@ -4,10 +4,10 @@ description: Records all state variables at every integration step without any t
   Identity passthrough of the full simulation state.
 reconcile: by_label
 pipeline:
-- equation:
+- name: raw
+  equation:
     rhs: X
     latex: false
-  name: raw
   output: raw
   apply_on_dimension: time
 class_reference:

@@ -11,7 +11,7 @@ import pytest
 import xarray as xr
 
 from tvbo.data import analysis_io, dataref
-from tvbo.datamodel.schema import Analysis
+from tvbo.datamodel import Analysis
 from tvbo.utils.study_layout import study_path
 
 
@@ -288,7 +288,7 @@ def test_locate_analysis_container_names_the_fix_when_it_has_not_run(tmp_path):
 def test_a_figure_layer_binds_an_analysis_by_name(tmp_path, calls):
     """``used: {analysis: …}`` resolves to the same container the run wrote."""
     from tvbo.adapters import bsplot
-    from tvbo.datamodel.schema import DataRef
+    from tvbo.datamodel import DataRef
 
     study_dir = tmp_path / "study"
     results = study_path("results", root=study_dir)

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from tvbo.codegen import render_expression
-from tvbo.datamodel.schema import DerivedVariable, Dynamics, Equation, Observation, Parameter, StateVariable
+from tvbo.datamodel import DerivedVariable, Dynamics, Equation, Observation, Parameter, StateVariable
 from tvbo.parse.expression import parse_eq
 from tvbo.templates.tvboptim.utils import resolve_reduction
 

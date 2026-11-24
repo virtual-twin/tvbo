@@ -5,7 +5,7 @@ An observer with a ``period`` is a monitor: it emits its output every period as 
 
 import pytest
 
-from tvbo.datamodel.schema import DerivedVariable, Dynamics, Equation, Observation, Range, StateVariable
+from tvbo.datamodel import DerivedVariable, Dynamics, Equation, Observation, Range, StateVariable
 from tvbo.templates.tvboptim.utils import resolve_reduction
 
 

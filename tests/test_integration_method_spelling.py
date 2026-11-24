@@ -42,7 +42,7 @@ def test_a_backend_supplied_solver_name_still_loads():
 
     A NetworkDynamics.jl recipe writes `method: AutoTsit5` and that string is handed to Julia's `solve`; the tvb and tvboptim backends reject it when they are asked to render an update step, but `enrich()` runs at construction, so raising there stops the study loading at all.
     """
-    from tvbo.datamodel.schema import Integrator
+    from tvbo.datamodel import Integrator
 
     assert integration_method("AutoTsit5", strict=False) is None
     integrator = Integrator(method="AutoTsit5", duration=10.0, step_size=0.1)
@@ -59,7 +59,7 @@ def test_the_canonical_names_are_the_database_entries():
 
 def test_rk4_reaches_its_update_expression():
     """The failure this fixes: the spelling resolved for tvboptim and left the symbolic path empty."""
-    from tvbo.datamodel.schema import Integrator
+    from tvbo.datamodel import Integrator
 
     integrator = Integrator(method="rk4", duration=10.0, step_size=1.0)
     integrator.enrich()

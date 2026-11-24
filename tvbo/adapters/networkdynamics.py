@@ -18,6 +18,7 @@ from tvbo.adapters.base import (
     start_draw,
 )
 from tvbo.adapters.julia_model import initial_state_draws
+from tvbo.data.array_formats import sender_row
 from tvbo.export.registry import StartKind
 
 if TYPE_CHECKING:
@@ -539,8 +540,8 @@ class NetworkDynamicsAdapter(BaseAdapter):
 
         weights, generated_lines = self.connectome(ctx)
         if form == "matrix":
-            layout["weight_matrix"] = weights.T
-            sources, targets = np.nonzero(weights.T)
+            layout["weight_matrix"] = sender_row(weights)
+            sources, targets = np.nonzero(layout["weight_matrix"])
             order = list(zip(sources.tolist(), targets.tolist(), strict=True))
         else:
             order = sorted({pair for i, j, edge, _ in placed for pair in _graph_edges(i, j, edge)})

@@ -163,6 +163,23 @@ def test_a_named_layer_that_restates_a_default_overrides_the_source(study_dir):
     assert not bool(_layer(Network(**spec, edges=[{"label": "weight", "directed": False}]), "weight").directed)
 
 
+def test_a_named_layer_takes_the_unstated_slots_again_from_a_swapped_source(study_dir):
+    """A slot the first source filled is not one the entry states: after the source is swapped and the network rebuilt, the new source fills it."""
+    spec = _companion(study_dir)
+    directed = study_dir / "directed"
+    directed.mkdir()
+    Network.from_matrix(weights=SOURCE_WEIGHTS, lengths=SOURCE_LENGTHS, labels=LABELS).save(directed / "group.yaml")
+    sidecar = directed / "group.yaml"
+    sidecar.write_text(sidecar.read_text().replace("directed: false", "directed: true", 1))
+    net = Network(data_file=str(directed / "group.h5"), edges=[{"label": "weight", "non_negative": False}])
+    assert bool(_layer(net, "weight").directed)
+    net.data_file = spec["data_file"]
+    net.invalidate_resolution()
+    net.settle()
+    mine = _layer(net, "weight")
+    assert (bool(mine.directed), bool(mine.non_negative)) == (False, False)
+
+
 @pytest.mark.parametrize("source", EVERY_SOURCE)
 @pytest.mark.parametrize("ends", [{}, {"source": 0, "target": 2}], ids=["whole", "between-two-nodes"])
 def test_a_route_stays_beside_a_source_and_never_stands_in_for_it(study_dir, source, ends):
@@ -231,9 +248,9 @@ def test_a_parcellation_named_as_text_beside_a_listed_graph_names_its_atlas():
 
 def test_a_node_template_applies_through_the_datamodel_route_too():
     """A template's node parameters reach every node whether the network is built from a mapping or from its datamodel record."""
-    from tvbo.datamodel import schema
+    from tvbo import datamodel
 
     spec = {"number_of_nodes": 2, "node_template": {"parameters": {"g": {"value": 0.5}}}}
-    for net in (Network(**spec), Network.from_datamodel(schema.Network(**spec))):
+    for net in (Network(**spec), Network.from_datamodel(datamodel.Network(**spec))):
         nodes = net.nodes.values() if isinstance(net.nodes, dict) else net.nodes
         assert [sorted((getattr(n, "parameters", None) or {}).keys()) for n in nodes] == [["g"], ["g"]]

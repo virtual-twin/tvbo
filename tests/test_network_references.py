@@ -29,7 +29,7 @@ from tests.test_cohort_references import (  # noqa: E402
 from tvbo import Network  # noqa: E402
 from tvbo.data import analysis_io, dataref, network_io  # noqa: E402
 from tvbo.data.study_manifest import _analysis_fingerprint  # noqa: E402
-from tvbo.datamodel.schema import Analysis, DataRef, Dataset  # noqa: E402
+from tvbo.datamodel import Analysis, DataRef, Dataset  # noqa: E402
 
 root, results = cohort_case.root, cohort_case.results  # the cohort on disk and its two aggregate containers
 CURATED = "tvbo:tpl-MNI152NLin2009cAsym_cohort-HCPYA_rec-dTOR_atlas-Lobar_desc-SC_relmat"

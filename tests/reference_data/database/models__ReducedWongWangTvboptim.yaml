@@ -182,6 +182,7 @@ functions:
       x:
         name: x
 model_type: mean_field
+system_type: continuous
 autonomous: true
 cse: false
 compile: false

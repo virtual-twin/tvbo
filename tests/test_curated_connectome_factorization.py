@@ -10,7 +10,7 @@ import xarray as xr
 
 from tvbo import Function
 from tvbo.analysis.connectome import _als, _start
-from tvbo.datamodel.schema import Analysis
+from tvbo.datamodel import Analysis
 
 NODES = [f"r{i:02d}" for i in range(10)]
 """Region labels whose sorted order is their order here, so the factorization's pairs run as the upper triangle does."""

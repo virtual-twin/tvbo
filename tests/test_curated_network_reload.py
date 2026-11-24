@@ -108,15 +108,15 @@ def test_a_layer_held_in_a_damaged_group_raises_naming_it_when_read_and_when_sav
 
 
 def test_a_companion_that_is_not_an_array_store_raises_for_every_layer(tmp_path):
-    """A companion of a kind the store does not read (an ``.npz``) raises ``OSError`` for every layer, when the network is read or when the layer is, as one that cannot be opened does, rather than reading as a companion that lacks the layer."""
+    """A companion in no array format tvbo reads (a ``.dat``) raises ``OSError`` for every layer, when the network is read or when the layer is, as one that cannot be opened does, rather than reading as a companion that lacks the layer."""
     Network.from_matrix(weights=W, lengths=10 * W, labels=["A", "B", "C"]).save(tmp_path / "saved.yaml")
-    (tmp_path / "saved.h5").rename(tmp_path / "saved.npz")
+    (tmp_path / "saved.h5").rename(tmp_path / "saved.dat")
     sidecar = tmp_path / "saved.yaml"
     text = sidecar.read_text()
     assert text.count("data_file: saved.h5") == 1
-    sidecar.write_text(text.replace("data_file: saved.h5", "data_file: saved.npz"))
+    sidecar.write_text(text.replace("data_file: saved.h5", "data_file: saved.dat"))
     for layer in ("weight", "length"):
-        with pytest.raises(OSError, match=r"saved\.npz is not an array store"):
+        with pytest.raises(OSError, match=r"saved\.dat is not an array store"):
             Network.from_file(str(sidecar)).matrix(layer)
 
 

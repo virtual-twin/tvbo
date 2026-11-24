@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from tvbo.data import param_io
-from tvbo.datamodel.schema import Callable, FunctionCall, Parameter
+from tvbo.datamodel import Callable, FunctionCall, Parameter
 
 pytest.importorskip("h5py")
 
@@ -188,7 +188,7 @@ def _echo_positions(positions=None, hemi="lh"):
 
 def _network(n=3):
     from tvbo.classes.network import Network
-    from tvbo.datamodel.schema import Coordinate, Node
+    from tvbo.datamodel import Coordinate, Node
 
     nodes = [Node(id=i, label=f"n{i}", position=Coordinate(x=float(i), y=1.0, z=2.0)) for i in range(n)]
     return Network(label="net", nodes=nodes)
@@ -265,7 +265,7 @@ def _strength():
 def _ran(tmp_path, name):
     """The results directory a study run leaves after running analysis *name*, whose callable is this module's ``_<name>``."""
     from tvbo.data import analysis_io
-    from tvbo.datamodel.schema import Analysis
+    from tvbo.datamodel import Analysis
 
     results = tmp_path / "results"
     analysis_io.run_analysis(Analysis(name=name, callable={"name": f"_{name}", "module": __name__}), results)

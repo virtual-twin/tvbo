@@ -14,7 +14,7 @@ import pytest
 import xarray as xr
 
 from tvbo.data.analysis_io import RENDERERS, render_tvboptim
-from tvbo.datamodel.schema import Analysis
+from tvbo.datamodel import Analysis
 
 
 class _Agg:

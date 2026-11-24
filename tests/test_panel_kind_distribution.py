@@ -17,7 +17,7 @@ import xarray as xr
 from tvbo.adapters import bsplot_distributions as panels
 from tvbo.adapters.bsplot import CUSTOM_PANELS, _panel_opts
 from tvbo.adapters.bsplot_distributions import histogram_panel, joint_density_panel
-from tvbo.datamodel.schema import Panel
+from tvbo.datamodel import Panel
 
 
 @pytest.fixture

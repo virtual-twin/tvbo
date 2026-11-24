@@ -10,7 +10,6 @@ except ImportError:
 
 import numpy as np
 from bids.layout import BIDSLayout
-from linkml_runtime.dumpers import yaml_dumper
 from scipy.ndimage import center_of_mass
 
 try:
@@ -22,9 +21,10 @@ except ImportError:
         return x  # No-op if tqdm not available
 
 
+from tvbo import datamodel as tvbo_datamodel
 from tvbo.data.tvbo_data import ATLAS_DIR
-from tvbo.datamodel import schema as tvbo_datamodel
 from tvbo.ontology.atlas import freesurfer
+from tvbo.utils import to_yaml
 
 atlas_data = BIDSLayout(
     ATLAS_DIR,
@@ -148,5 +148,5 @@ def rank_atlas(fname_atlas, labels="freesurfer", desc="ranked", gm_only=True):
         validate=False,
     )
     nib.save(img, franked)
-    yaml_dumper.dump(atlas_metadata, franked.replace(".nii.gz", ".yaml"))
+    to_yaml(atlas_metadata, franked.replace(".nii.gz", ".yaml"))
     return img

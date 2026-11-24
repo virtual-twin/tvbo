@@ -4,7 +4,7 @@ Attached to the generated classes by name (``DynamicsBehaviour`` -> ``Dynamics``
 
 That reach is the point. Consumers used to ask whether the model in hand had a symbolic layer and fall back to parsing its metadata directly when it did not — three copies of one dispatch, and two parses of the same equation against namespaces built differently.
 
-The equations themselves live on a [`SymbolicSystem`](../parse/system.qmd), one per model, held under a private attribute: both generated forms accept one without a slot and neither serializes it (``tests/test_spec_model_contract.py``).
+The equations themselves live on a [`SymbolicSystem`](../parse/system.qmd), one per model, held under a private attribute: the generated class accepts one without a slot and does not serialize it (``tests/test_spec_model_contract.py``).
 """
 
 from __future__ import annotations

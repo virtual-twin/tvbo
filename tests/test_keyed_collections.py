@@ -1,58 +1,47 @@
-"""A keyed collection means the same thing in both generated forms, and in both spellings.
+"""A keyed collection means the same thing in both spellings.
 
-``parameters: {TR: {value: 720.0}}`` says a Parameter *called* ``TR``, so writing the name a second time inside the member is a redundancy this project's records are written without.
-Only the generated dataclasses acted on that: they fill the identifier from the key, and the generated Pydantic models left it missing and rejected the member as incomplete. The list spelling of the same collection they rejected outright, as not a mapping.
+``parameters: {TR: {value: 720.0}}`` says a Parameter *called* ``TR``, so writing the name a second time inside the member is a redundancy this project's records are written without; the generated models alone would reject the member as incomplete, and the list spelling of the same collection as not a mapping.
 
-Both are the dialect's business — it is the one implementation both construction paths run — and what these pin is that neither the form nor the spelling changes what a record means.
+Both are the dialect's business, and what these pin is that the spelling does not change what a record means.
 """
 
 from __future__ import annotations
 
 import pytest
 
-from tvbo.datamodel import pydantic as pyd
-from tvbo.datamodel import schema
-
-GENERATED_FORMS = pytest.mark.parametrize("model", (schema, pyd), ids=("dataclass", "pydantic"))
+from tvbo import datamodel as dm
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_member_is_named_by_its_key(model):
+def test_a_member_is_named_by_its_key():
     """The mapping spelling, with no redundant inner name."""
-    coupling = model.Coupling(name="C", parameters={"a": {"value": 1.5}})
+    coupling = dm.Coupling(name="C", parameters={"a": {"value": 1.5}})
 
     assert coupling.parameters["a"].name == "a"
     assert coupling.parameters["a"].value == 1.5
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_the_list_spelling_means_the_same(model):
+def test_the_list_spelling_means_the_same():
     """A list of bare identifiers, and a list of whole members, both arrive keyed."""
-    bare = model.Function(name="f", arguments=["v", "w"])
+    bare = dm.Function(name="f", arguments=["v", "w"])
     assert [str(argument) for argument in bare.arguments] == ["v", "w"]
 
-    whole = model.Coupling(name="C", parameters=[{"name": "a", "value": 1.5}])
+    whole = dm.Coupling(name="C", parameters=[{"name": "a", "value": 1.5}])
     assert whole.parameters["a"].value == 1.5
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_member_may_still_state_its_own_name(model):
+def test_a_member_may_still_state_its_own_name():
     """Fifty curated files spell it; the key and the name agree, and the name is kept."""
-    coupling = model.Coupling(name="C", parameters={"a": {"name": "a", "value": 1.5}})
+    coupling = dm.Coupling(name="C", parameters={"a": {"name": "a", "value": 1.5}})
     assert coupling.parameters["a"].name == "a"
 
 
 @pytest.mark.backend_core
-@GENERATED_FORMS
-def test_a_curated_record_loads_on_either_form(model):
-    """The regression: an ``iri`` reference to a record written without redundant names.
-
-    ``BOLD_TVB`` writes ``TR: {value: 720.0}``. The dataclass form took it and the Pydantic form raised ``Field required: parameters.TR.name`` — the same YAML meaning two different things depending on which generated class read it.
-    """
-    observation = model.Observation(iri="tvbo:BOLD_TVB")
+def test_a_curated_record_loads():
+    """An ``iri`` reference to a record written without redundant names: ``BOLD_TVB`` writes ``TR: {value: 720.0}``."""
+    observation = dm.Observation(iri="tvbo:BOLD_TVB")
 
     assert observation.parameters["TR"].value == 720.0
     assert observation.parameters["TR"].name == "TR"

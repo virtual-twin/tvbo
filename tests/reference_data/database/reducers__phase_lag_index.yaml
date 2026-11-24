@@ -1,8 +1,4 @@
 name: phase_lag_index
-state:
-- count
-- acc
-emit: abs(acc) / count
 description: The phase lag index of every two nodes, the modulus of the mean of sign(sin(v_j
   - v_k)) over the run for a node-wise phase v in radians (Stam et al. 2007), folded
   one sample at a time so that no trajectory is held. The sign compares sin(v_j) cos(v_k)
@@ -14,6 +10,9 @@ replaces:
 backends:
 - tvboptim
 emit_kind: run
+state:
+- count
+- acc
 add:
 - target: c
   expression: cos(v)
@@ -24,3 +23,4 @@ add:
 - target: acc
   expression: acc + Piecewise((1, outer(s, c) > outer(c, s)), (-1, outer(s, c) < outer(c,
     s)), (0, True))
+emit: abs(acc) / count

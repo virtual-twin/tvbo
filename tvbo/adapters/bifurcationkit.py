@@ -293,7 +293,7 @@ class BifurcationKitAdapter(ContinuationAdapter):
         hopf_idx = BifurcationKitAdapter.periodic_orbit_source(br)
 
         # Discretization (use schema defaults when unspecified)
-        from tvbo.datamodel.schema import Discretization
+        from tvbo.datamodel import Discretization
 
         disc = br.discretization or Discretization()
         _refuse_unread_options(disc, "discretization", f"the discretization of branch {getattr(br, 'name', '?')!r}")

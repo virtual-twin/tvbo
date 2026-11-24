@@ -27,7 +27,8 @@ data_source:
   path: acq-EEGBrainstorm65_sensors.yaml
 reconcile: by_label
 pipeline:
-- equation:
+- name: compute_gain
+  equation:
     parameters:
       sigma:
         name: sigma
@@ -38,7 +39,6 @@ pipeline:
   description: 'Construct the lead field (gain) matrix. If a precomputed gain is available
     from the sensor network data file, use it. Otherwise compute via single-sphere
     analytic formula: V(r) = (1 / 4*pi*sigma) * sum_i Q_i . (r_s - r_i) / |r_s - r_i|^3'
-  name: compute_gain
   output: gain
   arguments:
     Q:
@@ -47,7 +47,8 @@ pipeline:
     a:
       name: a
       description: 'Source-to-sensor vectors: r_sensor - r_source (n_sources, 3)'
-- equation:
+- name: lead_field_projection
+  equation:
     parameters:
       period_steps:
         name: period_steps
@@ -59,7 +60,6 @@ pipeline:
           latex: false
     rhs: gain @ sum(X, axis=-1) / period_steps
     latex: false
-  name: lead_field_projection
   output: projected
   apply_on_dimension: node
   arguments:
@@ -69,9 +69,9 @@ pipeline:
     period_steps:
       name: period_steps
       description: Number of integration steps per sampling period
-- description: 'Apply reference subtraction. For average reference: subtract mean
+- name: rereference
+  description: 'Apply reference subtraction. For average reference: subtract mean
     across all channels. For single electrode: subtract that channel.'
-  name: rereference
   input: lead_field_projection
   output: EEG
 class_reference:

@@ -14,6 +14,25 @@ from contextvars import ContextVar
 from pathlib import Path
 
 _SOURCE_FILE: ContextVar[str | None] = ContextVar("tvbo_source_file", default=None)
+_BUILDING_DOCUMENT: ContextVar[bool] = ContextVar("tvbo_building_document", default=False)
+
+
+@contextmanager
+def as_written(data: bool = True) -> Iterator[None]:
+    """State that the records constructed inside the block are a document being loaded.
+
+    A record built in Python settles itself on construction (`Network.settle`: its defaults and materialised connectivity); one built by a document loader reads as written until the loader, holding the whole document, settles it. So a golden dump, a validator or a loader that attaches arrays itself sees the record the file states, and a nested member is settled once, by the object that owns it.
+    """
+    token = _BUILDING_DOCUMENT.set(data)
+    try:
+        yield
+    finally:
+        _BUILDING_DOCUMENT.reset(token)
+
+
+def constructing_as_written() -> bool:
+    """Whether a document loader is constructing the records being built right now."""
+    return _BUILDING_DOCUMENT.get()
 
 
 @contextmanager

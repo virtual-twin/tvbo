@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 from tvbo import SimulationExperiment, templates
-from tvbo.datamodel.schema import Observation
+from tvbo.datamodel import Observation
 
 from .test_subsample_phase import _stamps_and_y
 from .test_tvb_observation_declared_key import OBSERVED, _assert_subsampled, _spec

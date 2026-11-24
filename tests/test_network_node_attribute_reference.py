@@ -8,8 +8,8 @@ Resolution order is what the tests pin: node ``parameters`` win over the compani
 import numpy as np
 import pytest
 
+from tvbo import datamodel as tvbo_datamodel  # noqa: E402
 from tvbo.data import param_io  # noqa: E402
-from tvbo.datamodel import schema as tvbo_datamodel  # noqa: E402
 
 
 class _FakeStore:

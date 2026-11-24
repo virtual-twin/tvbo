@@ -11,7 +11,7 @@ import pytest
 import xarray as xr
 
 from tvbo.data import analysis_io
-from tvbo.datamodel.schema import Analysis
+from tvbo.datamodel import Analysis
 
 from .test_curated_statistics import _curated, _seed
 

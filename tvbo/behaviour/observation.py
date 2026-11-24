@@ -13,7 +13,7 @@ from tvbo.behaviour._runtime import Catalogued
 
 
 class ObservationBehaviour(Catalogued):
-    """A declared observation model's factory constructors, backend rendering and plots, on both generated forms."""
+    """A declared observation model's factory constructors, backend rendering and plots."""
 
     _OP_COLORS = {
         "kernel": "#dbeafe",

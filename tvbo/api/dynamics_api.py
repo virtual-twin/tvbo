@@ -4,11 +4,13 @@ Endpoints:
   GET /api/v1/dynamics              — list available models (filterable) GET /api/v1/dynamics/{id}/sidecar — LinkML-valid YAML or JSON
 """
 
+import json
+
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import Response
-from linkml_runtime.dumpers import json_dumper, yaml_dumper
 
 from tvbo.data.registry import database_dir
+from tvbo.utils import to_dict, to_yaml
 
 router = APIRouter(prefix="/api/v1/dynamics", tags=["dynamics"])
 
@@ -76,15 +78,15 @@ def list_dynamics(
 
 @router.get("/{model_id}/sidecar")
 def get_sidecar(model_id: str, format: str = Query("yaml")):
-    """Download full LinkML-valid model definition (YAML or JSON)."""
+    """Download the full model record (YAML or JSON)."""
     entry = _get_models().get(model_id)
     if not entry:
         raise HTTPException(404, f"Dynamics model '{model_id}' not found")
     d, _path = entry
 
     if format == "json":
-        content = json_dumper.dumps(d, inject_type=False)
+        content = json.dumps(to_dict(d), indent=2)
         return Response(content, media_type="application/json")
     else:
-        content = yaml_dumper.dumps(d)
+        content = to_yaml(d)
         return Response(content, media_type="application/x-yaml")

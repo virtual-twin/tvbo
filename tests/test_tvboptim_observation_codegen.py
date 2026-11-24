@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
-from linkml_runtime.loaders import yaml_loader
 
 from tvbo import Coupling, Dynamics, Network, Observation, SimulationExperiment, database_path
-from tvbo.datamodel.schema import Observation as SchemaObservation
+from tvbo.datamodel import Observation as SchemaObservation
 from tvbo.templates.tvboptim.utils import get_observation_refs
+from tvbo.utils import yaml_loader
 
 
 def _two_node_bold_experiment(duration=1000.0):
