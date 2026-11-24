@@ -209,7 +209,7 @@ jobs:
           python -c "import tvbo, juliacall; juliacall.Main.seval('using NetworkDynamics, OrdinaryDiffEq'); print('Julia depot ready')"
       - name: Run shard "${{ matrix.shard }}"
         run: |
-          pytest -x -v --tb=short \
+          pytest -v --tb=short \
             --timeout=600 --timeout-method=thread \
             --override-ini="addopts=" \
             ${{ matrix.paths }}
