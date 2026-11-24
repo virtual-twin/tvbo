@@ -492,7 +492,7 @@ jobs:
               run: uv pip install -e . --no-deps
             - name: Run shard "${{ matrix.shard }}"
               run: |
-                  pytest -x -v --tb=short \
+                  pytest -v --tb=short \
                       --timeout=600 --timeout-method=thread \
                       --override-ini="addopts=" \
                       ${{ matrix.pytest_args }} ${{ matrix.paths }}
@@ -554,7 +554,7 @@ jobs:
             # Selects by the same marker the `rest` shard deselects, so neither list drifts.
             - name: Run Julia backend tests
               run: |
-                  pytest -x -v --tb=short \
+                  pytest -v --tb=short \
                       --timeout=1200 --timeout-method=thread \
                       --override-ini="addopts=" \
                       -m julia tests/ \
