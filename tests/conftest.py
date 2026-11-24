@@ -3,6 +3,8 @@
 The environment part must run before any JAX import: it forces the CPU backend (jax-metal raises XLA errors on Apple Silicon) and sets up the virtual XLA devices the pmap tests need, with XLA's Eigen intra-op threading off. The virtual devices execute at once on one shared intra-op pool, and XLA:CPU's multithreaded FFT parks a pool thread waiting on sub-tasks it queued in that same pool, so enough concurrent FFTs (a pmapped sweep computing BOLD or spectra) deadlock the process with every thread idle.
 
 It also hands each xdist worker its own ``TVB_USER_HOME``. TVB derives its storage from that variable — including the log folder it ``os.makedirs`` without ``exist_ok`` on import — so parallel workers otherwise race on that mkdir and the loser raises ``FileExistsError``.
+
+And it turns off the terminal typer forces whenever ``GITHUB_ACTIONS`` is set, so a CLI test reads the same plain output on CI as locally rather than rich markup that splits an option name such as ``--slim`` into separately styled ``-`` and ``-slim``.
 """
 
 import os
@@ -19,6 +21,8 @@ if _tvb_worker:
     os.environ["TVB_USER_HOME"] = os.path.join(tempfile.gettempdir(), f"tvb-home-{_tvb_worker}")
 else:
     os.environ.setdefault("TVB_USER_HOME", os.path.join(tempfile.gettempdir(), "tvb-home-main"))
+
+os.environ["_TYPER_FORCE_DISABLE_TERMINAL"] = "1"
 
 
 def pytest_addoption(parser):

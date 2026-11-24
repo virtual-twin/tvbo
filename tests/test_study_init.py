@@ -8,7 +8,6 @@ import subprocess
 import tomllib
 from pathlib import Path
 
-import click
 import pytest
 import yaml
 from typer.testing import CliRunner
@@ -135,7 +134,7 @@ def test_a_rerun_keeps_an_edited_ci_configuration(tmp_path):
 @pytest.mark.parametrize("option", [["--git"], ["--datalad"], ["--ci", "gitlab"]])
 def test_slim_refuses_version_control_and_ci(tmp_path, option):
     result = CliRunner().invoke(app, ["study", "init", "Slim", "--slim", *option, "--in", str(tmp_path)])
-    assert result.exit_code != 0 and "--slim" in click.unstyle(result.output)
+    assert result.exit_code != 0 and "--slim" in result.output
 
 
 def test_no_ci_writes_none(tmp_path):
