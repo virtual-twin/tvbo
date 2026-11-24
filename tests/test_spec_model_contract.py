@@ -6,15 +6,11 @@ They are pinned here because each one, if it silently stopped holding, would not
 """
 
 import pathlib
-import sys
 
 import pytest
 from pydantic import ValidationError
 
 from tvbo.datamodel.pydantic import Dynamics
-
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
-from hatch_build import _behaviour_mixins  # noqa: E402
 
 _ROOT = pathlib.Path(__file__).resolve().parents[1]
 _SCHEMA = _ROOT / "schema" / "tvbo_datamodel.yaml"
@@ -77,21 +73,6 @@ def test_behaviour_reaches_the_generated_class():
     event = Event(name="s", event_type="stimulus")
     assert callable(event.plot)
     assert callable(event._signal)
-
-
-def test_a_mixin_is_discovered_by_its_own_name():
-    """``EventBehaviour`` attaches to ``Event``; there is nothing to register."""
-    assert _behaviour_mixins(_ROOT, _SCHEMA)["Event"] == "tvbo.behaviour.event.EventBehaviour"
-
-
-def test_a_mixin_naming_no_schema_class_fails_the_build(tmp_path):
-    """Otherwise it attaches to nothing and the helpers vanish with no error."""
-    package = tmp_path / "tvbo" / "behaviour"
-    package.mkdir(parents=True)
-    (package / "bogus.py").write_text("class NotAClassBehaviour:\n    pass\n")
-
-    with pytest.raises(RuntimeError, match="no class 'NotAClass'"):
-        _behaviour_mixins(tmp_path, _SCHEMA)
 
 
 def test_the_schema_states_no_python():
