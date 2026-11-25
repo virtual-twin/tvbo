@@ -200,10 +200,7 @@ class ModelingToolkitAdapter(BaseAdapter):
             dyn = self._apply_lowered(result)
             if returns == "dynamics":
                 return dyn
-            return self.experiment.copy(
-                dynamics=dyn,
-                model=dyn,
-            )
+            return self.experiment.copy(dynamics=dyn, model=dyn.name)
 
         raise ValueError(f"Unknown returns={returns!r}. Use 'sympy', 'dynamics', 'experiment', or 'auto'.")
 
