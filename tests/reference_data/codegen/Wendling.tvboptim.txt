@@ -1,0 +1,135 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class Wendling(AbstractDynamics):
+    """Wendling neural mass model."""
+
+    STATE_NAMES = ("y0", "y1", "y2", "y3", "y4", "y5", "y6", "y7", "y8", "y9")
+    INITIAL_STATE = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ("lfp",)
+    VARIABLES_OF_INTEREST = (
+        "y0",
+        "y1",
+        "y2",
+        "y3",
+        "y4",
+        "y5",
+        "y6",
+        "y7",
+        "y8",
+        "y9",
+        "lfp",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        A=4.0,
+        B=40.0,
+        C=135.0,
+        G=20.0,
+        a=0.1,
+        b=0.05,
+        e0=0.0025,
+        g=0.35,
+        p=0.09,
+        r=0.56,
+        v0=6.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        A = params.A
+        B = params.B
+        C = params.C
+        G = params.G
+        a = params.a
+        b = params.b
+        e0 = params.e0
+        g = params.g
+        p = params.p
+        r = params.r
+        v0 = params.v0
+
+        C1 = C
+        C2 = 0.8 * C
+        C3 = 0.25 * C
+        C4 = 0.25 * C
+        C5 = 0.1 * C
+        C6 = 0.1 * C
+        C7 = 0.8 * C
+
+        y0 = state[0]
+        y1 = state[1]
+        y2 = state[2]
+        y3 = state[3]
+        y4 = state[4]
+        y5 = state[5]
+        y6 = state[6]
+        y7 = state[7]
+        y8 = state[8]
+        y9 = state[9]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        def Sigm(v):
+            return 2 * e0 / (1 + jnp.exp(r * (v0 - v)))
+
+        lfp = y1 - y2 - y3
+
+        dy0_dt = y5
+        dy1_dt = y6
+        dy2_dt = y7
+        dy3_dt = y8
+        dy4_dt = y9
+        dy5_dt = A * a * Sigm(c_glob + y1 - y2 - y3) - 2 * a * y5 - a**2 * y0
+        dy6_dt = A * a * (p + C2 * Sigm(C1 * y0)) - 2 * a * y6 - a**2 * y1
+        dy7_dt = B * b * C4 * Sigm(C3 * y0) - 2 * b * y7 - b**2 * y2
+        dy8_dt = G * g * C7 * Sigm(C5 * y0 - C6 * y4) - 2 * g * y8 - g**2 * y3
+        dy9_dt = B * b * Sigm(C3 * y0) - 2 * b * y9 - b**2 * y4
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dy0_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dy0_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy3_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy4_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy5_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy6_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy7_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy8_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dy9_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(lfp), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

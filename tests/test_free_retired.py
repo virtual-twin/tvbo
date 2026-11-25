@@ -33,6 +33,8 @@ network:
   nodes: [{id: 0, label: r0}]
   edges: []
 integration: {method: euler, step_size: 0.1, duration: 4.0, unit: ms}
+functions:
+  mse: {source_code: "jnp.mean(x ** 2)", arguments: {x: {}}}
 observations:
   mean_x: {source: [x], aggregation: mean}
 algorithms:

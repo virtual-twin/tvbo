@@ -1,0 +1,146 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class CavallariConductanceLIF(AbstractDynamics):
+    """CavallariConductanceLIF neural mass model."""
+
+    STATE_NAMES = ("v", "x_AMPA", "geff_AMPA", "x_GABA", "geff_GABA", "t_ref")
+    INITIAL_STATE = (-70.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ("I_AMPA", "I_GABA", "integrating")
+    VARIABLES_OF_INTEREST = (
+        "v",
+        "x_AMPA",
+        "geff_AMPA",
+        "x_GABA",
+        "geff_GABA",
+        "t_ref",
+        "I_AMPA",
+        "I_GABA",
+    )
+
+    DEFAULT_PARAMS = Bunch(
+        E_AMPA=0.0,
+        E_GABA=-80.0,
+        V_leak=-70.0,
+        g_AMPA_cort=0.187,
+        g_AMPA_rec=0.178,
+        g_AMPA_tha=0.234,
+        g_GABA=2.01,
+        g_leak=25.0,
+        reset=-59.0,
+        tau_d_AMPA=2.0,
+        tau_d_GABA=5.0,
+        tau_m=20.0,
+        tau_r_AMPA=0.4,
+        tau_r_GABA=0.25,
+        tau_refrac=2.0,
+        thresh=-52.0,
+    )
+
+    COUPLING_INPUTS = {
+        "S_AMPA_rec": 1,
+        "S_AMPA_tha": 1,
+        "S_AMPA_cort": 1,
+        "S_GABA": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        E_AMPA = params.E_AMPA
+        E_GABA = params.E_GABA
+        V_leak = params.V_leak
+        g_AMPA_cort = params.g_AMPA_cort
+        g_AMPA_rec = params.g_AMPA_rec
+        g_AMPA_tha = params.g_AMPA_tha
+        g_GABA = params.g_GABA
+        g_leak = params.g_leak
+        tau_d_AMPA = params.tau_d_AMPA
+        tau_d_GABA = params.tau_d_GABA
+        tau_m = params.tau_m
+        tau_r_AMPA = params.tau_r_AMPA
+        tau_r_GABA = params.tau_r_GABA
+
+        v = state[0]
+        x_AMPA = state[1]
+        geff_AMPA = state[2]
+        x_GABA = state[3]
+        geff_GABA = state[4]
+        t_ref = state[5]
+
+        S_AMPA_rec = (
+            jnp.atleast_1d(coupling.S_AMPA_rec)[0]
+            if hasattr(coupling, "S_AMPA_rec")
+            else 0.0
+        )
+        S_AMPA_tha = (
+            jnp.atleast_1d(coupling.S_AMPA_tha)[0]
+            if hasattr(coupling, "S_AMPA_tha")
+            else 0.0
+        )
+        S_AMPA_cort = (
+            jnp.atleast_1d(coupling.S_AMPA_cort)[0]
+            if hasattr(coupling, "S_AMPA_cort")
+            else 0.0
+        )
+        S_GABA = (
+            jnp.atleast_1d(coupling.S_GABA)[0] if hasattr(coupling, "S_GABA") else 0.0
+        )
+
+        I_AMPA = geff_AMPA * (v - E_AMPA)
+        I_GABA = geff_GABA * (v - E_GABA)
+        integrating = jnp.where(jnp.greater(t_ref, 0), 0.0, 1.0)
+
+        dv_dt = integrating * ((V_leak - v) - (I_AMPA + I_GABA) / g_leak) / tau_m
+        dx_AMPA_dt = (
+            -x_AMPA
+            + tau_m
+            * (
+                g_AMPA_rec * S_AMPA_rec
+                + g_AMPA_tha * S_AMPA_tha
+                + g_AMPA_cort * S_AMPA_cort
+            )
+        ) / tau_r_AMPA
+        dgeff_AMPA_dt = (-geff_AMPA + x_AMPA) / tau_d_AMPA
+        dx_GABA_dt = (-x_GABA + tau_m * g_GABA * S_GABA) / tau_r_GABA
+        dgeff_GABA_dt = (-geff_GABA + x_GABA) / tau_d_GABA
+        dt_ref_dt = -1 + integrating
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx_AMPA_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dgeff_AMPA_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx_GABA_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dgeff_GABA_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dt_ref_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(I_AMPA), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(I_GABA), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(integrating), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

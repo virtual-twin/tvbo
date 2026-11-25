@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.functional.simulation_backends_shared import _HAVE_TVBOPTIM, MODEL_FILES, MODEL_IDS
+from tests.functional.simulation_backends_shared import _HAVE_TVBOPTIM, COUPLED_MODEL_FILES, COUPLED_MODEL_IDS
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
 
@@ -12,7 +12,7 @@ from tvbo.classes.experiment import SimulationExperiment
 class TestTvboptimBackend:
     """Single-node tests for the tvboptim JAX backend."""
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    @pytest.mark.parametrize("model_file", COUPLED_MODEL_FILES, ids=COUPLED_MODEL_IDS)
     def test_run_tvboptim(self, model_file):
         """Run single-node simulation with tvboptim JAX backend."""
         model = Dynamics.from_file(model_file)

@@ -3959,22 +3959,15 @@ def parse_loss_arguments(loss_call: Any) -> tuple[list[dict], set[str]]:
 def parse_loss_function(opt: Any) -> dict | None:
     """Parse optimization loss function specification.
 
-    Returns dict with: opt_name, func_name, args, obs_refs, agg_over, agg_type or None if no loss defined.
+    Returns dict with: opt_name, func_name, module (the module ``func_name`` is imported from, ``None`` for a declared function), args, obs_refs, agg_over, agg_type or None if no loss defined.
     """
+    from tvbo.classes.optimization import loss_callee
+
     loss_call = getattr(opt, "loss", None)
     if not loss_call:
         return None
 
-    # Determine function name
-    func_ref = getattr(loss_call, "function", None)
-    callable_ref = getattr(loss_call, "callable", None)
-
-    if func_ref:
-        func_name = str(func_ref) if isinstance(func_ref, str) else (getattr(func_ref, "name", None) or str(func_ref))
-    elif callable_ref:
-        func_name = getattr(callable_ref, "name", None) or getattr(callable_ref, "qualname", None) or "loss"
-    else:
-        func_name = "loss"
+    func_name, module = loss_callee(loss_call)
 
     # Parse aggregate specification
     aggregate = getattr(loss_call, "aggregate", None)
@@ -3990,6 +3983,7 @@ def parse_loss_function(opt: Any) -> dict | None:
     return {
         "opt_name": getattr(opt, "name", None) or "loss",
         "func_name": func_name,
+        "module": module,
         "args": parsed_args,
         "obs_refs": obs_refs,
         "agg_over": agg_over,

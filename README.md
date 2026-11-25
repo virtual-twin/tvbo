@@ -24,10 +24,10 @@ Models, connectomes, coupling functions and published studies ship with the pack
 
 | Class | Curated records |
 |---|--:|
-| `Dynamics` | 108 |
+| `Dynamics` | 112 |
 | `Network` | 56 |
 | `Coupling` | 9 |
-| `SimulationStudy` | 122 |
+| `SimulationStudy` | 133 |
 
 | Record | Description |
 |---|---|

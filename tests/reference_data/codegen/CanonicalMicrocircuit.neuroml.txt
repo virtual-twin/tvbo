@@ -1,0 +1,156 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: CanonicalMicrocircuit
+       Generated from TVBO Dynamics: CanonicalMicrocircuit
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="CanonicalMicrocircuit">
+
+    <!-- Parameters -->
+    <Parameter name="G1" dimension="none"/>
+    <Parameter name="G2" dimension="none"/>
+    <Parameter name="G3" dimension="none"/>
+    <Parameter name="G4" dimension="none"/>
+    <Parameter name="G5" dimension="none"/>
+    <Parameter name="G6" dimension="none"/>
+    <Parameter name="G7" dimension="none"/>
+    <Parameter name="G8" dimension="none"/>
+    <Parameter name="G9" dimension="none"/>
+    <Parameter name="G10" dimension="none"/>
+    <Parameter name="T1" dimension="none"/>
+    <Parameter name="T2" dimension="none"/>
+    <Parameter name="T3" dimension="none"/>
+    <Parameter name="T4" dimension="none"/>
+    <Parameter name="R" dimension="none"/>
+    <Parameter name="U" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_glob" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="x1_0" dimension="none"/>
+    <Parameter name="x2_0" dimension="none"/>
+    <Parameter name="x3_0" dimension="none"/>
+    <Parameter name="x4_0" dimension="none"/>
+    <Parameter name="x5_0" dimension="none"/>
+    <Parameter name="x6_0" dimension="none"/>
+    <Parameter name="x7_0" dimension="none"/>
+    <Parameter name="x8_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="x1" dimension="none"/>
+    <Exposure name="x2" dimension="none"/>
+    <Exposure name="x3" dimension="none"/>
+    <Exposure name="x4" dimension="none"/>
+    <Exposure name="x5" dimension="none"/>
+    <Exposure name="x6" dimension="none"/>
+    <Exposure name="x7" dimension="none"/>
+    <Exposure name="x8" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="x1" dimension="none" exposure="x1"/>
+      <StateVariable name="x2" dimension="none" exposure="x2"/>
+      <StateVariable name="x3" dimension="none" exposure="x3"/>
+      <StateVariable name="x4" dimension="none" exposure="x4"/>
+      <StateVariable name="x5" dimension="none" exposure="x5"/>
+      <StateVariable name="x6" dimension="none" exposure="x6"/>
+      <StateVariable name="x7" dimension="none" exposure="x7"/>
+      <StateVariable name="x8" dimension="none" exposure="x8"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="x1" value="(x2) / SEC"/>
+      <TimeDerivative variable="x2" value="((U + c_glob - 2*x2 - G1*(-1/2 + 1/(1 + exp(-R*x1))) - G2*(-1/2 + 1/(1 + exp(-R*x3))) - G3*(-1/2 + 1/(1 + exp(-R*x5))) - x1/T1)/T1) / SEC"/>
+      <TimeDerivative variable="x3" value="(x4) / SEC"/>
+      <TimeDerivative variable="x4" value="((-2*x4 + G8*(-1/2 + 1/(1 + exp(-R*x1))) - G7*(-1/2 + 1/(1 + exp(-R*x3))) - x3/T2)/T2) / SEC"/>
+      <TimeDerivative variable="x5" value="(x6) / SEC"/>
+      <TimeDerivative variable="x6" value="((-2*x6 + G5*(-1/2 + 1/(1 + exp(-R*x1))) + G6*(-1/2 + 1/(1 + exp(-R*x7))) - G4*(-1/2 + 1/(1 + exp(-R*x5))) - x5/T3)/T3) / SEC"/>
+      <TimeDerivative variable="x7" value="(x8) / SEC"/>
+      <TimeDerivative variable="x8" value="((-2*x8 - G10*(-1/2 + 1/(1 + exp(-R*x7))) - G9*(-1/2 + 1/(1 + exp(-R*x5))) - x7/T4)/T4) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="x1" value="x1_0"/>
+        <StateAssignment variable="x2" value="x2_0"/>
+        <StateAssignment variable="x3" value="x3_0"/>
+        <StateAssignment variable="x4" value="x4_0"/>
+        <StateAssignment variable="x5" value="x5_0"/>
+        <StateAssignment variable="x6" value="x6_0"/>
+        <StateAssignment variable="x7" value="x7_0"/>
+        <StateAssignment variable="x8" value="x8_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="CanonicalMicrocircuit_inst" type="CanonicalMicrocircuit" G1="0.8" G2="0.8" G3="1.6" G4="0.8" G5="0.8" G6="0.4" G7="0.8" G8="0.8" G9="0.4" G10="0.2" T1="2.0" T2="2.0" T3="16.0" T4="28.0" R="0.6666666666666666" U="0.0" c_glob="0" x1_0="0.0" x2_0="0.0" x3_0="0.0" x4_0="0.0" x5_0="0.0" x6_0="0.0" x7_0="0.0" x8_0="0.0"/>
+
+
+
+</Lems>

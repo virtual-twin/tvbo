@@ -397,6 +397,7 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             self.integration = Integrator()
         self.integration.enrich()
         self._validate_trajectory_observations()
+        self._validate_optimization_losses()
 
     def __setattr__(self, name, value):
         """Hold reassigned observations as construction holds them: a plain dict of typed members, each one naming a curated model filled from it.
@@ -498,9 +499,10 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             with drawing_from(_stated_seed(getattr(obj, "execution", None))):
                 net._resolve(source_dir=source_dir)
 
-        # Validate the declared observation references: network sources against observational_measures, trajectory_observations against the fit (names only, no data load).
+        # Validate the declared references: network sources against observational_measures, trajectory_observations against the fit, each loss against what defines it (names only, no data load).
         obj._validate_network_observations()
         obj._validate_trajectory_observations()
+        obj._validate_optimization_losses()
 
         # Lower declarative stimulus/stimulation Event fields (target_variable, target_regions, weight_distribution) into the legacy fields the shared codegen consumes — resolved here in Python, no template changes.
         obj._resolve_events()
@@ -975,11 +977,12 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
     def configure(self):
         """Resolve coupling declarations and normalize delay flags.
 
-        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes. An optimization's ``trajectory_observations`` are checked here too (`_validate_trajectory_observations`), so one set after construction is refused before any backend renders it.
+        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes. An optimization's ``trajectory_observations`` and its loss are checked here too (`_validate_trajectory_observations`, `_validate_optimization_losses`), so one set after construction is refused before any backend renders it.
         """
         _resolve_coupling(self)
         self._resolve_events()
         self._validate_trajectory_observations()
+        self._validate_optimization_losses()
 
         lengths_bound = False
         # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
@@ -2412,6 +2415,24 @@ class SimulationExperiment(Copyable, tvbo_datamodel.SimulationExperiment):
             if unknown:
                 raise ValueError(
                     f"trajectory_observations names {', '.join(map(repr, unknown))}, which the experiment does not declare; its observations are {', '.join(declared) or 'none'}."
+                )
+
+    def _validate_optimization_losses(self) -> None:
+        """Hold each optimization's loss to calling a name the generated code defines.
+
+        A loss whose ``callable`` names its ``module`` is imported from it; any other loss calls a Function the experiment declares under ``functions:``. A loss naming neither is refused here, naming the optimization and the missing function, rather than generated into a ``loss_fn`` that raises ``NameError`` on its first evaluation.
+        """
+        from tvbo.classes.optimization import loss_callee
+
+        declared = {str(name) for name, _ in keyed_items(self.functions, "functions")}
+        for name, optimization in keyed_items(self.optimizations, "optimizations"):
+            loss = getattr(optimization, "loss", None)
+            if not loss:
+                continue
+            callee, module = loss_callee(loss)
+            if module is None and callee not in declared:
+                raise ValueError(
+                    f"optimization {name!r}: its loss calls {callee!r}, which no `functions:` entry declares and no `callable: {{module: ...}}` imports; declare {callee!r} under `functions:` or name the module on the loss's `callable:`."
                 )
 
     def resolve_network_observations(self) -> dict:

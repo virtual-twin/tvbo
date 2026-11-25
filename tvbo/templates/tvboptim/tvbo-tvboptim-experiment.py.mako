@@ -2322,6 +2322,13 @@ for fname, fdef in exp_funcs.items():
                 funcs_needing_def.append((fname, fdef))
     else:
         funcs_needing_def.append((fname, fdef))
+
+loss_functions = [parse_loss_function(opt) for opt in optim_list]
+loss_functions = [lf for lf in loss_functions if lf]
+# A loss callable naming its module is imported like a simple `functions:` callable, unless `functions:` declares that name itself.
+for lf in loss_functions:
+    if lf['module'] and lf['func_name'] not in all_func_names:
+        simple_callable_imports[(lf['module'], lf['func_name'])] = lf['func_name']
 %>
 # Simple callable imports (direct, no wrapper needed)
 % for (module, cname), local_name in sorted(simple_callable_imports.items()):
@@ -2344,9 +2351,6 @@ ${fn.function_def(fdef, format='jax', user_functions=all_func_names)}
 
 <%
 # Pre-compute loss function info for inline generation
-loss_functions = [parse_loss_function(opt) for opt in optim_list]
-loss_functions = [lf for lf in loss_functions if lf]
-
 runtime_kwargs_needed = set()
 for lf in loss_functions:
     for arg in lf['args']:

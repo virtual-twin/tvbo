@@ -27,25 +27,31 @@ flowchart LR
 
 ## Loss Function
 
-A loss function defines the optimization objective:
+A loss is a function the experiment declares under `functions:`, called by the optimisation with its arguments bound to observations:
 
 ```yaml
-optimization:
-    loss:
-        name: fc_loss
-        equation:
-            rhs: "1 - correlation(simulated_fc, empirical_fc)"
-        aggregate:
-            over: regions
-            reduction: mean
-    free_parameters:
-        - name: G
-          domain: {lo: 0.1, hi: 5.0}
-        - name: speed
-          domain: {lo: 1.0, hi: 30.0}
-    n_epochs: 200
-    learning_rate: 0.01
+functions:
+    fc_loss:
+        source_code: "1 - jnp.corrcoef(simulated_fc.ravel(), empirical_fc.ravel())[0, 1]"
+        arguments:
+            simulated_fc: {}
+            empirical_fc: {}
+optimizations:
+    fit_fc:
+        loss:
+            function: fc_loss
+            arguments:
+                simulated_fc: {value: observations.fc.data}
+                empirical_fc: {value: observations.empirical_fc.data}
+        free_parameters:
+            - parameter: FastLinearCoupling.G
+              domain: {lo: 0.1, hi: 5.0}
+        algorithm: adam
+        learning_rate: 0.01
+        max_iterations: 200
 ```
+
+A loss written in a Python module of your own is named by its module instead, and the generated code imports it: `loss: {callable: {module: my_losses, name: fc_loss}, arguments: ...}`. A loss that names a function neither `functions:` declares nor a `callable:` imports is refused when the experiment loads.
 
 ## End-to-End Differentiability
 
@@ -74,14 +80,25 @@ observations:
       pipeline:
           - function: numpy.corrcoef
       source_observations: [bold]
-optimization:
-    loss:
-        equation: {rhs: "1 - correlation(fc, empirical_fc)"}
-    free_parameters:
-        - name: G
-          domain: {lo: 0.1, hi: 5.0}
-    n_epochs: 200
-    learning_rate: 0.01
+functions:
+    fc_loss:
+        source_code: "1 - jnp.corrcoef(simulated_fc.ravel(), empirical_fc.ravel())[0, 1]"
+        arguments:
+            simulated_fc: {}
+            empirical_fc: {}
+optimizations:
+    fit_fc:
+        loss:
+            function: fc_loss
+            arguments:
+                simulated_fc: {value: observations.fc.data}
+                empirical_fc: {value: observations.empirical_fc.data}
+        free_parameters:
+            - parameter: FastLinearCoupling.G
+              domain: {lo: 0.1, hi: 5.0}
+        algorithm: adam
+        learning_rate: 0.01
+        max_iterations: 200
 ```
 
 ## Results
