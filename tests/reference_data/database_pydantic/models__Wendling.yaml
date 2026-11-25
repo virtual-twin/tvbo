@@ -1,0 +1,366 @@
+name: Wendling
+label: Wendling neural mass model (Jansen-Rit with fast somatic GABA_A inhibition)
+iri: tvbo:models/Wendling
+parameters:
+  A:
+    name: A
+    label: Average excitatory synaptic gain
+    value: 4.0
+    domain:
+      enforce: none
+      lo: 2.5
+      hi: 7.0
+      log_scale: false
+    description: Average excitatory synaptic gain (EXC); amplitude of the excitatory
+      PSP impulse response. Domain is the genetic-algorithm search range of Cai et
+      al. (2024, Table 2).
+    unit: mV
+    grounding:
+    - GO:0060079
+  B:
+    name: B
+    label: Average slow dendritic inhibitory synaptic gain
+    value: 40.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 50.0
+      log_scale: false
+    description: Average slow dendritic inhibitory synaptic gain (SDI, GABA_A slow);
+      amplitude of the slow IPSP impulse response. Domain is the genetic-algorithm
+      search range of Cai et al. (2024, Table 2).
+    unit: mV
+    grounding:
+    - GO:0060080
+  G:
+    name: G
+    label: Average fast somatic inhibitory synaptic gain
+    value: 20.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 30.0
+      log_scale: false
+    description: Average fast somatic inhibitory synaptic gain (FSI, GABA_A fast);
+      amplitude of the fast IPSP impulse response. Domain is the genetic-algorithm
+      search range of Cai et al. (2024, Table 2).
+    unit: mV
+    grounding:
+    - GO:0060080
+  a:
+    name: a
+    label: Excitatory dendritic rate constant
+    value: 0.1
+    description: Reciprocal of the dendritic average time constant in the excitatory
+      feedback loop (100 s^-1).
+    unit: per_ms
+  b:
+    name: b
+    label: Slow inhibitory dendritic rate constant
+    value: 0.05
+    description: Reciprocal of the dendritic average time constant in the slow feedback
+      inhibitory loop (50 s^-1).
+    unit: per_ms
+  g:
+    name: g
+    label: Fast inhibitory somatic rate constant
+    value: 0.35
+    description: Reciprocal of the somatic average time constant in the fast feedback
+      inhibitory loop (350 s^-1).
+    unit: per_ms
+  C:
+    name: C
+    label: Connectivity constant
+    value: 135.0
+    description: Average number of synaptic contacts that scales the connectivity
+      constants C1 to C7.
+    grounding:
+    - GO:0099536
+  v0:
+    name: v0
+    label: Sigmoid threshold
+    value: 6.0
+    description: Average membrane potential at which the sigmoid reaches half its
+      maximum firing rate.
+    unit: mV
+  e0:
+    name: e0
+    label: Half maximum firing rate
+    value: 0.0025
+    description: Half of the maximum firing rate of the sigmoid (2.5 s^-1).
+    unit: per_ms
+  r:
+    name: r
+    label: Sigmoid steepness
+    value: 0.56
+    description: Steepness of the sigmoid wave-to-pulse function.
+    unit: per_mV
+  p:
+    name: p
+    label: Mean afferent input
+    value: 0.09
+    description: Mean afferent pulse density to the excitatory input of the pyramidal
+      cells (90 pulses/s). The sources draw p(t) as Gaussian white noise with mean
+      90 pulses/s and standard deviation 30 pulses/s; the record carries the mean,
+      and an experiment adds the fluctuation as additive noise on y6.
+    unit: per_ms
+description: 'Lumped-parameter model of a hippocampal (CA1) neuronal population that
+  extends the Jansen-Rit model with a fourth subpopulation of fast somatic-projecting
+  GABA_A interneurons (Wendling et al., 2002). Four subpopulations interact through
+  excitatory, slow dendritic inhibitory and fast somatic inhibitory feedback loops:
+  pyramidal cells, excitatory interneurons, slow dendritic-projecting GABA_A interneurons,
+  and fast somatic-projecting GABA_A interneurons, which also receive inhibition from
+  the slow ones. Each loop is a second-order linear pulse-to-wave filter followed
+  by the sigmoid wave-to-pulse function. The three synaptic gains A (excitation),
+  B (slow dendritic inhibition) and G (fast somatic inhibition) move the model between
+  background activity and spikes; the low-voltage fast activity of Wendling et al.
+  (2002) appears in this formulation only with C5 = 0.3C (see C5), not at the tabulated
+  default; the model output is the pyramidal membrane potential y1 - y2 - y3. Equations
+  follow Cai et al. (2024, Sect. 2.3) and Carvalho et al. (2021, Materials and methods);
+  default values follow Cai et al. (2024, Supplementary Table 1) and Wendling et al.
+  (2005, Table 1), converted from s^-1 to ms^-1. The network input enters the pyramidal
+  sigmoid as in Cai et al. (2024), driven by the delayed y1 of connected nodes.'
+references:
+- Wendling2002
+- Wendling2005
+- Cai2024
+- Carvalho2021
+derived_parameters:
+  C1:
+    name: C1
+    description: Pyramidal cells to excitatory interneurons (excitatory feedback loop).
+    equation:
+      rhs: C
+      latex: false
+  C2:
+    name: C2
+    description: Excitatory interneurons to pyramidal cells (excitatory feedback loop).
+    equation:
+      rhs: 0.8*C
+      latex: false
+  C3:
+    name: C3
+    description: Pyramidal cells to slow dendritic inhibitory interneurons (slow feedback
+      inhibitory loop).
+    equation:
+      rhs: 0.25*C
+      latex: false
+  C4:
+    name: C4
+    description: Slow dendritic inhibitory interneurons to pyramidal cells (slow feedback
+      inhibitory loop).
+    equation:
+      rhs: 0.25*C
+      latex: false
+  C5:
+    name: C5
+    description: Pyramidal cells to fast somatic inhibitory interneurons (fast feedback
+      inhibitory loop). 0.1C as in Wendling et al. (2005, Table 1), Cai et al. (2024,
+      Supplementary Table 1) and Carvalho et al. (2021, Table 1); the simulation code
+      of Carvalho et al. (2021) uses 0.3C, and only with 0.3C does this formulation
+      reach low-voltage fast activity, above 20 Hz for G from 20 to 30 at low B, where
+      0.1C stays below 10 Hz.
+    equation:
+      rhs: 0.1*C
+      latex: false
+  C6:
+    name: C6
+    description: Slow dendritic inhibitory interneurons to fast somatic inhibitory
+      interneurons.
+    equation:
+      rhs: 0.1*C
+      latex: false
+  C7:
+    name: C7
+    description: Fast somatic inhibitory interneurons to pyramidal cells.
+    equation:
+      rhs: 0.8*C
+      latex: false
+derived_variables:
+  lfp:
+    name: lfp
+    label: Pyramidal membrane potential
+    description: Model output, the summed postsynaptic potential on the pyramidal
+      cells (excitatory minus slow and fast inhibitory), read as the simulated local
+      field potential.
+    equation:
+      rhs: y1 - y2 - y3
+      latex: false
+    unit: mV
+    record: true
+coupling_inputs:
+  c_glob:
+    name: c_glob
+    description: Long-range input added to the pyramidal membrane potential inside
+      the pyramidal sigmoid, the sum over connected nodes of the coupling weight times
+      their delayed y1 (Cai et al., 2024).
+    dimension: 1
+    local: false
+state_variables:
+  y0:
+    name: y0
+    label: Pyramidal output PSP onto interneurons
+    description: Output of the pyramidal cells' excitatory pulse-to-wave filter, the
+      PSP that drives all three interneuron populations.
+    equation:
+      rhs: y5
+      latex: false
+    unit: mV
+    record: true
+    grounding:
+    - CL:0000598
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y1:
+    name: y1
+    label: Excitatory PSP on pyramidal cells
+    description: Excitatory postsynaptic potential on the pyramidal cells from the
+      excitatory interneurons and the afferent input p; transmitted to connected nodes.
+    equation:
+      rhs: y6
+      latex: false
+    unit: mV
+    record: true
+    grounding:
+    - GO:0060079
+    variable_of_interest: true
+    coupling_variable: true
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y2:
+    name: y2
+    label: Slow dendritic IPSP on pyramidal cells
+    description: Slow dendritic GABA_A inhibitory postsynaptic potential on the pyramidal
+      cells.
+    equation:
+      rhs: y7
+      latex: false
+    unit: mV
+    record: true
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y3:
+    name: y3
+    label: Fast somatic IPSP on pyramidal cells
+    description: Fast somatic GABA_A inhibitory postsynaptic potential on the pyramidal
+      cells.
+    equation:
+      rhs: y8
+      latex: false
+    unit: mV
+    record: true
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y4:
+    name: y4
+    label: Slow IPSP on fast interneurons
+    description: Slow inhibitory postsynaptic potential that the slow dendritic interneurons
+      exert on the fast somatic interneurons.
+    equation:
+      rhs: y9
+      latex: false
+    unit: mV
+    record: true
+    grounding:
+    - GO:0060080
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y5:
+    name: y5
+    label: Derivative of y0
+    equation:
+      rhs: A*a*Sigm(c_glob + y1 - y2 - y3) - 2*a*y5 - a**2*y0
+      latex: false
+    unit: mV_per_ms
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y6:
+    name: y6
+    label: Derivative of y1
+    equation:
+      rhs: A*a*(p + C2*Sigm(C1*y0)) - 2*a*y6 - a**2*y1
+      latex: false
+    unit: mV_per_ms
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y7:
+    name: y7
+    label: Derivative of y2
+    equation:
+      rhs: B*b*C4*Sigm(C3*y0) - 2*b*y7 - b**2*y2
+      latex: false
+    unit: mV_per_ms
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y8:
+    name: y8
+    label: Derivative of y3
+    equation:
+      rhs: G*g*C7*Sigm(C5*y0 - C6*y4) - 2*g*y8 - g**2*y3
+      latex: false
+    unit: mV_per_ms
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  y9:
+    name: y9
+    label: Derivative of y4
+    equation:
+      rhs: B*b*Sigm(C3*y0) - 2*b*y9 - b**2*y4
+      latex: false
+    unit: mV_per_ms
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+functions:
+  Sigm:
+    name: Sigm
+    equation:
+      rhs: 2*e0/(1 + exp(r*(v0 - v)))
+      latex: false
+    definition: Sigmoid wave-to-pulse function converting an average membrane potential
+      into an average firing rate.
+    arguments:
+      v:
+        name: v
+model_type: neural_mass
+system_type: continuous
+autonomous: true
+cse: false
+compile: false

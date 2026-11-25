@@ -1,0 +1,167 @@
+name: CavallariConductanceLIF
+iri: tvbo:models/CavallariConductanceLIF
+label: Conductance-based leaky integrate-and-fire neuron (Cavallari 2014 E/I network)
+model_type: spiking
+description: 'One neuron of the recurrent excitatory/inhibitory leaky integrate-and-fire network of Mazzoni et al. (2008) in its conductance-based form (COBN) of Cavallari, Panzeri & Mazzoni (2014), with the parameters tabulated by Martínez-Cañada et al. (2021, Tables 3 and 4) and reused unchanged by Martínez-Cañada et al. (2023) to infer excitation/inhibition imbalance in Alzheimer''s disease from EEG/MEG 1/f slopes. The membrane potential v integrates a leak and two conductance-based synaptic currents, AMPA and GABA-A (Cavallari 2014 Eqs. 3, 4 and 6); when v crosses thresh it is reset to reset and held there for the absolute refractory period tau_refrac, counted down by t_ref. Each presynaptic spike increments the synaptic gating by a difference of exponentials with rise time tau_r and decay time tau_d (Cavallari 2014 Eq. 7), written here as the two linear ODEs per receptor of Mazzoni 2008 Eqs. 2-5 (auxiliary variable x, effective conductance geff), whose impulse response is exactly that kernel. Because all AMPA inputs share one kinetics, the recurrent, thalamic and cortico-cortical AMPA spike trains drive one AMPA pair weighted by their own conductances, so geff_AMPA and geff_GABA are the effective AMPA and GABA conductances of Cavallari 2014 Eq. 8. The inputs S_* are presynaptic spike trains (sums of Dirac deltas) that a network delivers after the synaptic latency tau_l = 1 ms (Cavallari 2014 Table 3), a transmission delay the network''s edges carry, not this node. Defaults describe a pyramidal (excitatory) cell; the interneuron value of every cell-type-specific parameter is given in its description. In the source network 4000 excitatory and 1000 inhibitory neurons are randomly connected with probability 0.2 and each receives two external Poisson drives, a constant-rate thalamic input and a cortico-cortical input whose rate follows an Ornstein-Uhlenbeck process. The EEG proxy of Martínez-Cañada 2021/2023 is the sum over excitatory cells of |I_AMPA| + |I_GABA|.'
+references:
+- Cavallari2014
+- Mazzoni2008
+- MartinezCanada2021
+- MartinezCanada2023
+parameters:
+  V_leak:
+    label: V_leak
+    value: -70.0
+    unit: mV
+    description: Leak (resting) membrane potential, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).
+  thresh:
+    label: V_threshold
+    value: -52.0
+    unit: mV
+    description: Spike threshold, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).
+  reset:
+    label: V_reset
+    value: -59.0
+    unit: mV
+    description: Reset potential after a spike, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).
+  tau_refrac:
+    label: tau_refractory
+    value: 2.0
+    unit: ms
+    description: 'Absolute refractory period: the spike event sets t_ref to it, and v stays at reset until t_ref has counted down to zero; interneuron: 1 ms (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).'
+  tau_m:
+    label: tau_m
+    value: 20.0
+    unit: ms
+    description: 'Membrane time constant, C_m / g_leak with C_m = 500 pF; interneuron: 10 ms, C_m = 200 pF (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 4A).'
+  g_leak:
+    label: g_leak
+    value: 25.0
+    unit: nS
+    description: 'Leak membrane conductance; interneuron: 20 nS (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 4A).'
+  E_AMPA:
+    label: E_AMPA
+    value: 0.0
+    unit: mV
+    description: AMPA reversal potential, both cell types (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).
+  E_GABA:
+    label: E_GABA
+    value: -80.0
+    unit: mV
+    description: GABA-A reversal potential, both cell types (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).
+  tau_r_AMPA:
+    label: tau_r (AMPA)
+    value: 0.4
+    unit: ms
+    description: 'AMPA rise time; interneuron: 0.2 ms (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).'
+  tau_d_AMPA:
+    label: tau_d (AMPA)
+    value: 2.0
+    unit: ms
+    description: 'AMPA decay time; interneuron: 1 ms (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).'
+  tau_r_GABA:
+    label: tau_r (GABA)
+    value: 0.25
+    unit: ms
+    description: GABA-A rise time, both cell types (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).
+  tau_d_GABA:
+    label: tau_d (GABA)
+    value: 5.0
+    unit: ms
+    description: GABA-A decay time, both cell types (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).
+  g_AMPA_rec:
+    label: g_AMPA (rec.)
+    value: 0.178
+    unit: nS
+    description: 'Conductance of one recurrent AMPA synapse from a pyramidal cell; interneuron: 0.233 nS (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).'
+  g_AMPA_tha:
+    label: g_AMPA (tha.)
+    value: 0.234
+    unit: nS
+    description: 'Conductance of one thalamic (external, constant-rate) AMPA synapse; interneuron: 0.317 nS (Cavallari 2014 Table 2, AMPA external; Martínez-Cañada 2021 Table 4B).'
+  g_AMPA_cort:
+    label: g_AMPA (cort.)
+    value: 0.187
+    unit: nS
+    description: 'Conductance of one cortico-cortical (external, OU-modulated rate) AMPA synapse; interneuron: 0.254 nS (Martínez-Cañada 2021 Table 4B).'
+  g_GABA:
+    label: g_GABA
+    value: 2.01
+    unit: nS
+    description: 'Conductance of one GABA-A synapse from an interneuron; interneuron target: 2.70 nS (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).'
+coupling_inputs:
+  S_AMPA_rec:
+    description: Spike train from presynaptic pyramidal cells, sum of Dirac deltas at the spike times plus tau_l (per ms).
+  S_AMPA_tha:
+    description: Spike train from the thalamic external Poisson input, sum of Dirac deltas (per ms).
+  S_AMPA_cort:
+    description: Spike train from the cortico-cortical external Poisson input, sum of Dirac deltas (per ms).
+  S_GABA:
+    description: Spike train from presynaptic interneurons, sum of Dirac deltas at the spike times plus tau_l (per ms).
+derived_variables:
+  integrating:
+    description: One outside the refractory period and zero during it, the factor that holds v at reset for tau_refrac after each spike while the synaptic conductances keep decaying.
+    equation:
+      rhs: Piecewise((0.0, t_ref > 0), (1.0, True))
+  I_AMPA:
+    description: AMPA synaptic current, positive outward (Cavallari 2014 Eq. 6); its absolute value summed over pyramidal cells enters the EEG proxy.
+    unit: pA
+    record: true
+    equation:
+      rhs: geff_AMPA*(v - E_AMPA)
+  I_GABA:
+    description: GABA-A synaptic current, positive outward (Cavallari 2014 Eq. 6); its absolute value summed over pyramidal cells enters the EEG proxy.
+    unit: pA
+    record: true
+    equation:
+      rhs: geff_GABA*(v - E_GABA)
+state_variables:
+  v:
+    description: Membrane potential, tau_m dv/dt = -v + V_leak - I_tot/g_leak (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 3D).
+    unit: mV
+    equation:
+      rhs: integrating*(-(v - V_leak) - (I_AMPA + I_GABA)/g_leak)/tau_m
+    initial_value: -70.0
+    record: true
+  x_AMPA:
+    description: Auxiliary AMPA rise variable; each presynaptic spike of a synapse with conductance g raises it by tau_m g / tau_r_AMPA (Mazzoni 2008 Eq. 3).
+    unit: nS
+    equation:
+      rhs: (-x_AMPA + tau_m*(g_AMPA_rec*S_AMPA_rec + g_AMPA_tha*S_AMPA_tha + g_AMPA_cort*S_AMPA_cort))/tau_r_AMPA
+    initial_value: 0.0
+    record: false
+  geff_AMPA:
+    description: Effective AMPA conductance, the sum over AMPA synapses of g s(t) with s the kernel of Cavallari 2014 Eq. 7 (Mazzoni 2008 Eq. 2; Cavallari 2014 Eq. 8).
+    unit: nS
+    equation:
+      rhs: (-geff_AMPA + x_AMPA)/tau_d_AMPA
+    initial_value: 0.0
+    record: true
+  x_GABA:
+    description: Auxiliary GABA-A rise variable; each presynaptic spike raises it by tau_m g_GABA / tau_r_GABA (Mazzoni 2008 Eq. 5).
+    unit: nS
+    equation:
+      rhs: (-x_GABA + tau_m*g_GABA*S_GABA)/tau_r_GABA
+    initial_value: 0.0
+    record: false
+  geff_GABA:
+    description: Effective GABA-A conductance, the sum over GABA synapses of g s(t) with s the kernel of Cavallari 2014 Eq. 7 (Mazzoni 2008 Eq. 4; Cavallari 2014 Eq. 8).
+    unit: nS
+    equation:
+      rhs: (-geff_GABA + x_GABA)/tau_d_GABA
+    initial_value: 0.0
+    record: true
+  t_ref:
+    description: Refractory time remaining, set to tau_refrac by the spike event and counting down to zero at unit rate.
+    unit: ms
+    equation:
+      rhs: -(1 - integrating)
+    initial_value: 0.0
+    record: false
+events:
+  spike:
+    description: Spike emission when v exceeds the threshold, followed by the reset and the start of the absolute refractory period.
+    condition:
+      rhs: v > thresh
+    affect:
+      rhs: v = reset; t_ref = tau_refrac

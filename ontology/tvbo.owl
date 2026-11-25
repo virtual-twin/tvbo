@@ -336,6 +336,12 @@
     
 
 
+    <!-- http://www.w3.org/2004/02/skos/core#narrowMatch -->
+
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2004/02/skos/core#narrowMatch"/>
+    
+
+
     <!-- http://www.w3.org/2004/02/skos/core#notation -->
 
     <owl:AnnotationProperty rdf:about="http://www.w3.org/2004/02/skos/core#notation"/>
@@ -54293,6 +54299,12 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
     
 
 
+    <!-- http://purl.obolibrary.org/obo/CL_0000122 -->
+
+    <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/CL_0000122"/>
+    
+
+
     <!-- http://purl.obolibrary.org/obo/CL_0000598 -->
 
     <owl:NamedIndividual rdf:about="http://purl.obolibrary.org/obo/CL_0000598"/>
@@ -56522,6 +56534,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Basal-ganglia circuit model</rdfs:label>
         <skos:prefLabel xml:lang="en">Basal-ganglia circuit model</skos:prefLabel>
+        <skos:relatedMatch rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron"/>
     </owl:NamedIndividual>
     
 
@@ -56532,6 +56545,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">next-generation NMM (Montbrió/Dody, aQIF-derived)</rdfs:label>
+        <skos:closeMatch rdf:resource="https://w3id.org/tvbo/models/MontbrioPazoRoxin"/>
         <skos:prefLabel xml:lang="en">next-generation NMM (Montbrió/Dody, aQIF-derived)</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56543,6 +56557,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">DCM canonical microcircuit</rdfs:label>
+        <skos:exactMatch rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit"/>
         <skos:prefLabel xml:lang="en">DCM canonical microcircuit</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56554,6 +56569,9 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Epileptor</rdfs:label>
+        <skos:narrowMatch rdf:resource="https://w3id.org/tvbo/models/Epileptor"/>
+        <skos:narrowMatch rdf:resource="https://w3id.org/tvbo/models/Epileptor2D"/>
+        <skos:narrowMatch rdf:resource="https://w3id.org/tvbo/models/Epileptor5D"/>
         <skos:prefLabel xml:lang="en">Epileptor</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56565,6 +56583,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Hopf / Stuart-Landau oscillator</rdfs:label>
+        <skos:closeMatch rdf:resource="https://w3id.org/tvbo/models/SupHopf"/>
         <skos:prefLabel xml:lang="en">Hopf / Stuart-Landau oscillator</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56576,6 +56595,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Jansen-Rit</rdfs:label>
+        <skos:exactMatch rdf:resource="https://w3id.org/tvbo/models/JansenRit"/>
         <skos:prefLabel xml:lang="en">Jansen-Rit</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56587,6 +56607,9 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Reduced Wong-Wang / dynamic mean-field (Deco)</rdfs:label>
+        <skos:narrowMatch rdf:resource="https://w3id.org/tvbo/models/DecoBalancedExcInh"/>
+        <skos:narrowMatch rdf:resource="https://w3id.org/tvbo/models/ReducedWongWang"/>
+        <skos:narrowMatch rdf:resource="https://w3id.org/tvbo/models/ReducedWongWangExcInh"/>
         <skos:prefLabel xml:lang="en">Reduced Wong-Wang / dynamic mean-field (Deco)</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56599,6 +56622,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Spiking E/I network (LIF)</rdfs:label>
         <skos:prefLabel xml:lang="en">Spiking E/I network (LIF)</skos:prefLabel>
+        <skos:relatedMatch rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF"/>
     </owl:NamedIndividual>
     
 
@@ -56609,6 +56633,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Stefánescu-Jirsa 3D</rdfs:label>
+        <skos:exactMatch rdf:resource="https://w3id.org/tvbo/models/StefanescuJirsa3D"/>
         <skos:prefLabel xml:lang="en">Stefánescu-Jirsa 3D</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -56620,6 +56645,7 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <rdf:type rdf:resource="https://w3id.org/tvbo/clinical/NodeDynamicsModel"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label xml:lang="en">Wendling (Jansen-Rit-derived)</rdfs:label>
+        <skos:exactMatch rdf:resource="https://w3id.org/tvbo/models/Wendling"/>
         <skos:prefLabel xml:lang="en">Wendling (Jansen-Rit-derived)</skos:prefLabel>
     </owl:NamedIndividual>
     
@@ -58995,6 +59021,84 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
     
 
 
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
+        <terms:description>The canonical microcircuit (CMC) neural mass model of dynamic causal modelling (DCM) for M/EEG, as implemented in SPM&apos;s spm_fx_cmc.m. One cortical source holds four populations arranged by layer, following the predictive-coding microcircuit of Bastos et al. (2012): spiny stellate cells (ss, granular layer), superficial pyramidal cells (sp, supragranular), inhibitory interneurons (ii) and deep pyramidal cells (dp, infragranular). Each population is a second-order (alpha-kernel) synaptic filter of its summed presynaptic firing, giving eight states: a voltage and its rate of change per population. Firing is a sigmoid of voltage centred so that a population at rest (voltage 0) contributes no deviation from baseline firing. Ten intrinsic connections G1-G10 couple the populations, including a self-inhibitory connection on each; the sp self-inhibition G7 is the &quot;pyramidal self-inhibition&quot; (inverse synaptic gain) parameter that clinical DCM studies estimate. Time is in ms; SPM integrates the same equations in seconds, so every SPM rate in s^-1 appears here divided by 1000 and every time constant keeps its SPM value in ms. The SPM sources default to no input and a zero initial state, which is a fixed point; drive the model through U or c_glob, or start it off zero. Extrinsic input from other sources enters the spiny stellate population as the forward (sp to ss) connection; SPM&apos;s three further extrinsic routes (forward sp to dp, backward dp to sp and dp to ii) and its intrinsic and extrinsic conduction delays are not part of this single-source record.</terms:description>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Bastos2012"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>CanonicalMicrocircuit</rdfs:label>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G1"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G10"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G2"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G3"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G4"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G5"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G6"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G7"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G8"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G9"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/R"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T1"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T2"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T3"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T4"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/U"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x1"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x2"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x3"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x4"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x5"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x6"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x7"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x8"/>
+        <tvbo:model_type>neural_mass</tvbo:model_type>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
+        <terms:description>One neuron of the recurrent excitatory/inhibitory leaky integrate-and-fire network of Mazzoni et al. (2008) in its conductance-based form (COBN) of Cavallari, Panzeri &amp; Mazzoni (2014), with the parameters tabulated by Martínez-Cañada et al. (2021, Tables 3 and 4) and reused unchanged by Martínez-Cañada et al. (2023) to infer excitation/inhibition imbalance in Alzheimer&apos;s disease from EEG/MEG 1/f slopes. The membrane potential v integrates a leak and two conductance-based synaptic currents, AMPA and GABA-A (Cavallari 2014 Eqs. 3, 4 and 6); when v crosses thresh it is reset to reset and held there for the absolute refractory period tau_refrac, counted down by t_ref. Each presynaptic spike increments the synaptic gating by a difference of exponentials with rise time tau_r and decay time tau_d (Cavallari 2014 Eq. 7), written here as the two linear ODEs per receptor of Mazzoni 2008 Eqs. 2-5 (auxiliary variable x, effective conductance geff), whose impulse response is exactly that kernel. Because all AMPA inputs share one kinetics, the recurrent, thalamic and cortico-cortical AMPA spike trains drive one AMPA pair weighted by their own conductances, so geff_AMPA and geff_GABA are the effective AMPA and GABA conductances of Cavallari 2014 Eq. 8. The inputs S_* are presynaptic spike trains (sums of Dirac deltas) that a network delivers after the synaptic latency tau_l = 1 ms (Cavallari 2014 Table 3), a transmission delay the network&apos;s edges carry, not this node. Defaults describe a pyramidal (excitatory) cell; the interneuron value of every cell-type-specific parameter is given in its description. In the source network 4000 excitatory and 1000 inhibitory neurons are randomly connected with probability 0.2 and each receives two external Poisson drives, a constant-rate thalamic input and a cortico-cortical input whose rate follows an Ornstein-Uhlenbeck process. The EEG proxy of Martínez-Cañada 2021/2023 is the sum over excitatory cells of |I_AMPA| + |I_GABA|.</terms:description>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Cavallari2014"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/MartinezCanada2021"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/MartinezCanada2023"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Mazzoni2008"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>CavallariConductanceLIF</rdfs:label>
+        <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/I_AMPA"/>
+        <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/I_GABA"/>
+        <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/integrating"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/E_AMPA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/E_GABA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/V_leak"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_cort"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_rec"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_tha"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_GABA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_leak"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/reset"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_d_AMPA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_d_GABA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_m"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_r_AMPA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_r_GABA"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_refrac"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/thresh"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/geff_AMPA"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/geff_GABA"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/t_ref"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/v"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/x_AMPA"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/x_GABA"/>
+        <tvbo:model_type>spiking</tvbo:model_type>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/models/Chua -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Chua">
@@ -60958,6 +61062,42 @@ attraction region selection.</terms:description>
     
 
 
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
+        <terms:description>Single-neuron unit of the spiking cortex-basal ganglia-thalamus motor-loop model that Maith et al. (2020) fitted to resting-state BOLD correlations of Parkinson patients and matched controls. Every population of that model (striatal direct and indirect spiny projection neurons dSN and iSN, GPe, GPi, STN, thalamus, and the excitatory and inhibitory cortex) is a group of these neurons: a quadratic Izhikevich membrane n2*v^2 + n1*v + n0 with a recovery variable u, AMPA and GABA conductances with reversal potentials, a spike-triggered reset (v = c, u = u + d) and a 10 ms refractory period during which v and u are frozen while the conductances keep decaying. The populations differ only in their parameter row (Meier et al. 2022, Supplementary Table 2, values taken from Maith et al. 2020); the defaults here are the STN row, and each parameter&apos;s description lists the value for every population. Meier et al. attribute the GPe, GPi and STN rows to the hybrid neuron of Thibeault &amp; Srinivasa (2013), the striatal row to Humphries, Wood &amp; Gurney (2009) and the thalamic row to the phasic-bursting neuron of Izhikevich (2004), whose reset is c = -55 mV where the thalamic row has -65 mV; the record keeps the row as tabulated. Incoming spikes enter as the coupling inputs c_ampa and c_gaba, each a weighted sum of delta pulses that increments the matching conductance (Meier et al. 2022, Supplementary Eq. 3); cortical input to the basal ganglia is excitatory and therefore arrives on c_ampa (cortex to dSN, iSN and STN). The circuit itself (population sizes, connection probabilities and the per-subject fitted weights) and the slow per-neuron noise current are network- and experiment-level quantities and are not part of this record.</terms:description>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Maith2020"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Meier2022"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>MaithBasalGangliaNeuron</rdfs:label>
+        <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/derived_variables/integrating"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/C"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/E_ampa"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/E_gaba"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/I_e"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/V_r"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/V_th"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/a"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/b"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/c"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/d"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n0"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n1"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n2"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_ampa"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_gaba"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_refrac"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/g_ampa"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/g_gaba"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/t_ref"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/u"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/v"/>
+        <tvbo:model_type>spiking</tvbo:model_type>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/models/MannevilleSimpleMap -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MannevilleSimpleMap">
@@ -61940,6 +62080,44 @@ forcing it displays entrainment, quasi-periodicity or chaos depending on paramet
     
 
 
+    <!-- https://w3id.org/tvbo/models/Wendling -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
+        <terms:description>Lumped-parameter model of a hippocampal (CA1) neuronal population that extends the Jansen-Rit model with a fourth subpopulation of fast somatic-projecting GABA_A interneurons (Wendling et al., 2002). Four subpopulations interact through excitatory, slow dendritic inhibitory and fast somatic inhibitory feedback loops: pyramidal cells, excitatory interneurons, slow dendritic-projecting GABA_A interneurons, and fast somatic-projecting GABA_A interneurons, which also receive inhibition from the slow ones. Each loop is a second-order linear pulse-to-wave filter followed by the sigmoid wave-to-pulse function. The three synaptic gains A (excitation), B (slow dendritic inhibition) and G (fast somatic inhibition) move the model between background activity and spikes; the low-voltage fast activity of Wendling et al. (2002) appears in this formulation only with C5 = 0.3C (see C5), not at the tabulated default; the model output is the pyramidal membrane potential y1 - y2 - y3. Equations follow Cai et al. (2024, Sect. 2.3) and Carvalho et al. (2021, Materials and methods); default values follow Cai et al. (2024, Supplementary Table 1) and Wendling et al. (2005, Table 1), converted from s^-1 to ms^-1. The network input enters the pyramidal sigmoid as in Cai et al. (2024), driven by the delayed y1 of connected nodes.</terms:description>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Cai2024"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Carvalho2021"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Wendling2002"/>
+        <terms:references rdf:resource="https://w3id.org/tvbo/studies/Wendling2005"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Wendling</rdfs:label>
+        <tvbo:hasDerivedVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/derived_variables/lfp"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/A"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/B"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/C"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/G"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/a"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/b"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/e0"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/g"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/p"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/r"/>
+        <tvbo:hasParameter rdf:resource="https://w3id.org/tvbo/models/Wendling/parameters/v0"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y0"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y1"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y2"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y3"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y4"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y5"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y6"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y7"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y8"/>
+        <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Wendling/state_variables/y9"/>
+        <tvbo:model_type>neural_mass</tvbo:model_type>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/models/WilsonCowan -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/WilsonCowan">
@@ -62014,11 +62192,11 @@ Note:
     </owl:NamedIndividual>
     <rdf:Description rdf:nodeID="genid5313">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     <rdf:Description rdf:nodeID="genid5314">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -63124,6 +63302,682 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mu_si (CakanObermayer state variable)</rdfs:label>
         <skos:notation>mu_si</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G1 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G1">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic self-inhibitory connection of the spiny stellate population. SPM default 4*200 = 800 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G1 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G1</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G10 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G10">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic self-inhibitory connection of the deep pyramidal population. SPM default 1*200 = 200 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.2</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G10 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G10</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic inhibitory connection from superficial pyramidal to spiny stellate cells. SPM default 4*200 = 800 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G2 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G2</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G3 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G3">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic inhibitory connection from inhibitory interneurons to spiny stellate cells. SPM default 8*200 = 1600 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.6</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G3 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G3</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G4 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G4">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic self-inhibitory connection of the inhibitory interneuron population. SPM default 4*200 = 800 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G4 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G4</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G5 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G5">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic excitatory connection from spiny stellate cells to inhibitory interneurons. SPM default 4*200 = 800 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G5 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G5</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G6 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G6">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic excitatory connection from deep pyramidal cells to inhibitory interneurons. SPM default 2*200 = 400 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.4</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G6 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G6</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G7 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G7">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic self-inhibitory connection of the superficial pyramidal population, the inverse of its synaptic gain; the first free intrinsic parameter in SPM (P.G(:,1)) and the one SPM lets deep-pyramidal depolarisation modulate. SPM default 4*200 = 800 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G7 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G7</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G8 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G8">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic excitatory connection from spiny stellate to superficial pyramidal cells. SPM default 4*200 = 800 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.8</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G8 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G8</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G9 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/G9">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Intrinsic inhibitory connection from inhibitory interneurons to deep pyramidal cells. SPM default 2*200 = 400 s^-1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.4</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G9 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>G9</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/R -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/R">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Slope (gain) of the sigmoid activation function that maps a population&apos;s voltage to its firing; SPM scales it by exp(P.S) with prior mean P.S = 0.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.6666667</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>R (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>R</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T1 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T1">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Synaptic time constant of the spiny stellate population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>T1 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>T1</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Synaptic time constant of the superficial pyramidal population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>T2 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>T2</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T3 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T3">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Synaptic time constant of the inhibitory interneuron population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">16.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>T3 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>T3</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T4 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/T4">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Synaptic time constant of the deep pyramidal population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">28.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>T4 (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>T4</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/U -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/parameters/U">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Constant exogenous drive to the spiny stellate population, in the same units as the intrinsic terms. SPM forms it as C*u*32 (exogenous) or u*512 (endogenous) in s^-1 and defaults to no input.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>U (CanonicalMicrocircuit parameter)</rdfs:label>
+        <skos:notation>U</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x1 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x1">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000122"/>
+        <tvbo:rhs>x2</tvbo:rhs>
+        <terms:description>Voltage of the spiny stellate population (granular layer).</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000122"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x1 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x1</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(c_glob + U - G1*Sigm(x1) - G2*Sigm(x3) - G3*Sigm(x5) - 2*x2 - x1/T1)/T1</tvbo:rhs>
+        <terms:description>Rate of change of the spiny stellate voltage (SPM &quot;conductance&quot;); receives the exogenous input U and the extrinsic forward input c_glob.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x2 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x2</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x3 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x3">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:rhs>x4</tvbo:rhs>
+        <terms:description>Voltage of the superficial pyramidal population (supragranular layer); the state SPM&apos;s CMC observer reads by default (lead-field contribution J = 1) and the source of forward extrinsic output.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x3 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x3</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x4 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x4">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(G8*Sigm(x1) - G7*Sigm(x3) - 2*x4 - x3/T2)/T2</tvbo:rhs>
+        <terms:description>Rate of change of the superficial pyramidal voltage (SPM &quot;conductance&quot;).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x4 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x4</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x5 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x5">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <tvbo:rhs>x6</tvbo:rhs>
+        <terms:description>Voltage of the inhibitory interneuron population (SPM labels this state &quot;current&quot;).</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000099"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x5 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x5</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x6 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x6">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(G5*Sigm(x1) + G6*Sigm(x7) - G4*Sigm(x5) - 2*x6 - x5/T3)/T3</tvbo:rhs>
+        <terms:description>Rate of change of the inhibitory interneuron state (SPM &quot;conductance&quot;).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x6 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x6</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x7 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x7">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:rhs>x8</tvbo:rhs>
+        <terms:description>Voltage of the deep pyramidal population (infragranular layer), the source of backward extrinsic output.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x7 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x7</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x8 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CanonicalMicrocircuit/state_variables/x8">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(-G10*Sigm(x7) - G9*Sigm(x5) - 2*x8 - x7/T4)/T4</tvbo:rhs>
+        <terms:description>Rate of change of the deep pyramidal voltage (SPM &quot;conductance&quot;).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x8 (CanonicalMicrocircuit state variable)</rdfs:label>
+        <skos:notation>x8</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/I_AMPA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/I_AMPA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:rhs>geff_AMPA*(v - E_AMPA)</tvbo:rhs>
+        <terms:description>AMPA synaptic current, positive outward (Cavallari 2014 Eq. 6); its absolute value summed over pyramidal cells enters the EEG proxy.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>I_AMPA (CavallariConductanceLIF derived variable)</rdfs:label>
+        <skos:notation>I_AMPA</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/I_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/I_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:rhs>geff_GABA*(v - E_GABA)</tvbo:rhs>
+        <terms:description>GABA-A synaptic current, positive outward (Cavallari 2014 Eq. 6); its absolute value summed over pyramidal cells enters the EEG proxy.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>I_GABA (CavallariConductanceLIF derived variable)</rdfs:label>
+        <skos:notation>I_GABA</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/integrating -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/derived_variables/integrating">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:rhs>Piecewise((0.0, t_ref &gt; 0), (1.0, True))</tvbo:rhs>
+        <terms:description>One outside the refractory period and zero during it, the factor that holds v at reset for tau_refrac after each spike while the synaptic conductances keep decaying.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>integrating (CavallariConductanceLIF derived variable)</rdfs:label>
+        <skos:notation>integrating</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/E_AMPA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/E_AMPA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>AMPA reversal potential, both cell types (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>E_AMPA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>E_AMPA</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/E_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/E_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>GABA-A reversal potential, both cell types (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-80.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>E_GABA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>E_GABA</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/V_leak -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/V_leak">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Leak (resting) membrane potential, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-70.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>V_leak (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>V_leak</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_cort -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_cort">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Conductance of one cortico-cortical (external, OU-modulated rate) AMPA synapse; interneuron: 0.254 nS (Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.187</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_AMPA_cort (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>g_AMPA_cort</skos:notation>
+        <tvbo:unit>nS</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_rec -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_rec">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Conductance of one recurrent AMPA synapse from a pyramidal cell; interneuron: 0.233 nS (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.178</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_AMPA_rec (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>g_AMPA_rec</skos:notation>
+        <tvbo:unit>nS</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_tha -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_AMPA_tha">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Conductance of one thalamic (external, constant-rate) AMPA synapse; interneuron: 0.317 nS (Cavallari 2014 Table 2, AMPA external; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.234</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_AMPA_tha (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>g_AMPA_tha</skos:notation>
+        <tvbo:unit>nS</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Conductance of one GABA-A synapse from an interneuron; interneuron target: 2.70 nS (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.01</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_GABA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>g_GABA</skos:notation>
+        <tvbo:unit>nS</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_leak -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/g_leak">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Leak membrane conductance; interneuron: 20 nS (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 4A).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">25.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_leak (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>g_leak</skos:notation>
+        <tvbo:unit>nS</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/reset -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/reset">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Reset potential after a spike, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-59.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>reset (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>reset</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_d_AMPA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_d_AMPA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>AMPA decay time; interneuron: 1 ms (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_d_AMPA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>tau_d_AMPA</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_d_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_d_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>GABA-A decay time, both cell types (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_d_GABA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>tau_d_GABA</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_m -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_m">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Membrane time constant, C_m / g_leak with C_m = 500 pF; interneuron: 10 ms, C_m = 200 pF (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 4A).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">20.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_m (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>tau_m</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_r_AMPA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_r_AMPA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>AMPA rise time; interneuron: 0.2 ms (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.4</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_r_AMPA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>tau_r_AMPA</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_r_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_r_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>GABA-A rise time, both cell types (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.25</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_r_GABA (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>tau_r_GABA</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_refrac -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/tau_refrac">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Absolute refractory period: the spike event sets t_ref to it, and v stays at reset until t_ref has counted down to zero; interneuron: 1 ms (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_refrac (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>tau_refrac</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/thresh -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/parameters/thresh">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Spike threshold, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-52.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>thresh (CavallariConductanceLIF parameter)</rdfs:label>
+        <skos:notation>thresh</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/geff_AMPA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/geff_AMPA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(-geff_AMPA + x_AMPA)/tau_d_AMPA</tvbo:rhs>
+        <terms:description>Effective AMPA conductance, the sum over AMPA synapses of g s(t) with s the kernel of Cavallari 2014 Eq. 7 (Mazzoni 2008 Eq. 2; Cavallari 2014 Eq. 8).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>geff_AMPA (CavallariConductanceLIF state variable)</rdfs:label>
+        <skos:notation>geff_AMPA</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/geff_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/geff_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(-geff_GABA + x_GABA)/tau_d_GABA</tvbo:rhs>
+        <terms:description>Effective GABA-A conductance, the sum over GABA synapses of g s(t) with s the kernel of Cavallari 2014 Eq. 7 (Mazzoni 2008 Eq. 4; Cavallari 2014 Eq. 8).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>geff_GABA (CavallariConductanceLIF state variable)</rdfs:label>
+        <skos:notation>geff_GABA</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/t_ref -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/t_ref">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>-(1 - integrating)</tvbo:rhs>
+        <terms:description>Refractory time remaining, set to tau_refrac by the spike event and counting down to zero at unit rate.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>t_ref (CavallariConductanceLIF state variable)</rdfs:label>
+        <skos:notation>t_ref</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/v -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/v">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>integrating*(-(v - V_leak) - (I_AMPA + I_GABA)/g_leak)/tau_m</tvbo:rhs>
+        <terms:description>Membrane potential, tau_m dv/dt = -v + V_leak - I_tot/g_leak (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 3D).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>v (CavallariConductanceLIF state variable)</rdfs:label>
+        <skos:notation>v</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/x_AMPA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/x_AMPA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(-x_AMPA + tau_m*(g_AMPA_rec*S_AMPA_rec + g_AMPA_tha*S_AMPA_tha + g_AMPA_cort*S_AMPA_cort))/tau_r_AMPA</tvbo:rhs>
+        <terms:description>Auxiliary AMPA rise variable; each presynaptic spike of a synapse with conductance g raises it by tau_m g / tau_r_AMPA (Mazzoni 2008 Eq. 3).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x_AMPA (CavallariConductanceLIF state variable)</rdfs:label>
+        <skos:notation>x_AMPA</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/x_GABA -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CavallariConductanceLIF/state_variables/x_GABA">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>(-x_GABA + tau_m*g_GABA*S_GABA)/tau_r_GABA</tvbo:rhs>
+        <terms:description>Auxiliary GABA-A rise variable; each presynaptic spike raises it by tau_m g_GABA / tau_r_GABA (Mazzoni 2008 Eq. 5).</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>x_GABA (CavallariConductanceLIF state variable)</rdfs:label>
+        <skos:notation>x_GABA</skos:notation>
     </owl:NamedIndividual>
     
 
@@ -74075,6 +74929,316 @@ Describes relationship between membrane voltage and channel conductance.</terms:
     
 
 
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/derived_variables/integrating -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/derived_variables/integrating">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:rhs>Piecewise((0.0, t_ref &gt; 0), (1.0, True))</tvbo:rhs>
+        <terms:description>One outside the refractory period and zero during it, the factor that freezes v and u for tau_refrac after each spike.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>integrating (MaithBasalGangliaNeuron derived variable)</rdfs:label>
+        <skos:notation>integrating</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/C -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/C">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Membrane capacity scaling of u. Per population: dSN/iSN 50, all others 1.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">1.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>C (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Membrane capacity scaling of the recovery term u/C.</skos:definition>
+        <skos:notation>C</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/E_ampa -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/E_ampa">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>AMPA reversal potential, the same for every population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>E_ampa (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>AMPA reversal potential.</skos:definition>
+        <skos:notation>E_ampa</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/E_gaba -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/E_gaba">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>GABA reversal potential, the same for every population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-90.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>E_gaba (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>GABA reversal potential.</skos:definition>
+        <skos:notation>E_gaba</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/I_e -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/I_e">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Constant baseline current. Per population: dSN/iSN 0, GPi 30, GPe 12, STN 3, thalamus 3.5, cortex E 50, cortex I 0.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">3.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>I_e (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Region-specific constant external (baseline) current.</skos:definition>
+        <skos:notation>I_e</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/V_r -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/V_r">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Reference potential of the recovery term. Per population: dSN/iSN -80 mV (the resting potential of the Humphries et al. 2009 spiny projection neuron, a root of n2*v^2 + n1*v + n0), all others 0 mV.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>V_r (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Reference potential of the recovery variable, u relaxes towards b*(v - V_r).</skos:definition>
+        <skos:notation>V_r</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/V_th -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/V_th">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Spike threshold. Per population: dSN/iSN 40 mV, all others 30 mV.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">30.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>V_th (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Spike threshold of the membrane potential.</skos:definition>
+        <skos:notation>V_th</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/a -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/a">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Rate of recovery of u. Per population: dSN/iSN 0.05, GPi 0.005, GPe 0.005, STN 0.005, thalamus 0.02, cortex E 0.02, cortex I 0.02.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.005</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>a (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Rate of recovery of the recovery variable u.</skos:definition>
+        <skos:notation>a</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/b -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/b">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Sensitivity of u to subthreshold membrane potential. Per population: dSN/iSN -20, GPi 0.585, GPe 0.585, STN 0.265, thalamus 0.25, cortex E 0.2, cortex I 0.2.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.265</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>b (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Sensitivity of the recovery variable u to subthreshold fluctuations of the membrane potential.</skos:definition>
+        <skos:notation>b</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/c -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/c">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>After-spike reset value of v. Per population: dSN/iSN -55, GPi -65, GPe -65, STN -65, thalamus -65, cortex E -72, cortex I -72 mV.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">-65.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>c (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>After-spike reset value of the membrane potential v.</skos:definition>
+        <skos:notation>c</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/d -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/d">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>After-spike increment of u. Per population: dSN/iSN 377, GPi 4, GPe 4, STN 2, thalamus 0.05, cortex E 6, cortex I 6.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">2.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>d (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>After-spike increment of the recovery variable u.</skos:definition>
+        <skos:notation>d</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n0 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n0">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Constant coefficient of the quadratic membrane. Per population: dSN/iSN 61.65119, all others 140.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">140.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>n0 (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Constant coefficient of the quadratic membrane equation.</skos:definition>
+        <skos:notation>n0</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n1 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n1">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Linear coefficient of the quadratic membrane. Per population: dSN/iSN 2.594639, all others 5.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">5.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>n1 (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Linear coefficient of the quadratic membrane equation.</skos:definition>
+        <skos:notation>n1</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/n2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Quadratic coefficient of the quadratic membrane. Per population: dSN/iSN 0.022799, all others 0.04.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.04</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>n2 (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Quadratic coefficient of the quadratic membrane equation.</skos:definition>
+        <skos:notation>n2</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_ampa -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_ampa">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>AMPA conductance decay time constant, the same for every population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_ampa (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>AMPA conductance decay time constant.</skos:definition>
+        <skos:notation>tau_ampa</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_gaba -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_gaba">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>GABA conductance decay time constant, the same for every population.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_gaba (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>GABA conductance decay time constant.</skos:definition>
+        <skos:notation>tau_gaba</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_refrac -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/parameters/tau_refrac">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Refractory period after a spike, the same for every population; v and u are frozen, the conductances keep decaying.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">10.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>tau_refrac (MaithBasalGangliaNeuron parameter)</rdfs:label>
+        <skos:definition>Refractory period after a spike, during which v and u are not integrated.</skos:definition>
+        <skos:notation>tau_refrac</skos:notation>
+        <tvbo:unit>ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/g_ampa -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/g_ampa">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>-g_ampa/tau_ampa + c_ampa</tvbo:rhs>
+        <terms:description>AMPA synaptic conductance.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_ampa (MaithBasalGangliaNeuron state variable)</rdfs:label>
+        <skos:notation>g_ampa</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/g_gaba -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/g_gaba">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>-g_gaba/tau_gaba + c_gaba</tvbo:rhs>
+        <terms:description>GABA synaptic conductance.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g_gaba (MaithBasalGangliaNeuron state variable)</rdfs:label>
+        <skos:notation>g_gaba</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/t_ref -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/t_ref">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>-(1 - integrating)</tvbo:rhs>
+        <terms:description>Refractory time remaining, set to tau_refrac by the spike event and counting down to zero at unit rate.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>t_ref (MaithBasalGangliaNeuron state variable)</rdfs:label>
+        <skos:notation>t_ref</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/u -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/u">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>integrating*a*(b*(v - V_r) - u)</tvbo:rhs>
+        <terms:description>Recovery variable.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>u (MaithBasalGangliaNeuron state variable)</rdfs:label>
+        <skos:notation>u</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/v -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MaithBasalGangliaNeuron/state_variables/v">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>integrating*(n2*v**2 + n1*v + n0 - u/C + I_e - g_ampa*(v - E_ampa) - g_gaba*(v - E_gaba))</tvbo:rhs>
+        <terms:description>Membrane potential.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>v (MaithBasalGangliaNeuron state variable)</rdfs:label>
+        <skos:notation>v</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/models/MannevilleSimpleMap/parameters/epsilon -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MannevilleSimpleMap/parameters/epsilon">
@@ -78993,6 +80157,315 @@ In the original publication, the parameter &apos;d&apos; is set in second. In TV
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>y (VanDerPolForced state variable)</rdfs:label>
         <skos:notation>y</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/derived_variables/lfp -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/derived_variables/lfp">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/DerivedVariable"/>
+        <tvbo:rhs>y1 - y2 - y3</tvbo:rhs>
+        <terms:description>Model output, the summed postsynaptic potential on the pyramidal cells (excitatory minus slow and fast inhibitory), read as the simulated local field potential.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>lfp (Wendling derived variable)</rdfs:label>
+        <skos:notation>lfp</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/A -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/A">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <terms:description>Average excitatory synaptic gain (EXC); amplitude of the excitatory PSP impulse response. Domain is the genetic-algorithm search range of Cai et al. (2024, Table 2).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">4.0</schema:defaultValue>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>A (Wendling parameter)</rdfs:label>
+        <skos:notation>A</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/B -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/B">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <terms:description>Average slow dendritic inhibitory synaptic gain (SDI, GABA_A slow); amplitude of the slow IPSP impulse response. Domain is the genetic-algorithm search range of Cai et al. (2024, Table 2).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">40.0</schema:defaultValue>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>B (Wendling parameter)</rdfs:label>
+        <skos:notation>B</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/C -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/C">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
+        <terms:description>Average number of synaptic contacts that scales the connectivity constants C1 to C7.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">135.0</schema:defaultValue>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0099536"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>C (Wendling parameter)</rdfs:label>
+        <skos:notation>C</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/G -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/G">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <terms:description>Average fast somatic inhibitory synaptic gain (FSI, GABA_A fast); amplitude of the fast IPSP impulse response. Domain is the genetic-algorithm search range of Cai et al. (2024, Table 2).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">20.0</schema:defaultValue>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>G (Wendling parameter)</rdfs:label>
+        <skos:notation>G</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/a -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/a">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Reciprocal of the dendritic average time constant in the excitatory feedback loop (100 s^-1).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.1</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>a (Wendling parameter)</rdfs:label>
+        <skos:notation>a</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/b -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/b">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Reciprocal of the dendritic average time constant in the slow feedback inhibitory loop (50 s^-1).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.05</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>b (Wendling parameter)</rdfs:label>
+        <skos:notation>b</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/e0 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/e0">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Half of the maximum firing rate of the sigmoid (2.5 s^-1).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.0025</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>e0 (Wendling parameter)</rdfs:label>
+        <skos:notation>e0</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/g -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/g">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Reciprocal of the somatic average time constant in the fast feedback inhibitory loop (350 s^-1).</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.35</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>g (Wendling parameter)</rdfs:label>
+        <skos:notation>g</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/p -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/p">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Mean afferent pulse density to the excitatory input of the pyramidal cells (90 pulses/s). The sources draw p(t) as Gaussian white noise with mean 90 pulses/s and standard deviation 30 pulses/s; the record carries the mean, and an experiment adds the fluctuation as additive noise on y6.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.09</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>p (Wendling parameter)</rdfs:label>
+        <skos:notation>p</skos:notation>
+        <tvbo:unit>per_ms</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/r -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/r">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Steepness of the sigmoid wave-to-pulse function.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">0.56</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>r (Wendling parameter)</rdfs:label>
+        <skos:notation>r</skos:notation>
+        <tvbo:unit>per_mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/parameters/v0 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/parameters/v0">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Parameter"/>
+        <terms:description>Average membrane potential at which the sigmoid reaches half its maximum firing rate.</terms:description>
+        <schema:defaultValue rdf:datatype="http://www.w3.org/2001/XMLSchema#double">6.0</schema:defaultValue>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>v0 (Wendling parameter)</rdfs:label>
+        <skos:notation>v0</skos:notation>
+        <tvbo:unit>mV</tvbo:unit>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y0 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y0">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <tvbo:rhs>y5</tvbo:rhs>
+        <terms:description>Output of the pyramidal cells&apos; excitatory pulse-to-wave filter, the PSP that drives all three interneuron populations.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/CL_0000598"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y0 (Wendling state variable)</rdfs:label>
+        <skos:notation>y0</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y1 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y1">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <tvbo:rhs>y6</tvbo:rhs>
+        <terms:description>Excitatory postsynaptic potential on the pyramidal cells from the excitatory interneurons and the afferent input p; transmitted to connected nodes.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060079"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y1 (Wendling state variable)</rdfs:label>
+        <skos:notation>y1</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y2 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y2">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:rhs>y7</tvbo:rhs>
+        <terms:description>Slow dendritic GABA_A inhibitory postsynaptic potential on the pyramidal cells.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y2 (Wendling state variable)</rdfs:label>
+        <skos:notation>y2</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y3 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y3">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:rhs>y8</tvbo:rhs>
+        <terms:description>Fast somatic GABA_A inhibitory postsynaptic potential on the pyramidal cells.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y3 (Wendling state variable)</rdfs:label>
+        <skos:notation>y3</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y4 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y4">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:surrogate_of rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <tvbo:rhs>y9</tvbo:rhs>
+        <terms:description>Slow inhibitory postsynaptic potential that the slow dendritic interneurons exert on the fast somatic interneurons.</terms:description>
+        <oboInOwl:hasDbXref rdf:resource="http://purl.obolibrary.org/obo/GO_0060080"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y4 (Wendling state variable)</rdfs:label>
+        <skos:notation>y4</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y5 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y5">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>A*a*Sigm(c_glob + y1 - y2 - y3) - 2*a*y5 - a**2*y0</tvbo:rhs>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y5 (Wendling state variable)</rdfs:label>
+        <skos:notation>y5</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y6 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y6">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>A*a*(p + C2*Sigm(C1*y0)) - 2*a*y6 - a**2*y1</tvbo:rhs>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y6 (Wendling state variable)</rdfs:label>
+        <skos:notation>y6</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y7 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y7">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>B*b*C4*Sigm(C3*y0) - 2*b*y7 - b**2*y2</tvbo:rhs>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y7 (Wendling state variable)</rdfs:label>
+        <skos:notation>y7</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y8 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y8">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>G*g*C7*Sigm(C5*y0 - C6*y4) - 2*g*y8 - g**2*y3</tvbo:rhs>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y8 (Wendling state variable)</rdfs:label>
+        <skos:notation>y8</skos:notation>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/models/Wendling/state_variables/y9 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Wendling/state_variables/y9">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/StateVariable"/>
+        <tvbo:rhs>B*b*Sigm(C3*y0) - 2*b*y9 - b**2*y4</tvbo:rhs>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>y9 (Wendling state variable)</rdfs:label>
+        <skos:notation>y9</skos:notation>
     </owl:NamedIndividual>
     
 
@@ -86137,6 +87610,29 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Bastos2012 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Bastos2012">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2012</terms:issued>
+        <terms:title>Canonical Microcircuits for Predictive Coding</terms:title>
+        <schema:author>Adams, Rick A.</schema:author>
+        <schema:author>Bastos, Andre M.</schema:author>
+        <schema:author>Fries, Pascal</schema:author>
+        <schema:author>Friston, Karl J.</schema:author>
+        <schema:author>Mangun, George R.</schema:author>
+        <schema:author>Usrey, W. Martin</schema:author>
+        <schema:identifier>10.1016/j.neuron.2012.10.038</schema:identifier>
+        <schema:isPartOf>Neuron</schema:isPartOf>
+        <schema:issueNumber>4</schema:issueNumber>
+        <schema:pagination>695--711</schema:pagination>
+        <schema:volumeNumber>76</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Bastos2012</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/BoCheng2008 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/BoCheng2008">
@@ -86250,6 +87746,26 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Cai2024 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Cai2024">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2024</terms:issued>
+        <terms:title>Predicting radiofrequency thermocoagulation surgical outcomes in refractory focal epilepsy patients using functional coupled neural mass model</terms:title>
+        <schema:author>Cai, Tianxin</schema:author>
+        <schema:author>Lin, Yaoxin</schema:author>
+        <schema:author>Luo, Jie</schema:author>
+        <schema:author>Wang, Guofu</schema:author>
+        <schema:identifier>10.3389/fneur.2024.1402004</schema:identifier>
+        <schema:isPartOf>Frontiers in Neurology</schema:isPartOf>
+        <schema:pagination>1402004</schema:pagination>
+        <schema:volumeNumber>15</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Cai2024</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/Cakan -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Cakan">
@@ -86277,6 +87793,46 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:volumeNumber>23</schema:volumeNumber>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Cao2013</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Carvalho2021 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Carvalho2021">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2021</terms:issued>
+        <terms:title>Active probing to highlight approaching transitions to ictal states in coupled neural mass models</terms:title>
+        <schema:author>Carvalho, Vinícius Rezende</schema:author>
+        <schema:author>Cash, Sydney S.</schema:author>
+        <schema:author>Mendes, Eduardo Mazoni Andrade Marçal</schema:author>
+        <schema:author>Moraes, Márcio Flávio Dutra</schema:author>
+        <schema:identifier>10.1371/journal.pcbi.1008377</schema:identifier>
+        <schema:isPartOf>PLOS Computational Biology</schema:isPartOf>
+        <schema:issueNumber>1</schema:issueNumber>
+        <schema:pagination>e1008377</schema:pagination>
+        <schema:volumeNumber>17</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Carvalho2021</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Cavallari2014 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Cavallari2014">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2014</terms:issued>
+        <terms:title>Comparison of the dynamics of neural interactions between current-based and conductance-based integrate-and-fire recurrent networks</terms:title>
+        <schema:author>Cavallari, Stefano</schema:author>
+        <schema:author>Mazzoni, Alberto</schema:author>
+        <schema:author>Panzeri, Stefano</schema:author>
+        <schema:identifier>10.3389/fncir.2014.00012</schema:identifier>
+        <schema:isPartOf>Frontiers in Neural Circuits</schema:isPartOf>
+        <schema:pagination>12</schema:pagination>
+        <schema:volumeNumber>8</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Cavallari2014</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -87227,6 +88783,31 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Maith2020 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Maith2020">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2020</terms:issued>
+        <terms:title>A computational model-based analysis of basal ganglia pathway changes in Parkinson&apos;s disease inferred from resting-state fMRI</terms:title>
+        <schema:author>Baladron, Javier</schema:author>
+        <schema:author>Dinkelbach, Helge \&quot;Ulo</schema:author>
+        <schema:author>Hamker, Fred H.</schema:author>
+        <schema:author>Horn, Andreas</schema:author>
+        <schema:author>Irmen, Friederike</schema:author>
+        <schema:author>K\&quot;uhn, Andrea A.</schema:author>
+        <schema:author>Maith, Oliver</schema:author>
+        <schema:author>Villagrasa Escudero, Francesc</schema:author>
+        <schema:identifier>10.1111/ejn.14868</schema:identifier>
+        <schema:isPartOf>European Journal of Neuroscience</schema:isPartOf>
+        <schema:issueNumber>7</schema:issueNumber>
+        <schema:pagination>2278--2295</schema:pagination>
+        <schema:volumeNumber>53</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Maith2020</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/Manneville1980 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Manneville1980">
@@ -87261,6 +88842,51 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/MartinezCanada2021 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/MartinezCanada2021">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2021</terms:issued>
+        <terms:title>Computation of the electroencephalogram (EEG) from network models of point neurons</terms:title>
+        <schema:author>Einevoll, Gaute T.</schema:author>
+        <schema:author>Fellin, Tommaso</schema:author>
+        <schema:author>Martínez-Cañada, Pablo</schema:author>
+        <schema:author>Ness, Torbjørn V.</schema:author>
+        <schema:author>Panzeri, Stefano</schema:author>
+        <schema:identifier>10.1371/journal.pcbi.1008893</schema:identifier>
+        <schema:isPartOf>PLOS Computational Biology</schema:isPartOf>
+        <schema:issueNumber>4</schema:issueNumber>
+        <schema:pagination>e1008893</schema:pagination>
+        <schema:volumeNumber>17</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>MartinezCanada2021</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/MartinezCanada2023 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/MartinezCanada2023">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2023</terms:issued>
+        <terms:title>Combining aperiodic 1/f slopes and brain simulation: An EEG/MEG proxy marker of excitation/inhibition imbalance in Alzheimer&apos;s disease</terms:title>
+        <schema:author>López-Gordo, Miguel A.</schema:author>
+        <schema:author>Martínez-Cañada, Pablo</schema:author>
+        <schema:author>Minguillon, Jesus</schema:author>
+        <schema:author>Morillas, Christian</schema:author>
+        <schema:author>Pelayo, Francisco</schema:author>
+        <schema:author>Perez-Valero, Eduardo</schema:author>
+        <schema:identifier>10.1002/dad2.12477</schema:identifier>
+        <schema:isPartOf>Alzheimer&apos;s \&amp; Dementia: Diagnosis, Assessment \&amp; Disease Monitoring</schema:isPartOf>
+        <schema:issueNumber>3</schema:issueNumber>
+        <schema:pagination>e12477</schema:pagination>
+        <schema:volumeNumber>15</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>MartinezCanada2023</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/May1976 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/May1976">
@@ -87274,6 +88900,53 @@ to a task-appropriate range (e.g. omega in Hz).
         <schema:volumeNumber>261</schema:volumeNumber>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>May1976</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Mazzoni2008 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Mazzoni2008">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2008</terms:issued>
+        <terms:title>Encoding of naturalistic stimuli by local field potential spectra in networks of excitatory and inhibitory neurons</terms:title>
+        <schema:author>Brunel, Nicolas</schema:author>
+        <schema:author>Logothetis, Nikos K.</schema:author>
+        <schema:author>Mazzoni, Alberto</schema:author>
+        <schema:author>Panzeri, Stefano</schema:author>
+        <schema:identifier>10.1371/journal.pcbi.1000239</schema:identifier>
+        <schema:isPartOf>PLoS Computational Biology</schema:isPartOf>
+        <schema:issueNumber>12</schema:issueNumber>
+        <schema:pagination>e1000239</schema:pagination>
+        <schema:volumeNumber>4</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Mazzoni2008</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Meier2022 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Meier2022">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2022</terms:issued>
+        <terms:title>Virtual deep brain stimulation: Multiscale co-simulation of a spiking basal ganglia model and a whole-brain mean-field model with The Virtual Brain</terms:title>
+        <schema:author>Baladron, Javier</schema:author>
+        <schema:author>Blickensd\&quot;orfer, Andr\&apos;e</schema:author>
+        <schema:author>Dinkelbach, Helge \&quot;U.</schema:author>
+        <schema:author>Hamker, Fred H.</schema:author>
+        <schema:author>Liu, Qin</schema:author>
+        <schema:author>Maith, Oliver</schema:author>
+        <schema:author>Meier, Jil M.</schema:author>
+        <schema:author>Perdikis, Dionysios</schema:author>
+        <schema:author>Ritter, Petra</schema:author>
+        <schema:author>Stefanovski, Leon</schema:author>
+        <schema:identifier>10.1016/j.expneurol.2022.114111</schema:identifier>
+        <schema:isPartOf>Experimental Neurology</schema:isPartOf>
+        <schema:pagination>114111</schema:pagination>
+        <schema:volumeNumber>354</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Meier2022</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -88025,6 +89698,48 @@ to a task-appropriate range (e.g. omega in Hz).
     
 
 
+    <!-- https://w3id.org/tvbo/studies/Wendling2002 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Wendling2002">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2002</terms:issued>
+        <terms:title>Epileptic fast activity can be explained by a model of impaired GABAergic dendritic inhibition</terms:title>
+        <schema:author>Bartolomei, F.</schema:author>
+        <schema:author>Bellanger, J. J.</schema:author>
+        <schema:author>Chauvel, P.</schema:author>
+        <schema:author>Wendling, F.</schema:author>
+        <schema:identifier>10.1046/j.1460-9568.2002.01985.x</schema:identifier>
+        <schema:isPartOf>European Journal of Neuroscience</schema:isPartOf>
+        <schema:issueNumber>9</schema:issueNumber>
+        <schema:pagination>1499--1508</schema:pagination>
+        <schema:volumeNumber>15</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Wendling2002</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/studies/Wendling2005 -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Wendling2005">
+        <rdf:type rdf:resource="http://schema.org/ScholarlyArticle"/>
+        <terms:issued>2005</terms:issued>
+        <terms:title>Interictal to ictal transition in human temporal lobe epilepsy: insights from a computational model of intracerebral EEG</terms:title>
+        <schema:author>Bartolomei, Fabrice</schema:author>
+        <schema:author>Bellanger, Jean-Jacques</schema:author>
+        <schema:author>Chauvel, Patrick</schema:author>
+        <schema:author>Hernandez, Alfredo</schema:author>
+        <schema:author>Wendling, Fabrice</schema:author>
+        <schema:isPartOf>Journal of Clinical Neurophysiology</schema:isPartOf>
+        <schema:issueNumber>5</schema:issueNumber>
+        <schema:pagination>343--356</schema:pagination>
+        <schema:volumeNumber>22</schema:volumeNumber>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Wendling2005</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/studies/Wilson1972 -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/studies/Wilson1972">
@@ -88743,14 +90458,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L0I0M1H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Kilogram per second</rdfs:comment>
@@ -88785,13 +90500,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Kilo-ohm centimetre (axial resistivity)</rdfs:comment>
@@ -88896,14 +90611,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E-1L2I0M1H0T-4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millivolt per second</rdfs:comment>
@@ -88993,14 +90708,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L1I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Millimetre per millisecond (= m/s)</rdfs:comment>
@@ -89079,7 +90794,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
+            </rdf:Description>
+        </qudt:hasFactorUnit>
+        <qudt:hasFactorUnit>
+            <rdf:Description>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
@@ -89091,13 +90812,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasFactorUnit>
             <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
-            </rdf:Description>
-        </qudt:hasFactorUnit>
-        <qudt:hasFactorUnit>
-            <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/SEC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Mole per metre per ampere per second (concentration-current coupling)</rdfs:comment>
@@ -89190,14 +90905,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E3L-4I0M-2H0T6D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoS"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoS"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Nanosiemens per millivolt</rdfs:comment>
@@ -89598,14 +91313,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E1L-2I0M0H0T0D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroA"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroA"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Microampere per square centimetre (current density)</rdfs:comment>
@@ -89623,14 +91338,14 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T4D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroFARAD"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MicroFARAD"/>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
         <rdfs:comment>Microfarad per square centimetre (specific capacitance)</rdfs:comment>

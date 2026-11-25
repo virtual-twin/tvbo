@@ -4,8 +4,8 @@ import pytest
 
 from tests.functional.simulation_backends_shared import (
     _HAVE_JULIACALL,
-    MODEL_FILES,
-    MODEL_IDS,
+    COUPLED_MODEL_FILES,
+    COUPLED_MODEL_IDS,
     _assert_timeseries,
 )
 from tvbo.classes.dynamics import Dynamics
@@ -33,7 +33,7 @@ class TestJuliaBackends:
     """Single-node tests for Julia-based simulation backends."""
 
     @pytest.mark.backend_julia_diffeq
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    @pytest.mark.parametrize("model_file", COUPLED_MODEL_FILES, ids=COUPLED_MODEL_IDS)
     def test_run_julia(self, model_file):
         """Run single-node simulation via DifferentialEquations.jl.
 
@@ -46,7 +46,7 @@ class TestJuliaBackends:
         _assert_timeseries(result, model)
 
     @pytest.mark.backend_networkdynamics
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    @pytest.mark.parametrize("model_file", COUPLED_MODEL_FILES, ids=COUPLED_MODEL_IDS)
     def test_run_networkdynamics(self, model_file):
         """Run single-node simulation via NetworkDynamics.jl."""
         reason = _JULIA_MODE_UNSUPPORTED.get(model_file.stem) or _ND_UNSUPPORTED.get(model_file.stem)
@@ -59,7 +59,7 @@ class TestJuliaBackends:
         _assert_timeseries(result, model)
 
     @pytest.mark.backend_mtk
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    @pytest.mark.parametrize("model_file", COUPLED_MODEL_FILES, ids=COUPLED_MODEL_IDS)
     def test_run_mtk(self, model_file):
         """Run single-node simulation via ModelingToolkit.jl."""
         reason = _JULIA_MODE_UNSUPPORTED.get(model_file.stem)

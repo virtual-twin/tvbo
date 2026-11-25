@@ -1,0 +1,41 @@
+import NaNMath
+function MaithBasalGangliaNeuron!(dx, x, p, t = 0)
+
+    (;a, b, c, d, C, I_e, n0, n1, n2, V_r, V_th, E_ampa, E_gaba, tau_ampa, tau_gaba, tau_refrac, c_ampa, c_gaba) = p
+
+    v, u, g_ampa, g_gaba, t_ref = x
+
+
+    integrating = ifelse(t_ref > 0, 0.0, 1.0)
+
+    dx[1] = integrating .* (I_e .+ n0 .+ n1 .* v .+ n2 .* v .^ 2 .- g_ampa .* (v .- E_ampa) .- g_gaba .* (v .- E_gaba) .- u ./ C)
+    dx[2] = a .* integrating .* (-u .+ b .* (v .- V_r))
+    dx[3] = c_ampa .- g_ampa ./ tau_ampa
+    dx[4] = c_gaba .- g_gaba ./ tau_gaba
+    dx[5] = -1 .+ integrating
+    dx
+end
+
+# Parameter values
+p = (a = 0.005, b = 0.265, c = -65.0, d = 2.0, C = 1.0, I_e = 3.0, n0 = 140.0, n1 = 5.0, n2 = 0.04, V_r = 0.0, V_th = 30.0, E_ampa = 0.0, E_gaba = -90.0, tau_ampa = 10.0, tau_gaba = 10.0, tau_refrac = 10.0, c_ampa = 0.0, c_gaba = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -70.0,
+        -18.55,
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(MaithBasalGangliaNeuron!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

@@ -1,0 +1,119 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class CanonicalMicrocircuit(AbstractDynamics):
+    """CanonicalMicrocircuit neural mass model."""
+
+    STATE_NAMES = ("x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8")
+    INITIAL_STATE = (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        G1=0.8,
+        G10=0.2,
+        G2=0.8,
+        G3=1.6,
+        G4=0.8,
+        G5=0.8,
+        G6=0.4,
+        G7=0.8,
+        G8=0.8,
+        G9=0.4,
+        R=0.6666666666666666,
+        T1=2.0,
+        T2=2.0,
+        T3=16.0,
+        T4=28.0,
+        U=0.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_glob": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        G1 = params.G1
+        G10 = params.G10
+        G2 = params.G2
+        G3 = params.G3
+        G4 = params.G4
+        G5 = params.G5
+        G6 = params.G6
+        G7 = params.G7
+        G8 = params.G8
+        G9 = params.G9
+        R = params.R
+        T1 = params.T1
+        T2 = params.T2
+        T3 = params.T3
+        T4 = params.T4
+        U = params.U
+
+        x1 = state[0]
+        x2 = state[1]
+        x3 = state[2]
+        x4 = state[3]
+        x5 = state[4]
+        x6 = state[5]
+        x7 = state[6]
+        x8 = state[7]
+
+        c_glob = (
+            jnp.atleast_1d(coupling.c_glob)[0] if hasattr(coupling, "c_glob") else 0.0
+        )
+
+        def Sigm(v):
+            return 1 / (1 + jnp.exp((-R) * v)) - 1 / 2
+
+        dx1_dt = x2
+        dx2_dt = (
+            c_glob
+            + U
+            - G1 * Sigm(x1)
+            - G2 * Sigm(x3)
+            - G3 * Sigm(x5)
+            - 2 * x2
+            - x1 / T1
+        ) / T1
+        dx3_dt = x4
+        dx4_dt = (G8 * Sigm(x1) - G7 * Sigm(x3) - 2 * x4 - x3 / T2) / T2
+        dx5_dt = x6
+        dx6_dt = (G5 * Sigm(x1) + G6 * Sigm(x7) - G4 * Sigm(x5) - 2 * x6 - x5 / T3) / T3
+        dx7_dt = x8
+        dx8_dt = ((-G10) * Sigm(x7) - G9 * Sigm(x5) - 2 * x8 - x7 / T4) / T4
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx1_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx1_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx2_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx3_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx4_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx5_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx6_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx7_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dx8_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries

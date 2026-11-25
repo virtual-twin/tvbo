@@ -1,0 +1,254 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class CavallariConductanceLIF(Model):
+
+    V_leak = NArray(
+        label=r":math:`V_leak`",
+        default=np.array([-70.0]),
+        doc="""Leak (resting) membrane potential, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).""",
+    )
+    thresh = NArray(
+        label=r":math:`thresh`",
+        default=np.array([-52.0]),
+        doc="""Spike threshold, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).""",
+    )
+    reset = NArray(
+        label=r":math:`reset`",
+        default=np.array([-59.0]),
+        doc="""Reset potential after a spike, both cell types (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).""",
+    )
+    tau_refrac = NArray(
+        label=r":math:`tau_refrac`",
+        default=np.array([2.0]),
+        doc="""Absolute refractory period: the spike event sets t_ref to it, and v stays at reset until t_ref has counted down to zero; interneuron: 1 ms (Cavallari 2014 Methods; Martínez-Cañada 2021 Table 4A).""",
+    )
+    tau_m = NArray(
+        label=r":math:`tau_m`",
+        default=np.array([20.0]),
+        doc="""Membrane time constant, C_m / g_leak with C_m = 500 pF; interneuron: 10 ms, C_m = 200 pF (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 4A).""",
+    )
+    g_leak = NArray(
+        label=r":math:`g_leak`",
+        default=np.array([25.0]),
+        doc="""Leak membrane conductance; interneuron: 20 nS (Cavallari 2014 Eq. 3; Martínez-Cañada 2021 Table 4A).""",
+    )
+    E_AMPA = NArray(
+        label=r":math:`E_AMPA`",
+        default=np.array([0.0]),
+        doc="""AMPA reversal potential, both cell types (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).""",
+    )
+    E_GABA = NArray(
+        label=r":math:`E_GABA`",
+        default=np.array([-80.0]),
+        doc="""GABA-A reversal potential, both cell types (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).""",
+    )
+    tau_r_AMPA = NArray(
+        label=r":math:`tau_r_AMPA`",
+        default=np.array([0.4]),
+        doc="""AMPA rise time; interneuron: 0.2 ms (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).""",
+    )
+    tau_d_AMPA = NArray(
+        label=r":math:`tau_d_AMPA`",
+        default=np.array([2.0]),
+        doc="""AMPA decay time; interneuron: 1 ms (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).""",
+    )
+    tau_r_GABA = NArray(
+        label=r":math:`tau_r_GABA`",
+        default=np.array([0.25]),
+        doc="""GABA-A rise time, both cell types (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).""",
+    )
+    tau_d_GABA = NArray(
+        label=r":math:`tau_d_GABA`",
+        default=np.array([5.0]),
+        doc="""GABA-A decay time, both cell types (Cavallari 2014 Table 3; Martínez-Cañada 2021 Table 4B).""",
+    )
+    g_AMPA_rec = NArray(
+        label=r":math:`g_AMPA_rec`",
+        default=np.array([0.178]),
+        doc="""Conductance of one recurrent AMPA synapse from a pyramidal cell; interneuron: 0.233 nS (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).""",
+    )
+    g_AMPA_tha = NArray(
+        label=r":math:`g_AMPA_tha`",
+        default=np.array([0.234]),
+        doc="""Conductance of one thalamic (external, constant-rate) AMPA synapse; interneuron: 0.317 nS (Cavallari 2014 Table 2, AMPA external; Martínez-Cañada 2021 Table 4B).""",
+    )
+    g_AMPA_cort = NArray(
+        label=r":math:`g_AMPA_cort`",
+        default=np.array([0.187]),
+        doc="""Conductance of one cortico-cortical (external, OU-modulated rate) AMPA synapse; interneuron: 0.254 nS (Martínez-Cañada 2021 Table 4B).""",
+    )
+    g_GABA = NArray(
+        label=r":math:`g_GABA`",
+        default=np.array([2.01]),
+        doc="""Conductance of one GABA-A synapse from an interneuron; interneuron target: 2.70 nS (Cavallari 2014 Table 2; Martínez-Cañada 2021 Table 4B).""",
+    )
+
+    _nvar = 6
+    state_variables = ["v", "x_AMPA", "geff_AMPA", "x_GABA", "geff_GABA", "t_ref"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "v": np.array([-1000000000.0, 1000000000.0]),
+            "x_AMPA": np.array([-1000000000.0, 1000000000.0]),
+            "geff_AMPA": np.array([-1000000000.0, 1000000000.0]),
+            "x_GABA": np.array([-1000000000.0, 1000000000.0]),
+            "geff_GABA": np.array([-1000000000.0, 1000000000.0]),
+            "t_ref": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=(
+            "v",
+            "x_AMPA",
+            "geff_AMPA",
+            "x_GABA",
+            "geff_GABA",
+            "t_ref",
+            "I_AMPA",
+            "I_GABA",
+        ),
+        default=("v", "geff_AMPA", "geff_GABA", "I_AMPA", "I_GABA"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "V_leak",
+            "thresh",
+            "reset",
+            "tau_refrac",
+            "tau_m",
+            "g_leak",
+            "E_AMPA",
+            "E_GABA",
+            "tau_r_AMPA",
+            "tau_d_AMPA",
+            "tau_r_GABA",
+            "tau_d_GABA",
+            "g_AMPA_rec",
+            "g_AMPA_tha",
+            "g_AMPA_cort",
+            "g_GABA",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "v": "integrating*(V_leak - v - (I_AMPA + I_GABA)/g_leak)/tau_m",
+            "x_AMPA": "(-x_AMPA + tau_m*(S_AMPA_cort*g_AMPA_cort + S_AMPA_rec*g_AMPA_rec + S_AMPA_tha*g_AMPA_tha))/tau_r_AMPA",
+            "geff_AMPA": "(x_AMPA - geff_AMPA)/tau_d_AMPA",
+            "x_GABA": "(-x_GABA + S_GABA*g_GABA*tau_m)/tau_r_GABA",
+            "geff_GABA": "(x_GABA - geff_GABA)/tau_d_GABA",
+            "t_ref": "-1 + integrating",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(
+        label="Coupling terms",
+        default=["S_AMPA_rec", "S_AMPA_tha", "S_AMPA_cort", "S_GABA"],
+    )
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def _build_observer(self):
+        template = (
+            "def observe(state):\n"
+            "    {svars} = state\n"
+            "    I_AMPA = geff_AMPA*(v - E_AMPA)\n"
+            "    I_GABA = geff_GABA*(v - E_GABA)\n"
+            "    return np.array([{voi_names}])"
+        )
+        svars = ",".join(self.state_variables)
+        if len(self.state_variables) == 1:
+            svars += ","
+        code = template.format(
+            svars=svars, voi_names=",".join(self.variables_of_interest)
+        )
+        # the namespace dfun runs in, plus this model's parameters
+        namespace = {**globals(), **self.__dict__}
+        self.log.debug("building observer with code:\n%s", code)
+        exec(code, namespace)
+        self.observe = namespace["observe"]
+        self.observe.code = code
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        v = state_variables[0, :]
+        x_AMPA = state_variables[1, :]
+        geff_AMPA = state_variables[2, :]
+        x_GABA = state_variables[3, :]
+        geff_GABA = state_variables[4, :]
+        t_ref = state_variables[5, :]
+
+        V_leak = self.V_leak
+        tau_m = self.tau_m
+        g_leak = self.g_leak
+        E_AMPA = self.E_AMPA
+        E_GABA = self.E_GABA
+        tau_r_AMPA = self.tau_r_AMPA
+        tau_d_AMPA = self.tau_d_AMPA
+        tau_r_GABA = self.tau_r_GABA
+        tau_d_GABA = self.tau_d_GABA
+        g_AMPA_rec = self.g_AMPA_rec
+        g_AMPA_tha = self.g_AMPA_tha
+        g_AMPA_cort = self.g_AMPA_cort
+        g_GABA = self.g_GABA
+
+        # Coupling Terms (from coupling array)
+        S_AMPA_rec = coupling[0, :]
+        S_AMPA_tha = coupling[1, :]
+        S_AMPA_cort = coupling[2, :]
+        S_GABA = coupling[3, :]
+
+        # Derived Variables
+        self.I_AMPA = I_AMPA = geff_AMPA * (v - E_AMPA)
+        self.I_GABA = I_GABA = geff_GABA * (v - E_GABA)
+        self.integrating = integrating = np.where(np.greater(t_ref, 0), 0.0, 1.0)
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                integrating * (V_leak - v - (I_AMPA + I_GABA) / g_leak) / tau_m
+            ),  # v
+            np.asarray(
+                (
+                    -x_AMPA
+                    + tau_m
+                    * (
+                        S_AMPA_cort * g_AMPA_cort
+                        + S_AMPA_rec * g_AMPA_rec
+                        + S_AMPA_tha * g_AMPA_tha
+                    )
+                )
+                / tau_r_AMPA
+            ),  # x_AMPA
+            np.asarray((x_AMPA - geff_AMPA) / tau_d_AMPA),  # geff_AMPA
+            np.asarray((-x_GABA + S_GABA * g_GABA * tau_m) / tau_r_GABA),  # x_GABA
+            np.asarray((x_GABA - geff_GABA) / tau_d_GABA),  # geff_GABA
+            np.asarray(-1 + integrating),  # t_ref
+        )
+        return np.array(_derivs)
