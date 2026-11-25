@@ -1,11 +1,11 @@
 """The ModelingToolkit adapter turns MTK's first-order lowering back into a Dynamics.
 
-``ModelingToolkitAdapter._apply_lowered`` writes each lowered equation onto its state variable and adds a state variable for each auxiliary MTK introduces (``x_t`` for ``dx/dt``). It runs only after Julia lowered a model, so these tests hand it a lowering of the shape ``_lower_via_mtk`` returns and need no Julia.
+``ModelingToolkitAdapter._apply_lowered`` writes each lowered equation onto its state variable and adds a state variable for each auxiliary MTK introduces (``x_t`` for ``dx/dt``). It runs only after Julia lowered a model, so these tests hand it a lowering of the shape ``_lower_sympy`` returns and need no Julia. ``lower`` wraps the result back into the kind of system it was given; an experiment keeps its other settings and names the lowered dynamics as its ``model``.
 """
 
 import sympy as sp
 
-from tvbo import Dynamics
+from tvbo import Dynamics, SimulationExperiment
 from tvbo.adapters.modelingtoolkit import ModelingToolkitAdapter
 
 OSCILLATOR = Dynamics.from_string(
@@ -44,3 +44,12 @@ def test_a_lowered_second_order_model_is_a_first_order_dynamics_with_its_auxilia
 def test_lowering_leaves_the_original_dynamics_unchanged():
     ModelingToolkitAdapter(OSCILLATOR)._apply_lowered(_lowered())
     assert set(OSCILLATOR.state_variables) == {"x"} and OSCILLATOR.state_variables["x"].equation_order == 2
+
+
+def test_lowering_an_experiment_returns_the_experiment_with_its_dynamics_lowered(monkeypatch):
+    monkeypatch.setattr(ModelingToolkitAdapter, "_lower_sympy", lambda self, **kwargs: _lowered())
+    experiment = SimulationExperiment(dynamics=OSCILLATOR, label="oscillator run")
+    lowered = ModelingToolkitAdapter(experiment).lower()
+    assert isinstance(lowered, SimulationExperiment)
+    assert set(lowered.dynamics.state_variables) == {"x", "x_t"} and lowered.model == "Oscillator_FirstOrder"
+    assert lowered.label == "oscillator run" and experiment.dynamics is OSCILLATOR and experiment.model == "Oscillator"
