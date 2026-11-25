@@ -141,6 +141,9 @@
 ### Fixed
 
 - The ModelingToolkit code escapes a description's double quotes and dollar signs as well as its backslashes, so a description that quotes a word or holds `$...$` no longer ends or interpolates the Julia string it is written into (`test_mtk_description_escaping.py`).
+
+- **An optimization's loss given as a module callable is imported, and a loss nothing defines is refused.** A loss written `callable: {module: m, name: f}` rendered a bare `f(...)` in the generated tvboptim `loss_fn` and imported nothing unless `functions:` also listed `f`, so the run generated cleanly and died with `NameError` on the first loss evaluation (Koller2024 Exp 52, `fc_corr_loss`). The callable is now imported from its module through the same import list as a `functions:` callable, and a loss whose name neither a module nor a `functions:` entry defines is refused when the experiment is loaded or configured, naming the optimization and the missing function.
+
 - **A study made by `tvbo study init` runs from a pip install.** Its seeded recipe names the Desikan-Killiany structural connectome (`rec-dTOR`, 79 kB), which the wheel left out with the other network files; it is now force-included, and a test keeps every network the study template seeds in the wheel.
 
 - **A workflow kit's figures render when the study has not run where the kit was emitted.** The frozen `plot.py` of each figure took its result paths from the author's own results and rebased them onto the kit afterwards, so a kit emitted from a fresh study (the usual case before a cluster run) baked empty paths and every figure rule failed with "result container was not found". The paths are now bound to the kit's own outputs while the script is generated (`bsplot.reading_containers`).

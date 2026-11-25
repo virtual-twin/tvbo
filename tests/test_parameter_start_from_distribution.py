@@ -475,6 +475,8 @@ NODES_WITH_K = """  number_of_nodes: 5
 """
 SCALED = f'        s: {{value: 0.75}}\n        w: {{equation: {{rhs: "2 * s"}}, {MATRIX}}}'
 OPTIMIZATION = """
+functions:
+  mse: {source_code: "jnp.mean(x ** 2)", arguments: {x: {}}}
 optimizations:
   fit:
     loss: {function: mse, arguments: {x: {value: observations.x_last.data}}}
