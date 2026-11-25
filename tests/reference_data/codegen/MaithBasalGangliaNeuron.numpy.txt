@@ -1,0 +1,52 @@
+import numpy as np
+
+
+def dfun(current_state, t, cX, _p):
+    # Parameters
+    a = _p.a
+    b = _p.b
+    C = _p.C
+    I_e = _p.I_e
+    n0 = _p.n0
+    n1 = _p.n1
+    n2 = _p.n2
+    V_r = _p.V_r
+    E_ampa = _p.E_ampa
+    E_gaba = _p.E_gaba
+    tau_ampa = _p.tau_ampa
+    tau_gaba = _p.tau_gaba
+
+    # Coupling
+    c_ampa = cX[0]
+    c_gaba = cX[1]
+
+    # State variables
+    v = current_state[0]
+    u = current_state[1]
+    g_ampa = current_state[2]
+    g_gaba = current_state[3]
+    t_ref = current_state[4]
+
+    # Derived variables
+    integrating = np.where(np.greater(t_ref, 0), 0.0, 1.0)
+
+    # Derivatives
+    dv_dt = integrating * (
+        I_e
+        + n0
+        + n1 * v
+        + n2 * v**2
+        - g_ampa * (v - E_ampa)
+        - g_gaba * (v - E_gaba)
+        - u / C
+    )
+    du_dt = a * integrating * (-u + b * (v - V_r))
+    dg_ampa_dt = c_ampa - g_ampa / tau_ampa
+    dg_gaba_dt = c_gaba - g_gaba / tau_gaba
+    dt_ref_dt = -1 + integrating
+
+    derivatives = np.array(
+        np.broadcast_arrays(dv_dt, du_dt, dg_ampa_dt, dg_gaba_dt, dt_ref_dt)
+    )
+
+    return derivatives

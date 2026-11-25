@@ -1,6 +1,6 @@
-"""What an optimization stage fits, resolved once for every reader.
+"""What an optimization stage fits and what its loss calls, resolved once for every reader.
 
-A stage names the parameters it fits in ``free_parameters``. Each entry fits its parameter at the parameter's own layout, its declared ``shape`` or, with ``heterogeneous: true``, one value per node, and writes ``shape`` or ``heterogeneous`` only to change that layout; ``heterogeneous: false`` or ``shape: "()"`` narrows it to one scalar. An entry that writes the layout its parameter already declares is a restatement and is refused, so the layout has one home. :func:`fitted_parameters` resolves every entry of a stage to the parameter, its owner and the layout it is fitted at; the tvboptim stage marking reads it.
+A stage names the parameters it fits in ``free_parameters``. Each entry fits its parameter at the parameter's own layout, its declared ``shape`` or, with ``heterogeneous: true``, one value per node, and writes ``shape`` or ``heterogeneous`` only to change that layout; ``heterogeneous: false`` or ``shape: "()"`` narrows it to one scalar. An entry that writes the layout its parameter already declares is a restatement and is refused, so the layout has one home. :func:`fitted_parameters` resolves every entry of a stage to the parameter, its owner and the layout it is fitted at; the tvboptim stage marking reads it. :func:`loss_callee` names what an optimization's loss calls and the module it is imported from, which the generated loss and the check refusing a loss nothing defines both read.
 """
 
 from __future__ import annotations
@@ -14,6 +14,20 @@ from tvbo.utils import network_couplings
 def optimization_stages(optimization: Any) -> list:
     """The stages of *optimization*; one written without stages is its own single stage."""
     return list(optimization.stages or []) or ([optimization] if optimization.free_parameters else [])
+
+
+def loss_callee(loss: Any) -> tuple[str, str | None]:
+    """The name *loss* calls and the module that name is imported from.
+
+    A ``function:`` reference names a Function the experiment declares, so it imports nothing and its module is ``None``. A ``callable:`` is called by its ``name`` (else ``qualname``) and imported from its ``module``, ``None`` when it states none. A loss stating neither calls ``loss``.
+    """
+    function = getattr(loss, "function", None)
+    if function:
+        return (function if isinstance(function, str) else getattr(function, "name", None) or str(function)), None
+    call = getattr(loss, "callable", None)
+    if call:
+        return getattr(call, "name", None) or getattr(call, "qualname", None) or "loss", getattr(call, "module", None) or None
+    return "loss", None
 
 
 def layout(parameter: Any) -> tuple:

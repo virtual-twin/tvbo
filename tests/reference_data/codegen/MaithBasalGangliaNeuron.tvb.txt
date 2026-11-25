@@ -1,0 +1,221 @@
+# Auto-generated standalone model file
+import numpy as np
+import scipy.special
+from tvb.basic.neotraits.api import Attr, Final, List, NArray, Range
+from tvb.simulator.models.base import Model
+
+
+class MaithBasalGangliaNeuron(Model):
+
+    a = NArray(
+        label=r":math:`a`",
+        default=np.array([0.005]),
+        domain=Range(lo=0.005, hi=0.05, step=1.0),
+        doc="""Rate of recovery of u. Per population: dSN/iSN 0.05, GPi 0.005, GPe 0.005, STN 0.005, thalamus 0.02, cortex E 0.02, cortex I 0.02.""",
+    )
+    b = NArray(
+        label=r":math:`b`",
+        default=np.array([0.265]),
+        domain=Range(lo=-20.0, hi=0.585, step=1.0),
+        doc="""Sensitivity of u to subthreshold membrane potential. Per population: dSN/iSN -20, GPi 0.585, GPe 0.585, STN 0.265, thalamus 0.25, cortex E 0.2, cortex I 0.2.""",
+    )
+    c = NArray(
+        label=r":math:`c`",
+        default=np.array([-65.0]),
+        domain=Range(lo=-72.0, hi=-55.0, step=1.0),
+        doc="""After-spike reset value of v. Per population: dSN/iSN -55, GPi -65, GPe -65, STN -65, thalamus -65, cortex E -72, cortex I -72 mV.""",
+    )
+    d = NArray(
+        label=r":math:`d`",
+        default=np.array([2.0]),
+        domain=Range(lo=0.05, hi=377.0, step=1.0),
+        doc="""After-spike increment of u. Per population: dSN/iSN 377, GPi 4, GPe 4, STN 2, thalamus 0.05, cortex E 6, cortex I 6.""",
+    )
+    C = NArray(
+        label=r":math:`C`",
+        default=np.array([1.0]),
+        domain=Range(lo=1.0, hi=50.0, step=1.0),
+        doc="""Membrane capacity scaling of u. Per population: dSN/iSN 50, all others 1.""",
+    )
+    I_e = NArray(
+        label=r":math:`I_e`",
+        default=np.array([3.0]),
+        domain=Range(lo=0.0, hi=50.0, step=1.0),
+        doc="""Constant baseline current. Per population: dSN/iSN 0, GPi 30, GPe 12, STN 3, thalamus 3.5, cortex E 50, cortex I 0.""",
+    )
+    n0 = NArray(
+        label=r":math:`n0`",
+        default=np.array([140.0]),
+        domain=Range(lo=61.65119, hi=140.0, step=1.0),
+        doc="""Constant coefficient of the quadratic membrane. Per population: dSN/iSN 61.65119, all others 140.""",
+    )
+    n1 = NArray(
+        label=r":math:`n1`",
+        default=np.array([5.0]),
+        domain=Range(lo=2.594639, hi=5.0, step=1.0),
+        doc="""Linear coefficient of the quadratic membrane. Per population: dSN/iSN 2.594639, all others 5.""",
+    )
+    n2 = NArray(
+        label=r":math:`n2`",
+        default=np.array([0.04]),
+        domain=Range(lo=0.022799, hi=0.04, step=1.0),
+        doc="""Quadratic coefficient of the quadratic membrane. Per population: dSN/iSN 0.022799, all others 0.04.""",
+    )
+    V_r = NArray(
+        label=r":math:`V_r`",
+        default=np.array([0.0]),
+        domain=Range(lo=-80.0, hi=0.0, step=1.0),
+        doc="""Reference potential of the recovery term. Per population: dSN/iSN -80 mV (the resting potential of the Humphries et al. 2009 spiny projection neuron, a root of n2*v^2 + n1*v + n0), all others 0 mV.""",
+    )
+    V_th = NArray(
+        label=r":math:`V_th`",
+        default=np.array([30.0]),
+        domain=Range(lo=30.0, hi=40.0, step=1.0),
+        doc="""Spike threshold. Per population: dSN/iSN 40 mV, all others 30 mV.""",
+    )
+    E_ampa = NArray(
+        label=r":math:`E_ampa`",
+        default=np.array([0.0]),
+        doc="""AMPA reversal potential, the same for every population.""",
+    )
+    E_gaba = NArray(
+        label=r":math:`E_gaba`",
+        default=np.array([-90.0]),
+        doc="""GABA reversal potential, the same for every population.""",
+    )
+    tau_ampa = NArray(
+        label=r":math:`tau_ampa`",
+        default=np.array([10.0]),
+        doc="""AMPA conductance decay time constant, the same for every population.""",
+    )
+    tau_gaba = NArray(
+        label=r":math:`tau_gaba`",
+        default=np.array([10.0]),
+        doc="""GABA conductance decay time constant, the same for every population.""",
+    )
+    tau_refrac = NArray(
+        label=r":math:`tau_refrac`",
+        default=np.array([10.0]),
+        doc="""Refractory period after a spike, the same for every population; v and u are frozen, the conductances keep decaying.""",
+    )
+
+    _nvar = 5
+    state_variables = ["v", "u", "g_ampa", "g_gaba", "t_ref"]
+
+    state_variable_range = Final(
+        label="State Variable ranges [lo, hi]",
+        default={
+            "v": np.array([-1000000000.0, 1000000000.0]),
+            "u": np.array([-1000000000.0, 1000000000.0]),
+            "g_ampa": np.array([-1000000000.0, 1000000000.0]),
+            "g_gaba": np.array([-1000000000.0, 1000000000.0]),
+            "t_ref": np.array([-1000000000.0, 1000000000.0]),
+        },
+        doc="""Expected ranges of the state variables for initial condition generation and phase plane setup.""",
+    )
+
+    variables_of_interest = List(
+        of=str,
+        label="Variables watched by Monitors",
+        choices=("v", "u", "g_ampa", "g_gaba", "t_ref"),
+        default=("v", "u", "g_ampa", "g_gaba", "t_ref"),
+        doc="""Default state variables to be monitored.""",
+    )
+
+    parameter_names = List(
+        of=str,
+        label="List of parameters for this model",
+        default=[
+            "a",
+            "b",
+            "c",
+            "d",
+            "C",
+            "I_e",
+            "n0",
+            "n1",
+            "n2",
+            "V_r",
+            "V_th",
+            "E_ampa",
+            "E_gaba",
+            "tau_ampa",
+            "tau_gaba",
+            "tau_refrac",
+        ],
+    )
+
+    local_parameter_names = []
+
+    state_variable_dfuns = Final(
+        label="Drift functions",
+        default={
+            "v": "integrating*(I_e + n0 + n1*v + n2*v**2 - g_ampa*(v - E_ampa) - g_gaba*(v - E_gaba) - u/C)",
+            "u": "a*integrating*(-u + b*(v - V_r))",
+            "g_ampa": "c_ampa - g_ampa/tau_ampa",
+            "g_gaba": "c_gaba - g_gaba/tau_gaba",
+            "t_ref": "-1 + integrating",
+        },
+    )
+
+    cvar = np.array([], dtype=np.int32)
+
+    coupling_terms = Final(label="Coupling terms", default=["c_ampa", "c_gaba"])
+
+    _R = None
+    _stimulus = 0.0
+    use_numba = False
+
+    def dfun(self, state_variables, coupling, local_coupling=0):
+
+        # shape (n_sv, n_modes)
+        v = state_variables[0, :]
+        u = state_variables[1, :]
+        g_ampa = state_variables[2, :]
+        g_gaba = state_variables[3, :]
+        t_ref = state_variables[4, :]
+
+        a = self.a
+        b = self.b
+        C = self.C
+        I_e = self.I_e
+        n0 = self.n0
+        n1 = self.n1
+        n2 = self.n2
+        V_r = self.V_r
+        E_ampa = self.E_ampa
+        E_gaba = self.E_gaba
+        tau_ampa = self.tau_ampa
+        tau_gaba = self.tau_gaba
+
+        # Coupling Terms (from coupling array)
+        c_ampa = coupling[0, :]
+        c_gaba = coupling[1, :]
+
+        # Derived Variables
+        self.integrating = integrating = np.where(np.greater(t_ref, 0), 0.0, 1.0)
+
+        # Time Derivatives
+        # Broadcast every derivative to a common per-node shape so constant
+        # (state-independent) derivatives — e.g. ``duA/dt = cA`` — stack into a
+        # homogeneous array alongside node-shaped ones, matching TVB's own
+        # ``numpy.full_like`` handling of constant drifts.
+        _derivs = np.broadcast_arrays(
+            np.asarray(
+                integrating
+                * (
+                    I_e
+                    + n0
+                    + n1 * v
+                    + n2 * v**2
+                    - g_ampa * (v - E_ampa)
+                    - g_gaba * (v - E_gaba)
+                    - u / C
+                )
+            ),  # v
+            np.asarray(a * integrating * (-u + b * (v - V_r))),  # u
+            np.asarray(c_ampa - g_ampa / tau_ampa),  # g_ampa
+            np.asarray(c_gaba - g_gaba / tau_gaba),  # g_gaba
+            np.asarray(-1 + integrating),  # t_ref
+        )
+        return np.array(_derivs)

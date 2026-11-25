@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.functional.simulation_backends_shared import _HAVE_PYRATES, MODEL_FILES, MODEL_IDS
+from tests.functional.simulation_backends_shared import _HAVE_PYRATES, COUPLED_MODEL_FILES, COUPLED_MODEL_IDS
 from tvbo.classes.dynamics import Dynamics
 from tvbo.classes.experiment import SimulationExperiment
 
@@ -24,7 +24,7 @@ Two families are excluded: multi-mode models, whose per-mode matrix parameters (
 class TestPyRatesBackend:
     """Single-node tests for the PyRates backend."""
 
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    @pytest.mark.parametrize("model_file", COUPLED_MODEL_FILES, ids=COUPLED_MODEL_IDS)
     def test_run_pyrates(self, model_file):
         """Run single-node simulation with PyRates backend."""
         reason = _PYRATES_UNSUPPORTED.get(model_file.stem)

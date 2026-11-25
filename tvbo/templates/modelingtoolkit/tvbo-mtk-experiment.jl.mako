@@ -29,6 +29,7 @@ from tvbo.adapters.base import run_seed
 from tvbo.adapters.julia_model import (
     equation_rhs_text, initial_state_stream, julia_ode_package, make_renderer, needs_special_functions, symbol_names,
 )
+from tvbo.templates.base.utils import julia_string_text
 %>
 <%
 # Check if any parameter or state variable has units
@@ -110,11 +111,6 @@ has_higher_order = len(higher_order_svs) > 0
 # Detect if any equation uses special functions (shared across Julia backends)
 model_needs_special = needs_special_functions(equation_rhs_text(model))
 
-# Helper: escape backslashes in Julia strings to avoid parse errors
-def jl_escape(s):
-    if not s:
-        return s
-    return str(s).replace('\\', '\\\\')
 %>
 
 ## ── Packages ────────────────────────────────────────────────────────────────
@@ -160,7 +156,7 @@ end
 % for p_name, p in model.parameters.items():
 <%
     p_val = p.value if p.value is not None else ''
-    p_desc = jl_escape(p.description or p.label or '')
+    p_desc = julia_string_text(p.description or p.label or '')
     meta = []
     if p_desc:
         meta.append(f'description="{p_desc}"')
@@ -179,7 +175,7 @@ end
 % for sv_name, sv in model.state_variables.items():
 <%
     sv_init = _initial_value(sv)
-    sv_desc = jl_escape(sv.description or sv.label or '')
+    sv_desc = julia_string_text(sv.description or sv.label or '')
     meta = []
     if sv_desc:
         meta.append(f'description="{sv_desc}"')
@@ -194,7 +190,7 @@ end
 % endfor
 % for dv_name, dv in model.in_dependency_order('derived_variables').items():
 <%
-    dv_desc = jl_escape(getattr(dv, 'description', '') or '')
+    dv_desc = julia_string_text(getattr(dv, 'description', '') or '')
     dv_meta = []
     if dv_desc:
         dv_meta.append(f'description="{dv_desc}"')

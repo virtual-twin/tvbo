@@ -1,0 +1,151 @@
+
+<Lems>
+
+  <!-- Simulation.xml → NeuroMLCoreDimensions.xml (all standard dims/units).
+       Networks.xml → Cells.xml → baseCell (needed by extends="baseCell").
+       jLEMS deduplicates these when also included by network.xml/simulation.xml. -->
+  <Include file="Simulation.xml"/>
+  <Include file="Networks.xml"/>
+
+
+  <!-- Dimensions -->
+  <Dimension name="none"/>
+  <Dimension name="time" t="1"/>
+  <Dimension name="voltage" m="1" l="2" t="-3" i="-1"/>
+  <Dimension name="per_time" t="-1"/>
+  <Dimension name="conductance" m="-1" l="-2" t="3" i="2"/>
+  <Dimension name="capacitance" m="-1" l="-2" t="4" i="2"/>
+  <Dimension name="current" i="1"/>
+  <Dimension name="resistance" m="1" l="2" t="-3" i="-2"/>
+  <Dimension name="concentration" l="-3" n="1"/>
+  <Dimension name="substance" n="1"/>
+  <Dimension name="charge" t="1" i="1"/>
+  <Dimension name="temperature" k="1"/>
+
+  <!-- Units -->
+  <Unit symbol="s" dimension="time" power="0"/>
+  <Unit symbol="ms" dimension="time" power="-3"/>
+  <Unit symbol="us" dimension="time" power="-6"/>
+  <Unit symbol="V" dimension="voltage" power="0"/>
+  <Unit symbol="mV" dimension="voltage" power="-3"/>
+  <Unit symbol="A" dimension="current" power="0"/>
+  <Unit symbol="mA" dimension="current" power="-3"/>
+  <Unit symbol="nA" dimension="current" power="-9"/>
+  <Unit symbol="pA" dimension="current" power="-12"/>
+  <Unit symbol="S" dimension="conductance" power="0"/>
+  <Unit symbol="mS" dimension="conductance" power="-3"/>
+  <Unit symbol="nS" dimension="conductance" power="-9"/>
+  <Unit symbol="F" dimension="capacitance" power="0"/>
+  <Unit symbol="uF" dimension="capacitance" power="-6"/>
+  <Unit symbol="nF" dimension="capacitance" power="-9"/>
+  <Unit symbol="ohm" dimension="resistance" power="0"/>
+  <Unit symbol="Mohm" dimension="resistance" power="6"/>
+  <Unit symbol="per_s" dimension="per_time" power="0"/>
+  <Unit symbol="per_ms" dimension="per_time" power="3"/>
+  <Unit symbol="degC" dimension="temperature" offset="273.15"/>
+  <Unit symbol="K" dimension="temperature" power="0"/>
+
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       ComponentType: MaithBasalGangliaNeuron
+       Generated from TVBO Dynamics: MaithBasalGangliaNeuron
+       ════════════════════════════════════════════════════════════════ -->
+  <ComponentType name="MaithBasalGangliaNeuron">
+
+    <!-- Parameters -->
+    <Parameter name="a" dimension="none"/>
+    <Parameter name="b" dimension="none"/>
+    <Parameter name="c" dimension="none"/>
+    <Parameter name="d" dimension="none"/>
+    <Parameter name="C" dimension="none"/>
+    <Parameter name="I_e" dimension="none"/>
+    <Parameter name="n0" dimension="none"/>
+    <Parameter name="n1" dimension="none"/>
+    <Parameter name="n2" dimension="none"/>
+    <Parameter name="V_r" dimension="none"/>
+    <Parameter name="V_th" dimension="none"/>
+    <Parameter name="E_ampa" dimension="none"/>
+    <Parameter name="E_gaba" dimension="none"/>
+    <Parameter name="tau_ampa" dimension="none"/>
+    <Parameter name="tau_gaba" dimension="none"/>
+    <Parameter name="tau_refrac" dimension="none"/>
+    <!-- Coupling inputs -->
+    <Parameter name="c_ampa" dimension="none"/>
+    <Parameter name="c_gaba" dimension="none"/>
+    <!-- Initial condition parameters -->
+    <Parameter name="v_0" dimension="none"/>
+    <Parameter name="u_0" dimension="none"/>
+    <Parameter name="g_ampa_0" dimension="none"/>
+    <Parameter name="g_gaba_0" dimension="none"/>
+    <Parameter name="t_ref_0" dimension="none"/>
+
+    <!-- Time conversion for derivatives.
+         When all parameters and state variables carry proper LEMS dimensions,
+         LEMS handles unit conversion natively (e.g. tau="30 ms" → 0.03 s).
+         No SEC constant is needed and TimeDerivatives use the RHS directly.
+         When dimensions are "none" (dimensionless models), / SEC converts
+         from model time to SI seconds.
+         all_dimensioned=False  needs_sec=True  time_scale=ms -->
+    <Constant name="SEC" dimension="time" value="1ms"/>
+
+    <!-- Exposures (one per state variable) -->
+    <Exposure name="v" dimension="none"/>
+    <Exposure name="u" dimension="none"/>
+    <Exposure name="g_ampa" dimension="none"/>
+    <Exposure name="g_gaba" dimension="none"/>
+    <Exposure name="t_ref" dimension="none"/>
+
+    <Dynamics>
+
+      <!-- State variables -->
+      <StateVariable name="v" dimension="none" exposure="v"/>
+      <StateVariable name="u" dimension="none" exposure="u"/>
+      <StateVariable name="g_ampa" dimension="none" exposure="g_ampa"/>
+      <StateVariable name="g_gaba" dimension="none" exposure="g_gaba"/>
+      <StateVariable name="t_ref" dimension="none" exposure="t_ref"/>
+
+      <!-- Derived variables (simple and conditional/piecewise) -->
+      <ConditionalDerivedVariable name="integrating" dimension="none">
+        <Case condition="t_ref .gt. 0" value="0.0"/>
+        <Case value="1.00000000000000"/>
+      </ConditionalDerivedVariable>
+
+      <!-- ── Flat dynamics (no spike events) ── -->
+
+      <!-- Time derivatives -->
+      <TimeDerivative variable="v" value="(integrating*(I_e + n0 + n1*v + n2*v^2 - g_ampa*(v - E_ampa) - g_gaba*(v - E_gaba) - u/C)) / SEC"/>
+      <TimeDerivative variable="u" value="(a*integrating*(-u + b*(v - V_r))) / SEC"/>
+      <TimeDerivative variable="g_ampa" value="(c_ampa - g_ampa/tau_ampa) / SEC"/>
+      <TimeDerivative variable="g_gaba" value="(c_gaba - g_gaba/tau_gaba) / SEC"/>
+      <TimeDerivative variable="t_ref" value="(-1 + integrating) / SEC"/>
+
+      <!-- Initial conditions -->
+      <OnStart>
+        <StateAssignment variable="v" value="v_0"/>
+        <StateAssignment variable="u" value="u_0"/>
+        <StateAssignment variable="g_ampa" value="g_ampa_0"/>
+        <StateAssignment variable="g_gaba" value="g_gaba_0"/>
+        <StateAssignment variable="t_ref" value="t_ref_0"/>
+      </OnStart>
+
+      <!-- Events (non-spike) -->
+      <OnCondition test="v .gt. V_th">
+        <StateAssignment variable="v" value="c"/>
+        <StateAssignment variable="u" value="d + u"/>
+        <StateAssignment variable="t_ref" value="tau_refrac"/>
+      </OnCondition>
+
+    </Dynamics>
+
+  </ComponentType>
+
+
+  <!-- ════════════════════════════════════════════════════════════════
+       Component instances (default parameter values)
+       ════════════════════════════════════════════════════════════════ -->
+  <Component id="MaithBasalGangliaNeuron_inst" type="MaithBasalGangliaNeuron" a="0.005" b="0.265" c="-65.0" d="2.0" C="1.0" I_e="3.0" n0="140.0" n1="5.0" n2="0.04" V_r="0.0" V_th="30.0" E_ampa="0.0" E_gaba="-90.0" tau_ampa="10.0" tau_gaba="10.0" tau_refrac="10.0" c_ampa="0" c_gaba="0" v_0="-70.0" u_0="-18.55" g_ampa_0="0.0" g_gaba_0="0.0" t_ref_0="0.0"/>
+
+
+
+</Lems>

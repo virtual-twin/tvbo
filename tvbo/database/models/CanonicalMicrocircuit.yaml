@@ -1,0 +1,160 @@
+name: CanonicalMicrocircuit
+iri: tvbo:models/CanonicalMicrocircuit
+model_type: neural_mass
+label: DCM canonical microcircuit (CMC)
+description: 'The canonical microcircuit (CMC) neural mass model of dynamic causal modelling (DCM) for M/EEG, as implemented in SPM''s spm_fx_cmc.m. One cortical source holds four populations arranged by layer, following the predictive-coding microcircuit of Bastos et al. (2012): spiny stellate cells (ss, granular layer), superficial pyramidal cells (sp, supragranular), inhibitory interneurons (ii) and deep pyramidal cells (dp, infragranular). Each population is a second-order (alpha-kernel) synaptic filter of its summed presynaptic firing, giving eight states: a voltage and its rate of change per population. Firing is a sigmoid of voltage centred so that a population at rest (voltage 0) contributes no deviation from baseline firing. Ten intrinsic connections G1-G10 couple the populations, including a self-inhibitory connection on each; the sp self-inhibition G7 is the "pyramidal self-inhibition" (inverse synaptic gain) parameter that clinical DCM studies estimate. Time is in ms; SPM integrates the same equations in seconds, so every SPM rate in s^-1 appears here divided by 1000 and every time constant keeps its SPM value in ms. The SPM sources default to no input and a zero initial state, which is a fixed point; drive the model through U or c_glob, or start it off zero. Extrinsic input from other sources enters the spiny stellate population as the forward (sp to ss) connection; SPM''s three further extrinsic routes (forward sp to dp, backward dp to sp and dp to ii) and its intrinsic and extrinsic conduction delays are not part of this single-source record.'
+references:
+- Bastos2012
+source: 'SPM, toolbox/dcm_meeg/spm_fx_cmc.m (state equations, lines 44-48 and 87-197) and spm_cmc_priors.m (prior means, lines 118-124), github.com/spm/spm main at 2b4d097f51e25015343201f6d8d52646f0ed7732; identical equations and defaults in SPM12 r7771 ($Id: spm_fx_cmc.m 7279 2018-03-10). Observer state from spm_L_priors.m line 112.'
+parameters:
+  G1:
+    label: ss -> ss self-inhibition
+    description: Intrinsic self-inhibitory connection of the spiny stellate population. SPM default 4*200 = 800 s^-1.
+    value: 0.8
+    unit: per_ms
+  G2:
+    label: sp -> ss inhibition
+    description: Intrinsic inhibitory connection from superficial pyramidal to spiny stellate cells. SPM default 4*200 = 800 s^-1.
+    value: 0.8
+    unit: per_ms
+  G3:
+    label: ii -> ss inhibition
+    description: Intrinsic inhibitory connection from inhibitory interneurons to spiny stellate cells. SPM default 8*200 = 1600 s^-1.
+    value: 1.6
+    unit: per_ms
+  G4:
+    label: ii -> ii self-inhibition
+    description: Intrinsic self-inhibitory connection of the inhibitory interneuron population. SPM default 4*200 = 800 s^-1.
+    value: 0.8
+    unit: per_ms
+  G5:
+    label: ss -> ii excitation
+    description: Intrinsic excitatory connection from spiny stellate cells to inhibitory interneurons. SPM default 4*200 = 800 s^-1.
+    value: 0.8
+    unit: per_ms
+  G6:
+    label: dp -> ii excitation
+    description: Intrinsic excitatory connection from deep pyramidal cells to inhibitory interneurons. SPM default 2*200 = 400 s^-1.
+    value: 0.4
+    unit: per_ms
+  G7:
+    label: sp -> sp self-inhibition
+    description: Intrinsic self-inhibitory connection of the superficial pyramidal population, the inverse of its synaptic gain; the first free intrinsic parameter in SPM (P.G(:,1)) and the one SPM lets deep-pyramidal depolarisation modulate. SPM default 4*200 = 800 s^-1.
+    value: 0.8
+    unit: per_ms
+  G8:
+    label: ss -> sp excitation
+    description: Intrinsic excitatory connection from spiny stellate to superficial pyramidal cells. SPM default 4*200 = 800 s^-1.
+    value: 0.8
+    unit: per_ms
+  G9:
+    label: ii -> dp inhibition
+    description: Intrinsic inhibitory connection from inhibitory interneurons to deep pyramidal cells. SPM default 2*200 = 400 s^-1.
+    value: 0.4
+    unit: per_ms
+  G10:
+    label: dp -> dp self-inhibition
+    description: Intrinsic self-inhibitory connection of the deep pyramidal population. SPM default 1*200 = 200 s^-1.
+    value: 0.2
+    unit: per_ms
+  T1:
+    label: ss synaptic time constant
+    description: Synaptic time constant of the spiny stellate population.
+    value: 2.0
+    unit: ms
+  T2:
+    label: sp synaptic time constant
+    description: Synaptic time constant of the superficial pyramidal population.
+    value: 2.0
+    unit: ms
+  T3:
+    label: ii synaptic time constant
+    description: Synaptic time constant of the inhibitory interneuron population.
+    value: 16.0
+    unit: ms
+  T4:
+    label: dp synaptic time constant
+    description: Synaptic time constant of the deep pyramidal population.
+    value: 28.0
+    unit: ms
+  R:
+    label: sigmoid slope
+    description: Slope (gain) of the sigmoid activation function that maps a population's voltage to its firing; SPM scales it by exp(P.S) with prior mean P.S = 0.
+    value: 0.6666666666666666
+  U:
+    label: exogenous input to ss
+    description: Constant exogenous drive to the spiny stellate population, in the same units as the intrinsic terms. SPM forms it as C*u*32 (exogenous) or u*512 (endogenous) in s^-1 and defaults to no input.
+    value: 0.0
+    unit: per_ms
+functions:
+  Sigm:
+    definition: CMC activation function, firing as a deviation from baseline firing at zero voltage (SPM bias B = 0).
+    arguments:
+      v: {}
+    equation:
+      rhs: 1/(1 + exp(-R*v)) - 1/2
+coupling_inputs:
+  c_glob:
+    description: Summed extrinsic forward input to the spiny stellate population, A1*Sigm(x3) of the afferent sources in SPM (sp -> ss, default strength 200 s^-1 = 0.2 per_ms, halved for reciprocal pairs); pair it with a coupling function that applies Sigm to the presynaptic superficial pyramidal voltage x3.
+state_variables:
+  x1:
+    label: ss voltage
+    description: Voltage of the spiny stellate population (granular layer).
+    equation:
+      rhs: x2
+    initial_value: 0.0
+    grounding:
+    - CL:0000122
+  x2:
+    label: ss voltage rate
+    description: Rate of change of the spiny stellate voltage (SPM "conductance"); receives the exogenous input U and the extrinsic forward input c_glob.
+    equation:
+      rhs: (c_glob + U - G1*Sigm(x1) - G2*Sigm(x3) - G3*Sigm(x5) - 2*x2 - x1/T1)/T1
+    initial_value: 0.0
+    unit: per_ms
+  x3:
+    label: sp voltage
+    description: Voltage of the superficial pyramidal population (supragranular layer); the state SPM's CMC observer reads by default (lead-field contribution J = 1) and the source of forward extrinsic output.
+    equation:
+      rhs: x4
+    coupling_variable: true
+    initial_value: 0.0
+    grounding:
+    - CL:0000598
+  x4:
+    label: sp voltage rate
+    description: Rate of change of the superficial pyramidal voltage (SPM "conductance").
+    equation:
+      rhs: (G8*Sigm(x1) - G7*Sigm(x3) - 2*x4 - x3/T2)/T2
+    initial_value: 0.0
+    unit: per_ms
+  x5:
+    label: ii voltage
+    description: Voltage of the inhibitory interneuron population (SPM labels this state "current").
+    equation:
+      rhs: x6
+    initial_value: 0.0
+    grounding:
+    - CL:0000099
+  x6:
+    label: ii voltage rate
+    description: Rate of change of the inhibitory interneuron state (SPM "conductance").
+    equation:
+      rhs: (G5*Sigm(x1) + G6*Sigm(x7) - G4*Sigm(x5) - 2*x6 - x5/T3)/T3
+    initial_value: 0.0
+    unit: per_ms
+  x7:
+    label: dp voltage
+    description: Voltage of the deep pyramidal population (infragranular layer), the source of backward extrinsic output.
+    equation:
+      rhs: x8
+    initial_value: 0.0
+    grounding:
+    - CL:0000598
+  x8:
+    label: dp voltage rate
+    description: Rate of change of the deep pyramidal voltage (SPM "conductance").
+    equation:
+      rhs: (-G10*Sigm(x7) - G9*Sigm(x5) - 2*x8 - x7/T4)/T4
+    initial_value: 0.0
+    unit: per_ms

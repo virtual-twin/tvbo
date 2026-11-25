@@ -6,6 +6,8 @@ import tempfile
 import pytest
 
 from tests.functional.simulation_backends_shared import (
+    COUPLED_MODEL_FILES,
+    COUPLED_MODEL_IDS,
     DATABASE_MODELS_DIR,
     MODEL_FILES,
     MODEL_IDS,
@@ -43,7 +45,7 @@ class TestSimulationBackendsCore:
             assert exp.coupling is not None
 
     @pytest.mark.backend_jax
-    @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
+    @pytest.mark.parametrize("model_file", COUPLED_MODEL_FILES, ids=COUPLED_MODEL_IDS)
     def test_run_jax(self, model_file):
         """Test running simulation with JAX backend (single-node)."""
         model = Dynamics.from_file(model_file)
