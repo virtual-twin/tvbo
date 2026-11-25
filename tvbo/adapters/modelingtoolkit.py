@@ -163,11 +163,8 @@ class ModelingToolkitAdapter(BaseAdapter):
 
             - ``"sympy"`` — dict of SymPy equations, unknowns, parameters
             - ``"dynamics"`` — tvbo ``Dynamics`` with lowered equations
-            - ``"experiment"`` — tvbo ``SimulationExperiment`` with lowered
-              dynamics
-            - ``"auto"`` (default) — same type as the input: ``Dynamics``
-              if given ``Dynamics``, ``SimulationExperiment`` if given an
-              experiment, ``"sympy"`` if empty.
+            - ``"experiment"`` — tvbo ``SimulationExperiment`` with lowered dynamics
+            - ``"auto"`` (default) — same type as the input: ``Dynamics`` if given ``Dynamics``, ``SimulationExperiment`` if given an experiment, ``"sympy"`` if empty.
 
         Returns:
         -------
@@ -257,11 +254,7 @@ class ModelingToolkitAdapter(BaseAdapter):
 
     def _apply_lowered(self, lowered):
         """Apply lowered equations onto a deepcopy of the original Dynamics."""
-        from tvbo.datamodel import (
-            Equation,
-            StateVariable,
-            StateVariableName,
-        )
+        from tvbo.datamodel import Equation, StateVariable
 
         original = self.experiment.dynamics
         dyn = deepcopy(original)
@@ -280,7 +273,7 @@ class ModelingToolkitAdapter(BaseAdapter):
                 # Auxiliary variable introduced by MTK (e.g. x_t for dx/dt)
                 init_val = _infer_aux_initial_value(name, original)
                 sv = StateVariable(
-                    name=StateVariableName(name),
+                    name=name,
                     equation=Equation(
                         lhs=str(eq.lhs),
                         rhs=str(eq.rhs),
