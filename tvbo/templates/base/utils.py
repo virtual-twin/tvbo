@@ -48,6 +48,11 @@ def docstring_text(text) -> str:
     return str(text).replace("\\", "\\\\").replace('"', '\\"')
 
 
+def julia_string_text(text) -> str:
+    r"""``text`` written so that, between the double quotes of a generated Julia string, the string's value is ``text`` itself: a backslash doubled, a double quote escaped so it cannot end the string, and a dollar sign escaped so Julia does not interpolate what follows it, as it would in ``$mV/ms$``."""
+    return str(text or "").replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$")
+
+
 def is_local_coupling(name, coupling_input=None):
     """Whether a coupling input is driven by the node's own neighbourhood.
 

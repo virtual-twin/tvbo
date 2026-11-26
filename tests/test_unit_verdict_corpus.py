@@ -1,6 +1,6 @@
 """Every curated model's dimensional standing, frozen.
 
-The point of freezing it is that the numbers are *supposed* to move — as models gain declarations they should shift from `underdetermined` towards `consistent` — and a movement nobody intended is exactly what a corpus catches. Today 86 of the 108 registered models declare no unit anywhere, and 104 have no equation the checker can settle either way — which is why it reports three answers instead of two. A gate demanding consistency of all 108 would pressure invented declarations into the published record, and a unit somebody made up to satisfy a test is worse than no unit.
+The point of freezing it is that the numbers are *supposed* to move — as models gain declarations they should shift from `underdetermined` towards `consistent` — and a movement nobody intended is exactly what a corpus catches. Today 86 of the 112 registered models declare no unit anywhere, and 106 have no equation the checker can settle either way — which is why it reports three answers instead of two. A gate demanding consistency of all 112 would pressure invented declarations into the published record, and a unit somebody made up to satisfy a test is worse than no unit.
 
 Update the table in the same commit as the model change, and say why.
 """
@@ -21,6 +21,8 @@ VERDICTS = {
     "ArnoldCatMap": (0, 0, 2),
     "BetaTransformationMap": (0, 0, 1),
     "CakanObermayer": (0, 1, 2),
+    "CanonicalMicrocircuit": (0, 0, 8),
+    "CavallariConductanceLIF": (2, 0, 4),
     "Chua": (0, 0, 3),
     "CoombesByrne": (0, 0, 4),
     "CoombesByrne2D": (0, 0, 2),
@@ -80,6 +82,7 @@ VERDICTS = {
     "LorenzDiffusionless": (0, 0, 3),
     "LotkaVolterraPredPrey": (0, 0, 2),
     "MagneticPendulum": (0, 0, 4),
+    "MaithBasalGangliaNeuron": (0, 0, 5),
     "MannevilleSimpleMap": (0, 0, 1),
     "ModelJansen1995": (4, 0, 2),
     "MontbrioPazoRoxin": (0, 0, 2),
@@ -118,6 +121,7 @@ VERDICTS = {
     "Ueda": (0, 0, 2),
     "UlamRing4": (0, 0, 4),
     "VanDerPolForced": (0, 0, 2),
+    "Wendling": (5, 0, 5),
     "WilsonCowan": (0, 0, 2),
     "ZaslavskiiMap": (0, 0, 2),
     "ZerlautAdaptationFirstOrder": (0, 0, 5),
@@ -178,8 +182,8 @@ def test_most_models_still_declare_nothing_to_check():
     """
     nothing_to_check = [name for name, (c, i, _) in VERDICTS.items() if not c and not i]
 
-    assert len(VERDICTS) == 108
-    assert len(nothing_to_check) == 104
+    assert len(VERDICTS) == 112
+    assert len(nothing_to_check) == 106
 
 
 def test_a_model_with_no_state_equations_reaches_no_verdicts():

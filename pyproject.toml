@@ -223,6 +223,10 @@ dependencies = [
     "pre-commit",
 ]
 
+[tool.check-wheel-contents]
+# REUSE keeps one copy of a licence text in every tree that cites it, so the study template and dist-info both carry MIT, CC0 and CC-BY, and GPL-3.0-only and -or-later share one text.
+ignore = ["W002"]
+
 [tool.ruff]
 line-length = 127
 extend-exclude = [

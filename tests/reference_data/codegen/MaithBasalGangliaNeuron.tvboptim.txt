@@ -1,0 +1,114 @@
+import jax
+import jax.numpy as jnp
+import jax.scipy as jsp
+from typing import Tuple
+
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+
+
+class MaithBasalGangliaNeuron(AbstractDynamics):
+    """MaithBasalGangliaNeuron neural mass model."""
+
+    STATE_NAMES = ("v", "u", "g_ampa", "g_gaba", "t_ref")
+    INITIAL_STATE = (-70.0, -18.55, 0.0, 0.0, 0.0)
+    AUXILIARY_NAMES = ("integrating",)
+
+    DEFAULT_PARAMS = Bunch(
+        C=1.0,
+        E_ampa=0.0,
+        E_gaba=-90.0,
+        I_e=3.0,
+        V_r=0.0,
+        V_th=30.0,
+        a=0.005,
+        b=0.265,
+        c=-65.0,
+        d=2.0,
+        n0=140.0,
+        n1=5.0,
+        n2=0.04,
+        tau_ampa=10.0,
+        tau_gaba=10.0,
+        tau_refrac=10.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c_ampa": 1,
+        "c_gaba": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        C = params.C
+        E_ampa = params.E_ampa
+        E_gaba = params.E_gaba
+        I_e = params.I_e
+        V_r = params.V_r
+        a = params.a
+        b = params.b
+        n0 = params.n0
+        n1 = params.n1
+        n2 = params.n2
+        tau_ampa = params.tau_ampa
+        tau_gaba = params.tau_gaba
+
+        v = state[0]
+        u = state[1]
+        g_ampa = state[2]
+        g_gaba = state[3]
+        t_ref = state[4]
+
+        c_ampa = (
+            jnp.atleast_1d(coupling.c_ampa)[0] if hasattr(coupling, "c_ampa") else 0.0
+        )
+        c_gaba = (
+            jnp.atleast_1d(coupling.c_gaba)[0] if hasattr(coupling, "c_gaba") else 0.0
+        )
+
+        integrating = jnp.where(jnp.greater(t_ref, 0), 0.0, 1.0)
+
+        dv_dt = integrating * (
+            n2 * v**2
+            + n1 * v
+            + n0
+            - u / C
+            + I_e
+            - g_ampa * (v - E_ampa)
+            - g_gaba * (v - E_gaba)
+        )
+        du_dt = integrating * a * (b * (v - V_r) - u)
+        dg_ampa_dt = (-g_ampa) / tau_ampa + c_ampa
+        dg_gaba_dt = (-g_gaba) / tau_gaba + c_gaba
+        dt_ref_dt = -1 + integrating
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dv_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dv_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(du_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dg_ampa_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dg_gaba_dt), _per_node_shape),
+                jnp.broadcast_to(jnp.atleast_1d(dt_ref_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(integrating), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        return derivatives, auxiliaries

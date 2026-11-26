@@ -1,0 +1,59 @@
+function Wendling!(dx, x, p, t = 0)
+
+    (;A, B, G, a, b, g, C, v0, e0, r, p, c_glob) = p
+
+    y0, y1, y2, y3, y4, y5, y6, y7, y8, y9 = x
+
+    Sigm(v) = 2 * e0 ./ (1 .+ exp(r .* (v0 .- v)))
+
+    C1 = C
+    C2 = 0.8 * C
+    C3 = 0.25 * C
+    C4 = 0.25 * C
+    C5 = 0.1 * C
+    C6 = 0.1 * C
+    C7 = 0.8 * C
+
+    lfp = y1 .- y2 .- y3
+
+    dx[1] = y5
+    dx[2] = y6
+    dx[3] = y7
+    dx[4] = y8
+    dx[5] = y9
+    dx[6] = -y0 .* a .^ 2 .- 2 * a .* y5 .+ A .* a .* Sigm(c_glob .+ y1 .- y2 .- y3)
+    dx[7] = -y1 .* a .^ 2 .- 2 * a .* y6 .+ A .* a .* (p .+ C2 .* Sigm(C1 .* y0))
+    dx[8] = -y2 .* b .^ 2 .- 2 * b .* y7 .+ B .* C4 .* b .* Sigm(C3 .* y0)
+    dx[9] = -y3 .* g .^ 2 .- 2 * g .* y8 .+ C7 .* G .* g .* Sigm(C5 .* y0 .- C6 .* y4)
+    dx[10] = -y4 .* b .^ 2 .- 2 * b .* y9 .+ B .* b .* Sigm(C3 .* y0)
+    dx
+end
+
+# Parameter values
+p = (A = 4.0, B = 40.0, G = 20.0, a = 0.1, b = 0.05, g = 0.35, C = 135.0, v0 = 6.0, e0 = 0.0025, r = 0.56, p = 0.09, c_glob = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(Wendling!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)

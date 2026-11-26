@@ -1,9 +1,19 @@
-# Connect clinical application studies to the concrete TVB neural-mass model that
-# implements the node dynamics they used, so the clinical knowledge graph reaches
-# runnable (workspace-addable) models. Layered on top of tvb-o-clinical.ttl.
+# Layered on tvb-o-clinical.ttl, so the clinical knowledge graph reaches runnable models: each clinical application study tied to the TVB-O model record that implements the node dynamics it used, and each clinical model family tied by a SKOS match to the records that implement it (exactMatch, narrowMatch for a family several records refine, closeMatch for a record in another formulation, relatedMatch for a family of networks whose single neuron a record gives).
 @prefix tvbo: <https://w3id.org/tvbo/> .
 @prefix tvbc: <https://w3id.org/tvbo/clinical/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 tvbc:study-Yang2015 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/ReducedWongWang> .
 tvbc:study-Mana2023 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/SupHopf> .
 tvbc:study-Stefanovski2019 tvbc:usesNodeDynamics <https://w3id.org/tvbo/models/JansenRit> .
+
+tvbc:model-JansenRit skos:exactMatch <https://w3id.org/tvbo/models/JansenRit> .
+tvbc:model-ReducedWongWang skos:narrowMatch <https://w3id.org/tvbo/models/ReducedWongWang> , <https://w3id.org/tvbo/models/ReducedWongWangExcInh> , <https://w3id.org/tvbo/models/DecoBalancedExcInh> .
+tvbc:model-Epileptor skos:narrowMatch <https://w3id.org/tvbo/models/Epileptor> , <https://w3id.org/tvbo/models/Epileptor2D> , <https://w3id.org/tvbo/models/Epileptor5D> .
+tvbc:model-StefanescuJirsa3D skos:exactMatch <https://w3id.org/tvbo/models/StefanescuJirsa3D> .
+tvbc:model-DodyNextGen skos:closeMatch <https://w3id.org/tvbo/models/MontbrioPazoRoxin> .
+tvbc:model-Hopf skos:closeMatch <https://w3id.org/tvbo/models/SupHopf> .
+tvbc:model-Wendling skos:exactMatch <https://w3id.org/tvbo/models/Wendling> .
+tvbc:model-DynamicCausalModel skos:exactMatch <https://w3id.org/tvbo/models/CanonicalMicrocircuit> .
+tvbc:model-SpikingEI skos:relatedMatch <https://w3id.org/tvbo/models/CavallariConductanceLIF> .
+tvbc:model-BasalGanglia skos:relatedMatch <https://w3id.org/tvbo/models/MaithBasalGangliaNeuron> .

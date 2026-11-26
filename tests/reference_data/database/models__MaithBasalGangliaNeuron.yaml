@@ -1,0 +1,294 @@
+name: MaithBasalGangliaNeuron
+label: Maith et al. basal-ganglia Izhikevich neuron
+iri: tvbo:models/MaithBasalGangliaNeuron
+parameters:
+  a:
+    name: a
+    definition: Rate of recovery of the recovery variable u.
+    value: 0.005
+    domain:
+      enforce: none
+      lo: 0.005
+      hi: 0.05
+      log_scale: false
+    description: 'Rate of recovery of u. Per population: dSN/iSN 0.05, GPi 0.005,
+      GPe 0.005, STN 0.005, thalamus 0.02, cortex E 0.02, cortex I 0.02.'
+  b:
+    name: b
+    definition: Sensitivity of the recovery variable u to subthreshold fluctuations
+      of the membrane potential.
+    value: 0.265
+    domain:
+      enforce: none
+      lo: -20.0
+      hi: 0.585
+      log_scale: false
+    description: 'Sensitivity of u to subthreshold membrane potential. Per population:
+      dSN/iSN -20, GPi 0.585, GPe 0.585, STN 0.265, thalamus 0.25, cortex E 0.2, cortex
+      I 0.2.'
+  c:
+    name: c
+    definition: After-spike reset value of the membrane potential v.
+    value: -65.0
+    domain:
+      enforce: none
+      lo: -72.0
+      hi: -55.0
+      log_scale: false
+    description: 'After-spike reset value of v. Per population: dSN/iSN -55, GPi -65,
+      GPe -65, STN -65, thalamus -65, cortex E -72, cortex I -72 mV.'
+    unit: mV
+  d:
+    name: d
+    definition: After-spike increment of the recovery variable u.
+    value: 2.0
+    domain:
+      enforce: none
+      lo: 0.05
+      hi: 377.0
+      log_scale: false
+    description: 'After-spike increment of u. Per population: dSN/iSN 377, GPi 4,
+      GPe 4, STN 2, thalamus 0.05, cortex E 6, cortex I 6.'
+  C:
+    name: C
+    definition: Membrane capacity scaling of the recovery term u/C.
+    value: 1.0
+    domain:
+      enforce: none
+      lo: 1.0
+      hi: 50.0
+      log_scale: false
+    description: 'Membrane capacity scaling of u. Per population: dSN/iSN 50, all
+      others 1.'
+  I_e:
+    name: I_e
+    definition: Region-specific constant external (baseline) current.
+    value: 3.0
+    domain:
+      enforce: none
+      lo: 0.0
+      hi: 50.0
+      log_scale: false
+    description: 'Constant baseline current. Per population: dSN/iSN 0, GPi 30, GPe
+      12, STN 3, thalamus 3.5, cortex E 50, cortex I 0.'
+  n0:
+    name: n0
+    definition: Constant coefficient of the quadratic membrane equation.
+    value: 140.0
+    domain:
+      enforce: none
+      lo: 61.65119
+      hi: 140.0
+      log_scale: false
+    description: 'Constant coefficient of the quadratic membrane. Per population:
+      dSN/iSN 61.65119, all others 140.'
+  n1:
+    name: n1
+    definition: Linear coefficient of the quadratic membrane equation.
+    value: 5.0
+    domain:
+      enforce: none
+      lo: 2.594639
+      hi: 5.0
+      log_scale: false
+    description: 'Linear coefficient of the quadratic membrane. Per population: dSN/iSN
+      2.594639, all others 5.'
+  n2:
+    name: n2
+    definition: Quadratic coefficient of the quadratic membrane equation.
+    value: 0.04
+    domain:
+      enforce: none
+      lo: 0.022799
+      hi: 0.04
+      log_scale: false
+    description: 'Quadratic coefficient of the quadratic membrane. Per population:
+      dSN/iSN 0.022799, all others 0.04.'
+  V_r:
+    name: V_r
+    definition: Reference potential of the recovery variable, u relaxes towards b*(v
+      - V_r).
+    value: 0.0
+    domain:
+      enforce: none
+      lo: -80.0
+      hi: 0.0
+      log_scale: false
+    description: 'Reference potential of the recovery term. Per population: dSN/iSN
+      -80 mV (the resting potential of the Humphries et al. 2009 spiny projection
+      neuron, a root of n2*v^2 + n1*v + n0), all others 0 mV.'
+    unit: mV
+  V_th:
+    name: V_th
+    definition: Spike threshold of the membrane potential.
+    value: 30.0
+    domain:
+      enforce: none
+      lo: 30.0
+      hi: 40.0
+      log_scale: false
+    description: 'Spike threshold. Per population: dSN/iSN 40 mV, all others 30 mV.'
+    unit: mV
+  E_ampa:
+    name: E_ampa
+    definition: AMPA reversal potential.
+    value: 0.0
+    description: AMPA reversal potential, the same for every population.
+    unit: mV
+  E_gaba:
+    name: E_gaba
+    definition: GABA reversal potential.
+    value: -90.0
+    description: GABA reversal potential, the same for every population.
+    unit: mV
+  tau_ampa:
+    name: tau_ampa
+    definition: AMPA conductance decay time constant.
+    value: 10.0
+    description: AMPA conductance decay time constant, the same for every population.
+    unit: ms
+  tau_gaba:
+    name: tau_gaba
+    definition: GABA conductance decay time constant.
+    value: 10.0
+    description: GABA conductance decay time constant, the same for every population.
+    unit: ms
+  tau_refrac:
+    name: tau_refrac
+    definition: Refractory period after a spike, during which v and u are not integrated.
+    value: 10.0
+    description: Refractory period after a spike, the same for every population; v
+      and u are frozen, the conductances keep decaying.
+    unit: ms
+description: 'Single-neuron unit of the spiking cortex-basal ganglia-thalamus motor-loop
+  model that Maith et al. (2020) fitted to resting-state BOLD correlations of Parkinson
+  patients and matched controls. Every population of that model (striatal direct and
+  indirect spiny projection neurons dSN and iSN, GPe, GPi, STN, thalamus, and the
+  excitatory and inhibitory cortex) is a group of these neurons: a quadratic Izhikevich
+  membrane n2*v^2 + n1*v + n0 with a recovery variable u, AMPA and GABA conductances
+  with reversal potentials, a spike-triggered reset (v = c, u = u + d) and a 10 ms
+  refractory period during which v and u are frozen while the conductances keep decaying.
+  The populations differ only in their parameter row (Meier et al. 2022, Supplementary
+  Table 2, values taken from Maith et al. 2020); the defaults here are the STN row,
+  and each parameter''s description lists the value for every population. Meier et
+  al. attribute the GPe, GPi and STN rows to the hybrid neuron of Thibeault & Srinivasa
+  (2013), the striatal row to Humphries, Wood & Gurney (2009) and the thalamic row
+  to the phasic-bursting neuron of Izhikevich (2004), whose reset is c = -55 mV where
+  the thalamic row has -65 mV; the record keeps the row as tabulated. Incoming spikes
+  enter as the coupling inputs c_ampa and c_gaba, each a weighted sum of delta pulses
+  that increments the matching conductance (Meier et al. 2022, Supplementary Eq. 3);
+  cortical input to the basal ganglia is excitatory and therefore arrives on c_ampa
+  (cortex to dSN, iSN and STN). The circuit itself (population sizes, connection probabilities
+  and the per-subject fitted weights) and the slow per-neuron noise current are network-
+  and experiment-level quantities and are not part of this record.'
+references:
+- Maith2020
+- Meier2022
+derived_variables:
+  integrating:
+    name: integrating
+    description: One outside the refractory period and zero during it, the factor
+      that freezes v and u for tau_refrac after each spike.
+    equation:
+      rhs: Piecewise((0.0, t_ref > 0), (1.0, True))
+      latex: false
+    record: false
+coupling_inputs:
+  c_ampa:
+    name: c_ampa
+    description: Excitatory (AMPA) spike input, a weighted sum of delta pulses from
+      presynaptic excitatory neurons (cortex, STN, thalamus); cortical network input
+      arrives here.
+    dimension: 1
+    local: false
+  c_gaba:
+    name: c_gaba
+    description: Inhibitory (GABA) spike input, a weighted sum of delta pulses from
+      presynaptic inhibitory neurons (striatum, GPe, GPi, cortical interneurons).
+    dimension: 1
+    local: false
+state_variables:
+  v:
+    name: v
+    description: Membrane potential.
+    equation:
+      rhs: integrating*(n2*v**2 + n1*v + n0 - u/C + I_e - g_ampa*(v - E_ampa) - g_gaba*(v
+        - E_gaba))
+      latex: false
+    unit: mV
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -70.0
+  u:
+    name: u
+    description: Recovery variable.
+    equation:
+      rhs: integrating*a*(b*(v - V_r) - u)
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: -18.55
+  g_ampa:
+    name: g_ampa
+    description: AMPA synaptic conductance.
+    equation:
+      rhs: -g_ampa/tau_ampa + c_ampa
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  g_gaba:
+    name: g_gaba
+    description: GABA synaptic conductance.
+    equation:
+      rhs: -g_gaba/tau_gaba + c_gaba
+      latex: false
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+  t_ref:
+    name: t_ref
+    description: Refractory time remaining, set to tau_refrac by the spike event and
+      counting down to zero at unit rate.
+    equation:
+      rhs: -(1 - integrating)
+      latex: false
+    unit: ms
+    record: true
+    variable_of_interest: true
+    coupling_variable: false
+    equation_type: differential
+    equation_order: 1
+    initial_value: 0.0
+number_of_modes: 1
+model_type: spiking
+system_type: continuous
+autonomous: true
+events:
+  spike:
+    name: spike
+    description: Spike emission when v exceeds the threshold, followed by the Izhikevich
+      reset and the start of the refractory period.
+    event_type: stimulus
+    condition:
+      rhs: v > V_th
+      latex: false
+    affect:
+      rhs: v = c; u = u + d; t_ref = tau_refrac
+      latex: false
+    sampling_rate: 1.0
+    interpolation: linear
+cse: false
+compile: false

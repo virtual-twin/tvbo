@@ -1,0 +1,45 @@
+import NaNMath
+function CavallariConductanceLIF!(dx, x, p, t = 0)
+
+    (;V_leak, thresh, reset, tau_refrac, tau_m, g_leak, E_AMPA, E_GABA, tau_r_AMPA, tau_d_AMPA, tau_r_GABA, tau_d_GABA, g_AMPA_rec, g_AMPA_tha, g_AMPA_cort, g_GABA, S_AMPA_rec, S_AMPA_tha, S_AMPA_cort, S_GABA) = p
+
+    v, x_AMPA, geff_AMPA, x_GABA, geff_GABA, t_ref = x
+
+
+    I_AMPA = geff_AMPA .* (v .- E_AMPA)
+    I_GABA = geff_GABA .* (v .- E_GABA)
+    integrating = ifelse(t_ref > 0, 0.0, 1.0)
+
+    dx[1] = integrating .* (V_leak .- v .- (I_AMPA .+ I_GABA) ./ g_leak) ./ tau_m
+    dx[2] = (-x_AMPA .+ tau_m .* (S_AMPA_cort .* g_AMPA_cort .+ S_AMPA_rec .* g_AMPA_rec .+ S_AMPA_tha .* g_AMPA_tha)) ./ tau_r_AMPA
+    dx[3] = (x_AMPA .- geff_AMPA) ./ tau_d_AMPA
+    dx[4] = (-x_GABA .+ S_GABA .* g_GABA .* tau_m) ./ tau_r_GABA
+    dx[5] = (x_GABA .- geff_GABA) ./ tau_d_GABA
+    dx[6] = -1 .+ integrating
+    dx
+end
+
+# Parameter values
+p = (V_leak = -70.0, thresh = -52.0, reset = -59.0, tau_refrac = 2.0, tau_m = 20.0, g_leak = 25.0, E_AMPA = 0.0, E_GABA = -80.0, tau_r_AMPA = 0.4, tau_d_AMPA = 2.0, tau_r_GABA = 0.25, tau_d_GABA = 5.0, g_AMPA_rec = 0.178, g_AMPA_tha = 0.234, g_AMPA_cort = 0.187, g_GABA = 2.01, S_AMPA_rec = 0.0, S_AMPA_tha = 0.0, S_AMPA_cort = 0.0, S_GABA = 0.0)
+
+
+using OrdinaryDiffEqTsit5
+
+# Initial conditions (flat state vector; multi-mode SVs are length-n_modes blocks)
+u0 = [
+        -70.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    ]
+
+# Define time span
+tspan = (0.0, 1000) # Adjust time span as needed
+
+prob = ODEProblem(CavallariConductanceLIF!, u0, tspan, p)
+
+
+# Solve
+sol = solve(prob, Tsit5(); saveat=0.01)
