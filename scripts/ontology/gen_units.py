@@ -13,7 +13,7 @@ Transcribes the unit facts TVBO reasons about from QUDT rather than restating th
 - ``tvbo/data/ontology/unit_facts.json`` — the compiled projection ``tvbo.utils.units``
   loads at runtime (stdlib ``json``, no rdflib on the hot path).
 
-Only one thing here is authored by TVBO: ``DECOMPOSITIONS``, the factor-unit reading of the values QUDT publishes no IRI for. Everything else — multiplier, dimension vector, quantity kind, symbol, UCUM code — is copied or derived arithmetically.
+Only one thing here is authored by TVBO: ``DECOMPOSITIONS``, the factor-unit reading of the values QUDT publishes no IRI for. Everything else — multiplier, dimension vector, quantity kind, symbol, UCUM code — is copied or derived from the atoms: a compound's UCUM code is its atoms' codes multiplied and divided.
 
 That is also what makes a SymPy expression unnecessary to author. A unit is exactly ``multiplier x product(base_unit ** exponent)`` over the seven SI base units, and both halves come from QUDT, so ``mV`` is ``Rational(1,1000) * kilogram*meter**2 / (second**3 * ampere)`` — exact, canonical, and distinguishable from ``V``. An earlier draft of this work authored ``mV -> milli*volt`` by hand for every value; deriving it removes that table and the chance of it disagreeing with the dimension vector beside it.
 
@@ -166,8 +166,21 @@ def compose(name: str, factors: dict[str, int], atoms: dict[str, dict]) -> dict:
         "dimensions": exponents,
         "quantity_kinds": [],
         "symbol": None,
-        "ucum_code": None,
+        "ucum_code": compose_ucum(factors, atoms),
     }
+
+
+def compose_ucum(factors: dict[str, int], atoms: dict[str, dict]) -> str | None:
+    """The UCUM code of a compound, its atoms' codes multiplied by ``.`` and each divisor after a ``/`` (``uA/cm2``, ``/mV``, ``mol/m/A/s``); None when an atom has no UCUM code or one that is not a single unit symbol (``m2``, ``m.s-1``), which an exponent or a ``/`` set beside it would misread."""
+    codes = {atom: atoms[atom]["ucum_code"] for atom in factors}
+    if not all(code and code.isalpha() for code in codes.values()):
+        return None
+
+    def term(atom: str, power: int) -> str:
+        return codes[atom] + (str(abs(power)) if abs(power) != 1 else "")
+
+    numerator = ".".join(term(atom, power) for atom, power in factors.items() if power > 0)
+    return numerator + "".join("/" + term(atom, power) for atom, power in factors.items() if power < 0)
 
 
 def load_enum() -> dict[str, dict]:

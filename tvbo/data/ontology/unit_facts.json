@@ -123,7 +123,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "Hz/nA"
   },
   "MW": {
    "curated": true,
@@ -190,7 +190,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "MOhm"
   },
   "N_per_m": {
    "curated": true,
@@ -253,7 +253,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "S/cm2"
   },
   "S_per_m": {
    "curated": true,
@@ -325,7 +325,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "S/m2"
   },
   "V": {
    "curated": true,
@@ -784,7 +784,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "kg/s"
   },
   "km": {
    "curated": true,
@@ -843,7 +843,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "kOhm.cm"
   },
   "m": {
    "curated": true,
@@ -903,7 +903,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "mS/cm2"
   },
   "mV": {
    "curated": true,
@@ -978,7 +978,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "mV/ms"
   },
   "mV_per_s": {
    "curated": true,
@@ -1013,7 +1013,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "mV/s"
   },
   "m_per_s": {
    "curated": true,
@@ -1152,7 +1152,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "mm/ms"
   },
   "mmol_per_m3": {
    "curated": true,
@@ -1208,7 +1208,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "mol/cm3"
   },
   "mol_per_m3": {
    "curated": true,
@@ -1275,7 +1275,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "mol/m/A/s"
   },
   "ms": {
    "curated": true,
@@ -1441,7 +1441,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "nS/mV"
   },
   "ns": {
    "curated": true,
@@ -1661,7 +1661,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "/mV"
   },
   "per_mm2": {
    "curated": true,
@@ -1683,7 +1683,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "/mm2"
   },
   "per_ms": {
    "curated": true,
@@ -1734,7 +1734,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "/nC"
   },
   "per_pC": {
    "curated": true,
@@ -1760,7 +1760,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "/pC"
   },
   "per_s": {
    "curated": true,
@@ -1890,7 +1890,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "rad/ms"
   },
   "rad_per_s": {
    "curated": true,
@@ -2004,7 +2004,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "uA/cm2"
   },
   "uF_per_cm2": {
    "curated": true,
@@ -2039,7 +2039,7 @@
    "quantity_kinds": [],
    "qudt": null,
    "symbol": null,
-   "ucum_code": null
+   "ucum_code": "uF/cm2"
   },
   "uS": {
    "curated": true,

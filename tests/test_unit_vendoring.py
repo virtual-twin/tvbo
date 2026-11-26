@@ -20,8 +20,10 @@ from tvbo.utils.units import (
     unit_dimensions,
     unit_expression,
     unit_facts,
+    unit_from_ucum,
     unit_multiplier,
     unit_to_si_factor,
+    unit_to_ucum,
 )
 
 REPO = Path(__file__).resolve().parents[1]
@@ -57,6 +59,31 @@ def test_a_curated_unit_states_its_dimensions_and_scale(unit: str):
     """Every curated unit carries both halves of `Q = {Q}·[Q]`."""
     assert unit_multiplier(unit) is not None
     assert unit_dimensions(unit) is not None
+
+
+def test_a_ucum_code_reads_back_to_the_unit_that_states_it():
+    """Every curated unit but the two QUDT gives no code states a UCUM code, and no two units share one."""
+    coded = {unit: unit_to_ucum(unit) for unit in CURATED if unit_to_ucum(unit)}
+    assert sorted(set(CURATED) - set(coded)) == ["arbitrary_unit", "dimensionless"]
+    assert {unit: unit_from_ucum(code) for unit, code in coded.items()} == {unit: unit for unit in coded}
+
+
+def test_a_compound_ucum_code_is_composed_from_its_atoms():
+    """Factors multiply by ``.`` and each divisor follows a ``/``; one atom without a code, or with a compound one, leaves the compound without one."""
+    import sys
+
+    sys.path.insert(0, str(REPO / "scripts" / "ontology"))
+    from gen_units import compose_ucum
+
+    atoms = {"MicroA": "uA", "CentiM": "cm", "KiloOHM": "kOhm", "MilliV": "mV", "MOL": "mol", "SEC": "s", "UNITLESS": None}
+    atoms |= {"M2": "m2", "M-PER-SEC": "m.s-1"}
+    atoms = {iri: {"ucum_code": code} for iri, code in atoms.items()}
+    assert compose_ucum({"MicroA": 1, "CentiM": -2}, atoms) == "uA/cm2" == unit_to_ucum("uA_per_cm2")
+    assert compose_ucum({"KiloOHM": 1, "CentiM": 1}, atoms) == "kOhm.cm"
+    assert compose_ucum({"MilliV": -1}, atoms) == "/mV"
+    assert compose_ucum({"MOL": 1, "CentiM": -1, "SEC": -1}, atoms) == "mol/cm/s"
+    assert compose_ucum({"UNITLESS": 1}, atoms) is None
+    assert compose_ucum({"M2": 2}, atoms) is None and compose_ucum({"MOL": 1, "M-PER-SEC": -1}, atoms) is None
 
 
 def test_an_uncurated_unit_says_so_rather_than_guessing():

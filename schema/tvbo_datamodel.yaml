@@ -1238,7 +1238,7 @@ classes:
     MeasureSpec:
         class_uri: tvbo:MeasureSpec
         description: >-
-            Metadata for one phenotype measure, the column entry of a BIDS phenotype sidecar: ``iri`` is its ``TermURL``, ``unit`` its ``Units`` and ``description`` its ``Description``. The same three fields are the ``code``, ``valueQuantity.code`` and display of a FHIR ``Observation``. Optional per-measure entry on ``Phenotype.measure_specs``.
+            Metadata for one phenotype measure, the column entry of a BIDS phenotype sidecar: ``iri`` is its ``TermURL``, ``unit`` its ``Units`` and ``description`` its ``Description``. The same three fields are the ``code``, the ``valueQuantity.code`` and the text of the code of a FHIR ``Observation``. Optional per-measure entry on ``Phenotype.measure_specs``.
         slots:
             - iri
             - unit

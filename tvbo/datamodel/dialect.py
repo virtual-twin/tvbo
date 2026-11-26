@@ -254,7 +254,7 @@ def expand_curie(iri: str) -> str:
     prefix, _, local = iri.partition(":")
     if local.startswith("//"):
         return iri
-    namespaces = _schema_namespaces()
+    namespaces = schema_namespaces()
     if prefix not in namespaces:
         raise ValueError(f"{iri!r}: the schema declares no prefix {prefix!r}, so it has no URL")
     return str(namespaces[prefix][local])
@@ -276,11 +276,11 @@ def compact_curie(iri: str) -> str:
 @cache
 def _schema_bases() -> list[tuple[str, str]]:
     """``(prefix, expansion)`` of every declared schema prefix, longest expansion first."""
-    return sorted(((p, str(ns)) for p, ns in _schema_namespaces().items()), key=lambda pair: -len(pair[1]))
+    return sorted(((p, str(ns)) for p, ns in schema_namespaces().items()), key=lambda pair: -len(pair[1]))
 
 
 @cache
-def _schema_namespaces() -> dict:
+def schema_namespaces() -> dict:
     """The prefixes the schema modules declare, each mapped to its generated ``CurieNamespace``."""
     from linkml_runtime.utils.curienamespace import CurieNamespace
 

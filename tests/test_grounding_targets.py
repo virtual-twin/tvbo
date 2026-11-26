@@ -47,3 +47,15 @@ def test_a_grounding_with_an_unknown_prefix_is_refused():
     iri = gen_abox.TVBO["models/Example/parameters/a"]
     with pytest.raises(ValueError, match=r"models/Example/parameters/a: grounding 'GOO:0060080'"):
         gen_abox._add_groundings(Graph(), iri, {"grounding": ["GOO:0060080"]})
+
+
+def test_a_clinical_grounding_expands_by_the_schema_prefix():
+    """A LOINC or SNOMED CT grounding reaches the A-box under the namespace the schema declares, as GO does."""
+    iri = gen_abox.TVBO["models/Example/parameters/a"]
+    g = Graph()
+    gen_abox._add_groundings(g, iri, {"grounding": ["loinc:30525-0", "sct:49049000", "GO:0060080"]})
+    assert {str(o) for o in g.objects(iri, gen_abox.TVBO.surrogate_of)} == {
+        "http://loinc.org/rdf/30525-0",
+        "http://snomed.info/id/49049000",
+        "http://purl.obolibrary.org/obo/GO_0060080",
+    }

@@ -78,6 +78,7 @@ def test_bundle_becomes_dataset_and_phenotype(tmp_path, caplog):
         ((_observation("30525-0", "Patient/nobody", 31),), "no Patient"),
         ((_observation("30525-0", "Patient/p1", 31), _observation("30525-0", "Patient/p1", 32)), "two values"),
         ((_observation("30525-0", "Patient/p1", 31), _observation("30525-0", "Patient/p2", 380, unit="mo")), "two different"),
+        ((_observation("30525-0", "Patient/p1", "31,5"),), "no number$"),
     ],
 )
 def test_ambiguous_or_foreign_observations_are_refused(observations, message):
@@ -96,6 +97,52 @@ def test_display_variants_share_a_measure_and_an_absent_value_is_skipped():
     _, phenotype = from_fhir(_bundle(*observations, absent, later), dataset_id="ward")
     np.testing.assert_array_equal(phenotype.get("30525-0"), [31.0, 45.0])
     assert phenotype.measure_spec("30525-0").description == "Age"
+
+
+def test_an_observation_that_states_no_result_is_skipped():
+    """A retracted observation, a quantity a comparator only bounds and an uncoded note fill no cell and refuse nothing."""
+    retracted = _observation("30525-0", "Patient/p1", 99)
+    retracted["resource"]["status"] = "entered-in-error"
+    bounded = _observation("8302-2", "Patient/p1", 5, unit="cm", display="Height")
+    bounded["resource"]["valueQuantity"]["comparator"] = "<"
+    note = {
+        "resource": {
+            "resourceType": "Observation",
+            "status": "final",
+            "code": {"text": "note"},
+            "subject": {"reference": "Patient/p1"},
+            "valueString": "seen",
+        }
+    }
+    _, phenotype = from_fhir(_bundle(retracted, _observation("30525-0", "Patient/p1", 31), bounded, note), dataset_id="ward")
+    assert phenotype.measures == ["30525-0"]
+    np.testing.assert_array_equal(phenotype.get("30525-0"), [31.0, np.nan])
+
+
+def test_a_later_description_fills_an_empty_one_and_a_local_unit_code_is_kept_as_written():
+    undescribed = _observation("30525-0", "Patient/p1", 31, display=None)
+    local = _observation("8302-2", "Patient/p1", 3, unit="a", display="Height")
+    local["resource"]["valueQuantity"]["system"] = "urn:example:local-units"
+    _, phenotype = from_fhir(_bundle(undescribed, _observation("30525-0", "Patient/p2", 45), local), dataset_id="ward")
+    assert (phenotype.measure_spec("30525-0").description, phenotype.measure_spec("30525-0").unit) == ("Age", "year")
+    assert phenotype.measure_spec("8302-2").unit == "a"
+
+
+def test_a_subject_is_named_by_its_identifier_under_the_pseudonym_system():
+    bundle = _bundle()
+    first, second = (entry["resource"] for entry in bundle["entry"])
+    first["identifier"].insert(0, {"system": "urn:example:record-number", "value": "4711"})
+    second["identifier"][0]["system"] = "urn:example:pseudonym"
+    dataset, _ = from_fhir(bundle, dataset_id="ward", subject_system="urn:example:pseudonym")
+    assert list(dataset.subjects) == ["01", "ctrl03"]
+
+    with pytest.raises(ValueError, match="no identifier under"):
+        from_fhir(bundle, dataset_id="ward", subject_system="urn:example:other")
+    second["identifier"][0]["value"] = "01"
+    with pytest.raises(ValueError, match="one subject"):
+        from_fhir(bundle, dataset_id="ward", subject_system="urn:example:pseudonym")
+    with pytest.raises(ValueError, match="reads a Bundle"):
+        from_fhir(first, dataset_id="ward")
 
 
 def _condition(subject, *codings, status=None):
@@ -183,6 +230,7 @@ def test_phenotype_becomes_a_valid_bundle_and_round_trips():
     assert {o.status for o in observations} == {"preliminary"}
     age = observations[0]
     assert (age.code.coding[0].system, age.code.coding[0].code) == ("http://loinc.org", "30525-0")
+    assert (age.code.coding[0].display, age.code.text) == (None, "Predicted age")
     assert (age.valueQuantity.value, age.valueQuantity.code, age.valueQuantity.system) == (
         31.0,
         "a",
@@ -201,6 +249,7 @@ def test_phenotype_becomes_a_valid_bundle_and_round_trips():
     np.testing.assert_array_equal(back.get("30525-0"), [31.0, 45.0])
     np.testing.assert_array_equal(back.get("273249006"), [np.nan, 2.5])
     assert (back.measure_spec("30525-0").unit, back.measure_spec("273249006").iri) == ("year", "sct:273249006")
+    assert back.measure_spec("30525-0").description == "Predicted age"
 
 
 def test_cohort_table_is_attributed_to_a_group():
@@ -220,6 +269,8 @@ def test_cohort_table_is_attributed_to_a_group():
 
     with pytest.raises(ValueError, match="one row"):
         to_fhir(_phenotype(["01", "ctrl03"], TWO_ROWS), cohort=cohort)
+    with pytest.raises(ValueError, match="types no `members`"):
+        to_fhir(_phenotype(["listed"]), cohort=Cohort(cohort_id="listed", members_file="members.tsv"))
 
 
 def test_report_needs_one_subject_and_a_measure_needs_a_code(tmp_path):
@@ -239,6 +290,8 @@ def test_report_needs_one_subject_and_a_measure_needs_a_code(tmp_path):
     uncoded.measure_specs[1].iri = "http://loinc.org/rdf/30525-0"
     with pytest.raises(ValueError, match="share the code"):
         to_fhir(uncoded)
+    with pytest.raises(ValueError, match="infinite"):
+        to_fhir(_phenotype(values={"30525-0": [np.inf], "score": [2.0]}))
 
 
 def test_provenance_period_orders_by_time_and_needs_an_offset():
@@ -251,3 +304,8 @@ def test_provenance_period_orders_by_time_and_needs_an_offset():
     phenotype.provenance.date_created = "2026-11-07"
     with pytest.raises(ValueError, match="no UTC offset"):
         to_fhir(phenotype)
+
+
+def test_a_table_without_subjects_is_not_exported():
+    with pytest.raises(ValueError, match="without subjects has nothing to export"):
+        to_fhir(Phenotype.from_values({}, dataset_id="toy", subjects=[], measures=[], data_file="toy.tsv"))

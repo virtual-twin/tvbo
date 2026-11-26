@@ -269,28 +269,27 @@ def _companion(path: Path) -> str | None:
     return str(table._data_path) if table.data_file else None
 
 
-def _read_measure(path: Path, measure: str) -> tuple[list[str], list[float]]:
-    """The subjects of the phenotype table at *path* and their values of *measure*, in the table's order: a table (:data:`TABLE_SUFFIXES`) by its ``participant_id`` and *measure* columns, a record (:data:`RECORD_SUFFIXES`) as a ``Phenotype`` sidecar with its companion. A cell without a value (:data:`MISSING_CELLS`) is NaN, and no error repeats a row."""
+def _table_column(path: Path, header: list[str], rows: list, measure: str) -> list[float]:
+    """The values of column *measure* of the table :func:`_read_table` read from *path*, one per row. A cell without a value (:data:`MISSING_CELLS`) is NaN, and no error repeats a row."""
     import math
 
+    if measure not in header:
+        raise ValueError(f"{path.name} has no column {measure!r} (columns: {[c for c in header if c != 'participant_id']}).")
+    where, values = header.index(measure), []
+    for number, _, row in rows:
+        cell = row[where].strip() if len(row) > where else ""
+        try:
+            values.append(math.nan if cell.lower() in MISSING_CELLS else float(cell))
+        except ValueError:
+            raise ValueError(f"{path.name}, row {number}: column {measure!r} holds a value that is not a number.") from None
+    return values
+
+
+def _read_measure(path: Path, measure: str) -> tuple[list[str], list[float]]:
+    """The subjects of the phenotype table at *path* and their values of *measure*, in the table's order: a table (:data:`TABLE_SUFFIXES`) by its ``participant_id`` and *measure* columns (:func:`_table_column`), a record (:data:`RECORD_SUFFIXES`) as a ``Phenotype`` sidecar with its companion."""
     if path.suffix.lower() in TABLE_SUFFIXES:
         header, rows = _read_table(path)
-        if measure not in header:
-            raise ValueError(
-                f"{path.name} has no column {measure!r} (columns: {[c for c in header if c != 'participant_id']})."
-            )
-        where, subjects, values = header.index(measure), [], []
-        for number, participant, row in rows:
-            cell = row[where].strip() if len(row) > where else ""
-            try:
-                value = math.nan if cell.lower() in MISSING_CELLS else float(cell)
-            except ValueError:
-                raise ValueError(
-                    f"{path.name}, row {number}: column {measure!r} holds a value that is not a number."
-                ) from None
-            subjects.append(participant)
-            values.append(value)
-        return subjects, values
+        return [participant for _, participant, _ in rows], _table_column(path, header, rows, measure)
     from tvbo.classes.phenotype import Phenotype
 
     table = Phenotype.from_file(path)

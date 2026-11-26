@@ -772,6 +772,8 @@ def unit_to_ucum(unit):
     'ms'
     >>> unit_to_ucum("year")
     'a'
+    >>> unit_to_ucum("uA_per_cm2")
+    'uA/cm2'
     """
     facts = unit_facts(unit)
     return facts["ucum_code"] if facts else None

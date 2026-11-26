@@ -25,6 +25,7 @@ from rdflib import Graph, Literal, Namespace, URIRef
 from rdflib.namespace import OWL, RDF, RDFS, SKOS
 
 from tvbo.data import registry
+from tvbo.datamodel.dialect import expand_curie, schema_namespaces
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 DB = ROOT / "tvbo" / "database"
@@ -37,26 +38,6 @@ SCHEMA = Namespace("http://schema.org/")
 ATOM = Namespace("http://uri.interlex.org/tgbugs/uris/readable/")
 """InterLex namespace under which the struct OWL exposes the SANDS classes and slots imported from openMINDS via `schema/SANDS.yaml` (its `default_prefix`). Atlas and coordinate-space individuals are typed against those T-box classes and described by those slots; no `tvbo:*` term is minted for them."""
 
-PREFIX_MAP = {
-    "GO": "http://purl.obolibrary.org/obo/GO_",
-    "CL": "http://purl.obolibrary.org/obo/CL_",
-    "UBERON": "http://purl.obolibrary.org/obo/UBERON_",
-    "CHEBI": "http://purl.obolibrary.org/obo/CHEBI_",
-    "MESH": "http://purl.bioontology.org/ontology/MESH/",
-    "tvbo": str(TVBO),
-    "atom": str(ATOM),
-}
-
-
-def expand_curie(curie: str) -> URIRef | None:
-    if ":" not in curie:
-        return None
-    pfx, local = curie.split(":", 1)
-    base = PREFIX_MAP.get(pfx)
-    if base is None:
-        return None
-    return URIRef(base + local)
-
 
 def safe_local(name: str) -> str:
     return name.replace(" ", "_")
@@ -64,7 +45,7 @@ def safe_local(name: str) -> str:
 
 def record_iri(folder: str, path: pathlib.Path) -> URIRef:
     """The individual of the record *path* files in *folder*, at the IRI :func:`tvbo.data.registry.record_iri` gives it."""
-    return expand_curie(registry.record_iri(folder, path))
+    return URIRef(expand_curie(registry.record_iri(folder, path)))
 
 
 def _study_iri(citekey: str) -> URIRef:
@@ -96,12 +77,13 @@ def _resolve_study(citekey: str) -> str | None:
 def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     """Link `iri` to every CURIE in `data["grounding"]` under two complementary vocabularies.
 
-    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling. A CURIE whose prefix is not in `PREFIX_MAP` raises `ValueError`, so a mistyped prefix cannot drop a grounding unseen.
+    `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling. A CURIE whose prefix no schema module declares raises `ValueError`, so a mistyped prefix cannot drop a grounding unseen.
     """
     for cur in data.get("grounding") or []:
-        u = expand_curie(str(cur))
-        if u is None:
-            raise ValueError(f"{iri}: grounding {cur!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+        try:
+            u = URIRef(expand_curie(cur))
+        except ValueError as err:
+            raise ValueError(f"{iri}: grounding {err}") from None
         g.add((iri, TVBO.surrogate_of, u))
         g.add((iri, OBOINOWL.hasDbXref, u))
 
@@ -320,13 +302,8 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
 
 def build_graph() -> Graph:
     g = Graph()
-    g.bind("tvbo", TVBO)
     g.bind("owl", OWL)
-    g.bind("dcterms", DCTERMS)
-    g.bind("oboInOwl", OBOINOWL)
-    g.bind("schema", SCHEMA)
-    g.bind("skos", SKOS)
-    for pfx, base in PREFIX_MAP.items():
+    for pfx, base in schema_namespaces().items():
         g.bind(pfx, base)
 
     onto = URIRef("https://w3id.org/tvbo/data")

@@ -24,9 +24,18 @@ class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
     The record is the YAML-side descriptor — subjects, measure names, provenance, what each measure quantifies via ``measure_specs`` — and the values live in a companion beside it, read on first use through :attr:`values`. The extension of ``data_file`` selects the companion: an ``.h5`` holds ``measures/<measure>`` as a 1-D array of ``len(subjects)``; a ``.tsv`` is a BIDS phenotype table, ``participant_id`` then one column per measure, written together with the ``.json`` column sidecar that ``measure_specs`` describes.
 
     Example:
-        >>> ph = Phenotype.from_file("Schirner2023_HCPYA_phenotype.yaml")
-        >>> ph.subjects[:5]                 # ['100206', '100307', ...]
-        >>> ph.get("PMAT24_A_RTCR")         # ndarray shape (50,)
+        >>> from tvbo.classes.phenotype import Phenotype
+        >>> ph = Phenotype.from_values(
+        ...     {"PMAT24_A_RTCR": [17, 21]},
+        ...     dataset_id="HCPYA",
+        ...     subjects=["100206", "100307"],
+        ...     measures=["PMAT24_A_RTCR"],
+        ...     data_file="HCPYA_phenotype.tsv",
+        ... )
+        >>> ph.get("PMAT24_A_RTCR")
+        array([17., 21.])
+        >>> ph.subject_index("100307")
+        1
     """
 
     _yaml_path = None
@@ -62,7 +71,7 @@ class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
 
         Args:
             path: Target ``.yaml`` path. The companion is written next to it, named by ``self.data_file``, whose extension selects the format.
-            values: ``{measure_name: 1-D array}`` mapping covering every name in ``self.measures``, each array of length ``len(self.subjects)``; the values already read when omitted.
+            values: ``{measure_name: 1-D array}`` mapping covering every name in ``self.measures``, each array of length ``len(self.subjects)``; when omitted, the values the record holds or its companion states.
             provenance_comment: Optional block of ``#``-prefixed lines prepended to the yaml for provenance.
         """
         import yaml
@@ -71,7 +80,9 @@ class PhenotypeBehaviour(YamlDocument, RuntimeAttributes):
         from tvbo.utils import to_dict
 
         path = Path(path)
-        arrays = self._checked(self._values_cache or {} if values is None else values)
+        if values is None:
+            values = self.values if self._values_cache is not None or self._yaml_path else {}
+        arrays = self._checked(values)
         object.__setattr__(self, "_yaml_path", str(path))
         self._data_path.parent.mkdir(parents=True, exist_ok=True)
         write_companion(self._data_path, self, arrays)

@@ -1,6 +1,6 @@
 """Read and write a ``Phenotype``'s companion file, in the format the extension of its ``data_file`` names.
 
-An ``.h5`` holds ``measures/<name>`` as a 1-D array of ``len(subjects)``. A ``.tsv`` is a BIDS phenotype table, ``participant_id`` as ``sub-<subject_id>`` then one column per measure with ``n/a`` for a missing value, written together with its ``.json`` column sidecar, whose entries are the record's ``measure_specs``.
+An ``.h5`` holds ``measures/<name>`` as a 1-D array of ``len(subjects)``. A ``.tsv`` is a BIDS phenotype table, ``participant_id`` as ``sub-<subject_id>`` then one column per measure with ``n/a`` for a missing value, written together with its ``.json`` column sidecar, whose entries are the record's ``measure_specs``; it is read as every participants table is (:func:`tvbo.data.cohort._read_table`).
 """
 
 from __future__ import annotations
@@ -45,10 +45,6 @@ def _write_bids(path: Path, phenotype, values: Mapping) -> None:
     from tvbo.datamodel.dialect import expand_curie
     from tvbo.utils.units import unit_to_ucum
 
-    table = pd.DataFrame(
-        {"participant_id": [f"sub-{s}" for s in phenotype.subjects], **{m: values[m] for m in phenotype.measures}}
-    )
-    table.to_csv(path, sep="\t", index=False, na_rep="n/a")
     sidecar = {}
     for spec in phenotype.measure_specs or []:
         entry = {
@@ -57,30 +53,32 @@ def _write_bids(path: Path, phenotype, values: Mapping) -> None:
             "TermURL": expand_curie(spec.iri) if spec.iri else None,
         }
         sidecar[spec.name] = {k: v for k, v in entry.items() if v is not None}
+    table = pd.DataFrame(
+        {"participant_id": [f"sub-{s}" for s in _participants(phenotype)], **{m: values[m] for m in phenotype.measures}}
+    )
+    table.to_csv(path, sep="\t", index=False, na_rep="n/a")
     path.with_suffix(".json").write_text(json.dumps(sidecar, indent=2) + "\n", encoding="utf-8")
 
 
 def _read_bids(path: Path, phenotype) -> dict:
-    """The measure columns as float arrays; the ``participant_id`` column must list the record's subjects in order, so no row is paired with the wrong subject."""
-    import pandas as pd
+    """The measure columns as float arrays; the ``participant_id`` column must list the record's subjects in order, so no row is paired with the wrong subject. The refusal counts rows and names no participant."""
+    from tvbo.data.cohort import _read_table, _table_column
 
-    wanted = {"participant_id", *phenotype.measures}
-    table = pd.read_csv(
-        path,
-        sep="\t",
-        index_col="participant_id",
-        usecols=lambda c: c in wanted,
-        dtype={"participant_id": str},
-        na_values=["n/a"],
-        keep_default_na=False,
-        float_precision="round_trip",
-    )
-    ids = [str(p).removeprefix("sub-") for p in table.index]
-    if ids != list(phenotype.subjects):
+    header, rows = _read_table(path)
+    subjects = _participants(phenotype)
+    if [participant for _, participant, _ in rows] != subjects:
         raise ValueError(
-            f"{path}: participant_id column {ids} does not match the record's subjects {list(phenotype.subjects)}"
+            f"{path.name}: its {len(rows)} participant_id rows are not the record's {len(subjects)} subjects in their order"
         )
-    return {m: table[m].to_numpy(dtype=float) for m in phenotype.measures if m in table.columns}
+    return {m: np.array(_table_column(path, header, rows, m)) for m in phenotype.measures if m in header}
+
+
+def _participants(phenotype) -> list[str]:
+    """The record's subjects as a table names them after ``sub-``, so one listed with the prefix is not given it twice; two subjects under one name are refused by count."""
+    names = [str(s).removeprefix("sub-") for s in phenotype.subjects]
+    if len(set(names)) != len(names):
+        raise ValueError(f"{len(names) - len(set(names))} of the {len(names)} subjects repeat another's participant_id")
+    return names
 
 
 _FORMATS = {".h5": (_write_h5, _read_h5), ".tsv": (_write_bids, _read_bids)}

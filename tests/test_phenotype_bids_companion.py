@@ -58,6 +58,17 @@ def test_tsv_rows_must_be_the_records_subjects(tmp_path):
         Phenotype.from_file(tmp_path / "cohort.yaml").get("age")
 
 
+def test_tsv_is_read_as_a_participants_table(tmp_path):
+    """A subject listed with ``sub-`` is not given the prefix twice, and a cell left empty reads as a missing value."""
+    phenotype = Phenotype(dataset_id="cohort", data_file="cohort.tsv", subjects=["sub-01", "ctrl03"], measures=["age"])
+    phenotype.to_file(tmp_path / "cohort.yaml", values={"age": [31.0, 45.0]})
+    tsv = tmp_path / "cohort.tsv"
+    assert tsv.read_text().splitlines()[1:] == ["sub-01\t31.0", "sub-ctrl03\t45.0"]
+
+    tsv.write_text(tsv.read_text().replace("45.0", ""))
+    np.testing.assert_array_equal(Phenotype.from_file(tmp_path / "cohort.yaml").get("age"), [31.0, np.nan])
+
+
 def test_unknown_companion_extension_is_refused(tmp_path):
     with pytest.raises(ValueError, match="extension"):
         _phenotype("cohort.csv").to_file(tmp_path / "cohort.yaml", values={"age": [1.0, 2.0], "iq": [3.0, 4.0]})
@@ -72,3 +83,21 @@ def test_values_in_memory_are_checked_and_written(tmp_path):
     np.testing.assert_array_equal(phenotype.get("iq"), [100.0, 112.0])
     phenotype.to_file(tmp_path / "cohort.yaml")
     np.testing.assert_array_equal(Phenotype.from_file(tmp_path / "cohort.yaml").get("age"), [31.0, 45.0])
+
+
+def test_a_record_read_lazily_is_written_with_its_companion_values(tmp_path):
+    """`to_file` without values writes what the companion of the record it was read from states."""
+    Phenotype.from_values(
+        {"age": [31.0, 44.0]}, dataset_id="toy", subjects=["01", "02"], measures=["age"], data_file="toy.tsv"
+    ).to_file(tmp_path / "toy.yaml")
+    (tmp_path / "copy").mkdir()
+    Phenotype.from_file(tmp_path / "toy.yaml").to_file(tmp_path / "copy" / "toy.yaml")
+    assert list(Phenotype.from_file(tmp_path / "copy" / "toy.yaml").get("age")) == [31.0, 44.0]
+
+
+def test_two_subjects_under_one_participant_id_are_refused(tmp_path):
+    table = Phenotype.from_values(
+        {"age": [31.0, 44.0]}, dataset_id="toy", subjects=["01", "sub-01"], measures=["age"], data_file="toy.tsv"
+    )
+    with pytest.raises(ValueError, match=r"1 of the 2 subjects repeat"):
+        table.to_file(tmp_path / "toy.yaml")

@@ -30,7 +30,7 @@
         <terms:description xml:lang="en">TVB-O, The Virtual Brain Ontology, describes large-scale brain network models and their simulation: neural mass and neural field models with their parameters, state variables and equations, coupling functions, connectomes and brain atlases, integrators and noise, observation models, and the simulation experiments and studies that combine them. Every model, network and experiment curated in the TVB-O database is an individual of the ontology at https://w3id.org/tvbo/&lt;collection&gt;/&lt;name&gt;.</terms:description>
         <terms:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2025-11-20</terms:issued>
         <terms:license rdf:resource="https://creativecommons.org/licenses/by/4.0/"/>
-        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-11-13</terms:modified>
+        <terms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2026-11-23</terms:modified>
         <terms:title xml:lang="en">The Virtual Brain Ontology</terms:title>
         <pav:version>0.9.0</pav:version>
         <vann:preferredNamespacePrefix>tvbo</vann:preferredNamespacePrefix>
@@ -985,6 +985,12 @@
     
 
 
+    <!-- http://org.semanticweb.owlapi/error#Error76 -->
+
+    <rdfs:Datatype rdf:about="http://org.semanticweb.owlapi/error#Error76"/>
+    
+
+
     <!-- http://org.semanticweb.owlapi/error#Error8 -->
 
     <rdfs:Datatype rdf:about="http://org.semanticweb.owlapi/error#Error8"/>
@@ -1711,6 +1717,12 @@
     
 
 
+    <!-- https://w3id.org/tvbo/channel -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/channel"/>
+    
+
+
     <!-- https://w3id.org/tvbo/citekey -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/citekey"/>
@@ -1870,12 +1882,6 @@
     
 
 
-    <!-- https://w3id.org/tvbo/concept_iri -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/concept_iri"/>
-    
-
-
     <!-- https://w3id.org/tvbo/condition -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/condition"/>
@@ -1988,6 +1994,18 @@
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>coordinate_space (slot)</rdfs:label>
         <skos:notation>coordinate_space</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/coordinate_system -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/coordinate_system">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>coordinate_system (slot)</rdfs:label>
+        <skos:definition>The units `x`, `y` and an `arrow`&apos;s offset are given in: `axes` fractions (unset) or the panel&apos;s `data` coordinates, where a paper places a label beside its points with `ax.text(80, 3, ...)`. Data coordinates need both `x` and `y` and are refused beside `loc`, which names a corner of the axes.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>coordinate_system</skos:notation>
     </owl:ObjectProperty>
     
 
@@ -2384,6 +2402,18 @@
     
 
 
+    <!-- https://w3id.org/tvbo/display -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/display">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>display (slot)</rdfs:label>
+        <skos:definition>The channels whose numbers are shown at a factor of the stored values, keyed by channel: `{y: {factor: 1000}}` prints a coupling at the 1000 times its simulated value a paper prints, `{x: {factor: 0.001}}` a time stored in ms in seconds, under a label the panel declares. A channel converts the coordinate it names, or, where the layer&apos;s array has no such coordinate, the layer&apos;s own values on the channel that draws them (y of a line, x of a vertical rule or a horizontal bar, the colour of a heatmap or a brain map), so a colour bar keying them prints the converted numbers. The conversion runs when the figure is drawn, after the layer&apos;s `sel`, which therefore selects in the stored values, as `Animation.window` does; every number the panel declares about the converted axis (`xlim`, `xticks`, `rules`, `regions`, an annotation in data coordinates, a colour bar&apos;s limits and ticks) is in the displayed values, the ones the reader reads, and the theme&apos;s tick rule places its ticks on the displayed values. Nothing is written back to the result container. Two layers drawn on one axis each declare the conversion, and a coordinate two channels of one layer name is declared on one of them.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>display</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
     <!-- https://w3id.org/tvbo/distance_unit -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/distance_unit">
@@ -2554,7 +2584,7 @@
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/emit_kind">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>emit_kind (slot)</rdfs:label>
-        <skos:definition>Whether the reduced value is read out every step or every stride.</skos:definition>
+        <skos:definition>Whether the reduced value is read out every step, every stride, or once at the end of the run.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>emit_kind</skos:notation>
     </owl:ObjectProperty>
@@ -3768,7 +3798,7 @@
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/measure_specs">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>measure_specs (slot)</rdfs:label>
-        <skos:definition>Optional per-measure metadata (Cognitive Atlas IRIs, units, description). When present, each entry&apos;s ``name`` must match an entry in ``measures``.</skos:definition>
+        <skos:definition>Optional per-measure metadata (``iri``, ``unit``, ``description``, instrument). When present, each entry&apos;s ``name`` must match an entry in ``measures``.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>measure_specs</skos:notation>
     </owl:ObjectProperty>
@@ -4695,7 +4725,7 @@
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>producer (slot)</rdfs:label>
         <skos:closeMatch rdf:resource="http://www.w3.org/ns/prov#wasGeneratedBy"/>
-        <skos:definition>HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe&apos;s `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec&apos;s own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Mutually exclusive with `value:`/`source:`.</skos:definition>
+        <skos:definition>HOW to compute this value, when it is derived rather than obtained — the callable that produces it, its arguments, and (via `output:`) which entry to take from a callable returning several named arrays. The callable resolves against the recipe&apos;s `code_source`. Use instead of `source:` for a value that is a deterministic function of the spec&apos;s own inputs (a mesh operator, a template matrix): declaring the producer keeps the spec the single source of truth, where pointing at a pre-built file would let the two drift apart silently — and would need a prep step run by hand before the spec could execute. The result is cached and invalidated by the artifact fingerprint, so it is computed once rather than per run. On a `Parameter` it produces the value; on an `Edge` it produces the whole template matrix, which is what lets a connectome or a discrete differential operator be declared rather than pre-built. Without `output:`, a producer whose function declares `outputs` is a bundle: an observer binds each of those arrays as a constant of its own name. Mutually exclusive with `value:`/`source:`.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>producer</skos:notation>
     </owl:ObjectProperty>
@@ -4804,6 +4834,30 @@
         <rdfs:label>random_state (slot)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>random_state</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/realisation -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/realisation">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>realisation (slot)</rdfs:label>
+        <skos:definition>How often the network&apos;s random construction is drawn. Absent, or `run`, the network is built once and every trial of an `n_trials` ensemble integrates it. `trial` builds it anew for each trial: the graph generator when it declares a `seed`, and every callable transform with a `seed` argument, are called again for trial k with the seed `tvbo.classes.network.trial_seed` derives from the declared seed and k alone, so a trial&apos;s network does not depend on how many trials run or in what order. The realisations vary the weights and tract lengths only: one that changes a node&apos;s label, position or parameters is refused, and so is a constant a producer computes from the weights, the tract lengths or the in-strength. Outside an ensemble, the base run included, the network is trial 0&apos;s realisation, and that realisation is the network a result or a kit freezes beside its spec, the result&apos;s sidecar recording it in `realised_trial`; the frozen spec keeps the generator, so a kit draws the realisations the recipe does. A backend that builds one network per run refuses it.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>realisation</skos:notation>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/realised_trial -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/realised_trial">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>realised_trial (slot)</rdfs:label>
+        <skos:definition>Which realisation of a network realised per trial (`realisation: trial`) this one holds, written into the sidecar of the network frozen beside a result: trial 0 of the experiment&apos;s largest `n_trials` ensemble, the network that trial integrates. A recipe does not declare it.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>realised_trial</skos:notation>
     </owl:ObjectProperty>
     
 
@@ -5129,6 +5183,18 @@
     <!-- https://w3id.org/tvbo/setup -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/setup"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/shading -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/shading">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>shading (slot)</rdfs:label>
+        <skos:definition>How the faces are coloured and lit. Unset is `flat`: each face takes the mean of its corners&apos; values and is lit by its own normal, so a coarse mesh shows its faces. `smooth` blends the colours and the light across the faces, as a renderer&apos;s smooth shading does: each face is split into 16 on the curved surface its corners&apos; normals describe, a new vertex taking the mean of its edge&apos;s two values, so it is meant for a coarse mesh such as a parcel mesh of a few hundred vertices, where 16 times the faces still draws quickly. Refused beside `markers`, whose mesh is flat and unlit under the dots, and beside `edge_color`, which would outline triangles the mesh does not have.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>shading</skos:notation>
+    </owl:ObjectProperty>
     
 
 
@@ -5708,12 +5774,6 @@
     
 
 
-    <!-- https://w3id.org/tvbo/task_iri -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/task_iri"/>
-    
-
-
     <!-- https://w3id.org/tvbo/task_name -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/task_name"/>
@@ -5905,6 +5965,12 @@
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>transforms</skos:notation>
     </owl:ObjectProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/trial -->
+
+    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/trial"/>
     
 
 
@@ -6358,12 +6424,6 @@
     <!-- https://w3id.org/tvbo/dbs/description -->
 
     <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/dbs/description"/>
-    
-
-
-    <!-- https://w3id.org/tvbo/dbs/diagnosis -->
-
-    <owl:ObjectProperty rdf:about="https://w3id.org/tvbo/dbs/diagnosis"/>
     
 
 
@@ -7549,7 +7609,7 @@
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/arrow">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>arrow (slot)</rdfs:label>
-        <skos:definition>Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in axes fractions — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper&apos;s callout arrowheads are declared instead of drawn in code.</skos:definition>
+        <skos:definition>Draw an arrow POINTING AT (x, y), starting (dx, dy) away from it in the units `coordinate_system` gives (axes fractions unless it says `data`) — e.g. [-0.08, 0.06] for one coming from the upper left. The text, when non-empty, sits at the tail. This is how a paper&apos;s callout arrowheads are declared instead of drawn in code.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>arrow</skos:notation>
     </owl:DatatypeProperty>
@@ -7647,6 +7707,12 @@
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>azimuth</skos:notation>
     </owl:DatatypeProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/backdrop -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/backdrop"/>
     
 
 
@@ -7765,6 +7831,12 @@
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>center</skos:notation>
     </owl:DatatypeProperty>
+    
+
+
+    <!-- https://w3id.org/tvbo/channel -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/channel"/>
     
 
 
@@ -7901,12 +7973,6 @@
     <!-- https://w3id.org/tvbo/compile -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/compile"/>
-    
-
-
-    <!-- https://w3id.org/tvbo/concept_iri -->
-
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/concept_iri"/>
     
 
 
@@ -8527,6 +8593,18 @@
     <!-- https://w3id.org/tvbo/extension -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/extension"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/factor -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/factor">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>factor (slot)</rdfs:label>
+        <skos:definition>The positive number the stored values are multiplied by for display. It states no unit: a panel that declares no label prints it before the quantity&apos;s name (`1000 × KuramotoCoupling.a`), and a unit the axis reads in is named by the declared `xlabel` or `ylabel`. An axis runs the other way through `invert_x` or `invert_y`, never through a sign.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>factor</skos:notation>
+    </owl:DatatypeProperty>
     
 
 
@@ -9280,8 +9358,6 @@
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/marker_size">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>marker_size (slot)</rdfs:label>
-        <skos:definition>Default marker size, in points, for any layer whose own style does not fix one.</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>marker_size</skos:notation>
     </owl:DatatypeProperty>
     
@@ -10578,7 +10654,7 @@
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/tail_x">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>tail_x (slot)</rdfs:label>
-        <skos:definition>Start the arrow at this x in DATA coordinates instead of at an axes-fraction offset. Pair with tail_used, which supplies the y: together they anchor the arrow&apos;s tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set.</skos:definition>
+        <skos:definition>Start the arrow at this x in DATA coordinates instead of at an `arrow` offset. Pair with tail_used, which supplies the y: together they anchor the arrow&apos;s tail on a point the run computed, so a callout keeps pointing at its data when the data changes. Ignored unless tail_used is also set.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>tail_x</skos:notation>
     </owl:DatatypeProperty>
@@ -10635,7 +10711,13 @@
 
     <!-- https://w3id.org/tvbo/task_iri -->
 
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/task_iri"/>
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/task_iri">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>task_iri (slot)</rdfs:label>
+        <skos:definition>IRI of the assessment instrument / task that produced this measure (e.g. the Cognitive Atlas task ``https://www.cognitiveatlas.org/task/id/trm_4a3fd79d09cba`` for PMAT24).</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>task_iri</skos:notation>
+    </owl:DatatypeProperty>
     
 
 
@@ -10836,6 +10918,12 @@
     <!-- https://w3id.org/tvbo/transparent -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/transparent"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/trial -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/trial"/>
     
 
 
@@ -11440,12 +11528,6 @@
     
 
 
-    <!-- https://w3id.org/tvbo/dbs/diagnosis -->
-
-    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/dbs/diagnosis"/>
-    
-
-
     <!-- https://w3id.org/tvbo/dbs/domain -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/dbs/domain"/>
@@ -11643,6 +11725,19 @@
     <!-- https://w3id.org/tvbo/study/description -->
 
     <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/study/description"/>
+    
+
+
+    <!-- https://w3id.org/tvbo/study/diagnosis -->
+
+    <owl:DatatypeProperty rdf:about="https://w3id.org/tvbo/study/diagnosis">
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>diagnosis (study)</rdfs:label>
+        <skos:definition>Diagnosed conditions as coded terms, such as the SNOMED CT code ``sct:49049000`` for Parkinson&apos;s disease. On a Subject, what that participant is diagnosed with; on a Cohort, the condition every member has. A graded disease state, such as a UPDRS score, is a Phenotype measure instead.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/study"/>
+        <skos:notation>diagnosis</skos:notation>
+    </owl:DatatypeProperty>
     
 
 
@@ -14596,6 +14691,18 @@
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/grounding"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/grounding"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/persist"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -14773,8 +14880,20 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/backdrop"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/coordinate_system"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/AnnotationCoordinateSystem"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -14834,6 +14953,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/coordinate_system"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -14917,6 +15042,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/coordinate_system"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/font_weight"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -15031,6 +15162,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/backdrop"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/rotation"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -15039,6 +15176,12 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/tail_x"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/backdrop"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -15055,8 +15198,30 @@ Like a ``SimulationExperiment``, an Analysis declares its own ``execution``: whi
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Annotation</rdfs:label>
-        <skos:definition>A positioned text label on a panel, in axes-fraction coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel&apos;s printed statistic (an r, a p-value) from drifting away from the run that produced it.</skos:definition>
+        <skos:definition>A positioned text label on a panel, placed in axes fractions or, with `coordinate_system: data`, in the panel&apos;s data coordinates. With a `used:` binding the number in it is READ from a result rather than typed, which is what keeps a panel&apos;s printed statistic (an r, a p-value) from drifting away from the run that produced it.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/AnnotationCoordinateSystem -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/AnnotationCoordinateSystem">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/AnnotationCoordinateSystem#axes"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/AnnotationCoordinateSystem#data"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>AnnotationCoordinateSystem</rdfs:label>
+        <skos:definition>The units an annotation&apos;s position is given in.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AnnotationCoordinateSystem#axes"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/AnnotationCoordinateSystem#data"/>
     </owl:Class>
     
 
@@ -18282,7 +18447,7 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>DataRef</rdfs:label>
-        <skos:definition>A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), ``cohort`` (a named subset of a study dataset, read from each member&apos;s own file chosen by ``query``), or the full ``iri`` (a curated / result / external pointer); at most one. An ``iri`` that names a network, by the path of its sidecar file or by a curated network&apos;s exact id, reads ``output`` as a layer of that network (an edge layer or a per-node quantity) as the network delivers it, its own sources read and its transforms applied. WHICH is ``output`` (a recorded variable, ``observation__&lt;name&gt;``, ``estimate__&lt;param&gt;``, an external variable, or the measure a cohort member&apos;s file holds). SLICE is ``sel`` (label-keyed ``.sel``, never positional). ``reconcile`` optionally aligns the sourced array to the consuming network&apos;s node order by label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``), sourced parameters (``Parameter.used``) and sourced network layers (``Edge.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.</skos:definition>
+        <skos:definition>A pointer to one labelled array in a result container, dataset, or curated entity — the single cross-container reference primitive (a PROV entity a consumer ``prov:used``). WHERE is ``experiment`` (an in-study experiment id, resolved like ``initial_state.source_experiment``), ``analysis`` (an in-study analysis name), ``cohort`` (a named subset of a study dataset, read from each member&apos;s own file chosen by ``query``), or the full ``iri`` (a curated / result / external pointer); at most one. An ``iri`` that names a network, by the path of its sidecar file or by a curated network&apos;s exact id, reads ``output`` as a layer of that network (an edge layer or a per-node quantity) as the network delivers it, its own sources read and its transforms applied. WHICH is ``output`` (a recorded variable, ``observation__&lt;name&gt;``, ``estimate__&lt;param&gt;``, an external variable, the measure a cohort member&apos;s file holds, or what an experiment&apos;s run used, ``network.&lt;name&gt;`` and ``dynamics.&lt;parameter&gt;``). SLICE is ``sel`` (label-keyed ``.sel``, never positional). ``reconcile`` optionally aligns the sourced array to the consuming network&apos;s node order by label. One model reused by figure layers (``Layer.used``), sourced arguments (``Argument.used``), sourced parameters (``Parameter.used``) and sourced network layers (``Edge.used``), so data binding, cross-experiment sourcing and PROV provenance are the same edge. A sourced array is resolved lazily and never inlined into generated code.</skos:definition>
         <skos:exactMatch rdf:resource="http://www.w3.org/ns/prov#Entity"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/common"/>
     </owl:Class>
@@ -19012,6 +19177,7 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
                     <rdf:Description rdf:about="https://w3id.org/tvbo/DimensionType#state"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/DimensionType#subject"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/DimensionType#time"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/DimensionType#trial"/>
                 </owl:unionOf>
             </owl:Class>
         </owl:equivalentClass>
@@ -19029,6 +19195,7 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DimensionType#state"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DimensionType#subject"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DimensionType#time"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DimensionType#trial"/>
     </owl:Class>
     
 
@@ -19199,6 +19366,54 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DiscretizationMethod#FEM"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DiscretizationMethod#FVM"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/DiscretizationMethod#Spectral"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/DisplayScale -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/DisplayScale">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/channel"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/channel"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/channel"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/factor"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/factor"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/factor"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>DisplayScale</rdfs:label>
+        <skos:definition>How one channel&apos;s numbers are shown: at a `factor` of the stored values. A channel other than `x`, `y`, `z` or `color` and a factor that is not positive are refused when the figure&apos;s script is generated.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
     </owl:Class>
     
 
@@ -20536,6 +20751,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/display"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/DisplayScale"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/x"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -20555,6 +20776,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/color"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/display"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -20614,7 +20841,7 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Encoding</rdfs:label>
-        <skos:definition>Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel may later accept a scale object without breaking this string form.</skos:definition>
+        <skos:definition>Map visual channels to container dims/coords/vars, by NAME (keyed, never positional). Common case: {x: time, y: rate}. A channel&apos;s numbers are shown at a factor of the stored values through `display`, which converts what is drawn and never what is stored.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
     </owl:Class>
     
@@ -23203,6 +23430,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outputs"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/requirements"/>
                 <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/sw/SoftwareRequirement"/>
             </owl:Restriction>
@@ -23294,6 +23527,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/output_equation"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outputs"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -23510,6 +23749,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outputs"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/source_code"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -23595,6 +23840,12 @@ A heatmap carries one unasked, since it is unreadable without one; a scatter sha
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/output"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/outputs"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -27229,12 +27480,6 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/concept_iri"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/description"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -27249,18 +27494,6 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/name"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/task_iri"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/concept_iri"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -27283,18 +27516,6 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/task_iri"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/concept_iri"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/description"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -27313,13 +27534,43 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/iri"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/task_iri"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/iri"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/task_iri"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/iri"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/task_iri"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>MeasureSpec</rdfs:label>
-        <skos:definition>Metadata for one phenotype measure. Optional per-measure entry on ``Phenotype.measure_specs``.</skos:definition>
+        <skos:definition>Metadata for one phenotype measure, the column entry of a BIDS phenotype sidecar: ``iri`` is its ``TermURL``, ``unit`` its ``Units`` and ``description`` its ``Description``. The same three fields are the ``code``, the ``valueQuantity.code`` and the text of the code of a FHIR ``Observation``. Optional per-measure entry on ``Phenotype.measure_specs``.</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/MeasureSpec"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
     </owl:Class>
@@ -28125,6 +28376,18 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/realisation"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/NetworkRealisation"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/realised_trial"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/TrialRealisation"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/structural_measures"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -28317,6 +28580,18 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/realisation"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/realised_trial"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/structural_measures"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -28467,6 +28742,18 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/realisation"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/realised_trial"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/time_unit"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -28514,6 +28801,28 @@ Distinct from `kind: legend`, which is a standalone legend PANEL occupying a cel
         <skos:definition>Network specification with nodes, edges, and reusable coupling configurations. Supports both explicit node/edge representation and matrix-based connectivity (Connectome compatibility).</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/Network"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/NetworkRealisation -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NetworkRealisation">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/NetworkRealisation#run"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/NetworkRealisation#trial"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>NetworkRealisation</rdfs:label>
+        <skos:definition>How often a network&apos;s random construction is drawn.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/NetworkRealisation#run"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/NetworkRealisation#trial"/>
     </owl:Class>
     
 
@@ -29886,6 +30195,12 @@ Refused, naming what is wrong: a label the network does not carry, ``keep`` besi
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/grounding"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/iri"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
             </owl:Restriction>
@@ -29933,6 +30248,12 @@ Refused, naming what is wrong: a label the network does not carry, ``keep`` besi
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/downsample_period"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/grounding"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -32960,8 +33281,8 @@ Refused, naming what is wrong: a label the network does not carry, ``keep`` besi
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Phenotype</rdfs:label>
-        <skos:definition>Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the h5 carries ``measures/&lt;name&gt;`` 1-D float arrays of length ``len(subjects)``.
-Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM&apos;s ``nidm:Phenotype`` concept. Per-measure metadata can optionally carry Cognitive Atlas (https://www.cognitiveatlas.org/) ``cogat:Task`` and ``cogat:Concept`` IRIs via ``measure_specs``.</skos:definition>
+        <skos:definition>Per-subject phenotype table (BIDS ``phenotype/`` directory convention). Carries cognitive scores, clinical scales, demographic variables, behavioral task outputs, physiological measures, or any other per-subject numeric measurement bundle for a cohort. Sidecar companion to per-subject Network sidecars in multi-subject studies that correlate simulated quantities with empirical scores (e.g. PMAT24_A, g-factor, CardSort, ProcSpeed for Schirner 2023). The yaml carries metadata + the measure list; the companion named by ``data_file`` carries one 1-D float array of length ``len(subjects)`` per measure.
+Aligns with the BIDS phenotype standard (https://bids-specification.readthedocs.io/en/stable/modality-agnostic-files/phenotypic-and-assessment-data.html) and with NIDM&apos;s ``nidm:Phenotype`` concept. Each ``measure_specs`` entry names what its column measures by ``iri``, a LOINC, SNOMED CT or Cognitive Atlas term, which is the ``TermURL`` of the BIDS column sidecar and the ``code`` of a FHIR ``Observation``.</skos:definition>
         <skos:exactMatch rdf:resource="https://w3id.org/tvbo/Phenotype"/>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
     </owl:Class>
@@ -34052,6 +34373,7 @@ Carried by the frozen spec beside a result container, this is the whole record o
         <owl:equivalentClass>
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/ReducerEmitKind#run"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/ReducerEmitKind#stride"/>
                     <rdf:Description rdf:about="https://w3id.org/tvbo/ReducerEmitKind#window"/>
                 </owl:unionOf>
@@ -34062,6 +34384,7 @@ Carried by the frozen spec beside a result container, this is the whole record o
         <rdfs:label>ReducerEmitKind</rdfs:label>
         <skos:definition>How often a streaming reducer reads its value out (see Reducer.emit_kind).</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/ReducerEmitKind#run"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/ReducerEmitKind#stride"/>
         <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/ReducerEmitKind#window"/>
     </owl:Class>
@@ -37700,6 +38023,12 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/markers"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/mask"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -37724,6 +38053,12 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/shading"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/SurfaceShading"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/surface_atlas"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -37732,6 +38067,12 @@ Named for the entity rather than for the experiment because an analysis containe
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/template"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/used"/>
+                <owl:allValuesFrom rdf:resource="https://w3id.org/tvbo/DataRef"/>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -37784,6 +38125,12 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/markers"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/mask"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -37802,7 +38149,19 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/shading"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/template"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/used"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -37856,6 +38215,12 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/markers"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/mask"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
@@ -37874,7 +38239,19 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/shading"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/template"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/used"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -37892,7 +38269,19 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/marker_size"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#float"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/edge_width"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/marker_size"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -37911,6 +38300,12 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/edge_width"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/marker_size"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -37928,8 +38323,30 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Surface</rdfs:label>
-        <skos:definition>A cortical surface panel&apos;s geometry and how a field is painted on it. One object, so the three mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination.</skos:definition>
+        <skos:definition>A cortical surface panel&apos;s geometry and how a field is painted on it. One object, so the four mutually exclusive places a mesh can come from — a tvbo `Network` carrying one, the result of the analysis that derived it, a mesh file, or a named template — sit together with the options that only apply to each, instead of being loose names that could be given in any combination.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SurfaceShading -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SurfaceShading">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/SurfaceShading#flat"/>
+                    <rdf:Description rdf:about="https://w3id.org/tvbo/SurfaceShading#smooth"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>SurfaceShading</rdfs:label>
+        <skos:definition>How a cortical surface&apos;s faces are coloured and lit.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SurfaceShading#flat"/>
+        <linkml:permissible_values rdf:resource="https://w3id.org/tvbo/SurfaceShading#smooth"/>
     </owl:Class>
     
 
@@ -40200,6 +40617,55 @@ Named for the entity rather than for the experiment because an analysis containe
     
 
 
+    <!-- https://w3id.org/tvbo/TrialRealisation -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/TrialRealisation">
+        <rdfs:subClassOf rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/n_trials"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/trial"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#integer"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/n_trials"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/trial"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/n_trials"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/trial"/>
+                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>TrialRealisation</rdfs:label>
+        <skos:definition>One realisation of a network built anew for each trial (`realisation: trial`): trial `trial` of an ensemble of `n_trials`.</skos:definition>
+        <skos:exactMatch rdf:resource="https://w3id.org/tvbo/TrialRealisation"/>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/Triangle -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/Triangle">
@@ -41499,6 +41965,30 @@ Named for the entity rather than for the experiment because an analysis containe
     
 
 
+    <!-- https://w3id.org/tvbo/AnnotationCoordinateSystem#axes -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/AnnotationCoordinateSystem#axes">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/AnnotationCoordinateSystem"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>axes (AnnotationCoordinateSystem)</rdfs:label>
+        <skos:definition>Fractions of the axes: 0 is the left or bottom edge, 1 the right or top. The default.</skos:definition>
+        <skos:notation>axes</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/AnnotationCoordinateSystem#data -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/AnnotationCoordinateSystem#data">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/AnnotationCoordinateSystem"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>data (AnnotationCoordinateSystem)</rdfs:label>
+        <skos:definition>The panel&apos;s data coordinates, the values its axes show, so the label stays on its place in the data when the limits move.</skos:definition>
+        <skos:notation>data</skos:notation>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/AnnotationPlacement#caption -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/AnnotationPlacement#caption">
@@ -42250,7 +42740,7 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/DimensionType"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>sample (DimensionType)</rdfs:label>
-        <skos:definition>Sample/trial/realization dimension</skos:definition>
+        <skos:definition>Sample/realization dimension</skos:definition>
         <skos:notation>sample</skos:notation>
     </owl:Class>
     
@@ -42288,6 +42778,18 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:label>time (DimensionType)</rdfs:label>
         <skos:definition>Temporal dimension</skos:definition>
         <skos:notation>time</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/DimensionType#trial -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/DimensionType#trial">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/DimensionType"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>trial (DimensionType)</rdfs:label>
+        <skos:definition>Trial dimension: the repetitions of an `n_trials` ensemble, the axis an exploration writes its results along</skos:definition>
+        <skos:notation>trial</skos:notation>
     </owl:Class>
     
 
@@ -43423,6 +43925,30 @@ Named for the entity rather than for the experiment because an analysis containe
     
 
 
+    <!-- https://w3id.org/tvbo/NetworkRealisation#run -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NetworkRealisation#run">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/NetworkRealisation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>run (NetworkRealisation)</rdfs:label>
+        <skos:definition>Once per run: every trial of an `n_trials` ensemble integrates the network the run built.</skos:definition>
+        <skos:notation>run</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/NetworkRealisation#trial -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/NetworkRealisation#trial">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/NetworkRealisation"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>trial (NetworkRealisation)</rdfs:label>
+        <skos:definition>Once per trial of an `n_trials` ensemble: trial k integrates the network its seeded parts build under seeds derived from their declared seeds and k. Outside an ensemble, the base run included, the network is trial 0&apos;s realisation.</skos:definition>
+        <skos:notation>trial</skos:notation>
+    </owl:Class>
+    
+
+
     <!-- https://w3id.org/tvbo/NodeReconciliation#by_label -->
 
     <owl:Class rdf:about="https://w3id.org/tvbo/NodeReconciliation#by_label">
@@ -43569,7 +44095,7 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/ObservationReductionMode"/>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>streaming (ObservationReductionMode)</rdfs:label>
-        <skos:definition>Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, and a matrix co-moment FC (compute_fc as a running covariance).</skos:definition>
+        <skos:definition>Fold this observation into the integrator carry as an (init, update, finalize) reducer; never materialise the trajectory. Supported for the HRF-Volterra BOLD pipeline (hemodynamic convolution, whose kernel / downsample stride / TR stride / Volterra scaling the resolver lifts from the declared pipeline), cumulative mean/std/variance aggregations, a matrix co-moment FC (compute_fc as a running covariance), and a pipeline step whose callable a curated reducer recipe with `emit_kind: run` replaces (the phase locking value and phase lag index).</skos:definition>
         <skos:notation>streaming</skos:notation>
     </owl:Class>
     
@@ -43939,6 +44465,18 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:label>sagittal (Projection)</rdfs:label>
         <skos:definition>Seen from the side.</skos:definition>
         <skos:notation>sagittal</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/ReducerEmitKind#run -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/ReducerEmitKind#run">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/ReducerEmitKind"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>run (ReducerEmitKind)</rdfs:label>
+        <skos:definition>Emit once, at the end of the run, over every sample after the transient (a phase locking value). Every state starts at zero in the shape `add` gives it; `evict` and `resync` are not read.</skos:definition>
+        <skos:notation>run</skos:notation>
     </owl:Class>
     
 
@@ -44919,6 +45457,30 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:label>on_device (SubjectBatchMode)</rdfs:label>
         <skos:definition>The whole cohort evaluated together as one vectorised on-device batch.</skos:definition>
         <skos:notation>on_device</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SurfaceShading#flat -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SurfaceShading#flat">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/SurfaceShading"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>flat (SurfaceShading)</rdfs:label>
+        <skos:definition>Each face in one colour, the mean of its corners&apos; values, lit by its own normal. The default.</skos:definition>
+        <skos:notation>flat</skos:notation>
+    </owl:Class>
+    
+
+
+    <!-- https://w3id.org/tvbo/SurfaceShading#smooth -->
+
+    <owl:Class rdf:about="https://w3id.org/tvbo/SurfaceShading#smooth">
+        <rdfs:subClassOf rdf:resource="https://w3id.org/tvbo/SurfaceShading"/>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>smooth (SurfaceShading)</rdfs:label>
+        <skos:definition>Colours and light blended across the faces, as a renderer&apos;s smooth shading draws a coarse mesh.</skos:definition>
+        <skos:notation>smooth</skos:notation>
     </owl:Class>
     
 
@@ -46318,12 +46880,6 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/dbs/diagnosis"/>
-                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/dbs/handedness"/>
                 <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
             </owl:Restriction>
@@ -46342,12 +46898,6 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/dbs/diagnosis"/>
-                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/dbs/handedness"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
@@ -46361,12 +46911,6 @@ Named for the entity rather than for the experiment because an analysis containe
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/dbs/coordinate_space"/>
-                <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
-            </owl:Restriction>
-        </rdfs:subClassOf>
-        <rdfs:subClassOf>
-            <owl:Restriction>
-                <owl:onProperty rdf:resource="https://w3id.org/tvbo/dbs/diagnosis"/>
                 <owl:maxCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:maxCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -50077,8 +50621,20 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/study/diagnosis"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/study/cohort_id"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/study/diagnosis"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
@@ -51356,7 +51912,19 @@ Named for the entity rather than for the experiment because an analysis containe
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/study/diagnosis"/>
+                <owl:allValuesFrom rdf:resource="http://www.w3.org/2001/XMLSchema#anyURI"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
                 <owl:onProperty rdf:resource="https://w3id.org/tvbo/study/age"/>
+                <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
+            </owl:Restriction>
+        </rdfs:subClassOf>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="https://w3id.org/tvbo/study/diagnosis"/>
                 <owl:minCardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">0</owl:minCardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -56256,6 +56824,17 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
     
 
 
+    <!-- https://w3id.org/tvbo/experiments/ThreeNode_JansenRit1995_Parity -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/experiments/ThreeNode_JansenRit1995_Parity">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/SimulationExperiment"/>
+        <terms:description>Three Jansen &amp; Rit (1995) cortical columns on the alpha limit cycle, coupled through the sigmoid of each source column&apos;s pyramidal potential over tracts of three lengths. Deterministic by construction: every node declares its opening state, nothing is drawn, and no observation is declared, so tvboptim, jax and tvb integrate the same states and any difference between them is the backends&apos;. The clock is the model&apos;s own, seconds; the step is 2^-13 s and every delay and the duration are whole numbers of steps in floating point, so no backend&apos;s rounding of a delay to steps can differ from another&apos;s.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Three Jansen-Rit columns, delayed, for cross-backend parity</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/experiments/WilsonCowan_LEMS -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/experiments/WilsonCowan_LEMS">
@@ -56264,6 +56843,50 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
 </terms:description>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>TVBO WilsonCowan as LEMS</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/AtOptimum -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/AtOptimum">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The entry of a value array at the cell where a score is largest or smallest, the score there and the cell&apos;s coordinates, as when a quantity a parameter grid records is read at the parameters that fit data best. The optimum is searched over every dimension of score; value carries each of them with the same labels, in any order, and keeps its other dimensions, and a dimension without labels is labelled by position. NaN scores are ignored, and a score that is NaN in every cell is refused. Of several cells with the optimal score the one with the smallest coordinates is taken, compared dimension by dimension in the sorted order of the dimensions&apos; names, so neither the order of the dimensions nor that of the labels along them changes the cell. It returns value at the optimum on its other dimensions, score, and one output per dimension of score, named by the dimension and holding its coordinate at the optimum.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>AtOptimum</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/ConcordanceCorrelation -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/ConcordanceCorrelation">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>Lin&apos;s concordance correlation coefficient of two variables over the units of one dimension, 2 cov(x, y) / (var(x) + var(y) + (mean(x) - mean(y))**2) with population moments, numpy&apos;s default (Lin 1989). It is the Pearson correlation scaled down by how far the two differ in mean and spread, so it measures agreement and not only covariation, as of a simulated map with an empirical one; it is 1 only where y equals x unit for unit and -1 where y is x reflected about their common mean. Labelled inputs are paired on the labels of the dimension, which occur once each and which both carry, and every other dimension an input carries is kept, with one coefficient per element of it. A NaN unit makes the coefficient NaN, as it makes numpy&apos;s moments NaN. It returns one array, which an analysis stores under its own name.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>ConcordanceCorrelation</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/ConsistencyThreshold -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/ConsistencyThreshold">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The mean of each region pair&apos;s weight over a cohort&apos;s subjects, kept for the share density of all region pairs whose weights vary least across subjects (Roberts et al. 2017, doi:10.1016/j.neuroimage.2016.09.053). A pair&apos;s variation is its coefficient of variation across subjects, the sample standard deviation over the mean, and only pairs with a nonzero mean compete; the least varying pairs of the upper triangle are kept and mirrored, so the kept entries are density of all region pairs. A subject without a connection counts as zero. Lengths, when given, are averaged the same way and kept on the same pairs. It returns weight, and length when lengths are given, on the two node axes.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>ConsistencyThreshold</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/Correlation -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/Correlation">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>Pearson&apos;s or Spearman&apos;s correlation coefficient of two variables over the units of one dimension, one coefficient per element of every other dimension. Spearman&apos;s is Pearson&apos;s over the ranks, tied values given the mean of the ranks they span, as scipy&apos;s rankdata and spearmanr rank them. A unit enters where both variables are finite, so a NaN on either side drops that pair only, and the ranks are taken over the pairs that enter. Labelled inputs are paired on the labels of the dimension, which occur once each and which both carry. A coefficient is NaN with fewer than three pairs or a constant side. It returns r and n, the number of pairs it was computed from.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>Correlation</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -56301,6 +56924,17 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
     
 
 
+    <!-- https://w3id.org/tvbo/functions/HierarchicalClustering -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/HierarchicalClustering">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>Ward hierarchical clustering of the units of one dimension by their correlation profiles. The rows of a feature matrix, one per unit, are correlated over the features with Pearson&apos;s r as numpy&apos;s corrcoef computes it, each unit is described by its row of that correlation matrix, and Ward&apos;s linkage on the Euclidean distances between those rows builds the tree, as scipy&apos;s linkage with method ward does on the correlation matrix. The rows are put in the order of their labels first, positions standing in where the dimension has none, so the result, a tie included, depends on the labels and not on the order the rows come in. The clusters are the subtrees whose merges all lie below cut times the highest merge, as scipy&apos;s dendrogram colours the links below its threshold, numbered from 1 in the order their units come in the dendrogram from the left; a unit that no merge below the cut joins to another is 0. A row that is constant or not finite throughout is refused by its label. It returns correlation on the dimension and the dimension with _j appended, both in dendrogram order; linkage, scipy&apos;s linkage matrix of the label-sorted rows on merge and field; leaf_order, each unit&apos;s position in the dendrogram; and cluster, each unit&apos;s cluster.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>HierarchicalClustering</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
     <!-- https://w3id.org/tvbo/functions/Histogram -->
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/Histogram">
@@ -56308,6 +56942,83 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <terms:description>The number of values in each of n_bins bins of equal width from lower to upper, each bin closed below and open above and the last closed on both sides, as numpy.histogram cuts them. Every finite value is counted, whatever its dimensions, a value outside the range is not, and a mask restricts the count to the entries it marks. It returns count and center on `bin`, edge on `bin_edge`, the bins&apos; width, and n, the number of values counted.</terms:description>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Histogram</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/LatticeField -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/LatticeField">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The values of a sheet&apos;s nodes placed at their positions on a regular, axis-aligned lattice, as an image whose rows run along y and columns along x, both ascending, so neither the order of the nodes nor that of their positions changes it. Positions are in mm, one row of x, y and optionally z per node as a network&apos;s node positions are, with the same z for every node. Coordinates closer than a millionth of the lattice&apos;s larger extent are one lattice line, and the lines along each axis are evenly spaced to the same tolerance. Positions off a regular lattice, two nodes on one lattice point and a lattice point without a node are refused. Labelled inputs are paired on the labels of the node dimension, and every other dimension of the values is kept with its labels. It returns field on the other dimensions followed by y and x, whose coordinates are the lattice lines in mm.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>LatticeField</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/MeshOperators -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/MeshOperators">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The fixed arrays a travelling-wave detector reads on a triangulated mesh, built once per group of its vertices (a hemisphere) and padded to the largest group, in the gather form of the detector of Koller et al. (2024, doi:10.1038/s41467-024-47860-x). Mesh vertices meet network nodes by label, the groups are ordered by label and the vertices of a group by network node, so no input order changes a value. Per group it returns members, the network node of each vertex; group, its label; vertex_mask and face_mask, 1 for a real entry and 0 for padding; faces, the corner-major face table; grad_x, grad_y and grad_z, the gradient of each corner&apos;s hat function on its face; area; poisson, the pseudo-inverse of the negated cotangent Laplacian, whose potentials have zero mean on each connected component; kring_faces, kring_mask and kring_count, the faces incident to every vertex of the k-ring of each vertex but itself, each once per ring vertex it touches; divergent_x, divergent_y and divergent_z, the unit gradient on each listed face of the heat-method geodesic distance from the vertex; null_mask and decision_mask, 1 outside the border rings; reference, a node field on the vertices; and components, the number of connected components. It is built with libigl and potpourri3d, which the extra tvbo[mesh] installs, where the producer runs.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>MeshOperators</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/NodePermutations -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/NodePermutations">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>A table of n uniform random permutations of the network nodes, each row permuting the nodes of every group (a hemisphere) among themselves and never across groups, the null family of the travelling-wave test of Koller et al. (2024, doi:10.1038/s41467-024-47860-x), who permutes each hemisphere&apos;s phases. The table is in gather form and indexes network nodes, so a node field permuted by row r is the field at index[r]. Each group draws from its own stream, keyed by the seed and its label, and permutes its nodes in label order, so no order of the nodes or the groups changes the table. It returns index, the n by N table, and group, the group label of each node in network order.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>NodePermutations</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/NonnegativeFactorization -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/NonnegativeFactorization">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>Each subject&apos;s weights on the region pairs a mask keeps form one column of a data matrix of pairs by subjects, which is approximated by nonnegative factors w (pairs by components) and h (components by subjects), each component&apos;s column of w and row of h summing to one and its scale held in d, as RcppML&apos;s nmf fits it (DeBruine et al. 2021, doi:10.1101/2021.09.01.458620; version 0.5.6): alternating least squares, each factor&apos;s nonnegative least-squares problem solved by sequential coordinate descent (Franc et al. 2005, doi:10.1007/11556121_50) and rescaled to unit sums, until one minus the correlation of w with its value an iteration earlier falls below tol or after max_iter iterations, and of n_starts random starts the one with the least squared error kept. Koller et al. (2024, doi:10.1038/s41467-024-47860-x) factorized 776 subjects&apos; weights on the pairs of their consistency-thresholded group connectome at rank 5 from 100 starts. Pairs and subjects are taken by their sorted labels, so the order of neither input&apos;s axes changes the result. It returns subnetwork on component and the two node axes, each component&apos;s mean over subjects on the kept pairs and their mirror as Koller et al. rebuild it; w on pair, with each pair&apos;s two region labels, and component; h on component and subject; d on component; rmse and explained_variance of the reconstruction over all pairs and subjects; and iterations, the updates the kept start ran.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>NonnegativeFactorization</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/NonnegativeFactorizationCrossValidation -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/NonnegativeFactorizationCrossValidation">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The rank of a nonnegative factorization chosen by how well it imputes entries held out of the fit, as RcppML&apos;s crossValidate computes it (DeBruine et al. 2021, doi:10.1101/2021.09.01.458620; version 0.5.6). In each of reps repetitions a share held_out of the entries of the data matrix, each subject&apos;s weights on the region pairs a mask keeps as NonnegativeFactorization builds it, is drawn uniformly without replacement and left out of the fit; each rank is fitted to the rest from one random start, the same in every repetition, and the root mean squared error of its prediction of the held-out entries is recorded. Koller et al. (2024, doi:10.1038/s41467-024-47860-x) ran 100 repetitions over ranks 2 to 10 and took the rank with the least mean error. It returns rmse on repetition and rank.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>NonnegativeFactorizationCrossValidation</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/PhaseLagIndex -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/PhaseLagIndex">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The phase lag index of every two nodes, the modulus of the mean over the samples of sign(sin(phase_j - phase_k)), for a phase in radians (Stam et al. 2007). It is 1 for two nodes whose phase difference stays strictly inside (0, pi) or strictly inside (-pi, 0), 0 for a zero difference and on the diagonal, and near 0 for a difference spread evenly over the circle. It returns the node-by-node matrix on the phase&apos;s node dimension and the same name with _j appended, labelled as the phase is. A grid streams the same quantity through the reducer recipe phase_lag_index, which replaces this function in an observation marked reduce streaming.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>PhaseLagIndex</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/PhaseLockingValue -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/PhaseLockingValue">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The phase locking value of every two nodes, the modulus of the mean over the samples of exp(i (phase_j - phase_k)), for a phase in radians (Lachaux et al. 1999). It is 1 for two nodes whose phase difference stays constant and near 0 for one spread evenly over the circle, and 1 on the diagonal. It returns the node-by-node matrix on the phase&apos;s node dimension and the same name with _j appended, labelled as the phase is. A grid streams the same quantity through the reducer recipe phase_locking_value, which replaces this function in an observation marked reduce streaming.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>PhaseLockingValue</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -56341,6 +57052,28 @@ A tool&apos;s unit vocabulary is a fact about that tool, not about the unit — 
         <terms:description>A differentiable peak frequency of one spectrum. The frequencies are averaged with softmax weights over the power, normalised to its maximum and sharpened by beta, so the result approaches the frequency of the largest peak as beta grows while keeping a gradient with respect to the spectrum. The leading skip bins are left out, which drops the DC bin and the slow drift a finite record leaves at the lowest frequencies. The normalised power peaks at exactly 1, so the weights are written as exp(beta * (power / max(power) - 1)), the max-shifted softmax, which cannot overflow. The function takes one spectrum; a pipeline step applies it per node with apply_on_dimension.</terms:description>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>SoftPeakFrequency</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/SpinPermutations -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/SpinPermutations">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>A table of n spin permutations of the network nodes (Alexander-Bloch et al. 2018, doi:10.1016/j.neuroimage.2018.05.070), the null family of the directed-wave test of Koller et al. (2024, doi:10.1038/s41467-024-47860-x). Each row turns the sphere positions of the nodes by one random rotation, uniform over rotations and drawn as the SpinPermutations of BrainSpace draws it from its random state, and the same rotations turn every group. Each node then takes the nearest node of its own group to its turned position, so a row may repeat a node and leave another out, as BrainSpace does by default, and never crosses groups; the groups therefore decide which nodes share one reassignment. The table is in gather form and indexes network nodes, and the nodes of a group are ordered by label, so no order of the nodes or the groups changes it. It returns index, the n by N table, and group, the group label of each node in network order.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>SpinPermutations</rdfs:label>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://w3id.org/tvbo/functions/SpreadBand -->
+
+    <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/functions/SpreadBand">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/Function"/>
+        <terms:description>The centre of values along one dimension and a band around it, the pair a band or errorbar layer draws. mean_sd is the mean with the band from one standard deviation below it to one above, the squared deviations divided by n - ddof for the n values counted, so ddof 0 is the population form numpy computes by default and 1 the sample form of pandas and seaborn. median_iqr is the median with the band from the 25th to the 75th percentile, each read at rank p (n - 1) of the sorted values and interpolated linearly between its two neighbours, numpy&apos;s default method. NaN entries are left out, as numpy&apos;s nanmean, nanstd, nanmedian and nanpercentile leave them out, and a slice with no other entry gives NaN. Every other dimension is kept with its labels. It returns center on the other dimensions, and band on them and a last dimension, bound, labelled lower and upper in the order the band and errorbar marks read the two edges.</terms:description>
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>SpreadBand</rdfs:label>
     </owl:NamedIndividual>
     
 
@@ -56895,7 +57628,7 @@ is the dyadic map with symbolic dynamics given by binary shift.</terms:descripti
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CakanObermayer">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5117"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5175"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -56943,7 +57676,7 @@ Defaults are taken verbatim from ``neurolib/models/aln/loadDefaultParams.py``. N
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CakanObermayer/state_variables/mu_si"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5117">
+    <rdf:Description rdf:nodeID="genid5175">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -56983,7 +57716,7 @@ bifurcation route to chaos. [^Chua2007]</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CoombesByrne">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5118"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5176"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57012,7 +57745,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CoombesByrne/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5118">
+    <rdf:Description rdf:nodeID="genid5176">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57023,7 +57756,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/CoombesByrne2D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5119"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5177"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57043,7 +57776,7 @@ $Z$. Using the conformal transformation $Z=(1-W^\star)/(1+W^\star)$ and $W= \pi 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/CoombesByrne2D/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5119">
+    <rdf:Description rdf:nodeID="genid5177">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57191,7 +57924,7 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/DumontGutkin">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5120"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5178"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57228,7 +57961,7 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/DumontGutkin/state_variables/s_ii"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5120">
+    <rdf:Description rdf:nodeID="genid5178">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57239,8 +57972,8 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Epileptor">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5121"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5122"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5179"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5180"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -57287,13 +58020,13 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Epileptor/state_variables/z"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5121">
-        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
-    </rdf:Description>
-    <rdf:Description rdf:nodeID="genid5122">
+    <rdf:Description rdf:nodeID="genid5179">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/HomoclinicBifurcation"/>
+    </rdf:Description>
+    <rdf:Description rdf:nodeID="genid5180">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
     
 
@@ -57302,7 +58035,7 @@ variables φ = θ₂ - θ₁ and Δ = (M1 + M2) - M2 cos² φ appear in the equa
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Epileptor2D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5123"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5181"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57341,7 +58074,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Epileptor2D/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5123">
+    <rdf:Description rdf:nodeID="genid5181">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -57380,7 +58113,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Epileptor5D">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5124"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5182"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -57440,7 +58173,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Epileptor5D/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5124">
+    <rdf:Description rdf:nodeID="genid5182">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -57553,7 +58286,7 @@ Note:
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/EpileptorRestingState">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5125"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5183"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -57617,7 +58350,7 @@ This model, its motivation and derivation can be found in the published article 
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/EpileptorRestingState/state_variables/z"/>
         <tvbo:model_type>phenomenological</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5125">
+    <rdf:Description rdf:nodeID="genid5183">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -57684,7 +58417,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/GastSchmidtKnosche_SD">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5126"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5184"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57729,7 +58462,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/GastSchmidtKnosche_SD/state_variables/r"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5126">
+    <rdf:Description rdf:nodeID="genid5184">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57740,7 +58473,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/GastSchmidtKnosche_SF">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5127"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5185"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -57768,7 +58501,7 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/GastSchmidtKnosche_SF/state_variables/r"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5127">
+    <rdf:Description rdf:nodeID="genid5185">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -57779,8 +58512,8 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Generic2dOscillator">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5128"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5129"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5186"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5187"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Excitable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -57811,11 +58544,11 @@ intermittency) and rich phase locking structure in parameter space.</terms:descr
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Generic2dOscillator/state_variables/W"/>
         <tvbo:model_type>generic</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5128">
+    <rdf:Description rdf:nodeID="genid5186">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
-    <rdf:Description rdf:nodeID="genid5129">
+    <rdf:Description rdf:nodeID="genid5187">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -58321,7 +59054,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/Jansen1995">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5130"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5188"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -58358,7 +59091,7 @@ rich strange attractors.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/Jansen1995/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5130">
+    <rdf:Description rdf:nodeID="genid5188">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -58369,7 +59102,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/JansenRit">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5131"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5189"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -58414,7 +59147,7 @@ rich strange attractors.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/JansenRit/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5131">
+    <rdf:Description rdf:nodeID="genid5189">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -58425,7 +59158,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/JansenRit1995">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5132"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5190"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -58456,7 +59189,7 @@ rich strange attractors.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/JansenRit1995/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5132">
+    <rdf:Description rdf:nodeID="genid5190">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -58467,7 +59200,7 @@ rich strange attractors.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/KIonEx">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5133"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5191"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bursting"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -58556,7 +59289,7 @@ The model is derived as the mathematical limit of an infinite number of all-to-a
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/KIonEx/state_variables/x"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5133">
+    <rdf:Description rdf:nodeID="genid5191">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
     </rdf:Description>
@@ -58634,7 +59367,7 @@ vector field.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/LarterBreakspear">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5134"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5192"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Chaotic"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
@@ -58711,7 +59444,7 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/LarterBreakspear/state_variables/Z"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5134">
+    <rdf:Description rdf:nodeID="genid5192">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -58933,8 +59666,8 @@ bursts separated by quiescent phases.</terms:description>
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/MontbrioPazoRoxin">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5135"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5136"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5193"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5194"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -58958,13 +59691,13 @@ bursts separated by quiescent phases.</terms:description>
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/MontbrioPazoRoxin/state_variables/r"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5135">
-        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
-    </rdf:Description>
-    <rdf:Description rdf:nodeID="genid5136">
+    <rdf:Description rdf:nodeID="genid5193">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+    </rdf:Description>
+    <rdf:Description rdf:nodeID="genid5194">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -59695,7 +60428,7 @@ dynamics decouple giving stable limit cycle of radius sqrt(mu) for mu &gt; 0.</t
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/SupHopf">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5137"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5195"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -59716,7 +60449,7 @@ This normal form has a supercritical bifurcation at &apos;a=0&apos; with &apos;a
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/SupHopf/state_variables/y"/>
         <tvbo:model_type>generic</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5137">
+    <rdf:Description rdf:nodeID="genid5195">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SupercriticalHopf"/>
     </rdf:Description>
@@ -59899,8 +60632,8 @@ forcing it displays entrainment, quasi-periodicity or chaos depending on paramet
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/WilsonCowan">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5138"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5139"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5196"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5197"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Bistable"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
@@ -59967,13 +60700,13 @@ Note:
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/WilsonCowan/state_variables/I"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5138">
-        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
-        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
-    </rdf:Description>
-    <rdf:Description rdf:nodeID="genid5139">
+    <rdf:Description rdf:nodeID="genid5196">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/SaddleNode"/>
+    </rdf:Description>
+    <rdf:Description rdf:nodeID="genid5197">
+        <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
+        <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
     
 
@@ -60002,7 +60735,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/ZerlautAdaptationFirstOrder">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5140"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5198"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Quiescent"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
@@ -60122,7 +60855,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/ZerlautAdaptationFirstOrder/state_variables/ou_drift"/>
         <tvbo:model_type>mean_field</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5140">
+    <rdf:Description rdf:nodeID="genid5198">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -60224,7 +60957,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
 
     <owl:NamedIndividual rdf:about="https://w3id.org/tvbo/models/ZetterbergJansen">
         <rdf:type rdf:resource="https://w3id.org/tvbo/Dynamics"/>
-        <tvbo:exhibitsBifurcation rdf:nodeID="genid5141"/>
+        <tvbo:exhibitsBifurcation rdf:nodeID="genid5199"/>
         <tvbo:exhibitsRegime rdf:resource="https://w3id.org/tvbo/Oscillatory"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/FixedPoint"/>
         <tvbo:hasAttractor rdf:resource="https://w3id.org/tvbo/LimitCycle"/>
@@ -60272,7 +61005,7 @@ sets; sometimes mischaracterized as the “simplest” strange attractor.</terms
         <tvbo:hasStateVariable rdf:resource="https://w3id.org/tvbo/models/ZetterbergJansen/state_variables/y5"/>
         <tvbo:model_type>neural_mass</tvbo:model_type>
     </owl:NamedIndividual>
-    <rdf:Description rdf:nodeID="genid5141">
+    <rdf:Description rdf:nodeID="genid5199">
         <rdf:type rdf:resource="https://w3id.org/tvbo/BifurcationEvent"/>
         <tvbo:bifurcationType rdf:resource="https://w3id.org/tvbo/Hopf"/>
     </rdf:Description>
@@ -86219,6 +86952,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoA"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>Hz/nA</qudt:ucumCode>
         <rdfs:comment>Hertz per nanoampere (neural gain)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Hz_per_nA</rdfs:label>
@@ -86255,6 +86989,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MegaOHM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>MOhm</qudt:ucumCode>
         <rdfs:comment>Megaohm (MΩ)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>Mohm</rdfs:label>
@@ -86296,6 +87031,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>S/cm2</qudt:ucumCode>
         <rdfs:comment>Siemens per square centimetre (conductance density)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>S_per_cm2</rdfs:label>
@@ -86328,16 +87064,17 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E2L-4I0M-1H0T3D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
-            </rdf:Description>
-        </qudt:hasFactorUnit>
-        <qudt:hasFactorUnit>
-            <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-2</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:hasFactorUnit>
+            <rdf:Description>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/S"/>
+            </rdf:Description>
+        </qudt:hasFactorUnit>
+        <qudt:ucumCode>S/m2</qudt:ucumCode>
         <rdfs:comment>Siemens per square metre (conductance density, SI)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>S_per_m2</rdfs:label>
@@ -86698,6 +87435,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloGM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>kg/s</qudt:ucumCode>
         <rdfs:comment>Kilogram per second</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>kg_per_s</rdfs:label>
@@ -86739,6 +87477,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/KiloOHM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>kOhm.cm</qudt:ucumCode>
         <rdfs:comment>Kilo-ohm centimetre (axial resistivity)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>kohm_cm</rdfs:label>
@@ -86781,6 +87520,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>mS/cm2</qudt:ucumCode>
         <rdfs:comment>Millisiemens per square centimetre (conductance density)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mS_per_cm2</rdfs:label>
@@ -86826,6 +87566,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>mV/ms</qudt:ucumCode>
         <rdfs:comment>Millivolt per millisecond</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mV_per_ms</rdfs:label>
@@ -86851,6 +87592,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>mV/s</qudt:ucumCode>
         <rdfs:comment>Millivolt per second</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mV_per_s</rdfs:label>
@@ -86948,6 +87690,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>mm/ms</qudt:ucumCode>
         <rdfs:comment>Millimetre per millisecond (= m/s)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mm_per_ms</rdfs:label>
@@ -86990,6 +87733,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>mol/cm3</qudt:ucumCode>
         <rdfs:comment>Mole per cubic centimetre (mol/cm³)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mol_per_cm3</rdfs:label>
@@ -87023,6 +87767,12 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A1E-1L-1I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
+            </rdf:Description>
+        </qudt:hasFactorUnit>
+        <qudt:hasFactorUnit>
+            <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/M"/>
             </rdf:Description>
@@ -87035,16 +87785,11 @@ to a task-appropriate range (e.g. omega in Hz).
         </qudt:hasFactorUnit>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MOL"/>
-            </rdf:Description>
-        </qudt:hasFactorUnit>
-        <qudt:hasFactorUnit>
-            <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/A"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>mol/m/A/s</qudt:ucumCode>
         <rdfs:comment>Mole per metre per ampere per second (concentration-current coupling)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>mol_per_m_per_A_per_s</rdfs:label>
@@ -87145,6 +87890,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>nS/mV</qudt:ucumCode>
         <rdfs:comment>Nanosiemens per millivolt</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>nS_per_mV</rdfs:label>
@@ -87266,6 +88012,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliV"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>/mV</qudt:ucumCode>
         <rdfs:comment>Reciprocal millivolt (mV⁻¹)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>per_mV</rdfs:label>
@@ -87285,6 +88032,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>/mm2</qudt:ucumCode>
         <rdfs:comment>Per square millimetre (mm⁻²). The unit of a Laplace-Beltrami eigenvalue and of Gaussian curvature.</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>per_mm2</rdfs:label>
@@ -87321,6 +88069,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/NanoC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>/nC</qudt:ucumCode>
         <rdfs:comment>Reciprocal nanocoulomb (nC⁻¹)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>per_nC</rdfs:label>
@@ -87340,6 +88089,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/PicoC"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>/pC</qudt:ucumCode>
         <rdfs:comment>Reciprocal picocoulomb (pC⁻¹)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>per_pC</rdfs:label>
@@ -87455,16 +88205,17 @@ to a task-appropriate range (e.g. omega in Hz).
         <qudt:hasDimensionVector rdf:resource="http://qudt.org/vocab/dimensionvector/A0E0L0I0M0H0T-1D0"/>
         <qudt:hasFactorUnit>
             <rdf:Description>
-                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
-                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
-            </rdf:Description>
-        </qudt:hasFactorUnit>
-        <qudt:hasFactorUnit>
-            <rdf:Description>
                 <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">1</qudt:exponent>
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/RAD"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:hasFactorUnit>
+            <rdf:Description>
+                <qudt:exponent rdf:datatype="http://www.w3.org/2001/XMLSchema#integer">-1</qudt:exponent>
+                <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/MilliSEC"/>
+            </rdf:Description>
+        </qudt:hasFactorUnit>
+        <qudt:ucumCode>rad/ms</qudt:ucumCode>
         <rdfs:comment>Radian per millisecond</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>rad_per_ms</rdfs:label>
@@ -87553,6 +88304,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>uA/cm2</qudt:ucumCode>
         <rdfs:comment>Microampere per square centimetre (current density)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>uA_per_cm2</rdfs:label>
@@ -87578,6 +88330,7 @@ to a task-appropriate range (e.g. omega in Hz).
                 <qudt:hasUnit rdf:resource="http://qudt.org/vocab/unit/CentiM"/>
             </rdf:Description>
         </qudt:hasFactorUnit>
+        <qudt:ucumCode>uF/cm2</qudt:ucumCode>
         <rdfs:comment>Microfarad per square centimetre (specific capacitance)</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>uF_per_cm2</rdfs:label>
@@ -88191,6 +88944,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label>axis (slot)</rdfs:label>
         <skos:notation>axis</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/backdrop">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>backdrop (slot)</rdfs:label>
+        <skos:definition>Whether a label that reads its number through `used:` sits on a box in the page colour, which keeps a statistic printed over its own scatter readable. Unset is true; false prints the label bare, for a plot that fills its whole area, such as a density whose empty cells take the colormap&apos;s light end, where the box shows as a patch.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>backdrop</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/backend">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>backend (slot)</rdfs:label>
@@ -88266,6 +89026,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Coarse classification of the phenotype bundle, used for filtering in larger study libraries. Canonical values: ``cognitive`` (intelligence / memory / attention scores), ``clinical`` (UPDRS, MMSE, …), ``behavioral`` (raw task outputs), ``demographic``, ``physiological``, ``derived`` (composite scores like g-factor or brain-age). Free string — extend as needed.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>category</skos:notation>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/channel">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>channel (slot)</rdfs:label>
+        <skos:definition>The channel converted: `x`, `y`, `z` or `color`.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
+        <skos:notation>channel</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/citekey">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
@@ -88351,13 +89118,6 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Code-generation hint (opt-in, backend-independent): request that the generated dynamics be compiled to machine code rather than interpreted, where the target backend supports it. Purely a performance hint with no effect on results; a backend that is inherently compiled (or cannot compile) honours it as a no-op. Off by default. Independent of, and composable with, ``cse``.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>compile</skos:notation>
-    </rdf:Description>
-    <rdf:Description rdf:about="https://w3id.org/tvbo/concept_iri">
-        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
-        <rdfs:label>concept_iri (slot)</rdfs:label>
-        <skos:definition>Cognitive Atlas IRI of the cognitive construct measured (e.g. ``cogat:trm_521ef89ce5e84`` for fluid intelligence).</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
-        <skos:notation>concept_iri</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/condition">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
@@ -89185,8 +89945,6 @@ to a task-appropriate range (e.g. omega in Hz).
     <rdf:Description rdf:about="https://w3id.org/tvbo/markers">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>markers (slot)</rdfs:label>
-        <skos:definition>One marker per entry of a standalone legend, for a key whose entries are scatter marks.</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>markers</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/mask">
@@ -89245,7 +90003,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <rdf:Description rdf:about="https://w3id.org/tvbo/measures">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>measures (slot)</rdfs:label>
-        <skos:definition>Names of the measures present in the h5 companion (one ``measures/&lt;name&gt;`` dataset per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj, ProcSpeed_Unadj]``.</skos:definition>
+        <skos:definition>Names of the measures present in the companion (one ``measures/&lt;name&gt;`` dataset of the h5, or one column of the ``.tsv``, per name). Example: ``[g_factor, PMAT24_A_CR, PMAT24_A_RTCR, CardSort_Unadj, ProcSpeed_Unadj]``.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>measures</skos:notation>
     </rdf:Description>
@@ -89401,8 +90159,6 @@ to a task-appropriate range (e.g. omega in Hz).
     <rdf:Description rdf:about="https://w3id.org/tvbo/n_trials">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>n_trials (slot)</rdfs:label>
-        <skos:definition>Number of independent trials per grid point. Each trial uses a different noise seed, redraws the initial condition of every state variable that declares a distribution, and redraws the start of every parameter whose distribution declares `axis: trial`. Used for averaging stochastic simulations (e.g., VEP = average of 20 trials).</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>n_trials</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/n_workers">
@@ -90116,7 +90872,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <rdf:Description rdf:about="https://w3id.org/tvbo/subjects">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>subjects (slot)</rdfs:label>
-        <skos:definition>Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs). Each ``measures/&lt;name&gt;`` array in the h5 companion is indexed by this order.</skos:definition>
+        <skos:definition>Ordered list of subject IDs (e.g. HCP-YA 6-digit IDs), without the ``sub-`` prefix. Each measure array in the companion is indexed by this order.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
         <skos:notation>subjects</skos:notation>
     </rdf:Description>
@@ -90212,13 +90968,6 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label>target_variable (slot)</rdfs:label>
         <skos:notation>target_variable</skos:notation>
     </rdf:Description>
-    <rdf:Description rdf:about="https://w3id.org/tvbo/task_iri">
-        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
-        <rdfs:label>task_iri (slot)</rdfs:label>
-        <skos:definition>Cognitive Atlas (``cogat:``) IRI of the assessment instrument / task that produced this measure (e.g. ``cogat:trm_4a3fd79d09cba`` for PMAT24).</skos:definition>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
-        <skos:notation>task_iri</skos:notation>
-    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/task_name">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>task_name (slot)</rdfs:label>
@@ -90241,7 +90990,7 @@ to a task-appropriate range (e.g. omega in Hz).
     <rdf:Description rdf:about="https://w3id.org/tvbo/ticklabels">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>ticklabels (slot)</rdfs:label>
-        <skos:definition>Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`.</skos:definition>
+        <skos:definition>Text for the marked values of a STANDALONE `kind: colorbar` panel, where the numbers themselves are not what the figure wants to print. With `ticks` the labels name those ticks one to one, and lists of different lengths are refused; without them the labels are spread evenly from the bar&apos;s lower end to its upper end, so `[low, high]` marks its two ends. A bar attached to a panel writes its own numbers, which the shared format pass rounds to `decimals`.</skos:definition>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>ticklabels</skos:notation>
     </rdf:Description>
@@ -90291,6 +91040,13 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/figure"/>
         <skos:notation>transparent</skos:notation>
     </rdf:Description>
+    <rdf:Description rdf:about="https://w3id.org/tvbo/trial">
+        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
+        <rdfs:label>trial (slot)</rdfs:label>
+        <skos:definition>The trial index, counted from 0.</skos:definition>
+        <skos:inScheme rdf:resource="https://w3id.org/tvbo"/>
+        <skos:notation>trial</skos:notation>
+    </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/triangle_gap">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
         <rdfs:label>triangle_gap (slot)</rdfs:label>
@@ -90328,6 +91084,7 @@ to a task-appropriate range (e.g. omega in Hz).
         <skos:definition>Bind the key to a computed scalar in a result container (same reference form a figure Layer uses, and the same PROV edge). Mutually exclusive with ``value`` and ``count``.</skos:definition>
         <skos:definition>IRIs of the inputs, outputs and environment the activity consumed (BEP028 ``Used``).</skos:definition>
         <skos:definition>The p-value, a scalar in a result container (same reference form a Layer uses, and the same PROV edge).</skos:definition>
+        <skos:definition>The result whose `vertices` (V, 3) and `faces` (F, 3) are the mesh, for one an analysis derived (a parcel mesh, a reconstructed surface), bound as a layer is bound to its data rather than written out to a file by hand. It names only where the result is, since a mesh is both arrays together. When the vertices carry a label coordinate, a layer&apos;s values are placed on them by label, and a vertex the layer holds no value for is drawn as missing.</skos:definition>
         <skos:definition>WHERE + WHICH + SLICE for a template edge whose whole matrix is read rather than stored or computed: another network&apos;s layer, an analysis result, or a cohort member&apos;s own connectome (``used: {cohort: &lt;id&gt;, query: {...}, output: weight, reconcile: by_label}``). Inside a per-subject run a cohort reference resolves to that run&apos;s subject, which is what binds a model network to each subject&apos;s own connectivity. ``reconcile: by_label`` aligns the read matrix to this network&apos;s node order through its atlas aliases. Resolved lazily and never inlined, and it wins over a same-named layer in the companion file. Mutually exclusive with ``producer:``.</skos:definition>
         <skos:definition>WHERE + WHICH + SLICE in one edge — this parameter&apos;s array sourced from another experiment&apos;s result (an operating point, a tuned ``estimate__&lt;name&gt;`` a fit persisted), a dataset, or a curated entity, PROV ``prov:used``. The full cross-container form of which `source:`+`measure:` is the no-``sel``/no-``experiment`` shorthand; adds label ``reconcile`` and a swept-point ``sel``. Like `source:` the array is resolved lazily and never inlined. An in-study ``experiment`` reference also registers the workflow dependency. Mutually exclusive with `value:`/`source:`/`producer:`.</skos:definition>
         <skos:exactMatch rdf:resource="http://www.w3.org/ns/prov#used"/>
@@ -90522,12 +91279,6 @@ to a task-appropriate range (e.g. omega in Hz).
         <rdfs:label>description (dbs)</rdfs:label>
         <skos:inScheme rdf:resource="https://w3id.org/tvbo/dbs"/>
         <skos:notation>description</skos:notation>
-    </rdf:Description>
-    <rdf:Description rdf:about="https://w3id.org/tvbo/dbs/diagnosis">
-        <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
-        <rdfs:label>diagnosis (dbs)</rdfs:label>
-        <skos:inScheme rdf:resource="https://w3id.org/tvbo/dbs"/>
-        <skos:notation>diagnosis</skos:notation>
     </rdf:Description>
     <rdf:Description rdf:about="https://w3id.org/tvbo/dbs/domain">
         <rdfs:isDefinedBy rdf:resource="https://w3id.org/tvbo/tvbo.owl"/>
