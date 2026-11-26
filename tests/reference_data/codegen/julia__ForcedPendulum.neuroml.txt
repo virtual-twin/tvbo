@@ -87,7 +87,7 @@
 
       <!-- Time derivatives -->
       <TimeDerivative variable="x" value="(v) / SEC"/>
-      <TimeDerivative variable="v" value="(-sin(x) + f*cos(omega*t) - d*v) / SEC"/>
+      <TimeDerivative variable="v" value="(-sin(x) + f*cos(omega*(t/SEC)) - d*v) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

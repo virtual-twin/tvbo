@@ -1,6 +1,7 @@
 using Random
 rng = MersenneTwister(0)
 
+using SpecialFunctions
 import NaNMath
 function ZerlautAdaptationSecondOrder!(dx, x, p, t = 0)
 

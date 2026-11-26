@@ -97,7 +97,7 @@
 
       <!-- Derived variables (simple and conditional/piecewise) -->
       <ConditionalDerivedVariable name="I_ext" dimension="none">
-        <Case condition="pulse_delay .leq. t .and. t .lt. pulse_delay + pulse_duration" value="I_amp"/>
+        <Case condition="pulse_delay .leq. (t/SEC) .and. (t/SEC) .lt. pulse_delay + pulse_duration" value="I_amp"/>
         <Case value="0.0"/>
       </ConditionalDerivedVariable>
       <DerivedVariable name="alpha_h" dimension="none" value="0.00271419454822054*Q10*exp(-0.05*v)"/>

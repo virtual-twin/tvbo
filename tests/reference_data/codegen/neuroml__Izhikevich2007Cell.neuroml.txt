@@ -89,7 +89,7 @@
 
       <!-- Derived variables (simple and conditional/piecewise) -->
       <ConditionalDerivedVariable name="I_ext" dimension="none">
-        <Case condition="t .geq. 0.05 .and. t .lt. 0.25" value="1000.00000000000"/>
+        <Case condition="(t/SEC) .geq. 0.05 .and. (t/SEC) .lt. 0.25" value="1000.00000000000"/>
         <Case value="0.0"/>
       </ConditionalDerivedVariable>
 

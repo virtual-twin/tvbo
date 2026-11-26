@@ -38,3 +38,22 @@ keywords:
 - dynamical systems
 issue_tracker: https://github.com/bifurcationkit/BifurcationKit.jl/issues
 is_accessible_for_free: true
+modules:
+- BifurcationKit
+interfaces:
+  BifurcationKit:
+    name: BifurcationKit
+    kind:
+    - import
+  BifurcationKit.getp:
+    name: BifurcationKit.getp
+    kind:
+    - call
+  BifurcationKit.jacobian:
+    name: BifurcationKit.jacobian
+    kind:
+    - call
+  BifurcationKit.newton_fold:
+    name: BifurcationKit.newton_fold
+    kind:
+    - call

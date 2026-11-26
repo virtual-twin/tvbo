@@ -87,7 +87,7 @@
 
       <!-- Time derivatives -->
       <TimeDerivative variable="x" value="(y) / SEC"/>
-      <TimeDerivative variable="y" value="(-x + F*sin(2*pi*t/T) + mu*y*(1 - x^2)) / SEC"/>
+      <TimeDerivative variable="y" value="(-x + F*sin(2*3.141592653589793*(t/SEC)/T) + mu*y*(1 - x^2)) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

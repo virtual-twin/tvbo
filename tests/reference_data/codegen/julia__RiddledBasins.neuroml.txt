@@ -97,8 +97,8 @@
       <!-- Time derivatives -->
       <TimeDerivative variable="x" value="(vx) / SEC"/>
       <TimeDerivative variable="y" value="(vy) / SEC"/>
-      <TimeDerivative variable="vx" value="(-y^2 - gamma*vx + 4*x*(1 - x^2) + f0*x0*sin(omega*t)) / SEC"/>
-      <TimeDerivative variable="vy" value="(-gamma*vy - 2*y*(x + xbar) + f0*y0*sin(omega*t)) / SEC"/>
+      <TimeDerivative variable="vx" value="(-y^2 - gamma*vx + 4*x*(1 - x^2) + f0*x0*sin(omega*(t/SEC))) / SEC"/>
+      <TimeDerivative variable="vy" value="(-gamma*vy - 2*y*(x + xbar) + f0*y0*sin(omega*(t/SEC))) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

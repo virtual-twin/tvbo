@@ -84,8 +84,8 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="theta" value="((p + theta + k*sin(theta) + 2*pi*ceil(-(p + theta + k*sin(theta))/(2*pi)))) / SEC"/>
-      <TimeDerivative variable="p" value="((p + k*sin(theta) + 2*pi*ceil(-(p + k*sin(theta))/(2*pi)))) / SEC"/>
+      <TimeDerivative variable="theta" value="((p + theta + k*sin(theta) + 2*3.141592653589793*ceil(-(p + theta + k*sin(theta))/(2*3.141592653589793)))) / SEC"/>
+      <TimeDerivative variable="p" value="((p + k*sin(theta) + 2*3.141592653589793*ceil(-(p + k*sin(theta))/(2*3.141592653589793)))) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

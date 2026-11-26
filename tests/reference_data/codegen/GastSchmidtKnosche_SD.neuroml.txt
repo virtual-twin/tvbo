@@ -102,8 +102,8 @@
       <!-- Time derivatives -->
       <TimeDerivative variable="A" value="(B/tau_A) / SEC"/>
       <TimeDerivative variable="B" value="((-A - 2*B + alpha*r)/tau_A) / SEC"/>
-      <TimeDerivative variable="V" value="((I + eta + V^2 + c_glob0*cr + c_glob1*cv - pi^2*r^2*tau^2 + J*r*tau*(1 - A))/tau) / SEC"/>
-      <TimeDerivative variable="r" value="((2*V*r + Delta/(pi*tau))/tau) / SEC"/>
+      <TimeDerivative variable="V" value="((I + eta + V^2 + c_glob0*cr + c_glob1*cv - 3.141592653589793^2*r^2*tau^2 + J*r*tau*(1 - A))/tau) / SEC"/>
+      <TimeDerivative variable="r" value="((2*V*r + Delta/(3.141592653589793*tau))/tau) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

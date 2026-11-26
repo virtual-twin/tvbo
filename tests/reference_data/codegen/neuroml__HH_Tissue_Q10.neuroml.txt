@@ -98,7 +98,7 @@
       <!-- Derived variables (simple and conditional/piecewise) -->
       <DerivedVariable name="I_ext" dimension="none" value="I_amp"/>
       <ConditionalDerivedVariable name="Q10" dimension="none">
-        <Case condition="switch_time .gt. t" value="Q10_early"/>
+        <Case condition="switch_time .gt. (t/SEC)" value="Q10_early"/>
         <Case value="Q10_late"/>
       </ConditionalDerivedVariable>
       <DerivedVariable name="alpha_h" dimension="none" value="0.00271419454822054*exp(-0.05*v)"/>

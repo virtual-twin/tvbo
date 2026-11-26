@@ -116,10 +116,10 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="V_e" value="((I_e + eta_e + V_e^2 + s_ee*tau_e - s_ei*tau_e - pi^2*r_e^2*tau_e^2)/tau_e) / SEC"/>
-      <TimeDerivative variable="V_i" value="((I_i + eta_i + V_i^2 + s_ie*tau_i - s_ii*tau_i - pi^2*r_i^2*tau_i^2)/tau_i) / SEC"/>
-      <TimeDerivative variable="r_e" value="((2*V_e*r_e + Delta_e/(pi*tau_e))/tau_e) / SEC"/>
-      <TimeDerivative variable="r_i" value="((2*V_i*r_i + Delta_i/(pi*tau_i))/tau_i) / SEC"/>
+      <TimeDerivative variable="V_e" value="((I_e + eta_e + V_e^2 + s_ee*tau_e - s_ei*tau_e - 3.141592653589793^2*r_e^2*tau_e^2)/tau_e) / SEC"/>
+      <TimeDerivative variable="V_i" value="((I_i + eta_i + V_i^2 + s_ie*tau_i - s_ii*tau_i - 3.141592653589793^2*r_i^2*tau_i^2)/tau_i) / SEC"/>
+      <TimeDerivative variable="r_e" value="((2*V_e*r_e + Delta_e/(3.141592653589793*tau_e))/tau_e) / SEC"/>
+      <TimeDerivative variable="r_i" value="((2*V_i*r_i + Delta_i/(3.141592653589793*tau_i))/tau_i) / SEC"/>
       <TimeDerivative variable="s_ee" value="((c_glob - s_ee + J_ee*r_e)/tau_s) / SEC"/>
       <TimeDerivative variable="s_ei" value="((-s_ei + J_ei*r_i)/tau_s) / SEC"/>
       <TimeDerivative variable="s_ie" value="((-s_ie + Gamma*c_glob + J_ie*r_e)/tau_s) / SEC"/>
