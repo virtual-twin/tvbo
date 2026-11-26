@@ -1,6 +1,9 @@
 ---
 title: Cross-Backend Numerical Parity
 jupyter: python3
+# The prose reads computed values inline, which Quarto refuses under the project's Jupyter cache.
+execute:
+  cache: false
 # Redirect the pre-restructure URL so existing links keep resolving.
 aliases:
   - /Models/CrossBackendParity.html
