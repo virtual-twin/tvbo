@@ -414,5 +414,5 @@ def resolve(symbol: EmittedSymbol) -> Resolution:
         deprecated, replaced_by = _documented_deprecation(function, keyword)
         return Resolution(PRESENT, version, deprecated, replaced_by)
     if any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()):
-        return Resolution(ABSORBED, version)
+        return Resolution(ABSORBED, version, detail=f"`{target}` declares no `{keyword}`; it lands in `**kwargs`")
     return Resolution(MISSING, version, detail=f"`{target}` takes no keyword `{keyword}`")

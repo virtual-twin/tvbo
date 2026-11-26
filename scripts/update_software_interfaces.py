@@ -2,7 +2,7 @@
 
 Reads every golden reference under `tests/reference_data/codegen/` and every curated experiment rendered in each code format the export registry declares, takes the inventory of what that code imports, calls, subclasses and passes as keywords (`tvbo.codegen.inventory`), and asks the installed package about each name (`resolve`). A keyword the callee absorbs in `**kwargs` is model data, not an interface, and is left out.
 
-A name is filed under the `SimulationTool` whose `modules:` lists its top-level module; the names of packages with no entry are printed instead. The block is regenerated whole and written last in the file, so the curated part of an entry is never reformatted.
+A name is filed under the `SimulationTool` whose `modules:` lists its top-level module; the names of packages with no entry are printed instead, and so is an unqualified Julia call no single loaded package is known to provide (`tests/test_codegen_inventory.py` holds the list of those). The block is regenerated whole and written last in the file, so the curated part of an entry is never reformatted.
 
 Run from the repository root, in the environment whose package versions the entries should record: `python scripts/update_software_interfaces.py`.
 """
@@ -81,6 +81,11 @@ def main() -> None:
     by_tool: dict[pathlib.Path, dict] = collections.defaultdict(dict)
     unattributed = collections.Counter()
     for symbol in sorted(joined):
+        if "|" in symbol.package:
+            print(
+                f"`{symbol.name}` is called unqualified where {symbol.package.replace('|', ', ')} are all loaded: no single provider"
+            )
+            continue
         module = symbol.package.split(".")[0]
         if module not in tools:
             unattributed[symbol.package] += 1
@@ -88,12 +93,14 @@ def main() -> None:
         resolution = resolve(symbol)
         if resolution.status == ABSORBED:
             continue
-        entries = by_tool[tools[module]]
-        earlier = entries.get(symbol.name, {})
+        recorded = by_tool[tools[module]]
+        earlier = recorded.get(symbol.name, {})
         kinds = sorted({symbol.kind, *earlier.get("kind", [])})
-        entries[symbol.name] = interface_entry(symbol, joined[symbol], resolution, kinds)
+        recorded[symbol.name] = interface_entry(symbol, joined[symbol], resolution, kinds)
         if "realises" in earlier:
-            entries[symbol.name]["realises"] = earlier["realises"]  # a name's base-class use outlives its later import or call
+            recorded[symbol.name]["realises"] = earlier[
+                "realises"
+            ]  # a name's base-class use outlives its later import or call
     for path in sorted(set(tools.values())):
         write_interfaces(path, by_tool.get(path, {}))
         print(f"{path.name}: {len(by_tool.get(path, {}))} interfaces")

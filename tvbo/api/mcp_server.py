@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import functools
+from urllib.parse import unquote
 
 import yaml
 from mcp.server.mcpserver import MCPServer
@@ -105,14 +106,14 @@ def describe(iri: str) -> dict:
     """The full record behind an IRI `explore` returned.
 
     Args:
-        iri: A `tvbo:<folder>/<name>` IRI, written out under `https://w3id.org/tvbo/` or not, or a software interface's `tvbo:software/<tool>/interfaces/<name>`.
+        iri: A `tvbo:<folder>/<name>` IRI, written out under `https://w3id.org/tvbo/` or not, or a software interface's `tvbo:software/<tool>#<name>`, percent-encoded or not.
 
     Returns:
         The row's `iri`, `kind`, `name` and `description`, and its `record` as YAML; `{found: false}` with a hint when no record has the IRI.
     """
-    curie = _curie(iri)
+    curie = unquote(_curie(iri))
     for row in _rows():
-        if row["iri"] == curie:
+        if unquote(row["iri"]) == curie:
             return _summary(row) | {"record": yaml.safe_dump(row["record"], sort_keys=False, allow_unicode=True, width=10_000)}
     return {"found": False, "hint": f"No curated record has the IRI {iri!r}; `explore` returns the IRIs there are."}
 

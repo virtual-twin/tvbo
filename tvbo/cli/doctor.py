@@ -11,9 +11,9 @@ def doctor(
 ) -> None:
     """Resolve each software entry's `interfaces:` against the installed package, and exit non-zero on a name it no longer provides.
 
-    A name the installed version documents as deprecated is reported, with its replacement; it fails the check only under `--strict`, since the generated code still runs. A package that is not installed, or is a Julia package, is reported as unchecked.
+    A recorded keyword the callee no longer declares counts as missing even when the callee takes `**kwargs`: the call still runs, but the keyword is no longer the parameter it was recorded as. A name the installed version documents as deprecated is reported, with its replacement; it fails the check only under `--strict`, since the generated code still runs. A package that is not installed, or is a Julia package, is reported as unchecked.
     """
-    from tvbo.codegen.inventory import CALL, MISSING, UNCHECKED, EmittedSymbol, resolve, software_entries
+    from tvbo.codegen.inventory import ABSORBED, CALL, MISSING, UNCHECKED, EmittedSymbol, resolve, software_entries
 
     failed = False
     for _, record in software_entries():
@@ -27,7 +27,7 @@ def doctor(
             head = name.split("(")[0].split(".")[0]
             resolution = resolve(EmittedSymbol(head if head in modules else "|".join(modules), name, CALL))
             versions.add(resolution.version)
-            if resolution.status == MISSING:
+            if resolution.status in (MISSING, ABSORBED):
                 counts["missing"] += 1
                 failed = True
                 lines.append(f"  missing     {name}: {resolution.detail}")

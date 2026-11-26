@@ -135,7 +135,11 @@ FUNCTIONS = {
 }
 """Every function name a reader accepts, in any backend's spelling, as the SymPy object it means."""
 
-CONSTANTS = {"pi": sp.pi, "π": sp.pi, "inf": sp.oo, "Inf": sp.oo, "e": sp.E}
+PYTHON_CONSTANTS = {"pi": sp.pi, "inf": sp.oo, "e": sp.E}
+"""The constants of a numeric module, read where the code names them as attributes (`np.pi`, `jnp.e`)."""
+
+JULIA_CONSTANTS = {"pi": sp.pi, "π": sp.pi, "ℯ": sp.E, "Inf": sp.oo}
+"""The constants Julia's `Base` defines; Euler's number is `ℯ`, so a bare `e` is an unbound name, as it is when the code runs."""
 
 SHAPE_ONLY = {"asarray", "atleast_1d", "atleast_2d", "broadcast_to", "moveaxis", "full_like", "float", "squeeze"}
 """Calls that change an array's shape and leave its value alone, read as their first argument."""
@@ -318,8 +322,8 @@ class _PythonReader:
     def attribute(self, node):
         module, _, name = dotted(node).rpartition(".")
         if module.split(".")[0] in self.modules:
-            if name in CONSTANTS:
-                return CONSTANTS[name]
+            if name in PYTHON_CONSTANTS:
+                return PYTHON_CONSTANTS[name]
             raise Unreadable(f"line {node.lineno}: the constant {ast.unparse(node)}")
         if node.attr == "shape":
             return None
@@ -341,6 +345,8 @@ class _PythonReader:
 
     def call(self, node):
         spelled = dotted(node.func)
+        if isinstance(node.func, ast.Attribute) and spelled.split(".")[0] not in self.modules:
+            raise Unreadable(f"line {node.lineno}: the method call {ast.unparse(node)}")
         name = next((spelling for spelling in FUNCTIONS if spelled.endswith(f".{spelling}")), spelled.rpartition(".")[2])
         if name == "hasattr":
             return True
@@ -359,8 +365,16 @@ class _PythonReader:
             modes_of_one_variable = keywords.get("axis") == -1 and len(set(gathered)) == 1
             return gathered[0] if modes_of_one_variable else tuple(gathered)
         if name in FUNCTIONS:
-            return FUNCTIONS[name](*arguments, **keywords)
+            return _apply(name, arguments, keywords, f"line {node.lineno}: the call {ast.unparse(node)}")
         raise Unreadable(f"line {node.lineno}: the call {ast.unparse(node)}")
+
+
+def _apply(name: str, arguments: list, keywords: dict, where: str):
+    """`FUNCTIONS[name]` of *arguments*; arguments the function does not take make the call unreadable, named by *where*."""
+    try:
+        return FUNCTIONS[name](*arguments, **keywords)
+    except TypeError as error:
+        raise Unreadable(f"{where} does not take these arguments: {error}") from error
 
 
 def _literal(keyword: ast.keyword):
@@ -403,7 +417,7 @@ def read_python(code: str, model, format: str) -> Readback:
         else:
             reader.assign(ast.Name(id=name), reader.value(defaults[argument]))
     returned = reader.run(function.body)
-    derivatives = returned[0] if returned and isinstance(returned[0], tuple) else returned
+    derivatives = returned[0] if isinstance(returned, tuple) and returned and isinstance(returned[0], tuple) else returned
     if (
         not isinstance(derivatives, tuple)
         or len(derivatives) != len(scope.states)
@@ -575,8 +589,8 @@ class _JuliaReader:
         if node.type == "identifier":
             if text in self.environment:
                 return self.environment[text]
-            if text in CONSTANTS:
-                return CONSTANTS[text]
+            if text in JULIA_CONSTANTS:
+                return JULIA_CONSTANTS[text]
             raise Unreadable(f"line {node.start_point[0] + 1}: `{text}` is read before anything binds it")
         if node.type == "parenthesized_expression" and node.named_child_count == 1:
             return self.value(node.named_children[0])
@@ -616,7 +630,7 @@ class _JuliaReader:
             if name == "sum" and len(arguments) == 1:
                 return ARRAY_FUNCTIONS["mode_sum"](arguments[0])  # a state is a vector over the modes
             if name in FUNCTIONS:
-                return FUNCTIONS[name](*arguments)
+                return _apply(name, arguments, {}, f"line {node.start_point[0] + 1}: {text}")
         raise Unreadable(f"line {node.start_point[0] + 1}: the expression {text}")
 
 
@@ -724,33 +738,45 @@ class _Comparison:
         point = self.point(index, symbols)
         return function(*[point[symbol] for symbol in symbols])
 
+    def real_value(self, expression, index: int):
+        """The value of *expression* at sample point *index* when it is a finite real number, else `None`; a complex value whose imaginary part vanishes, as `sqrt(k/m)**2` at a negative `m`, is real."""
+        try:
+            value = mpmath.mpmathify(self.evaluate(expression, index))
+        except (TypeError, ValueError, ZeroDivisionError):
+            return None
+        if isinstance(value, mpmath.mpc) and abs(value.imag) <= TOLERANCE * max(1, abs(value.real)):
+            value = value.real
+        return value if isinstance(value, mpmath.mpf) and mpmath.isfinite(value) else None
+
     def verdict(self, name: str, specified, emitted) -> Verdict:
+        """Equal when the two are one expression, or agree at every sample point where either is a finite real number.
+
+        A point where only one side is a finite real number is a difference: an emitted `sqrt(x)` for a specified `sqrt(Abs(x))` differs wherever `x` is negative. Inputs the code fixes to a constant are fixed in the specification too, and named in the verdict.
+        """
         common = {"name": name, "specified": specified, "emitted": emitted, "pinned": self.pinned}
+        fixed = ", ".join(f"{symbol} = {value}" for symbol, value in self.pinned.items())
+        but = f"; the code fixes {fixed}" if fixed else ""
         if specified.xreplace(self.pinned) == emitted:
-            return Verdict(status=EQUAL, detail="the same expression", **common)
+            return Verdict(status=EQUAL, detail=f"the same expression{but}", **common)
         compared = 0
         with mpmath.workdps(PRECISION):
             for index in range(SAMPLE_POINTS * DRAWS_PER_POINT):
                 if compared == SAMPLE_POINTS:
                     break
-                try:
-                    expected, found = (mpmath.mpmathify(self.evaluate(e, index)) for e in (specified, emitted))
-                except (TypeError, ValueError, ZeroDivisionError):
-                    continue
-                if not (isinstance(expected, mpmath.mpf) and isinstance(found, mpmath.mpf)) or not mpmath.isfinite(
-                    expected - found
-                ):
+                expected, found = self.real_value(specified, index), self.real_value(emitted, index)
+                if expected is None and found is None:
                     continue
                 compared += 1
-                if abs(expected - found) > TOLERANCE * max(1, abs(expected)):
+                if expected is None or found is None or abs(expected - found) > TOLERANCE * max(1, abs(expected)):
                     read = specified.free_symbols | emitted.free_symbols
                     at = {str(symbol): mpmath.nstr(value, 6) for symbol, value in self.points[index].items() if symbol in read}
-                    detail = f"specified {mpmath.nstr(expected, 12)}, emitted {mpmath.nstr(found, 12)} at {at}"
+                    spelled = ["no real number" if value is None else mpmath.nstr(value, 12) for value in (expected, found)]
+                    detail = f"specified {spelled[0]}, emitted {spelled[1]} at {at}{but}"
                     return Verdict(status=DIFFERS, detail=detail, **common)
         if compared < SAMPLE_POINTS // 2:
             detail = f"only {compared} of {SAMPLE_POINTS * DRAWS_PER_POINT} random points evaluate to a real number"
             return Verdict(status=UNREAD, detail=detail, **common)
-        return Verdict(status=EQUAL, detail=f"agrees at {compared} random points", **common)
+        return Verdict(status=EQUAL, detail=f"agrees at {compared} random points{but}", **common)
 
 
 def check_backend(model, format: str, code: str | None = None) -> list[Verdict]:

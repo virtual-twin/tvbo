@@ -25,9 +25,14 @@ def test_explore_matches_every_word_in_any_case_and_ranks_the_name_first():
 def test_explore_reaches_a_framework_name_and_its_deprecation():
     (interface,) = mcp_server.explore("InstantaneousCoupling incoming_states", kind="SoftwareInterface")
 
-    assert interface["iri"].startswith("tvbo:software/TVB-Optim/interfaces/")
+    assert (
+        interface["iri"]
+        == "tvbo:software/TVB-Optim#tvboptim.experimental.network_dynamics.coupling.base.InstantaneousCoupling(incoming_states=)"
+    )
     assert "deprecated, use source" in interface["description"]
     assert "deprecated: true" in mcp_server.describe(interface["iri"])["record"]
+    encoded = interface["iri"].replace("(", "%28").replace("=", "%3D").replace(")", "%29")
+    assert mcp_server.describe(encoded) == mcp_server.describe(interface["iri"])
 
 
 @pytest.mark.backend_core

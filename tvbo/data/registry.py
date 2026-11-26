@@ -121,10 +121,10 @@ def record_iri(folder: str, path: Path) -> str:
 
 
 def interface_iri(tool_iri: str, name: str) -> str:
-    """The IRI of the framework name *name* recorded under the software entry *tool_iri*, as a CURIE or written out: ``<tool_iri>/interfaces/<name, percent-encoded>``."""
+    """The IRI of the framework name *name* recorded under the software entry *tool_iri*, as a CURIE or written out: ``<tool_iri>#<name>``, so it resolves to the tool's page even after the name is retired. Only characters an IRI fragment cannot hold are percent-encoded; ``callee(keyword=)`` is kept as spelled."""
     from urllib.parse import quote
 
-    return f"{tool_iri}/interfaces/{quote(name, safe='._')}"
+    return f"{tool_iri}#{quote(name, safe='._()=,')}"
 
 
 def iri_for(cls_name: str, name: str) -> str:

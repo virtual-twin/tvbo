@@ -12,7 +12,7 @@ import sys
 
 import pytest
 from rdflib import Graph, Literal
-from rdflib.namespace import RDF, SKOS
+from rdflib.namespace import RDF
 
 from tvbo.codegen.inventory import (
     ABSORBED,
@@ -117,6 +117,24 @@ def test_resolution_tells_present_missing_and_absorbed_apart(name: str, status: 
 
 
 @pytest.mark.backend_core
+def test_doctor_fails_on_a_recorded_keyword_the_callee_now_absorbs(monkeypatch, capsys):
+    """A keyword recorded as a parameter that the installed callee only takes through `**kwargs` is reported missing."""
+    import typer
+
+    from tvbo.cli.doctor import doctor
+    from tvbo.codegen import inventory
+
+    entry = {"name": "PyYAML", "modules": ["yaml"], "interfaces": {"yaml.safe_dump": {}, "yaml.safe_dump(sort_keys=)": {}}}
+    monkeypatch.setattr(inventory, "software_entries", lambda: [(pathlib.Path("PyYAML.yaml"), entry)])
+
+    with pytest.raises(typer.Exit) as exited:
+        doctor(tool=None, strict=False)
+
+    assert exited.value.exit_code == 1
+    assert "missing     yaml.safe_dump(sort_keys=): `yaml.safe_dump` declares no `sort_keys`" in capsys.readouterr().out
+
+
+@pytest.mark.backend_core
 def test_a_julia_package_is_not_asked():
     assert resolve(EmittedSymbol("OrdinaryDiffEqTsit5", "ODEProblem", CALL)).status == UNCHECKED
 
@@ -175,9 +193,24 @@ def test_every_name_the_corpus_reaches_is_recorded(tool: str):
     assert not unrecorded, f"{tool} is reached through names its entry does not record: {unrecorded}"
 
 
+UNQUALIFIED_WITHOUT_ENTRY = {"MersenneTwister": "Random", "erfc": "SpecialFunctions"}
+"""Unqualified Julia calls every file making them loads several packages for, each with the package that provides it; none of these has a software entry."""
+
+
+@pytest.mark.backend_core
+def test_every_unqualified_julia_call_with_several_candidates_is_known():
+    """A template that starts calling a name unqualified where no single loaded package provides it fails here: qualify the call, or list it with its provider."""
+    if not JULIA_READABLE:
+        pytest.skip("reading Julia needs tvbo[julia]")
+
+    ambiguous = {symbol.name for symbol in _corpus_inventory() if "|" in symbol.package}
+
+    assert ambiguous == set(UNQUALIFIED_WITHOUT_ENTRY)
+
+
 @pytest.mark.backend_core
 def test_the_abox_carries_each_interface_with_its_deprecation():
-    """The recorded tvboptim keyword becomes an individual linked from the tool, deprecated and naming its replacement."""
+    """The recorded tvboptim keyword becomes an individual linked from the tool, deprecated and naming its replacement, at the tool's IRI with the name as written for its fragment."""
     sys.path.insert(0, str(REPO / "scripts" / "ontology"))
     import gen_abox
 
@@ -197,7 +230,8 @@ def test_the_abox_carries_each_interface_with_its_deprecation():
     )
 
     (interface,) = graph.objects(tool, gen_abox.TVBO_SW.interfaces)
+    assert str(interface) == f"{tool}#pkg.Coupling(incoming_states=)"
     assert (interface, RDF.type, gen_abox.TVBO_SW.SoftwareInterface) in graph
     assert (interface, gen_abox.TVBO_SW.deprecated, Literal(True)) in graph
     assert (interface, gen_abox.TVBO_SW.replaced_by, Literal("source")) in graph
-    assert (interface, SKOS.exactMatch, gen_abox.TVBO.Coupling) in graph
+    assert (interface, gen_abox.TVBO_SW.realises, gen_abox.TVBO.Coupling) in graph

@@ -88,10 +88,10 @@ def names_in(path: pathlib.Path) -> set[str]:
 
 
 def readers() -> dict[str, set[str]]:
-    """`{identifier: the backends and "core" that name it}` over every Python module and Mako template in the package, and the maintainer scripts."""
+    """`{identifier: the backends and "core" that name it}` over every Python module and Mako template in the package, and the maintainer scripts but this report, whose own source spells the slots it reports on."""
     read: dict[str, set[str]] = collections.defaultdict(set)
     for path in sorted([*PACKAGE.rglob("*.py"), *PACKAGE.rglob("*.mako"), *(REPO / "scripts").rglob("*.py")]):
-        reader = reader_of(path)
+        reader = None if path == pathlib.Path(__file__).resolve() else reader_of(path)
         if reader is not None:
             for name in names_in(path):
                 read[name].add(reader)

@@ -490,8 +490,6 @@ classes:
             realises:
                 range: uriorcurie
                 multivalued: true
-                exact_mappings:
-                    - skos:exactMatch
                 description: >-
                     The TVBO classes a package implements through this name, such as the `Dynamics` a simulator's model base class stands for.
 

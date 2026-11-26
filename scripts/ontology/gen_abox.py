@@ -99,11 +99,17 @@ def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling. A CURIE whose prefix is not in `PREFIX_MAP` raises `ValueError`, so a mistyped prefix cannot drop a grounding unseen.
     """
     for cur in data.get("grounding") or []:
-        u = expand_curie(str(cur))
-        if u is None:
-            raise ValueError(f"{iri}: grounding {cur!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+        u = _known_curie(cur, iri, "grounding")
         g.add((iri, TVBO.surrogate_of, u))
         g.add((iri, OBOINOWL.hasDbXref, u))
+
+
+def _known_curie(curie, iri: URIRef, slot: str) -> URIRef:
+    """*curie*, which *iri* names in *slot*, expanded; a prefix not in `PREFIX_MAP` raises `ValueError`."""
+    expanded = expand_curie(str(curie))
+    if expanded is None:
+        raise ValueError(f"{iri}: {slot} {curie!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+    return expanded
 
 
 def _add_equation(g: Graph, iri: URIRef, data: dict) -> None:
@@ -174,7 +180,7 @@ def emit_derived_variable(g: Graph, parent_iri: URIRef, key: str, dv: dict) -> N
 def emit_interface(g: Graph, tool_iri: URIRef, name: str, interface: dict) -> None:
     """A tool's public name as an individual of `tvbo_sw:SoftwareInterface`, linked from the tool by `tvbo_sw:interfaces`.
 
-    The IRI percent-encodes the name, whose keyword form `callee(keyword=)` is not a legal IRI segment; the label keeps the name as the package spells it, unique because it is qualified.
+    The IRI is the tool's with the name as its fragment (`tvbo.data.registry.interface_iri`), so it keeps resolving once codegen stops using the name; the label is the name as the package spells it, unique because it is qualified. `realises` links the name to the TVBO class it implements by `tvbo_sw:realises`, the schema's own predicate.
     """
     iri = URIRef(registry.interface_iri(str(tool_iri), name))
     g.add((iri, RDF.type, OWL.NamedIndividual))
@@ -189,12 +195,7 @@ def emit_interface(g: Graph, tool_iri: URIRef, name: str, interface: dict) -> No
     if interface.get("replaced_by"):
         g.add((iri, TVBO_SW.replaced_by, Literal(str(interface["replaced_by"]))))
     for concept in interface.get("realises") or []:
-        target = expand_curie(str(concept))
-        if target is None:
-            raise ValueError(
-                f"{iri}: realises {concept!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}"
-            )
-        g.add((iri, SKOS.exactMatch, target))
+        g.add((iri, TVBO_SW.realises, _known_curie(concept, iri, "realises")))
     g.add((tool_iri, TVBO_SW.interfaces, iri))
 
 
