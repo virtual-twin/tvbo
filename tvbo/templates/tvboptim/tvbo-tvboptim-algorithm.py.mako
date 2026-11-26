@@ -3,15 +3,12 @@
 <%page args="stream_plan=None, own_settle=False"/>\
 <%
 from tvbo.codegen import render_expression
-from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams,
     streaming_post_eval_plan, selection_settings, monitor_class_name, coupling_param_keys, set_literal,
+    observation_has_memory, streaming_recipe, coupling_input_wiring,
 )
-
-# Backend key this template targets — used for streaming-reducer registry lookups.
-_STREAMING_BACKEND = 'tvboptim'
 
 # Shared with the experiment template, so the two sides cannot drift: non-empty `names` means post_model_fn returns streamed values rather than a trajectory.
 _pp = stream_plan if stream_plan is not None else streaming_post_eval_plan(experiment)
@@ -182,9 +179,9 @@ state_names = state_var_names
 from tvbo.templates.tvboptim.utils import get_recorded_variable_names
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], [])
 
-# Build coupling parameter lookup: param_name -> coupling_key
+# Coupling parameter → the coupling-input key tvboptim's state holds it under, resolved as the experiment template resolves it.
 from tvbo.utils import network_couplings
-coupling_param_to_key = coupling_param_keys(network_couplings(experiment.network))
+coupling_param_to_key = coupling_param_keys(network_couplings(experiment.network), coupling_input_wiring(model, context['all_couplings'])[1])
 
 import re as _re_sym
 import math
@@ -389,9 +386,8 @@ def update_gate(src_algo, period):
             if not _ref:
                 continue
             _mod, _name, _skip_t, _s_var = _ref
-            _spec = lookup_streaming_reducer(_STREAMING_BACKEND, _mod, _name)
-            # Only step-wise 'window' reducers are wired here; a 'stride' spec keeps the recompute fallback.
-            if _spec is not None and _spec.emit_kind == 'window' and _src_list[0] in source_observations_needed:
+            _spec = streaming_recipe(_mod, _name, 'window')
+            if _spec is not None and _src_list[0] in source_observations_needed:
                 streaming_map[_dobs_name] = dict(
                     src_obs=_src_list[0], spec=_spec,
                     skip_t=_skip_t, s_var=_s_var,
@@ -547,6 +543,8 @@ def run_${algo_name}(
     # So we don't need dependent_monitors anymore
     _all_monitors = [o for o, _c in pipeline_observations] + [
         s for s, _c in source_monitors if s not in [o[0] for o in pipeline_observations]]
+    # Monitors that read history from before the window they are handed, decided from the spec, so a monitor passed in for one is held to it too.
+    _memory_monitors = [o for o in _all_monitors if observations_dict.get(o) is not None and observation_has_memory(observations_dict[o], experiment)]
 %>
     if monitors is None:
         monitors = {}
@@ -562,9 +560,15 @@ def run_${algo_name}(
 % endif
 % endfor
 % if _all_monitors:
-    # Every window here is one iteration long and brings no settle, so a kernel observation opens on zeros once and carries its own warm-up from then on. Seeded before the scan, because the carry it lives in cannot change shape inside one.
-% for _mon_obs in _all_monitors:
-    if hasattr(_${_mon_obs}_monitor, 'open_warmup') and _${_mon_obs}_monitor._warmup is None:
+    # Every window here is one iteration long and brings no settle, so a monitor with memory opens on its cold start once and carries its history from then on, and one that cannot carry it is refused rather than left to open every window empty. Seeded before the scan, because the carry it lives in cannot change shape inside one.
+% for _mon_obs in _memory_monitors:
+    if not hasattr(_${_mon_obs}_monitor, 'carry_warmup'):
+        raise TypeError(
+            "observation '${_mon_obs}' reads history from before the window it is handed, and its monitor "
+            f"{type(_${_mon_obs}_monitor).__name__} cannot carry it (no open_warmup / carry_warmup), so every window "
+            "of this loop would open on an empty history. Pass a monitor that carries its warm-up, or leave it to the generated one."
+        )
+    if _${_mon_obs}_monitor._warmup is None:
         _${_mon_obs}_monitor = _${_mon_obs}_monitor.open_warmup(n_nodes)
 % endfor
 % endif
@@ -596,8 +600,9 @@ def run_${algo_name}(
             _buf = _buf.at[-1, :, :].set(_wd[0, :, :])
         else:
             _buf = _buf.at[-1, 0, :].set(_wd)
-        if hasattr(_mon, 'carry_warmup'):
-            _mon = _mon.carry_warmup(_wr)
+% if src_obs in _memory_monitors:
+        _mon = _mon.carry_warmup(_wr)
+% endif
         return (state, key, _buf, _mon), None
 
     def _run_warmup_${src_obs}(state, key, _buf, _mon, _nsteps):
@@ -1253,8 +1258,9 @@ def _${algo_name}_tuning_core_impl(
         _${dobs_name}_acc = _${dobs_name}_reducer.evict(_${dobs_name}_acc, _${dobs_name}_evict)
         _${dobs_name}_acc = _${dobs_name}_reducer.add(_${dobs_name}_acc, _${src_obs}_buffer[-1, ${sinfo['s_var']}, :])
 % endfor
-        if hasattr(_${src_obs}_monitor, 'carry_warmup'):
-            _${src_obs}_monitor = _${src_obs}_monitor.carry_warmup(result)
+% if src_obs in _memory_monitors:
+        _${src_obs}_monitor = _${src_obs}_monitor.carry_warmup(result)
+% endif
 % endfor
 % for dobs_name, sinfo in streaming_map.items():
         # Periodic exact re-sync (float-drift reset; add/evict not exactly reversible); resync_every<=0 disables it.
@@ -1413,8 +1419,9 @@ def _${algo_name}_tuning_core_impl(
         else:
             _${obs}_collect = ${obs}
 % endif
-        if hasattr(_${obs}_monitor, 'carry_warmup'):
-            _${obs}_monitor = _${obs}_monitor.carry_warmup(result)
+% if obs in _memory_monitors:
+        _${obs}_monitor = _${obs}_monitor.carry_warmup(result)
+% endif
 
 % else:
 <%
@@ -1700,11 +1707,14 @@ _${algo_name}_tuning_core = jax.jit(
         for _arg in (getattr(_st, 'arguments', None) or []):
             _over[str(_arg.name)] = _arg.value
         _sd = {'n_iterations': int(_st.n_iterations)}
+        if getattr(_st, 'reset_state', False):
+            _sd['reset_state'] = True
         for _hp_name, _hp_val in hyperparam_dict.items():
             _sd[_hp_name] = _over.get(_hp_name, _hp_val)
         c_stage_defs.append(_sd)
     if not c_stage_defs:
         c_stage_defs = [{'n_iterations': n_iterations, **dict(hyperparam_dict)}]
+    _c_resets = any(sd.get('reset_state') for sd in c_stage_defs)
 %>
 % if emit_cohort:
 def run_cohort_${algo_name}(
@@ -1720,6 +1730,9 @@ def run_cohort_${algo_name}(
     save_every: int = None,
     resync_every: int = None,
     batch_size: int = None,
+% if _c_resets:
+    reopen=None,
+% endif
 ):
     """On-device cohort: vectorise the full ${algo_name} fit over subjects.
 
@@ -1735,7 +1748,13 @@ def run_cohort_${algo_name}(
     budget resolves one). Each slice is a plain ``vmap`` run on its own, so only one
     slice's working memory is live at a time. A narrower slice changes XLA's fusion
     order, so per-subject results match the whole-cohort ``vmap`` to floating-point
-    rounding (~1 ULP), not bit-for-bit."""
+    rounding (~1 ULP), not bit-for-bit.${'''
+
+    ``reopen`` maps a stage's tuned state to the state a ``reset_state`` stage opens from, as the single-subject schedule reopens it; such a stage also opens its monitors and window buffers cold and draws its noise from the lane's own key.''' if _c_resets else ''}"""
+% if _c_resets:
+    if reopen is None:
+        raise TypeError("run_cohort_${algo_name}: a stage declares reset_state, so the call needs `reopen`, the map from a tuned state to the state that stage opens from")
+% endif
     _n_subjects = ${batched_inputs[0]}.shape[0]
     _keys = jax.random.split(key, _n_subjects)
     _stage_defs = [
@@ -1755,8 +1774,17 @@ def run_cohort_${algo_name}(
 % endfor
 % endif
         for _si, _sd in enumerate(_stage_defs):
+% if _c_resets:
+            if _sd.get('reset_state'):
+                _st, _mon = reopen(_st), None
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+                _buf_${src_obs} = None
+% endfor
+% endif
+% endif
             _r = run_${algo_name}(
-                _st, model_fn, jax.random.fold_in(_skey, _si), _sd['n_iterations'],
+                _st, model_fn, ${"(_skey if _sd.get('reset_state') else jax.random.fold_in(_skey, _si))" if _c_resets else 'jax.random.fold_in(_skey, _si)'}, _sd['n_iterations'],
 % for hp in hyperparam_dict.keys():
                 ${hp}=_sd['${hp}'],
 % endfor

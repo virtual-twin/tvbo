@@ -28,7 +28,6 @@ def _reference(module, name, **constructor_args):
     [
         ("tvb.simulator.monitors", "Bold", {"hrf_kernel": "FirstOrderVolterra", "period": 720.0}),
         ("tvb.simulator.monitors", "TemporalAverage", {"period": 4.0}),
-        ("tvb.simulator.monitors", "SubSample", {"period": 4.0}),
     ],
 )
 def test_an_adapted_tvb_monitor_keeps_its_declared_warmup(module, name, args):

@@ -161,24 +161,26 @@ def test_stage_reset_absent_by_default():
 
 
 def test_stage_reset_carries_only_tuned_targets():
-    """reset_state restarts each stage from the entry state, carrying every update-rule target.
+    """reset_state reopens each stage where a run of the experiment opens, carrying every update-rule target.
 
-    The dynamical state, window buffer and monitors must come from the algorithm's entry state, the noise key must restart from the run seed (so each stage samples the same realisation), and each tuned parameter must be grafted from the previous endpoint.
+    The dynamical state and delay history must be the experiment's opening ones (the declared initial condition on a network no settle has touched), the monitors must reopen cold and the window empty, the noise key must restart from the run seed (so each stage samples the same realisation), and each tuned parameter must be grafted from the previous endpoint.
     """
     exp = _multistage_experiment()
     for stage in exp.algorithms["fic_eib"].stages:
         stage.reset_state = True
     code = exp.render_code("tvboptim")
 
-    assert "def _carry_tuned_fic_eib(" in code
+    assert "def _carry_tuned_fic_eib(_tuned):" in code
     # every update-rule target crosses the boundary: the two coupling matrices + J_i
     assert "_tuned.coupling.EIBLinearCoupling.wLRE" in code
     assert "_tuned.coupling.EIBLinearCoupling.wFFI" in code
     assert "_tuned.dynamics.J_i" in code
-    # ...and everything else is restored from the entry state / initial buffers
-    assert "_carry_tuned_fic_eib(algo_state, _stage_state)" in code
-    assert "_stage_monitors = _stage_monitors0" in code
-    assert "_stage_bold_buffer = _stage_bold_buffer0" in code
+    # ...onto the experiment's opening state, with cold monitors and an empty window
+    assert "_rebuilt_on(network, network.graph, history=None)" in code
+    assert "dynamics=jnp.asarray(sim_result.opening)" in code
+    assert "_stage_state = _carry_tuned_fic_eib(_stage_state)" in code
+    assert '_stage_monitors = _cold_monitors(kwargs.get("monitors", None))' in code
+    assert "_stage_bold_buffer = None" in code
     # noise restarts from the run seed rather than being folded per stage
     assert 'if _sd.get("reset_state")' in code
     assert "jax.random.fold_in(algo_key, _si)" in code

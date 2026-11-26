@@ -20,6 +20,7 @@ Usage in templates:
 """
 
 import ast
+import math
 import re
 from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
@@ -29,6 +30,7 @@ from tvbo.export.registry import StartKind
 from tvbo.templates.base.utils import (  # noqa: F401  re-exported for the mako templates
     distribution_family,
     initial_state_distribution,
+    parse_list_elements,
     referenced,
     resolve_distribution,
     samples_over_time,
@@ -121,6 +123,27 @@ def data_source_arrays(experiment: Any) -> dict:
             )
         out[edge] = entry
     return out
+
+
+def forward_traced_observations(observations: dict, functions: Mapping | None = None) -> set[str]:
+    """Names of the raw observations a forward run evaluates under ``jax.jit``, as a loss evaluates them.
+
+    Traced and eager evaluation differ in the last bit wherever XLA folds a constant, a kernel generated from the monitor's own parameters for one, so a monitor evaluated eagerly after the run would not give the value a fit sees. A pipeline monitor whose every stage is JAX code is traced; a class reference, a dynamics observer, a streaming reduction and a pipeline with a host stage are evaluated as they are. A stage is a host stage through its own callable or through the callable of the declared Function it names in *functions*, the experiment's functions by name.
+    """
+    functions = functions or {}
+
+    def is_host(stage):
+        return pipeline_stage_is_host(stage) or pipeline_stage_is_host(functions.get(pipeline_step_name(stage)))
+
+    return {
+        str(name)
+        for name, obs in observations.items()
+        if getattr(obs, "pipeline", None)
+        and not getattr(obs, "class_reference", None)
+        and not getattr(obs, "dynamics", None)
+        and not getattr(obs, "reduce", None)
+        and not any(is_host(stage) for stage in obs.pipeline)
+    }
 
 
 def has_host_pipeline(observations: Any) -> bool:
@@ -795,27 +818,6 @@ def format_channel_index(indices: list[int], n_channels: int) -> str:
     return "[" + ", ".join(str(i) for i in indices) + "]"
 
 
-def parse_list_elements(rhs_str: str) -> list[str]:
-    """Split a ``[a, b, c]`` list-literal string into top-level element strings, respecting nested brackets/parens (so ``[f(x, y), g(z)]`` yields two elements)."""
-    inner = rhs_str[1:-1]  # strip [ ]
-    elements: list[str] = []
-    depth = 0
-    current: list[str] = []
-    for c in inner:
-        if c in "([{":
-            depth += 1
-        elif c in ")]}":
-            depth -= 1
-        elif c == "," and depth == 0:
-            elements.append("".join(current).strip())
-            current = []
-            continue
-        current.append(c)
-    if current:
-        elements.append("".join(current).strip())
-    return elements
-
-
 def _shape_ndim(shape_str) -> int:
     """Rank of a declared parameter shape string, e.g. ``"(n_nodes, n_nodes)"`` → 2.
 
@@ -1116,6 +1118,15 @@ def coupling_input_channels(model, all_couplings) -> dict[str, int]:
     for ci_name, (func_name, coupling) in wired.items():
         channels[ci_name] = resolve_coupling_spec(coupling, func_name, model, info, func_to_ci, n_modes)["n_output_states"]
     return channels
+
+
+def coupling_input_wiring(model: Any, couplings: Any) -> tuple[dict, Any]:
+    """Which coupling feeds each of *model*'s coupling inputs, and the key tvboptim's state holds each coupling under.
+
+    Returns ``(ci_coupling_map, state_key)``: the input → ``(coupling key, coupling)`` map of :func:`resolve_coupling_input_map`, and a function from a coupling's key to the name of the first input it feeds, which is how tvboptim keys ``state.coupling``. A coupling that feeds no input keeps its own key. Every template addressing a coupling on the state goes through this one resolution.
+    """
+    ci_coupling_map, first_input = resolve_coupling_input_map(model, couplings)
+    return ci_coupling_map, lambda key: first_input.get(key, key) if key else None
 
 
 def get_node_state_overrides(
@@ -1527,7 +1538,7 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
     The materialised ``bold`` pipeline (HRF kernel -> stride decimation -> prepend the downsampled transient -> ``'valid'`` HRF convolution -> Volterra scaling -> subsample at the TR) is recast as a block reducer: a downsampled-history ring buffer folds each integration block, ``strided_convolve`` evaluates the HRF convolution ONLY at the TR boundaries, and the Volterra-scaled samples are written into a preallocated BOLD buffer — so the full trajectory is never held. Byte-identical to the pipeline value to f64 rounding (``strided_convolve`` is ~1e-12 vs the FFT ``fftconvolve``), with no FFT buffer. Streamable only when the decimation is a pure ``subsample`` stride;
     ``temporal_average`` is an averaging window (even ``period_samples == 1`` shifts by one sample — it reproduces tvboptim TemporalAverage, not identity) and raises.
 
-    Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants (source, HRF-kernel call, decimation stride, TR stride, Volterra ``k_1``/``V_0``); the convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no ``experiment``) only as the ``is this streaming?`` predicate — that path stays side-effect-free and returns the tag without resolving function defaults.
+    Returns a reduction dict tagged ``kind: 'convolution'`` carrying the lifted constants (source, HRF-kernel call, decimation stride, TR stride, and the code of a declared ``volterra_transform`` step over the convolution, else ``None``); the convolution branch of ``render_reduction`` emits the reducer from it. Called bare (no ``experiment``) only as the ``is this streaming?`` predicate — that path stays side-effect-free and returns the tag without resolving function defaults.
     """
     name = str(get_attr(obs, "name", "observation"))
     source = obs_source(obs)
@@ -1587,12 +1598,15 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
             _kw.append(f"{_k}={_v}")
     red["kernel_call"] = f"{kernel_fname}({', '.join(_kw)})"
 
-    # The decimation MUST be a pure subsample stride; temporal_average is an averaging window (even period_samples=1 shifts by one sample) and is not block-additive, so it cannot be streamed faithfully.
-    if _step_by_func("temporal_average") is not None:
+    from tvbo.adapters.observation_sampling import sampling_kind
+
+    # The decimation MUST be a pure subsample stride: an averaging window, a `temporal_average` function or a `window_mean` equation, is not the sample the reducer keeps, so it cannot be streamed faithfully.
+    if _step_by_func("temporal_average") is not None or any(
+        sampling_kind(get_attr(get_attr(st, "equation"), "rhs")) == "window" for st in pipeline
+    ):
         raise ValueError(
             f"Observation {name!r}: reduce: streaming requires a subsample decimation, but the "
-            "pipeline decimates with temporal_average (an averaging window; even period_samples=1 "
-            "shifts by one sample). Replace it with a subsample step, e.g. a function "
+            "pipeline decimates with an averaging window. Replace it with a subsample step, e.g. a function "
             "`subsample: {equation: {rhs: 'subsample(data, step - 1, step)'}}` and `step: <stride>`."
         )
 
@@ -1634,26 +1648,85 @@ def _resolve_bold_stream(obs: Any, experiment: Any = None) -> dict[str, Any]:
             )
         red["tr_stride"] = int(to_numeric(_tr))
 
-    # Volterra BOLD scaling k_1 * V_0 * (x - 1). The scaling constants live on a `volterra_transform` step — either a referenced Function's equation parameters, or an inline `equation` on the step itself (the fused strided pipeline uses the latter).
-    _vt = _func("volterra_transform")
-    _vpar = get_attr(get_attr(_vt, "equation"), "parameters") if _vt is not None else None
-    if _vpar is None:
-        _vstep = next(
-            (
-                st
-                for st in pipeline
-                if str(get_attr(st, "name", "")) == "volterra_transform" or _fname_of(st) == "volterra_transform"
-            ),
-            None,
-        )
-        _vpar = get_attr(get_attr(_vstep, "equation"), "parameters") if _vstep is not None else None
-    red["k_1"] = float(to_numeric(parameter_value(_vpar, "k_1", 5.6)))
-    red["V_0"] = float(to_numeric(parameter_value(_vpar, "V_0", 0.02)))
+    # The Volterra BOLD scaling, only where the pipeline declares a `volterra_transform` step: that step's own code over the convolution `_conv`, so the streamed samples are the materialised ones bit for bit.
+    _vstep = next(
+        (
+            st
+            for st in pipeline
+            if str(get_attr(st, "name", "")) == "volterra_transform" or _fname_of(st) == "volterra_transform"
+        ),
+        None,
+    )
+    red["scaling"] = None if _vstep is None else _streamed_step_code(_vstep, obs, name, _fns, _dt, pipeline)
     # Resolved here rather than from the emitted kernel array, so the reducer can state its warm-up as a literal a caller reads before any kernel is built. Without a `dt` the span cannot be counted in steps, and the caller is told there is no bound rather than a wrong one.
     red["warmup_steps"] = (
         kernel_support_steps(_fname_of(kernel_step), get_attr(kernel_step, "arguments"), _fns, _dt) if _dt else 0
     )
     return red
+
+
+def _streamed_step_code(step: Any, obs: Any, name: str, fns: dict[str, Any], dt: Any, pipeline: list) -> str:
+    """The code a streaming reducer emits for a pointwise pipeline *step* over the convolution ``_conv``: what the materialised pipeline emits for the same step, with the step that feeds it read from ``_conv``.
+
+    A step naming a declared Function is that function's call, as the materialised pipeline calls it; any other is its own equation in the authored operation order (:func:`equation_step_code`). Either way the streamed value is the materialised one bit for bit. An argument the reducer cannot supply, anything but the step's input or a literal, raises rather than being guessed.
+    """
+    step_name = pipeline_step_name(step)
+    where = f"Observation {name!r} step {step_name!r}"
+    if step_name in fns:
+        fdef = fns[step_name] if get_attr(step, "function") else None
+        arguments = {}
+        for source in (get_attr(fdef, "arguments"), get_attr(step, "arguments")):
+            for key, argument in keyed_items(source, "arguments"):
+                if get_attr(argument, "value") is not None:
+                    arguments[str(key)] = get_attr(argument, "value")
+        position = next(i for i, st in enumerate(pipeline) if st is step)
+        before = pipeline[position - 1] if position else None
+        feeds = {"data"}
+        for fed in (
+            get_attr(step, "input"),
+            before is not None and (get_attr(before, "output") or pipeline_step_name(before)),
+        ):
+            if fed:
+                feeds.add(str(fed))
+        parts = []
+        for key, value in arguments.items():
+            if isinstance(value, str) and value in feeds:
+                parts.append(f"{key}=_conv")
+            elif isinstance(value, str) and value.replace(".", "").replace("-", "").replace("_", "").isdigit():
+                parts.append(f"{key}={value}")
+            elif not isinstance(value, str):
+                parts.append(f"{key}={value!r}")
+            else:
+                raise ValueError(
+                    f"{where}: a streamed reducer supplies only the step's input and literals, not {key}={value!r}."
+                )
+        return f"{step_name}({', '.join(parts) or '_conv'})"
+    equation = get_attr(step, "equation")
+    if equation is None or not get_attr(equation, "rhs"):
+        raise ValueError(
+            f"{where} declares no equation and names no declared Function, so a streamed reducer has nothing to emit for it."
+        )
+    literals, derived = equation_constants(equation)
+    return equation_step_code(
+        get_attr(equation, "rhs"),
+        "_conv",
+        {**dict(iter_parameter_values(get_attr(obs, "parameters"))), **literals},
+        derived,
+        observation_scalars(dt, get_attr(obs, "period"), get_attr(obs, "downsample_period")),
+        where,
+        user_functions={n: n for n in fns},
+    )
+
+
+def pipeline_step_name(func_call: Any) -> str | None:
+    """The name a pipeline step goes by: the function it references, else its inline callable's output or name, else its own name (``None`` when it declares one without a value)."""
+    func_ref = get_attr(func_call, "function")
+    if func_ref:
+        return str(func_ref) if isinstance(func_ref, str) else str(get_attr(func_ref, "name", func_ref))
+    inline_callable = get_attr(func_call, "callable")
+    if inline_callable:
+        return str(get_attr(func_call, "output") or get_attr(inline_callable, "name") or "callable_step")
+    return get_attr(func_call, "name", "step")
 
 
 def functions_by_name(experiment: Any) -> dict[str, Any]:
@@ -1748,6 +1821,54 @@ def kernel_support_steps(step_name: str, step_arguments: Any, fns: dict[str, Any
             "warm-up its convolution consumes cannot be counted. Give it a literal, or an argument with a value."
         )
     return int(round((hi - lo) / dt))
+
+
+def kernel_arguments(fn_def: Any, step_arguments: Any = None, scalars: dict[str, Any] | None = None) -> dict[str, Any]:
+    """The argument values a kernel generator is called with: its declared values, then the pipeline step's, then the observation's own scalar of the same name.
+
+    The last is how a kernel is sampled on its observation's grid: one that declares a ``downsample_period`` argument is handed the observation's, as tvboptim's HRF kernels are handed their monitor's ``downsample_dt``. Only arguments the kernel declares are bound.
+    """
+    values = {}
+    for name, entry in (get_attr(fn_def, "arguments") or {}).items():
+        if get_attr(entry, "value") is not None:
+            values[str(name)] = to_numeric(entry.value)
+    for name, entry in step_arguments.items() if hasattr(step_arguments, "items") else ():
+        value = get_attr(entry, "value", entry)
+        if str(name) in values and value is not None:
+            values[str(name)] = to_numeric(value)
+    values.update({name: value for name, value in (scalars or {}).items() if name in values and value is not None})
+    return values
+
+
+def kernel_sample_count(
+    step_name: str, step_arguments: Any, fns: dict[str, Any], scalars: dict[str, Any] | None = None
+) -> int:
+    """Samples the kernel itself holds: its declared ``time_range.n``, else the length of ``arange(lo, hi, step)``.
+
+    A history joined per segment is kept at the rate the kernel convolves, so this is how many of its rows the join keeps. An expression ``n`` is evaluated on the arguments the kernel is called with (:func:`kernel_arguments`), printed as the generated kernel prints it, so the count is the one it computes. Bounds and step resolve on those same arguments through :func:`kernel_time_range`, so a ``step`` that names an argument, or the ``dt`` argument a kernel steps by when it declares neither, counts like a literal.
+    """
+    fn_def = fns.get(str(step_name))
+    time_range = get_attr(fn_def, "time_range") if fn_def is not None else None
+    if not time_range:
+        return 0
+    n = get_attr(time_range, "n")
+    if isinstance(n, str) and not n.strip().isdigit():
+        from tvbo.codegen.code import render_verbatim
+
+        code = render_verbatim(n, format="python", bindings=kernel_arguments(fn_def, step_arguments, scalars))
+        if code is None:
+            raise ValueError(f"kernel generator {step_name!r}: time_range.n {n!r} is not an expression over its arguments.")
+        return int(eval(code, {"math": math}))
+    if n:
+        return int(n)
+    lo, hi, spacing, form = kernel_time_range(step_name, kernel_arguments(fn_def, step_arguments, scalars), fns)
+    if hi is None or not spacing or spacing <= 0:
+        raise ValueError(
+            f"kernel generator {step_name!r}: its support and {form} do not resolve to numbers, so its sample count, "
+            "and with it the history a per-segment join keeps, cannot be counted. Give each a literal or an argument "
+            "with a value, or declare history_join: continuous."
+        )
+    return max(0, math.ceil((hi - lo) / spacing))
 
 
 def _assert_transient_on_sample_grid(experiment: Any, name: str, period_steps: int, kind: str) -> None:
@@ -1904,13 +2025,18 @@ def _resolve_stat_stream(obs: Any) -> dict[str, Any]:
     }
 
 
-def _step_recipe(step: Any, emit_kind: str):
-    """The reducer recipe registered for the callable a pipeline *step* names, when its ``emit_kind`` is *emit_kind*, else ``None``."""
+def streaming_recipe(reducer_module: str | None, reducer_name: str, emit_kind: str) -> Any:
+    """The tvboptim streaming spec registered for a pipeline reducer when its ``emit_kind`` is *emit_kind* (``"window"`` emits every step), else ``None``: a spec of another kind, an unregistered reducer and ``TVBO_STREAMING_REDUCERS=0`` all keep the recompute path."""
     from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 
-    call = get_attr(step, "callable")
-    spec = lookup_streaming_reducer("tvboptim", str(get_attr(call, "module", "") or ""), str(get_attr(call, "name", "") or ""))
+    spec = lookup_streaming_reducer("tvboptim", reducer_module, reducer_name)
     return spec if spec is not None and spec.emit_kind == emit_kind else None
+
+
+def _step_recipe(step: Any, emit_kind: str):
+    """The reducer recipe registered for the callable a pipeline *step* names, when its ``emit_kind`` is *emit_kind*, else ``None``."""
+    call = get_attr(step, "callable")
+    return streaming_recipe(str(get_attr(call, "module", "") or ""), str(get_attr(call, "name", "") or ""), emit_kind)
 
 
 def _resolve_fc_stream(obs: Any) -> dict[str, Any] | None:
@@ -2515,6 +2641,13 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
             )
         return expr.subs(sp.Symbol(alias), sp.Symbol(source)) if alias else expr
 
+    from tvbo.codegen.code import bind_names
+
+    def _text(rhs_str):
+        """*rhs_str* as written, the observer input bound to the source, for the printer that keeps the authored operation order; None when it is not plain Python arithmetic."""
+        bound = bind_names(str(rhs_str), {alias: source} if alias else {})
+        return bound[0] if bound is not None else None
+
     states: list[dict[str, Any]] = []
     windowed = False
     for name, sv in sv_pairs:
@@ -2534,6 +2667,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 "name": name,
                 "init": _reduction_init_value(sv),
                 "update": expr,  # sympy Expr — the printer renders it
+                "text": _text(rhs),  # the update as written, printed in its authored order where it can be
                 "evict": evict,  # sympy Expr (sliding-window downdate) or None
                 "is_accumulator": sp.Symbol(name) in expr.free_symbols,
             }
@@ -2546,7 +2680,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         drhs = get_attr(deq, "rhs") if deq is not None else None
         if drhs is None:
             continue
-        derived.append({"name": str(dname), "expr": _parse(str(drhs), f"derived variable {dname!r}")})
+        derived.append({"name": str(dname), "expr": _parse(str(drhs), f"derived variable {dname!r}"), "text": _text(drhs)})
 
     # `derived_parameters` are constants of the observer — functions of its parameters and `dt`, never of a state or the observed signal — so they are bound ONCE in the reducer's preamble rather than recomputed per step. This is the slot every other backend already uses for exactly this (model Dynamics do the same), and it is what lets a readout built only from states and constants be evaluated per emitted sample instead of per step.
     derived_constants = []
@@ -2563,7 +2697,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 "which vary per step; a derived parameter is a constant. Declare it as a "
                 "derived variable instead."
             )
-        derived_constants.append({"name": str(pname), "expr": expr})
+        derived_constants.append({"name": str(pname), "expr": expr, "text": _text(prhs)})
 
     # Permutation-significance surrogates: a derived variable may declare a `surrogate` (re-evaluate a named statistic DV under permutations of a field, report the exceedance p-value). Resolve each to the statistic EXPANDED for its permute symbol — DVs that depend on the permuted symbol are inlined so the statistic becomes a self-contained function of it, while DVs that don't (a captured observed value, e.g. U w.r.t. an in-strength permutation) stay as symbols the renderer binds in-step. General; the wave detector is one consumer.
     dv_expr = {d["name"]: d["expr"] for d in derived}
@@ -2661,12 +2795,14 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 "an observation has one value, so exactly one derived variable may be recorded."
             )
     output = None
+    output_text = None
     output_name = str(outs[0]) if outs else None
     if outs:
         out_name = str(outs[0])
         dv = dv_map.get(out_name)
         oeq = get_attr(dv, "equation") if dv is not None else None
         output = _parse(str(get_attr(oeq, "rhs")), f"output {out_name!r}") if oeq is not None else sp.Symbol(out_name)
+        output_text = _text(get_attr(oeq, "rhs")) if oeq is not None else None
 
     # Time-reduction statistic (Observation.aggregation). Default (anything but 'median') folds a running sum (the accumulator state above) and divides by count. 'median' folds a per-node HISTOGRAM of the per-step output (bins from Observation.histogram) into the carry (O(bins) memory, no trajectory) and reads the 0.5 quantile at finalize — the streaming-safe way to get the robust median instantaneous frequency Koller uses, which a running sum cannot compute.
     statistic = "median" if str(get_attr(obs, "aggregation", None) or "mean").lower() == "median" else "mean"
@@ -2713,6 +2849,22 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
                 f"than the integration step {_dt} ms; an observer cannot emit faster than it advances."
             )
 
+    # An observer that declares its own `step_size` advances on it: each integration step's input is repeated once per observer step inside it, or the last of every stride inputs is taken, as tvboptim's BalloonWindkesselBold resamples onto its `dt_bw`; it emits every `period` of its own steps.
+    observer_step, substeps, stride, observer_period = None, 1, 1, None
+    if get_attr(obs, "step_size") is not None and experiment is not None:
+        from tvbo.adapters.observation_sampling import tvb_iround
+
+        if not period_steps:
+            raise ValueError(
+                f"Observation {get_attr(obs, 'name', None)!r} declares an observer `step_size` but no `period`; "
+                "an observer advances on its own step only as a monitor, which emits every period."
+            )
+        observer_step = float(to_numeric(get_attr(obs, "step_size")))
+        substeps = tvb_iround(_dt / observer_step)
+        stride = tvb_iround(observer_step / _dt) if substeps < 1 else 1
+        substeps = max(substeps, 1)
+        observer_period = tvb_iround(_period / observer_step)
+
     # A readout built only from states and constants is the same value whether it is evaluated every step or once per emitted sample, so a monitor evaluates it per sample. One that reads the observed signal or a per-step derived variable cannot be deferred.
     _step_ctx = ({source} if source else set()) | {d["name"] for d in derived if d["name"] != output_name}
     output_per_step = bool(output is not None and {str(s) for s in output.free_symbols} & _step_ctx)
@@ -2721,6 +2873,10 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         # 'monitor' emits every period_steps into a time series; 'recurrence' folds the whole run into one value per node. Both render from the same observer context.
         "kind": "monitor" if period_steps else "recurrence",
         "period_steps": period_steps,
+        "observer_step": observer_step,  # the step the observer advances on and reads as `dt`, or None for the integration step
+        "substeps": substeps,  # observer steps inside each integration step (its input repeated)
+        "stride": stride,  # integration steps per observer step (every stride-th input taken)
+        "observer_period": observer_period,  # observer steps per emitted sample, or None for period_steps
         "derived_constants": derived_constants,  # bound once in the reducer preamble
         "output_per_step": output_per_step,
         "source": source,
@@ -2730,6 +2886,7 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         "output_name": output_name,  # the output DV's name (stays inlined at finalize; excluded from the per-step chain)
         "parameters": parameters,  # {name: {value (scalar|nested list), shape}} — named constants
         "output": output,
+        "output_text": output_text,  # the readout as written, or None
         "functions": functions,
         "statistic": statistic,  # 'mean' | 'median'
         "histogram": histogram,
@@ -2783,6 +2940,28 @@ def resolve_reduction(obs: Any, experiment: Any = None) -> dict[str, Any] | None
         experiment, str(get_attr(obs, "name", "observation")), period_steps or 0, str(red.get("kind"))
     )
     return red
+
+
+def reduction_has_memory(red: dict[str, Any] | None) -> bool:
+    """Whether a resolved reduction carries memory from one window to the next: a convolution's ring of past samples, or the states of an observer that emits every period. A statistic folds only the window it is handed, by design."""
+    if red is None:
+        return False
+    return red.get("kind") == "convolution" or (red.get("kind") == "monitor" and red.get("statistic", "mean") != "median")
+
+
+def observation_has_memory(obs: Any, experiment: Any = None) -> bool:
+    """Whether the monitor for *obs* reads history from before the window it is handed: a kernel's past, which its convolution reads, or an observer's states, which it advances.
+
+    A caller that hands the monitor successive windows, as a tuning loop does, has to carry that history between them (``open_warmup``, ``carry_warmup``); without it every window opens on an empty history. Decided from the spec, so it holds for any monitor a caller passes in place of the generated one: a streaming reduction with memory, an external class that declares a ``warmup``, or a pipeline with a kernel-generating step.
+    """
+    red = resolve_reduction(obs, experiment)
+    if red is not None:
+        return reduction_has_memory(red)
+    class_ref = get_attr(obs, "class_reference")
+    if class_ref is not None and get_attr(class_ref, "warmup") is not None:
+        return True
+    functions = functions_by_name(experiment)
+    return any(get_attr(functions.get(pipeline_step_name(step)), "time_range") for step in as_list(get_attr(obs, "pipeline")))
 
 
 def resolve_reductions(experiment: Any) -> dict[str, dict[str, Any] | None]:
@@ -2918,8 +3097,6 @@ def adapt_class_reference_for_tvboptim(class_info: dict[str, Any], obs: Any, dt:
 
 _TVBOPTIM_PERIOD_MONITORS = {
     "TemporalAverage": ("tvbo.templates.tvboptim.observations", "TVBTemporalAverage"),
-    "SubSample": ("tvboptim.observations.tvb_monitors.downsampling", "SubSampling"),
-    "GlobalAverage": ("tvbo.templates.tvboptim.observations", "TVBGlobalAverage"),
 }
 """TVB monitors that a tvboptim class reproduces, keyed by TVB class name and valued by the ``(module, name)`` that replaces it. Each takes ``voi`` and a sampling ``period`` and nothing else."""
 
@@ -3718,12 +3895,31 @@ SOURCE_ARG_NAMES = ("data", "X", "x", "input", "timeseries", "a")
 """Names by which a pipeline step's first argument refers to the series it is handed rather than to a constant."""
 
 
-def resolve_step_expression(rhs, input_var, literals=None, derived=None, scope=None, where="a pipeline step"):
+def equation_constants(equation: Any) -> tuple[dict[str, Any], dict[str, str]]:
+    """The constants an equation binds by name, as ``(literals, derived)``.
+
+    A parameter declared with a ``value`` is that number; one declared with an ``equation`` is derived from the experiment's own scalars (its ``rhs``), which is how a stride stays right on an integration grid it was not written for. A parameter with neither binds nothing here.
+    """
+    literals, derived = {}, {}
+    for name, parameter in (get_attr(equation, "parameters") or {}).items():
+        rhs = get_attr(get_attr(parameter, "equation"), "rhs")
+        if rhs is not None:
+            derived[str(name)] = str(rhs)
+        elif get_attr(parameter, "value") is not None:
+            literals[str(name)] = to_numeric(parameter.value)
+    return literals, derived
+
+
+def resolve_step_expression(
+    rhs, input_var, literals=None, derived=None, scope=None, where="a pipeline step", bound=None, preserve_order=False
+):
     """A pipeline step's declared equation, bound to the locals the monitor emits around it.
 
-    A monitor states what it computes as an equation over its input, and this is what makes that statement generatable instead of decorative. The source binds to whichever local holds the previous step's output; a constant declared with a ``value`` binds to it; and a constant declared as an EXPRESSION -- ``window_size = period / dt`` -- is evaluated here against the experiment's own scalars. That last case is the one that matters: without it the relationship can only be written as a number, correct for one integration grid and silently wrong on every other, or as a ``description`` no code reads, which is how these monitors came to need a Python class to stand in for their own declaration.
+    A monitor states what it computes as an equation over its input, and this is what makes that statement generatable instead of decorative. The source binds to whichever local holds the previous step's output; the experiment's own scalars bind to their values; a constant declared with a ``value`` binds to it; and a constant declared as an EXPRESSION -- ``window_size = period / dt`` -- is evaluated here against the experiment's own scalars. That last case is the one that matters: without it the relationship can only be written as a number, correct for one integration grid and silently wrong on every other, or as a ``description`` no code reads, which is how these monitors came to need a Python class to stand in for their own declaration.
 
-    Returns a backend-independent sympy expression. How ``window_mean`` is spelled is the printer's decision, not this one, which is what lets the same declaration emit for tvboptim, TVB or anything else.
+    ``bound`` maps further symbols to the locals the monitor emits for them, as a time equation's ``t`` binds to the measured window's time stamps.
+
+    Returns a backend-independent sympy expression. How ``window_mean`` is spelled is the printer's decision, not this one, which is what lets the same declaration emit for tvboptim, TVB or anything else. With ``preserve_order`` it is instead the equation's own Python-syntax text with every binding in place, for :func:`~tvbo.codegen.code.render_verbatim` to print in the authored operation order; the derived constants are still folded to numbers. An equation that is not plain Python arithmetic falls back to the sympy expression, parsed and bound unevaluated, as does one that names an axis (``sum_axis(X, node)``), since only the sympy expression carries an axis name to the printer.
     """
     import sympy as sp
 
@@ -3759,24 +3955,73 @@ def resolve_step_expression(rhs, input_var, literals=None, derived=None, scope=N
         subs[sp.Symbol(str(pname))] = expr.subs({sp.Symbol(k): v for k, v in scope.items()})
     for pname, value in literals.items():
         subs[sp.Symbol(str(pname))] = value
+    for pname, value in scope.items():
+        subs.setdefault(sp.Symbol(pname), value)
 
-    known = sorted({*scope, *literals, *derived, *SOURCE_ARG_NAMES})
-    expr = parse_eq(str(rhs), parameters=known, functions={"iround": _IRound}).subs(subs)
-    expr = expr.subs({sp.Symbol(n): sp.Symbol(str(input_var)) for n in SOURCE_ARG_NAMES})
+    bound = {str(k): str(v) for k, v in (bound or {}).items()}
 
-    unresolved = {str(s) for s in expr.free_symbols} - {str(input_var)} - axis_symbols(expr)
-    if unresolved:
-        raise ValueError(
+    def unresolved_error(unresolved):
+        return ValueError(
             f"{where}: {sorted(unresolved)} left unresolved in {str(rhs)!r}. Give each a `value`, or an "
             "`equation` deriving it from the experiment (e.g. `window_size: {equation: {rhs: period / dt}}`)."
         )
+
+    known = sorted({*scope, *literals, *derived, *SOURCE_ARG_NAMES, *bound})
+    expr = parse_eq(str(rhs), parameters=known, functions={"iround": _IRound}, evaluate=not preserve_order)
+    axes = axis_symbols(expr)  # a named axis is the printer's to resolve, which only the sympy path carries
+    if preserve_order and not axes:
+        from tvbo.codegen.code import bind_names
+
+        values = {str(k): (int(v) if v.is_Integer else float(v)) if isinstance(v, sp.Basic) else v for k, v in subs.items()}
+        bound_source = bind_names(str(rhs), {**dict.fromkeys(SOURCE_ARG_NAMES, str(input_var)), **values, **bound})
+        if bound_source is not None:
+            text, free = bound_source
+            if free - {str(input_var), *bound.values()}:
+                raise unresolved_error(free - {str(input_var), *bound.values()})
+            return text
+
+    with sp.evaluate(not preserve_order):
+        expr = expr.subs(subs)
+        expr = expr.subs({sp.Symbol(n): sp.Symbol(str(input_var)) for n in SOURCE_ARG_NAMES})
+        expr = expr.subs({sp.Symbol(n): sp.Symbol(v) for n, v in bound.items()})
+
+    unresolved = {str(s) for s in expr.free_symbols} - {str(input_var), *bound.values()} - axes
+    if unresolved:
+        raise unresolved_error(unresolved)
     return expr
 
 
-def obs_has_all_args(obs: Any) -> bool:
+def observation_scalars(dt: Any, period: Any = None, downsample_period: Any = None) -> dict[str, Any]:
+    """The scalars an observation's equations and kernels bind by name: the integration step *dt*, the reporting *period* (*dt* when it declares none), and the intermediate *downsample_period* when it declares one."""
+    scalars = {"dt": dt, "period": to_numeric(period) if period is not None else dt}
+    if downsample_period is not None:
+        scalars["downsample_period"] = to_numeric(downsample_period)
+    return scalars
+
+
+def equation_step_code(rhs, input_var, constants, derived, scalars, where, user_functions=None, dims=None, bound=None) -> str:
+    """The code an ``equation`` pipeline step emits over *input_var*: the equation in its authored operation order over the observation's *scalars* and *constants* (its declared parameters, the step's own taking precedence), via :func:`resolve_step_expression`.
+
+    The one rendering of such a step, which the materialised monitor and a streaming reducer that folds the same step both emit, so the two compute the same bits. *dims* are the input's axes, for an equation that names one, and *bound* maps a symbol to the local that holds it, as an argument naming an earlier step's output does.
+    """
+    from tvbo.codegen import render_expression
+    from tvbo.codegen.code import render_verbatim
+
+    expr = resolve_step_expression(rhs, input_var, constants, derived, scalars, where, bound=bound, preserve_order=True)
+    try:
+        return (
+            isinstance(expr, str) and render_verbatim(expr, format="jax", user_functions=user_functions)
+        ) or render_expression(
+            expr, format="jax", user_functions=user_functions, preserve_order=True, dims={input_var: dims} if dims else None
+        )
+    except ValueError as error:
+        raise ValueError(f"{where}: {error}") from None
+
+
+def obs_has_all_args(obs: Any, name: str | None = None) -> bool:
     """Check if observation has all required arguments satisfied.
 
-    Returns True if all pipeline step arguments either have values or are implicitly satisfied by source.
+    Returns True if all pipeline step arguments either have values or are implicitly satisfied by source. An argument bound to data (``used:``) instead of a value raises, naming the observation (*name*, else its own), the step and the argument, since leaving it out would drop the observation without a word.
     """
     if getattr(obs, "class_reference", None):
         return True
@@ -3803,6 +4048,12 @@ def obs_has_all_args(obs: Any) -> bool:
                     getattr(_named, "equation", None) is not None or getattr(_named, "value", None) is not None
                 ):
                     continue
+                if getattr(arg, "used", None) is not None:
+                    raise ValueError(
+                        f"Observation {name or getattr(obs, 'name', None)!r}, pipeline step {pipeline_step_name(func)!r}: "
+                        f"argument {arg_name!r} is bound to data with `used:`, which a pipeline argument does not read. "
+                        "Give it a `value`, or an equation parameter of the step that derives it."
+                    )
                 return False
     return True
 
@@ -3819,7 +4070,7 @@ def get_observation_refs(observations_dict: dict[str, Any]) -> tuple[set[str], l
     for name, obs in observations_dict.items():
         if is_network_observation(obs):
             network_obs.add(name)
-        if obs_has_all_args(obs):
+        if obs_has_all_args(obs, name):
             valid_obs.append(name)
 
     return network_obs, valid_obs

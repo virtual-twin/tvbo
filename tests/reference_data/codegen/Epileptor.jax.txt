@@ -42,7 +42,7 @@ def dfun(current_state, t, cX, _p):
     f2 = jnp.where(jnp.less(x2, -0.25), 0, aa * (0.25 + x2))
     h = jnp.where(
         jnp.greater(modification, 0),
-        x0 + 3 / (1 + 0.00673794699908547 * jnp.exp(-10.0 * x1)),
+        x0 + 3 / (1 + 0.006737946999085467 * jnp.exp(-10.0 * x1)),
         -4 * x0 + 4 * x1 + jnp.where(jnp.less(z, 0), -0.1 * z**7, 0),
     )
     lfp = x2 - x1

@@ -5,6 +5,7 @@ Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container w
 
 import copy
 import dataclasses
+import json
 import logging
 import re
 from copy import deepcopy
@@ -2018,6 +2019,24 @@ class ObservationResult(Bunch):
     def time(self):
         """Time array (alias for ts)."""
         return getattr(self, "ts", None)
+
+    def _pytree_leaves(self) -> dict:
+        return {k: v for k, v in self.items() if k != "variable_names"}
+
+    def _pytree_static(self) -> str:
+        """The names of the variables a ``[time, variable, node]`` output keeps, static as a tvboptim solution's are, so a result carrying them passes through ``jax.jit``."""
+        if "variable_names" not in self:
+            return ""
+        names = self["variable_names"]
+        return json.dumps(None if names is None else list(names))
+
+    @classmethod
+    def _pytree_build(cls, static, leaves):
+        result = cls(leaves)
+        if static:
+            names = json.loads(static)
+            result["variable_names"] = None if names is None else tuple(names)
+        return result
 
 
 def _algo_tuned_params(source) -> dict:

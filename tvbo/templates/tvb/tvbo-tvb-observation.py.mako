@@ -539,10 +539,9 @@ class ${class_name}(_RunStepPhase, Monitor):
         stock_time_max = self.hrf_length / 1000.0
         stock_time_step = stock_time_max / self._stock_steps
         self._stock_time = numpy.arange(0.0, stock_time_max, stock_time_step)
-% if hrf_params_str:
-        hrf_kernel = equations.${hrf_class_name}(parameters={${hrf_params_str}})
-% else:
         hrf_kernel = equations.${hrf_class_name}()
+% if hrf_params_str:
+        hrf_kernel.parameters.update({${hrf_params_str}})  # declared values over the kernel's own constants (`pi`, the `factorial` and `gamma_a_*` it fills in)
 % endif
         self._hrf_kernel_eq = hrf_kernel
         G = hrf_kernel.evaluate(self._stock_time)

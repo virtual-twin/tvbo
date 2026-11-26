@@ -5,7 +5,9 @@ Each printer subclasses a SymPy code printer and layers on TVBO's array-function
 Array-manipulation primitives are the ones SymPy cannot represent natively. Each is a handler `(printer, expr) -> code string` in `ARRAY_FUNCTION_PRINTERS`, shared by the NumPy and JAX printers so a new primitive is one dict entry rather than one per backend. A handler stays backend-agnostic by calling the printer's own rendering primitives — `_cat`, `_render_index`, `_slice_axis`, `_transpose`, `_reduce_axis`, `_shape` — which each printer implements for its own conventions: numpy and jax use Python's 0-based slicing, Julia 1-based and `end`-relative. Adding an operation is therefore one handler, plus one primitive override wherever a backend's syntax genuinely differs, and never the same string-building duplicated across printers.
 """
 
+import ast
 import logging
+import re
 from functools import lru_cache
 
 import sympy.printing.fortran as spf
@@ -282,6 +284,11 @@ def _afp_global_mean(p, expr):
     return p._reduce_axis("mean", p._print(expr.args[0]), -2, keepdims=True)
 
 
+def _afp_node_mean(p, expr):
+    """``node_mean(X)`` -> the mean over axis 2, the node axis of an observation series in both the `[time, variable, node, mode]` and the mode-free `[time, variable, node]` layout, kept at width one."""
+    return p._reduce_axis("mean", p._print(expr.args[0]), 2, keepdims=True)
+
+
 def _afp_transpose(p, expr):
     return p._transpose(p._print(expr.args[0]))
 
@@ -396,11 +403,13 @@ def _afp_sample(distribution, n_params):
 _ARRAY_FUNCTION_PRINTERS = {
     "concatenate": _afp_concatenate,
     "window_mean": _afp_window_mean,
+    "complete_window_mean": _afp_forward("_complete_window_mean", 2, "complete_window_mean(X, w)"),
     "subsample": _afp_subsample,
     "slice_axis": _afp_slice_axis,
     "slice_from": _afp_slice_from,
     "shape": _afp_shape,
     "global_mean": _afp_global_mean,
+    "node_mean": _afp_node_mean,
     "transpose": _afp_transpose,
     "mode_dot": _afp_mode_dot,
     "mode_sum": _afp_mode_sum,
@@ -409,6 +418,7 @@ _ARRAY_FUNCTION_PRINTERS = {
     "zero_diagonal": _afp_forward("_zero_diagonal", 1, "zero_diagonal(M)"),
     "matmul": _afp_forward("_matmul", 2, "matmul(A, B)"),
     "strided_convolve": _afp_forward("_strided_convolve", 3, "strided_convolve(X, k, s)"),
+    "sampled_convolve": _afp_forward("_sampled_convolve", 3, "sampled_convolve(X, k, s)"),
     "take": _afp_forward("_gather", 2, "take(x, idx)"),
     "scatter_sum": _afp_forward("_scatter_sum", 3, "scatter_sum(values, index, size)"),
     "sum_axis": _afp_sum_axis,
@@ -448,6 +458,7 @@ _JULIA_HANDLED_OPS = {
     "zero_diagonal",
     "matmul",
     "global_mean",
+    "node_mean",
 }
 
 
@@ -471,6 +482,20 @@ class _ArrayFunctionPrinterMixin:
 
     dims_env: dict = {}
     """The axis names of each symbol an expression reads, set by :func:`render_expression` so a primitive may name the axis it acts on (``sum_axis(x, node)``); empty, only a position names an axis."""
+
+    def _print_Float(self, expr):
+        """A double-precision float as a literal that parses back to the same double.
+
+        SymPy prints a 53-bit ``Float`` at 15 significant digits, which drops the last bits of a value such as ``1/3`` or ``0.1 + 0.2``; such a value is printed as Python's shortest round-tripping ``repr`` instead, and every other literal keeps SymPy's text.
+        """
+        printed = super()._print_Float(expr)
+        if expr._prec != 53:
+            return printed
+        try:
+            exact = float(printed) == float(expr)
+        except ValueError:
+            exact = False
+        return printed if exact else repr(float(expr))
 
     def _print_Function(self, expr):
         handler = _ARRAY_FUNCTION_PRINTERS.get(expr.func.__name__)
@@ -731,6 +756,13 @@ class _ArrayFunctionPrinterMixin:
     def _window_mean(self, X, w):
         return f"{self._afn('mean')}({X}.reshape(-1, {w}, *{X}.shape[1:]), axis=1)"
 
+    def _complete_window_mean(self, X, w):
+        """``complete_window_mean(X, w)``: the mean of each complete window of ``w`` samples along the leading axis, counted from the first sample, a trailing partial window dropped.
+
+        Printed as a static slice, reshape and mean, the operations of tvboptim's ``TemporalAverage``, so the two reduce in the same order wherever the input is a traced value or a constant the compiler folds.
+        """
+        return f"(lambda _x: {self._afn('mean')}(_x[: (_x.shape[0] // {w}) * {w}].reshape((-1, {w}) + _x.shape[1:]), axis=1))({X})"
+
     def _strided_convolve(self, X, k, s):
         """``strided_convolve(X, k, s)``: the ``'valid'`` convolution of ``X`` (leading time axis) with kernel ``k``, evaluated ONLY at output indices ``[s::s]``.
 
@@ -741,6 +773,10 @@ class _ArrayFunctionPrinterMixin:
         kept = f"{af('arange')}({s}, {X}.shape[0] - {k}.shape[0] + 1, {s})"
         idx = f"({kept}[:, None] + {af('arange')}({k}.shape[0])[None, :])"
         return f"{af('tensordot')}({k}[::-1], {X}[{idx}], axes=([0], [1]))"
+
+    def _sampled_convolve(self, X, k, s):
+        """``sampled_convolve(X, k, s)``: the samples of :meth:`_strided_convolve`; a backend that has to match another implementation's arithmetic overrides the route."""
+        return self._strided_convolve(X, k, s)
 
     def _shape(self, base, axis):
         return f"{base}.shape[{axis}]"
@@ -814,7 +850,7 @@ class NumPyPrinter(_ArrayFunctionPrinterMixin, spn.NumPyPrinter):
 class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
     """JAX code printer for TVBO symbolic expressions.
 
-    Extends SymPy's `JaxPrinter` with the array-function vocabulary from `ARRAY_FUNCTION_MAPPINGS["jax"]` and the mixin's array primitives, routing `erf`/`erfc` to `jsp.special`. When broadcasting inference is enabled it analyzes the index usage of indexed subexpressions to insert explicit axes so that `jnp` operations broadcast correctly.
+    Extends SymPy's `JaxPrinter` with the array-function vocabulary from `ARRAY_FUNCTION_MAPPINGS["jax"]` and the mixin's array primitives, routing `erf`/`erfc`/`gamma` to `jsp.special`, where they take traced values. When broadcasting inference is enabled it analyzes the index usage of indexed subexpressions to insert explicit axes so that `jnp` operations broadcast correctly.
 
     Args:
         settings: Printer settings forwarded to the SymPy base printer.
@@ -828,6 +864,7 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
 
         self._kf.update({"erfc": "jsp.special.erfc"})
         self._kf.update({"erf": "jsp.special.erf"})
+        self._kf.update({"gamma": "jsp.special.gamma"})
         super().__init__(settings=settings)
         self.known_functions.update(_qualify(module, _MODULE_ARRAY_FUNCTIONS))
         # Context for broadcasting inference
@@ -1047,6 +1084,19 @@ class JaxPrinter(_ArrayFunctionPrinterMixin, spn.JaxPrinter):
         else:
             axes_tuple = tuple(sorted(axes))  # back to front, so earlier axis numbers stay valid
             return f"{self._module}.sum({self._print(result)}, axis={axes_tuple})"
+
+    def _sampled_convolve(self, X, k, s):
+        """The JAX form, computed as tvboptim's ``HRFBold`` computes its ``'valid'`` samples so the two agree bit for bit.
+
+        ``X`` is ``[time, channel, node]``. Nothing is emitted while the valid length does not exceed ``s``. Otherwise the route is chosen from the static shapes as tvboptim chooses it: one reversed-kernel dot per retained sample where that is no more work than one padded FFT (``n_emit * len(k) <= L * max(1, log2(L))`` for the power of two ``L`` covering the full convolution), else the FFT convolution of every channel and node, sampled at ``[s::s]``.
+        """
+        direct = f"jax.lax.map(lambda _i: jnp.tensordot(_k[::-1], jax.lax.dynamic_slice_in_dim(_x, _i, _k.shape[0], axis=0), axes=(0, 0)), jnp.arange({s}, _v, {s}))"
+        fft = f"jax.vmap(lambda _c: jax.vmap(lambda _s: jax.scipy.signal.fftconvolve(_s, _k, mode='valid'), in_axes=1, out_axes=1)(_c), in_axes=1, out_axes=1)(_x)[{s}::{s}]"
+        fft_work = (
+            "(lambda _l: _l * max(1, _l.bit_length() - 1))(1 << (max(1, _x.shape[0] + _k.shape[0] - 1) - 1).bit_length())"
+        )
+        route = f"({direct} if ((_v - 1) // {s}) * _k.shape[0] <= {fft_work} else {fft})"
+        return f"(lambda _x, _k: (lambda _v: _x[:0] if _v <= {s} else {route})(_x.shape[0] - _k.shape[0] + 1))({X}, {k})"
 
 
 class JuliaPrinter(_ArrayFunctionPrinterMixin, spj.JuliaCodePrinter):
@@ -1722,6 +1772,150 @@ def render_expression(
         return printer._print_with_broadcasting(expression)
 
     return printer.doprint(expression)
+
+
+_VERBATIM_FORMATS = frozenset({"jax", "numpy", "python"})
+_VERBATIM_NODES = (
+    ast.Expression,
+    ast.BinOp,
+    ast.UnaryOp,
+    ast.Compare,
+    ast.Call,
+    ast.Name,
+    ast.Constant,
+    ast.Load,
+    ast.Add,
+    ast.Sub,
+    ast.Mult,
+    ast.Div,
+    ast.Pow,
+    ast.Mod,
+    ast.FloorDiv,
+    ast.USub,
+    ast.UAdd,
+    ast.Gt,
+    ast.Lt,
+    ast.GtE,
+    ast.LtE,
+    ast.Eq,
+    ast.NotEq,
+)
+_VERBATIM_CONSTANTS = frozenset({"pi"})
+_VERBATIM_BUILTINS = frozenset({"int", "float"})
+_ATOMIC = (ast.Call, ast.Subscript, ast.Attribute, ast.Name, ast.Constant)
+
+
+def _verbatim_tree(source):
+    """*source* parsed as Python syntax, or ``None`` when it is more than arithmetic, comparisons and positional calls over names and numbers (a subscript, a ``^``, a keyword argument, …)."""
+    if "^" in str(source):
+        return None
+    try:
+        tree = ast.parse(str(source).strip(), mode="eval")
+    except SyntaxError:
+        return None
+    for node in ast.walk(tree):
+        if not isinstance(node, _VERBATIM_NODES) or (
+            isinstance(node, ast.Call) and (node.keywords or not isinstance(node.func, ast.Name))
+        ):
+            return None
+    return tree
+
+
+def _is_int_literal(node):
+    """Whether *node* is an integer literal, negated or not: an argument a primitive may read as a literal (an axis), which has no operation order to keep."""
+    if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.USub, ast.UAdd)):
+        node = node.operand
+    return isinstance(node, ast.Constant) and type(node.value) is int
+
+
+def _as_node(text):
+    """*text* as a node ``ast.unparse`` writes verbatim, parenthesised unless it is already atomic."""
+    atomic = isinstance(ast.parse(text, mode="eval").body, _ATOMIC)
+    return ast.Name(id=text if atomic else f"({text})", ctx=ast.Load())
+
+
+class _Bind(ast.NodeTransformer):
+    """Replaces each free name in *bindings* with its value: a number as its literal, a negative one as the negation of its magnitude so it keeps its sign under an operator that binds tighter (``k ** 2``), a string as the local it is emitted as. A callee is never a free name."""
+
+    def __init__(self, tree, bindings):
+        self.callees = {id(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
+        self.bindings = bindings
+
+    def visit_Name(self, node):
+        if id(node) in self.callees or node.id not in self.bindings:
+            return node
+        value = self.bindings[node.id]
+        if isinstance(value, str):
+            return _as_node(value)
+        if isinstance(value, (int, float)) and str(value).startswith("-"):
+            return ast.UnaryOp(op=ast.USub(), operand=ast.Constant(value=-value))
+        return ast.Constant(value=value)
+
+
+def bind_names(source, bindings):
+    """*source* with the free names in *bindings* bound, and the names left free, as ``(text, free)``.
+
+    The operation order is kept exactly as written, which is what :func:`render_verbatim` prints. ``None`` when *source* is not plain Python arithmetic (see :func:`render_verbatim`).
+    """
+    tree = _verbatim_tree(source)
+    if tree is None:
+        return None
+    tree = _Bind(tree, dict(bindings)).visit(tree)
+    callees = {id(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
+    free = {
+        node.id for node in ast.walk(tree) if isinstance(node, ast.Name) and id(node) not in callees and node.id.isidentifier()
+    }
+    return ast.unparse(tree.body), free - _VERBATIM_CONSTANTS
+
+
+def render_verbatim(source, format="jax", user_functions=None, bindings=None):
+    """*source*, a Python-syntax expression, printed for *format* in its authored operation order.
+
+    SymPy canonicalises a product even when it parses unevaluated (``(t / 1000.0) / tau`` becomes ``t/(1000.0*tau)``, ``k / m`` becomes ``k*m**(-1.0)``, ``k_1 * V_0`` becomes ``V_0*k_1``), and floating-point arithmetic is not associative, so a reference implementation is matched bit for bit only by keeping every operator, grouping and literal as written. The expression is walked as Python syntax instead. Each call is spelled as :func:`render_expression` spells that function for *format*, with its arguments printed the same way, so the backend's vocabulary (``jnp.exp``, the array primitives, …) stays the printer's; ``pi`` is spelled by the printer too, Python's ``int`` and ``float`` are called as written, and every other name is printed as written unless *bindings* binds it (see :func:`bind_names`).
+
+    Returns ``None`` when *format* is not Python-family or *source* is more than arithmetic, comparisons and positional calls over names and numbers (a subscript, a ``^``, a keyword argument, …), for the caller to fall back to :func:`render_expression`.
+    """
+    tree = _verbatim_tree(source) if format in _VERBATIM_FORMATS else None
+    if tree is None:
+        return None
+    tree = _Bind(tree, dict(bindings or {})).visit(tree)
+    callees = {id(node.func) for node in ast.walk(tree) if isinstance(node, ast.Call)}
+
+    class _Spell(ast.NodeTransformer):
+        def visit_Name(self, node):
+            if id(node) not in callees and node.id in _VERBATIM_CONSTANTS:
+                return _as_node(render_expression(node.id, format=format))
+            return node
+
+        def visit_Call(self, node):
+            visited = [self.visit(arg) for arg in node.args]
+            args = [ast.unparse(arg) for arg in visited]
+            if node.func.id in _VERBATIM_BUILTINS:
+                return _as_node(f"{node.func.id}({', '.join(args)})")
+            slots = [
+                text if _is_int_literal(arg) else f"__verbatim_{i}__"
+                for i, (arg, text) in enumerate(zip(visited, args, strict=True))
+            ]
+            holders = [slot for slot in slots if slot.startswith("__verbatim_")]
+            known = [*(user_functions or {}), *ARRAY_FUNCTION_MAPPINGS.get(format, {})]
+            call = parse_eq(f"{node.func.id}({', '.join(slots)})", parameters=holders, functions=known)
+            if Symbol(node.func.id) in call.free_symbols:
+                raise ValueError(f"{node.func.id!r} in {str(source)!r} is not a function the {format} printer knows.")
+            text = render_expression(call, format=format, user_functions=user_functions, parameters=holders)
+
+            def argument(m):
+                """The argument a placeholder stands for, parenthesised unless it is atomic or a whole call argument."""
+                arg = args[int(m.group(2))]
+                whole = m.group(1) in ("(", ", ") and m.group(3) in (")", ",")
+                return (
+                    m.group(1)
+                    + (arg if whole or isinstance(ast.parse(arg, mode="eval").body, _ATOMIC) else f"({arg})")
+                    + m.group(3)
+                )
+
+            return _as_node(re.sub(r"(\(|, |)__verbatim_(\d+)__(\)|,|)", argument, text))
+
+    return ast.unparse(_Spell().visit(tree).body)
 
 
 def render_equation(
