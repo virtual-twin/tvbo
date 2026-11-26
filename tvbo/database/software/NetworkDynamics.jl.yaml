@@ -43,3 +43,9 @@ keywords:
 - power grid
 - neural network
 issue_tracker: https://github.com/JuliaDynamics/NetworkDynamics.jl/issues
+modules:
+- NetworkDynamics
+interfaces:
+  NetworkDynamics:
+    kind:
+    - import

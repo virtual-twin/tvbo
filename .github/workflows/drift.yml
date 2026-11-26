@@ -1,0 +1,43 @@
+# Weekly: resolve every name the generated code reaches against the latest releases of the frameworks, and open an issue when one is gone.
+name: Framework drift
+
+on:
+    schedule:
+        - cron: "17 5 * * 1"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    issues: write
+
+jobs:
+    doctor:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  activate-environment: true
+            - name: Install tvbo with the newest framework releases
+              run: uv pip install -e ".[tvb,tvboptim,pyrates]" --upgrade
+            - name: Resolve the recorded interfaces
+              id: doctor
+              continue-on-error: true
+              run: |
+                  set -o pipefail
+                  tvbo doctor --strict 2>&1 | tee doctor.txt
+            - name: Open an issue
+              if: steps.doctor.outcome == 'failure'
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  {
+                      echo "\`tvbo doctor\` found names the newest framework releases no longer provide. Each line names the interface and why it no longer resolves; \`scripts/update_software_interfaces.py\` records the versions once the templates are updated."
+                      echo
+                      echo '```'
+                      cat doctor.txt
+                      echo '```'
+                  } > body.md
+                  gh issue create --title "Framework drift: $(date -u +%Y-%m-%d)" --body-file body.md

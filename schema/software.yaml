@@ -22,6 +22,7 @@ prefixes:
     dcterms: http://purl.org/dc/terms/
     rdfs: http://www.w3.org/2000/01/rdf-schema#
     bibo: http://purl.org/ontology/bibo/
+    skos: http://www.w3.org/2004/02/skos/core#
 
 default_prefix: tvbo_sw
 
@@ -30,6 +31,21 @@ imports:
     - common
 
 enums:
+    InterfaceKind:
+        description: >-
+            How code reaches one public name of a software package.
+        permissible_values:
+            import:
+                description: The name is imported or loaded.
+            attribute:
+                description: The name is read, as a constant or a type.
+            call:
+                description: The name is called.
+            keyword:
+                description: The name is a keyword argument passed to a call.
+            base_class:
+                description: The name is a class that is subclassed.
+
     SimulationScale:
         description: >-
             Spatial / organizational scale at which a tool operates.
@@ -433,6 +449,51 @@ classes:
                 description: >-
                     How this tool spells the units TVBO declares. Only units the tool
                     has its own name for appear; anything absent is emitted unitless.
+            modules:
+                range: string
+                multivalued: true
+                description: >-
+                    The top-level modules or packages this tool is imported or loaded as, as code names them (`tvb`, `OrdinaryDiffEqTsit5`).
+            interfaces:
+                range: SoftwareInterface
+                multivalued: true
+                inlined: true
+                description: >-
+                    The public names of this tool that code calls, each with the version it was last checked against.
+
+    SoftwareInterface:
+        description: >-
+            One public name a software package provides, as code reaches it: a module, a class, a function, or a keyword argument of one, written `callee(keyword=)`. It describes the package, so a name another package's code reaches is the same interface whichever code reaches it.
+        attributes:
+            name:
+                range: string
+                key: true
+                annotations:
+                    collection_key: true
+                description: "The qualified name, as the package spells it."
+            kind:
+                range: InterfaceKind
+                multivalued: true
+                description: "Every way code reaches the name: a class may be imported and called."
+            checked_version:
+                range: string
+                slot_uri: schema:softwareVersion
+                description: "The package version the name was last resolved against."
+            deprecated:
+                range: boolean
+                description: >-
+                    Whether that version documents the name as deprecated.
+            replaced_by:
+                range: string
+                description: >-
+                    The name the package documents in place of a deprecated one.
+            realises:
+                range: uriorcurie
+                multivalued: true
+                exact_mappings:
+                    - skos:exactMatch
+                description: >-
+                    The TVBO classes a package implements through this name, such as the `Dynamics` a simulator's model base class stands for.
 
     ToolUnit:
         description: >-

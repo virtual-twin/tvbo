@@ -47,7 +47,7 @@ from tvbo.adapters.smallscale.lowering import (
 from tvbo.adapters.smallscale.lowering import (
     unique_component_id as _unique_component_id,
 )
-from tvbo.codegen.code import inline_functions
+from tvbo.codegen.code import LEMSPrinter, inline_functions
 from tvbo.parse.expression import function_bodies, states_an_expression
 from tvbo.utils import initial_value, normalize_params
 from tvbo.utils.units import unit_multiplier
@@ -299,12 +299,33 @@ _CLOCK_READING = re.compile(r"\bt\b")
 """A reading of the LEMS clock ``t`` in an emitted expression; LEMS spells its operators with dots (``.gt.``), so no operator contains it."""
 
 
-def _on_the_measurement_clock(expression, clock):
-    """*expression*, emitted LEMS, with every reading of ``t`` moved onto the measurement clock.
+def _on_the_measurement_clock(expression, clock, in_model_time: bool = False):
+    """*expression*, emitted LEMS, with every reading of ``t`` moved onto the measurement clock, and into model time units where *in_model_time*.
 
     A model's own equations read ``t`` on the measurement clock, as they do on every other backend, where the scan opens at ``-transient_time``. LEMS's ``t`` opens at the start of the settle, so it is read as ``t - SETTLE``, the constant `LemsClock.settle_constant` declares in the same ComponentType.
+
+    LEMS's ``t`` is a time. A component type emitted dimensionless (``needs_sec``) states its equations in model time units, so there ``t`` is read as ``t / SEC``, the one-model-time-unit constant: `cos(omega*t)` otherwise takes a time as its argument, which jLEMS rejects.
     """
-    return _CLOCK_READING.sub("(t - SETTLE)", expression) if clock.settle and expression else expression
+    reading = "(t - SETTLE)" if clock.settle else "t"
+    if in_model_time:
+        reading = f"({reading}/SEC)"
+    return _CLOCK_READING.sub(reading, expression) if reading != "t" and expression else expression
+
+
+def _as_lems(e, *, names, functions, bodies, clock, in_model_time: bool, parse_names=None, subs=None) -> str:
+    """*e*, an expression, its text or an `Equation`, printed as LEMS on the measurement clock.
+
+    A right-hand side already written in LEMS, one round-tripped from a LEMS import, is emitted as written, since its comparison operators (`.gt.`, …) are not SymPy's. The test reads the stated text: `str(e)` would also match an `Equation` whose repr merely contains the operator, and emit that repr. Anything else is parsed against *parse_names* (*names* by default), has each call to the model's *functions* expanded to its body in *bodies*, since LEMS has no user-defined functions, is renamed by *subs* and printed against *names*.
+    """
+    from tvbo.parse.expression import parse_eq
+
+    text = e if isinstance(e, str) else getattr(e, "rhs", None)
+    if isinstance(text, str) and _LEMS_CMP_RE.search(text):
+        return _on_the_measurement_clock(text, clock, in_model_time=in_model_time)
+    e = inline_functions(parse_eq(e, parameters=parse_names or names, functions=functions), bodies)
+    if subs:
+        e = e.subs(subs)
+    return _on_the_measurement_clock(sympy_to_lems(e, parameters=names), clock, in_model_time=in_model_time)
 
 
 def _shifted(param, clock):
@@ -684,20 +705,8 @@ _REQUIREMENT_DIMENSIONS = {
 }
 
 # LEMS built-in functions and keywords (not requirements)
-_LEMS_BUILTINS = frozenset(
+_LEMS_BUILTINS = LEMSPrinter.LEMS_FUNCTIONS | frozenset(
     {
-        "exp",
-        "ln",
-        "log",
-        "sin",
-        "cos",
-        "tan",
-        "sqrt",
-        "ceil",
-        "floor",
-        "abs",
-        "random",
-        "H",
         "Piecewise",
         "True",
         "False",
@@ -3008,26 +3017,9 @@ def build_lems_context(experiment):
     )
     fn_names = list((dyn.functions).keys())
 
-    # Hard-coded in PyLEMS's ExprParser, so a model symbol of the same name has to be renamed.
-    _PYLEMS_RESERVED = {
-        "exp",
-        "log",
-        "sqrt",
-        "sin",
-        "cos",
-        "tan",
-        "sinh",
-        "cosh",
-        "tanh",
-        "abs",
-        "ceil",
-        "factorial",
-        "random",
-        "H",
-    }
     _lems_rename = {}
     for name in list(str(k) for k in dvs.keys()):
-        if name in _PYLEMS_RESERVED:
+        if name in LEMSPrinter.LEMS_FUNCTIONS:  # a LEMS function's name, so a model symbol of that name is renamed
             _lems_rename[name] = f"{name}_dv"
     if _lems_rename:
         from sympy import Symbol
@@ -3043,22 +3035,21 @@ def build_lems_context(experiment):
     _bodies = function_bodies(dyn)
 
     def lems_expr(e):
-        """Parse (if needed), inline model functions, then print as LEMS.
-
-        LEMS has no user-defined function mechanism, so every call must be expanded to its body before printing.
+        """*e* as LEMS (`_as_lems`), parsed under the model's own names and printed under their LEMS renames.
 
         Accepts an `Equation` as readily as an expression or a string, so a caller need not know whether the equation states itself as a right-hand side or as conditional branches. Reaching for `.rhs` yields `None` for the second kind, and the templates skipped such an element entirely — emitting a LEMS component with no dynamics rather than failing.
         """
-        # Parse with ORIGINAL names so SymPy recognises the symbols
-        parse_names = all_names[:]
-        for old in _lems_rename:
-            if old not in parse_names:
-                parse_names.append(old)
-        e = parse_eq(e, parameters=parse_names, functions=fn_names)
-        e = inline_functions(e, _bodies)
-        if _lems_subs:
-            e = e.subs(_lems_subs)
-        return _on_the_measurement_clock(sympy_to_lems(e, parameters=all_names), clock)
+        parse_names = all_names + [old for old in _lems_rename if old not in all_names]
+        return _as_lems(
+            e,
+            names=all_names,
+            parse_names=parse_names,
+            functions=fn_names,
+            bodies=_bodies,
+            clock=clock,
+            in_model_time=_needs_sec,
+            subs=_lems_subs,
+        )
 
     def _parse_piecewise(equation):
         """Return [(condition_str, value_str)] if the equation is a Piecewise, else None.
@@ -3172,18 +3163,13 @@ def build_lems_context(experiment):
         )
         ct_fn_names = list((ct_dyn.functions).keys())
         ct_bodies = function_bodies(ct_dyn)
+        ct_needs_sec = time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs)
 
         def ct_lems_expr(e):
-            """Render *e* as LEMS, passing through text already written in it.
-
-            LEMS comparison operators (`.gt.`, `.lt.`, …) are not SymPy-parseable, so a right-hand side already written in LEMS — one round-tripped from a LEMS import — is emitted verbatim. The test and the passthrough both use the stated *text*: matching on `str(e)` would also match an `Equation` whose repr merely contains the operator, and then emit that repr into the document.
-            """
-            text = e if isinstance(e, str) else getattr(e, "rhs", None)
-            if isinstance(text, str) and _LEMS_CMP_RE.search(text):
-                return _on_the_measurement_clock(text, clock)
-            e = parse_eq(e, parameters=ct_all_names, functions=ct_fn_names)
-            e = inline_functions(e, ct_bodies)
-            return _on_the_measurement_clock(sympy_to_lems(e, parameters=ct_all_names), clock)
+            """*e* as LEMS (`_as_lems`) under the coupling component type's names."""
+            return _as_lems(
+                e, names=ct_all_names, functions=ct_fn_names, bodies=ct_bodies, clock=clock, in_model_time=ct_needs_sec
+            )
 
         def ct_parse_pw(equation):
             try:
@@ -3214,7 +3200,7 @@ def build_lems_context(experiment):
             "events": ct_dyn.events,
             "coupling_inputs": ct_coupling_inputs,
             "sv_names_set": set(str(k) for k in ct_svs.keys()),
-            "needs_sec": time_scale != "s" and not _dynamics_has_time_units(ct_params, ct_svs, ct_dvs),
+            "needs_sec": ct_needs_sec,
             "lems_expr": ct_lems_expr,
             "states_an_expression": states_an_expression,
             "_parse_piecewise": ct_parse_pw,
@@ -3358,15 +3344,23 @@ class NeuroMLAdapter(BaseAdapter):
         super().__init__(source)
 
     def refuse_unrenderable(self) -> None:
-        """`BaseAdapter.refuse_unrenderable`, and an input a declared settle cannot be run ahead of.
+        """`BaseAdapter.refuse_unrenderable`, a model with a mode axis, and an input a declared settle cannot be run ahead of.
+
+        A LEMS component type holds one scalar per state variable and its expressions have no array operation, so a model of several modes would be emitted as one mode, with `mode_dot` and `mode_sum` written into the document as calls LEMS does not have.
 
         A settle is integrated as the head of the LEMS run (`LemsClock`), with every declared onset moved a settle later. An input timed from the start of the run with no onset to move (`settle_refusal`) would instead fire differently in the measured window than without the settle, so it is refused by name.
 
         Raises:
-            ValueError: Where the network lacks an edge attribute this backend reads.
+            ValueError: Where the network lacks an edge attribute this backend reads, or the dynamics have more than one mode.
             NotImplementedError: If the experiment declares a positive ``transient_time`` and an input `settle_refusal` names.
         """
         super().refuse_unrenderable()
+        dynamics = getattr(self.experiment, "dynamics", None)
+        modes = int(getattr(dynamics, "number_of_modes", None) or 1)
+        if modes > 1:
+            raise ValueError(
+                f"dynamics {getattr(dynamics, 'name', '?')!r} has {modes} modes, and the NeuroML backend does not lower the mode axis into LEMS's scalar state variables; render a single-mode model"
+            )
         settle = self.get_integration_info()["transient_time"]
         if not settle:
             return

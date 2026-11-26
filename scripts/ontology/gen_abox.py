@@ -171,6 +171,33 @@ def emit_derived_variable(g: Graph, parent_iri: URIRef, key: str, dv: dict) -> N
     g.add((parent_iri, TVBO.hasDerivedVariable, iri))
 
 
+def emit_interface(g: Graph, tool_iri: URIRef, name: str, interface: dict) -> None:
+    """A tool's public name as an individual of `tvbo_sw:SoftwareInterface`, linked from the tool by `tvbo_sw:interfaces`.
+
+    The IRI percent-encodes the name, whose keyword form `callee(keyword=)` is not a legal IRI segment; the label keeps the name as the package spells it, unique because it is qualified.
+    """
+    iri = URIRef(registry.interface_iri(str(tool_iri), name))
+    g.add((iri, RDF.type, OWL.NamedIndividual))
+    g.add((iri, RDF.type, TVBO_SW.SoftwareInterface))
+    g.add((iri, RDFS.label, Literal(name)))
+    for kind in interface.get("kind") or []:
+        g.add((iri, TVBO_SW.kind, Literal(str(kind))))
+    if interface.get("checked_version"):
+        g.add((iri, SCHEMA.softwareVersion, Literal(str(interface["checked_version"]))))
+    if interface.get("deprecated"):
+        g.add((iri, TVBO_SW.deprecated, Literal(True)))
+    if interface.get("replaced_by"):
+        g.add((iri, TVBO_SW.replaced_by, Literal(str(interface["replaced_by"]))))
+    for concept in interface.get("realises") or []:
+        target = expand_curie(str(concept))
+        if target is None:
+            raise ValueError(
+                f"{iri}: realises {concept!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}"
+            )
+        g.add((iri, SKOS.exactMatch, target))
+    g.add((tool_iri, TVBO_SW.interfaces, iri))
+
+
 def emit_model(g: Graph, path: pathlib.Path) -> None:
     data = yaml.safe_load(path.read_text())
     if not isinstance(data, dict) or "name" not in data:
@@ -315,12 +342,16 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
     for key, dv in (data.get("derived_variables") or {}).items():
         if isinstance(dv, dict):
             emit_derived_variable(g, iri, key, dv)
+    for name, interface in (data.get("interfaces") or {}).items():
+        if isinstance(interface, dict):
+            emit_interface(g, iri, name, interface)
     return iri
 
 
 def build_graph() -> Graph:
     g = Graph()
     g.bind("tvbo", TVBO)
+    g.bind("tvbo_sw", TVBO_SW)
     g.bind("owl", OWL)
     g.bind("dcterms", DCTERMS)
     g.bind("oboInOwl", OBOINOWL)

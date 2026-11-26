@@ -31,44 +31,52 @@ MODEL_ROOT = database_dir("Dynamics")
 
 FORMATS = ("jax", "numpy", "julia", "tvb", "tvboptim", "neuroml")
 
-UNRENDERABLE = {
-    "neuroml__HH_KineticScheme.tvboptim": IndexError,
-    "neuroml__hhcell_1.neuroml": AttributeError,
-}
+UNRENDERABLE: dict[str, type[Exception]] = {}
 """Pairs whose emitter raises, mapped to the exception it raises.
 
-Excluded from the corpus because there is no output to freeze, and named here because a
-silent exclusion cannot be told from an oversight. `test_excluded_pairs_still_raise`
-holds them to it: repair the emitter and that test fails, which is the prompt to move the
-pair into the corpus.
+Excluded from the corpus because there is no output to freeze, and named here because a silent exclusion cannot be told from an oversight. `test_excluded_pairs_still_raise` holds them to it: repair the emitter and that test fails, which is the prompt to move the pair into the corpus.
 """
 
+NON_AUTONOMOUS_FOR_TVB = (
+    "julia__DuffingForced",
+    "julia__ForcedPendulum",
+    "julia__RiddledBasins",
+    "julia__Ueda",
+    "julia__VanDerPolForced",
+    "neuroml__HH_Tissue_Q10",
+    "neuroml__HodgkinHuxley_Q10",
+    "neuroml__IaFCell",
+    "neuroml__Izhikevich2007Cell",
+    "neuroml__IzhikevichBurst",
+    "neuroml__IzhikevichCell",
+)
+"""Models whose right-hand side reads `t`, which TVB's ``Model.dfun`` has no argument for: five Julia oscillators forced by `cos(omega*t)`, and six NeuroML cells whose `pulseGen` is written inline as a `Piecewise` in `t`."""
+
+NOT_LEMS = (
+    "ReducedSetFitzHughNagumo",
+    "ReducedSetHindmarshRose",
+    "StefanescuJirsa2D",
+    "StefanescuJirsa3D",
+    "EpileptorCodim3",
+    "EpileptorCodim3SlowMod",
+    "ZerlautAdaptationFirstOrder",
+    "ZerlautAdaptationSecondOrder",
+)
+"""Models LEMS cannot state: four of several modes, where LEMS holds one scalar per state variable and has no array operation, and four that call `atan2` or `erfc`, which LEMS has no function for."""
+
+STATELESS = "neuroml__HH_KineticScheme"
+"""A model stated wholly as NeuroML components, with no state variable for an equation format to emit a right-hand side for."""
+
 UNSUPPORTED = {
-    f"{name}.tvb": ValueError
-    for name in (
-        "julia__DuffingForced",
-        "julia__ForcedPendulum",
-        "julia__RiddledBasins",
-        "julia__Ueda",
-        "julia__VanDerPolForced",
-        "neuroml__HH_Tissue_Q10",
-        "neuroml__HodgkinHuxley_Q10",
-        "neuroml__IaFCell",
-        "neuroml__Izhikevich2007Cell",
-        "neuroml__IzhikevichBurst",
-        "neuroml__IzhikevichCell",
-    )
+    **{f"{name}.tvb": ValueError for name in NON_AUTONOMOUS_FOR_TVB},
+    **{f"{name}.neuroml": ValueError for name in NOT_LEMS},
+    **{f"{STATELESS}.{fmt}": ValueError for fmt in FORMATS if fmt != "neuroml"},
 }
 """Pairs a backend declines by design, mapped to the exception it raises.
 
-Every one is a non-autonomous system meeting TVB, whose ``Model.dfun`` takes no time
-argument: the five Julia models force an oscillator with `cos(omega*t)`, and the six
-NeuroML cells carry a `pulseGen` written inline as a `Piecewise` in `t`. There is nowhere
-to put `t`, so the emitter says so instead of emitting an unbound name.
+Each emitter says so by name instead of emitting an unbound `t`, one mode of three, a call LEMS does not have, or a function with nothing in it.
 
-Kept apart from `UNRENDERABLE` because the two ask for opposite things. A pair leaves that
-list when someone fixes the emitter; a pair leaves this one only when the *model* changes —
-by moving its time dependence into a stimulus, which TVB applies outside `dfun`.
+Kept apart from `UNRENDERABLE` because the two ask for opposite things. A pair leaves that list when someone fixes the emitter; a pair leaves this one when the *model* changes, as by moving its time dependence into a stimulus, which TVB applies outside `dfun`, or when a backend gains the capability, as LEMS would by lowering the mode axis.
 """
 
 EXCLUDED = {**UNRENDERABLE, **UNSUPPORTED}

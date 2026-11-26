@@ -998,10 +998,14 @@ class DynamicsRuntime(Catalogued, Copyable):
             The generated code as a formatted string.
 
         Raises:
-            ValueError: If `format` is not a supported backend.
+            ValueError: If `format` is not a supported backend, or is one that emits a right-hand side per state variable and this model declares no state variable.
         """
         spec = templater.code_format(format)
         if spec is not None and spec.template:
+            if not self.state_variables:
+                raise ValueError(
+                    f"dynamics {self.name!r} declares no state variables, so the {format} format has no right-hand side to emit."
+                )
             template = templates.lookup.get_template(spec.template)
             # The format's own kwargs are defaults, so an explicit argument still wins.
             for key, value in spec.render_kwargs:

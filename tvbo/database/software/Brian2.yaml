@@ -51,3 +51,5 @@ same_as:
 - https://www.wikidata.org/entity/Q19845440
 - https://scicrunch.org/resolver/RRID:SCR_002998
 issue_tracker: https://github.com/brian-team/brian2/issues
+modules:
+- brian2
