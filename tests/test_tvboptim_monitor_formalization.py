@@ -250,6 +250,7 @@ def test_a_streaming_monitor_carried_through_a_scan_reports_what_one_jitted_fold
 
 @pytest.mark.parametrize(("spec", "extra"), [("BOLD_HRF_strided", 0), ("BOLD_HRF_strided", 7), ("BalloonWindkesselBold", 0)])
 def test_a_settle_run_as_its_own_scan_warms_a_streaming_monitor_as_an_in_band_settle_does(spec, extra):
+    """The two ways of handing over a settle fill the same memory. The observer then reports the same bits; the kernel reports them to rounding, because one fold contracts the settle's windows and the measured ones in a single product and the other only the measured ones, and a matrix product's summation order depends on its size."""
     dt, period, declared = CARRYING[spec]
     settle = _solution(30 * period + extra * dt, dt, seed=1, scale=5.0)
     measured = _solution(10 * period, dt, seed=2, scale=5.0)
@@ -260,7 +261,11 @@ def test_a_settle_run_as_its_own_scan_warms_a_streaming_monitor_as_an_in_band_se
         variable_names=measured.variable_names,
     )
     monitor = _generated(spec, measured, **declared)
-    assert np.array_equal(_ys(monitor.carry_warmup(settle)(measured)), _ys(monitor(joined)))
+    carried, in_band = _ys(monitor.carry_warmup(settle)(measured)), _ys(monitor(joined))
+    if spec == "BalloonWindkesselBold":
+        assert np.array_equal(carried, in_band)
+    else:
+        np.testing.assert_allclose(carried, in_band, rtol=1e-12, atol=0.0)
 
 
 @pytest.mark.parametrize(
