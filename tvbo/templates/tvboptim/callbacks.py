@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections import Counter
 
 from tvboptim.optim.callbacks import AbstractCallback
 
@@ -351,7 +352,7 @@ def sweep_slice(n_cells: int, shard=None, limit=None) -> slice:
     return slice(start, None, step)
 
 
-def point_indices(cell_values, points):
+def point_indices(cell_values, points, others=()):
     """Index of each cell's ARRAY-VALUED axis point among *points*, matched by value.
 
     An exploration axis whose points are whole arrays (a swept connectome, a per-node control vector) cannot carry those arrays as a coordinate: an xarray coordinate is a 1-D index of scalars, so codegen declares ``arange(n)`` and the axis's grid dimension is the point index.
@@ -359,10 +360,12 @@ def point_indices(cell_values, points):
 
     Matched by nearest flattened L1 distance rather than by equality, because a point that has round-tripped through a device or a file need not compare equal to the one the axis declared.
     The distance is accumulated one point at a time: a 379-node connectome carries 143k elements per point, and differencing every cell against every point at once is hundreds of megabytes of temporary for an argmin.
+    Declared points may repeat (a control-mask sweep in which every strategy's zero-count mask is the same vector). A repeated point is the same simulation, so the cells matched to it are dealt out over its copies in arrival order, separately within each combination of the other axes' values, which gives every copy exactly one cell per combination. The deal counts cells in arrival order, so it names the same copy for a cell only when it is given the whole sweep: a shard is sliced from the result, never passed in.
 
     Args:
         cell_values: One entry per grid cell, each an array of the axis's point shape.
         points: The axis's declared points, leading axis = point.
+        others: The other swept axes' per-cell values, one sequence per axis, which name the combination each cell belongs to. Another array-valued axis is passed as its point indices once it has them, so that two axes with repeated points split each other's cells. Empty for axes that are paired rather than crossed, where a point's copies are told apart by arrival order alone.
 
     Returns:
         ``np.ndarray`` of int, one index per cell.
@@ -384,4 +387,21 @@ def point_indices(cell_values, points):
     for j in range(_pts.shape[0]):
         dist[:, j] = _np.abs(_cells - _pts[j]).sum(axis=1)
     out[:] = dist.argmin(axis=1)
+    _, group = _np.unique(_pts, axis=0, return_inverse=True)
+    group = group.ravel()
+    copies_of = {g: _np.flatnonzero(group == g) for g in _np.flatnonzero(_np.bincount(group) > 1)}
+    dealt = Counter()
+    for c in _np.flatnonzero(_np.isin(group[out], list(copies_of))):
+        copies = copies_of[group[out[c]]]
+        key = (group[out[c]], *(_np.asarray(col[c]).tobytes() for col in others))
+        out[c] = copies[dealt[key] % len(copies)]
+        dealt[key] += 1
     return out
+
+
+def repeats_a_point(points) -> bool:
+    """Whether two of an array-valued axis's declared *points* are the same array, so that `point_indices` has copies to deal its cells over and needs the whole sweep to do it."""
+    import numpy as _np
+
+    rows = {_np.asarray(p, dtype=float).tobytes() for p in points}
+    return len(rows) < len(points)

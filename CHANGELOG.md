@@ -22,6 +22,7 @@
 - The generated models take keyword arguments only: `Dynamics("x")` in the PyRates pages is `Dynamics(name="x")`.
 
 ### Fixed
+- **A sweep over per-node vectors keeps every cell when a vector repeats (tvboptim).** Each cell's vector was matched to the nearest declared point, so the cells of a point declared twice (every strategy's zero-count mask in a control-mask sweep) all landed on its first copy and the container refused to build ("map 30 cells onto fewer distinct grid cells"). A repeated point is the same simulation, so its cells are dealt out over its copies, once per combination of the other swept axes.
 - A misspelt key is refused with the slot it may mean on the generated models too: `Integrator has no key 'stepsize' (did you mean 'step_size'?)` is the message of the `ValidationError`, where 0.9.1 raised it as a `TypeError` from the dataclass constructor.
 - A study runs the experiment `get_experiment` materialises for each of its records, so a network named by `iri` is resolved before the run; `runtime_experiment` took every record for a materialised experiment once the record's class carried `run`, and `SimulationStudy.run` on such a study failed with `None is not a valid value for jnp.array`.
 - A network that states `number_of_nodes` beside nodes declared by `label` applies the declaration to the nodes its generator or source materialises; the count's placeholder nodes replaced it.
