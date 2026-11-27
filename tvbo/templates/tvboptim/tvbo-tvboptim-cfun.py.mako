@@ -15,7 +15,8 @@ Output:
 <%
 from tvbo.codegen import render_expression
 from tvbo.templates.base.utils import referenced
-from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, parse_list_elements, coupling_inputs_info as _coupling_inputs_info, resolve_coupling_input_map
+from tvbo.templates.base.utils import parse_list_elements
+from tvbo.templates.tvboptim.utils import get_param_info, normalize_coupling_aliases, get_mode_layout, resolve_coupling_spec, coupling_inputs_info as _coupling_inputs_info, resolve_coupling_input_map
 
 # Two modes: experiment (full pipeline) or standalone (single coupling)
 if 'experiment' in context.keys():

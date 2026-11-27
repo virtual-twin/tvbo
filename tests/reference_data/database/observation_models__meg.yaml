@@ -12,6 +12,7 @@ parameters:
     description: Magnetic constant (permeability of free space)
     unit: H_per_m
 period: 0.9765625
+history_join: per_segment
 imaging_modality: MEG
 data_source:
   name: sensor_network

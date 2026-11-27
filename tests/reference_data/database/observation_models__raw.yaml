@@ -2,6 +2,7 @@ name: Raw
 label: Raw State Recording
 description: Records all state variables at every integration step without any transformation.
   Identity passthrough of the full simulation state.
+history_join: per_segment
 reconcile: by_label
 pipeline:
 - name: raw

@@ -7,13 +7,14 @@ from tvbo.adapters.observation_sampling import last_sampling_kind, tvb_iround as
 from tvbo.templates.tvboptim.utils import (
     get_attr, to_numeric, get_recorded_variable_names,
     adapt_class_reference_for_tvboptim, resolve_reduction, iter_parameter_values, resolve_tail_samples,
-    resolve_step_expression, equation_dims as _equation_dims, observation_dims as _observation_dims,
+    equation_constants, equation_step_code, observation_scalars as _observation_scalars,
+    equation_dims as _equation_dims, observation_dims as _observation_dims,
     reduction_dims as _reduction_dims, _PIPELINE_STEP_KINDS,
     edge_label as _edge_label, edge_const as _edge_const, collect_network_edge_arrays,
     node_label as _node_label, node_const as _node_const, collect_network_node_arrays,
-    functions_by_name as _functions_by_name, kernel_support_steps as _kernel_support_steps,
+    functions_by_name as _functions_by_name, reduction_has_memory, pipeline_step_name, kernel_support_steps as _kernel_support_steps, kernel_sample_count as _kernel_sample_count,
     _assert_transient_on_sample_grid, assert_measured_window_is_stable, streaming_time_periods,
-    monitor_class_name,
+    monitor_class_name, kernel_arguments,
 )
 
 model = experiment.dynamics
@@ -131,7 +132,6 @@ functions_by_name = _functions_by_name(experiment)
 
 # User-defined function names for expression rendering
 user_functions = {name: name for name in functions_by_name.keys()}
-jaxcode = lambda expr, params=None, dims=None: render_expression(expr, format='jax', user_functions=user_functions, parameters=params, dims=dims)
 from tvbo.codegen.templater import canonical_observation_ref as _canonical_observation_ref, is_derived as _is_derived
 from tvbo.templates.base.utils import docstring_text
 _obs_raw = get_attr(experiment, 'observations', {})
@@ -185,18 +185,8 @@ def parse_step(func, step_name):
     eq = get_attr(func, 'equation')
     if eq:
         step['equation'] = get_attr(eq, 'rhs')
-        # Note: equation.parameters are LOCAL constants, not function arguments
-        # They are used when rendering the equation, not passed as kwargs
-        step['equation_params'] = {}
-        # A constant the equation binds by name. Declared with a `value` it is that number; declared with an `equation` it is derived from the experiment's own scalars, which is how a stride stays right on an integration grid it was not written for.
-        step['equation_derived'] = {}
-        for pname, pobj in (get_attr(eq, 'parameters') or {}).items():
-            _peq = get_attr(pobj, 'equation')
-            _prhs = get_attr(_peq, 'rhs') if _peq is not None else None
-            if _prhs is not None:
-                step['equation_derived'][str(pname)] = str(_prhs)
-            elif get_attr(pobj, 'value') is not None:
-                step['equation_params'][str(pname)] = to_numeric(pobj.value)
+        # The equation's parameters are constants it binds when rendered, never arguments of the call.
+        step['equation_params'], step['equation_derived'] = equation_constants(eq)
 
     # Parse arguments (these ARE function arguments), keyed by name (key == arg name).
     for name, arg in (get_attr(func, 'arguments') or {}).items():
@@ -271,6 +261,33 @@ def is_kernel_generator(step_name):
     fn_def = functions_by_name.get(step_name)
     return fn_def and get_attr(fn_def, 'time_range')
 
+def observation_scalars(obs):
+    """The scalars an observation's equations and kernels bind by name, on this experiment's integration step."""
+    return _observation_scalars(dt, obs.get('period'), obs.get('downsample_period'))
+
+def kernel_call(step, scalars):
+    """The call that evaluates a kernel-generator step, with the argument values :func:`kernel_arguments` binds for this observation's *scalars*.
+
+    Emitted where the monitor is called, never in its constructor, so the kernel is traced with the caller: evaluated eagerly it differs from the traced value in the last bit.
+    """
+    values = kernel_arguments(functions_by_name.get(step['name']), step.get('arguments'), scalars)
+    return f"{step['name']}({', '.join(f'{name}={value!r}' for name, value in values.items())})"
+
+def time_stamps_code(obs, obs_name):
+    """The expression an observation's declared ``time_stamps`` emits for its output's ``ts``, over ``_time`` (the measured window's stamps) and ``_n_out`` (the output length), in the authored operation order; None when it declares none."""
+    equation = obs.get('time_stamps')
+    if equation is None or not get_attr(equation, 'rhs'):
+        return None
+    literals, derived = equation_constants(equation)
+    return equation_step_code(
+        get_attr(equation, 'rhs'), '_final', {**obs['agg_params'], **literals}, derived, observation_scalars(obs),
+        f"Observation {obs_name!r} time_stamps", user_functions, bound={'t': '_time', 'n': '_n_out'},
+    )
+
+def step_output_var(step):
+    """The local an emitted step assigns its (last) output to."""
+    return '_' + [o.strip() for o in (step.get('output') or step['name']).split(',')][-1]
+
 # =============================================================================
 
 # =============================================================================
@@ -329,8 +346,12 @@ for obs_name, obs in observations.items():
         'pipeline': [],
         'class_reference': None,  # New: direct class reference
         'period': get_attr(obs, 'period'),  # Sampling period (ms) for time computation
+        'downsample_period': get_attr(obs, 'downsample_period'),  # Intermediate period a kernel is sampled on, when declared
         'tail_samples': resolve_tail_samples(obs, dt),  # Last N samples before aggregation; a `tail_duration` is converted here
         'aggregation': get_attr(obs, 'aggregation'),  # Aggregation type (mean, last, first, etc.)
+        'history_join': str(get_attr(obs, 'history_join') or 'per_segment'),  # How a kernel observation joins the history in front of its window
+        'time_stamps': get_attr(obs, 'time_stamps'),  # The output's declared time axis, an Equation, or None
+        'output_variable_name': get_attr(obs, 'output_variable_name') or '{name}',  # Pattern each kept variable's name is written through
         # Resolved once from the observation's generic `parameters` slot, so any parametric aggregation reads its values by name.
         'agg_params': dict(iter_parameter_values(get_attr(obs, 'parameters'))),
         # A dynamics observer resolves to a streaming reducer; None means the pipeline path applies.
@@ -367,10 +388,9 @@ for obs_name, obs in observations.items():
 
         func_ref = get_attr(func_call, 'function')
         inline_callable = get_attr(func_call, 'callable')
+        step_name = pipeline_step_name(func_call)
 
         if func_ref:
-            # Referenced function - get name from function reference
-            step_name = str(func_ref) if isinstance(func_ref, str) else get_attr(func_ref, 'name', str(func_ref))
             # Look up the actual Function definition
             func_def = functions_by_name.get(step_name)
             # Parse using Function definition with FunctionCall overrides
@@ -379,15 +399,8 @@ for obs_name, obs in observations.items():
             fc_output = get_attr(func_call, 'output')
             if fc_output:
                 step['output'] = fc_output
-        elif inline_callable:
-            # Inline callable - use output or callable.name as step identifier
-            cname = get_attr(inline_callable, 'name')
-            step_name = get_attr(func_call, 'output') or cname or 'callable_step'
-            # Parse the FunctionCall directly (it has the callable)
-            step = parse_step(func_call, step_name)
         else:
-            # Fallback
-            step_name = get_attr(func_call, 'name', 'step')
+            # An inline callable or a bare step, parsed from the FunctionCall itself
             step = parse_step(func_call, step_name)
 
         # Override arguments from FunctionCall if provided (keyed by name)
@@ -493,8 +506,8 @@ ${render_recurrence_reduction(red, name, s_idx, dt, tail)}\
         raise ValueError("co-moment reducer: no carry-init shape for state(s) %s" % _missing)
     _init_tuple = ", ".join(_INIT_SHAPE[_s] for _s in _states)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
-    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None, memory=None):
+    # progress, settle and memory are accepted and ignored, so every reducer factory shares one call site: only a reducer with memory (a kernel's ring, a monitor observer's states) has history to warm or carry.
     _skip = skip + ${_skip_t}
     def _init(template, n_steps):
         n = template.shape[-1]
@@ -558,7 +571,7 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
 </%doc>\
 <%
     from tvbo.codegen import render_expression
-    _cv = ['_block_voi', '_ds', '_off', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv', 'k_1', 'V_0']
+    _cv = ['_block_voi', '_ds', '_off', '_ring', '_block_ds', '_signal', '_kernel', '_tr', '_conv']
     _rc = lambda e: render_expression(e, format='jax', parameters=_cv)
 %>\
 _warmup_${name} = ${red['warmup_steps']}
@@ -568,9 +581,7 @@ Module level, and a literal rather than a shape read off the kernel, because a c
 """
 
 
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
-    k_1 = ${repr(red['k_1'])}
-    V_0 = ${repr(red['V_0'])}
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None, memory=None):
     _kernel = ${red['kernel_call']}   # HRF kernel array [K] (the pipeline's kernel function)
     _K = _kernel.shape[0]
     _ds = ${red['ds_steps']}          # decimation stride (raw integration steps / downsampled sample)
@@ -579,11 +590,13 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
     # The settle the TR grid has to clear, and the leading BOLD samples that lie inside it. `_phase` rows of ring beyond the kernel shift the strided convolution onto the measured grid, so the first reported sample ends one whole TR after t=0.
     _phase = (-_ds_skip) % _tr
     _skip_bold = -(-_ds_skip // _tr)
+    if memory is not None and (settle is not None or skip):
+        raise ValueError("a reducer was given a carried ring together with a settle or a skip; the ring already holds the history before this window, so either would be folded in twice. Pass one.")
     def _init(template, n_steps):
         n = template.shape[-1]
         _n_ds = len(range(_off, n_steps, _ds))        # downsampled samples over the run
         _n_bold = (_n_ds + _phase) // _tr             # BOLD samples at TR boundaries
-        _ring0 = _warm_ring(settle, skip, s_var, _ds, _K + _phase, n)
+        _ring0 = _warm_ring(settle, skip, s_var, _ds, _K + _phase, n) if memory is None else memory
         return (_ring0, jnp.zeros((_n_bold, n)), jnp.array(0))
     def _update(acc, block):
         _ring, _bold, _ds_count = acc
@@ -592,7 +605,8 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
         _m_b = _block_ds.shape[0]
         _signal = ${_rc("concatenate(_ring, _block_ds)")}          # [_K + _phase + m_b, n]
         _conv = ${_rc("strided_convolve(_signal, _kernel, _tr)")}  # 'valid' conv at TR boundaries
-        _samples = ${_rc("k_1 * V_0 * (_conv - 1.0)")}             # Volterra BOLD scaling
+        # The pipeline's own Volterra step over the convolution, emitted as the materialised monitor emits it, where the pipeline declares one.
+        _samples = ${red['scaling'] or '_conv'}
         _start = _ds_count // _tr
         _bold = jax.lax.dynamic_update_slice(_bold, _samples, (_start, 0))
         _ring = _signal[-(_K + _phase):]
@@ -623,8 +637,8 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
     from tvbo.codegen import render_expression
     _rc = lambda e: render_expression(e, format='jax', parameters=['_block_voi', '_ds', '_off'])
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
-    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None, memory=None):
+    # progress, settle and memory are accepted and ignored, so every reducer factory shares one call site: only a reducer with memory (a kernel's ring, a monitor observer's states) has history to warm or carry.
     _ds = ${red['ds_steps']}           # decimation stride (integration steps per kept sample)
     _off, _skip_n = _measured_grid(skip, _ds)
     def _init(template, n_steps):
@@ -643,13 +657,13 @@ def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, s
 </%def>\
 <%def name="render_observer_dvs(dvs, jc, ind)">\
 <%doc>
-    The two per-step observer fragments every reduction branch shares, emitted at the caller's indentation `ind` with its expression printer `jc`. Kept separate because the histogram fold evaluates its per-step sample BETWEEN them.
+    The two per-step observer fragments every reduction branch shares, emitted at the caller's indentation `ind` with its expression printer `jc(expr, text)`, which prints an equation's authored `text` where it can. Kept separate because the histogram fold evaluates its per-step sample BETWEEN them.
 </%doc>\
 % for _d in dvs:
 % if 'surrogate' in _d:
 ${render_surrogate(_d['name'], _d['surrogate'], jc, ind)}\
 % else:
-${ind}${_d['name']} = ${jc(_d['expr'])}
+${ind}${_d['name']} = ${jc(_d['expr'], _d.get('text'))}
 % endif
 % endfor
 </%def>\
@@ -680,7 +694,7 @@ ${ind}${sname} = jnp.mean((_null_${sname} ${_cmp} _obs_${sname}) * 1.0, axis=0)
     `states` is the subset this branch advances: all of them, or memory-only for the histogram fold (an accumulator there is the histogram itself).
 </%doc>\
 % for s in states:
-${ind}_new_${s['name']} = ${jc(s['update'])}
+${ind}_new_${s['name']} = ${jc(s['update'], s.get('text'))}
 % endfor
 </%def>\
 <%def name="render_observer_constants(rpars, kind)">\
@@ -703,6 +717,7 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
 <%def name="render_recurrence_reduction(red, name, s_idx, dt, tail=None)">\
 <%
     from tvbo.codegen import render_expression
+    from tvbo.codegen.code import render_verbatim
     _is_median = red.get('statistic', 'mean') == 'median'
     _period_steps = red.get('period_steps')
     # A pure accumulator folds the sample at skip; a memory-dependent observer has no predecessor there, so it starts after.
@@ -720,6 +735,8 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
                 + list(_rpars) + [_src, 'dt', 'count'])
     _rufuncs = {f: f for f in red['functions']}
     _jc = lambda e, ps=_rparams: render_expression(e, format='jax', user_functions=_rufuncs, parameters=ps)
+    # An equation's authored text in its operation order where it is plain arithmetic, else its SymPy form.
+    _vc = lambda e, text=None: (text and render_verbatim(text, format='jax', user_functions=_rufuncs)) or _jc(e)
     _h = red.get('histogram')   # guaranteed present for median (resolve_reduction requires it)
     _mem_pre = "".join("%s, " % _n for _n in _mnames)        # "s_prev, "
     _mem_new = "".join("_new_%s, " % _n for _n in _mnames)   # "_new_s_prev, "
@@ -727,8 +744,11 @@ ${ind}_new_${s['name']} = ${jc(s['update'])}
     _ind = ' ' * 12   # the scan-step body's indentation, shared by the emitted fragments
     _from = ", _from" if tail else ""   # carried first step of the trailing window, known once init sees n_steps
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
-    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None, memory=None):
+    # progress and settle are accepted and ignored; `memory` is the observer state a monitor carries from the window before this one (monitor form only), see the monitor class's `carry_warmup`.
+% if red.get('observer_step') is not None:
+    dt = ${repr(red['observer_step'])}  # the observer's own step, which its equations read as `dt`
+% endif
 % if _rpars:
     # Bound by name in the closure the init/update/finalize triple shares: a literal inlines, a sourced operator is read once so a large array never enters this source.
 ${render_observer_constants(_rpars, 'observer')}\
@@ -740,7 +760,7 @@ ${render_observer_constants(_rpars, 'observer')}\
 % if _dconsts:
     # Bound once rather than per step, as they cannot depend on a state or the observed signal.
 % for _d in _dconsts:
-    ${_d['name']} = ${_jc(_d['expr'])}
+    ${_d['name']} = ${_vc(_d['expr'], _d.get('text'))}
 % endfor
 % endif
 % if _is_median:
@@ -755,11 +775,11 @@ ${render_observer_constants(_rpars, 'observer')}\
             ${_mem_pre}_counts, _gstep = carry
             ${_src} = s_row[s_var]
             _accumulate = _gstep ${_gate} skip
-${render_observer_dvs(_step_dvs, _jc, _ind)}\
-            _q_step = ${_jc(red['output'])}
+${render_observer_dvs(_step_dvs, _vc, _ind)}\
+            _q_step = ${_vc(red['output'], red.get('output_text'))}
             _b = jnp.clip(((_q_step - _hlo) / _hbw).astype(jnp.int32), 0, _hbins - 1)
             _counts = _counts.at[_b, jnp.arange(_counts.shape[1])].add(jnp.where(_accumulate, 1.0, 0.0))
-${render_observer_states(_mem, _jc, _ind)}\
+${render_observer_states(_mem, _vc, _ind)}\
             return (${_mem_new}_counts, _gstep + 1), None
         return jax.lax.scan(_step, acc, block)[0]
     def _finalize(acc):
@@ -775,22 +795,30 @@ ${render_observer_states(_mem, _jc, _ind)}\
 % elif _period_steps:
     # Monitor form (Observation.period): emit the observer's output every _period steps into a preallocated series; states advance every step and `skip` drops the leading transient samples at finalize.
 <% _out_per_step = red.get('output_per_step', True) %>\
-    _period = ${_period_steps}
+    _period = ${red.get('observer_period') or _period_steps}   # observer steps per emitted sample
+    _every = ${_period_steps}   # integration steps per emitted sample
+    if memory is not None and skip:
+        raise ValueError("a monitor reducer was given carried states together with a skip; the states already hold the history before this window, so the settle would be folded in twice. Pass one.")
     def _init(template, n_steps):
         n = template.shape[-1]
-        return (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])},
-                ${"jnp.zeros((n,)), " if _out_per_step else ""}jnp.zeros((n_steps // _period, n)), jnp.array(0))
+        _memory = (${", ".join("jnp.full((n,), %r)" % s['init'] for s in red['states'])}, ${"jnp.zeros((n,))" if _out_per_step else ""}) if memory is None else tuple(memory)
+        return (*_memory, jnp.zeros((n_steps // _every, n)), jnp.array(0))
     def _update(acc, block):
         *_st, _out, _count = acc
+% if red.get('substeps', 1) > 1:
+        block = jnp.repeat(block, ${red['substeps']}, axis=0)   # each integration step's input, once per observer step inside it
+% elif red.get('stride', 1) > 1:
+        block = block[${red['stride']} - 1::${red['stride']}]   # one input per observer step, the last of the integration steps it spans, as tvboptim's BalloonWindkesselBold takes it
+% endif
         def _step(carry, s_row):
             ${", ".join(_snames)}${", _emit" if _out_per_step else ","} = carry
             ${_src} = s_row[s_var]
-${render_observer_dvs(_step_dvs, _jc, _ind)}\
-${render_observer_states(red['states'], _jc, _ind)}\
+${render_observer_dvs(_step_dvs, _vc, _ind)}\
+${render_observer_states(red['states'], _vc, _ind)}\
 % if _out_per_step:
             # readout evaluated from the advanced state each step, carried in one [n] slot (per-step values never stacked)
             ${", ".join(_snames)} = ${", ".join("_new_%s" % _n for _n in _snames)}
-            return (${", ".join(_snames)}, ${_jc(red['output'])}), None
+            return (${", ".join(_snames)}, ${_vc(red['output'], red.get('output_text'))}), None
 % else:
             return (${", ".join("_new_%s" % _n for _n in _snames)},), None
 % endif
@@ -801,7 +829,7 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 % else:
             # readout is a function of the states alone: evaluated once per emitted sample, not per step
             ${", ".join(_snames)}, = carry
-            return carry, ${_jc(red['output'])}
+            return carry, ${_vc(red['output'], red.get('output_text'))}
 % endif
         _n_full, _rem = divmod(block.shape[0], _period)
         if _rem and _n_full:
@@ -817,7 +845,7 @@ ${render_observer_states(red['states'], _jc, _ind)}\
             _st = jax.lax.scan(_step, _st, block[_n_full * _period:])[0]
         return (*_st, _out, _count + _n_full)
     def _finalize(acc):
-        return acc[-2][skip // _period:]   # the sample buffer, past the transient
+        return acc[-2][skip // _every:]   # the sample buffer, past the transient
     return (_init, _update, _finalize)
 % else:
     def _init(template, n_steps):
@@ -828,8 +856,8 @@ ${render_observer_states(red['states'], _jc, _ind)}\
             ${", ".join(_snames)}, _count, _gstep${_from} = carry
             ${_src} = s_row[s_var]
             _accumulate = ${"(_gstep %s skip) & (_gstep >= _from)" % _gate if tail else "_gstep %s skip" % _gate}
-${render_observer_dvs(_step_dvs, _jc, _ind)}\
-${render_observer_states(red['states'], _jc, _ind)}\
+${render_observer_dvs(_step_dvs, _vc, _ind)}\
+${render_observer_states(red['states'], _vc, _ind)}\
 % for s in red['states']:
 % if s['is_accumulator']:
             _new_${s['name']} = jnp.where(_accumulate, _new_${s['name']}, ${s['name']})
@@ -840,7 +868,7 @@ ${render_observer_states(red['states'], _jc, _ind)}\
         return jax.lax.scan(_step, acc, block)[0]
     def _finalize(acc):
         ${", ".join(_snames)}, count, _gstep${_from} = acc
-        return ${_jc(red['output'])}
+        return ${_vc(red['output'], red.get('output_text'))}
     return (_init, _update, _finalize)
 % endif
 </%def>\
@@ -850,6 +878,7 @@ ${render_observer_states(red['states'], _jc, _ind)}\
 </%doc>\
 <%
     from tvbo.codegen import render_expression
+    from tvbo.codegen.code import render_verbatim
     _G = red['n_groups']
     _period = red['period_steps']
     _src = red['source']
@@ -859,15 +888,15 @@ ${render_observer_states(red['states'], _jc, _ind)}\
     _gv = red.get('group_vmap')   # {gather: <param>, over: [<group-indexed params>]} or None
     _rparams = ([d['name'] for d in _derived] + list(_rpars) + [_src, 'dt'])
     _rufuncs = {f: f for f in red.get('functions', {})}
-    _jc = lambda e: render_expression(e, format='jax', user_functions=_rufuncs, parameters=_rparams)
+    _jc = lambda e, text=None: (text and render_verbatim(text, format='jax', user_functions=_rufuncs)) or render_expression(e, format='jax', user_functions=_rufuncs, parameters=_rparams)
     # Propagation gate (see the docstring): the resolved gate or None, its direction components, the names a block unpacks them into, and the `_sample` return suffix.
     _gate = red.get('propagation')
     _gdir = _gate['direction'] if _gate else []
     _gp = ['_p%d' % _k for _k in range(len(_gdir))]
     _gret = ''.join(', ' + _d for _d in _gdir)
 %>\
-def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None):
-    # progress and settle are accepted and ignored, so every reducer factory shares one call site: only a kernel-bearing reducer has history to warm.
+def _reduction_${name}(s_var=${s_idx}, dt=${repr(dt)}, skip=0, progress=False, settle=None, memory=None):
+    # progress, settle and memory are accepted and ignored, so every reducer factory shares one call site: only a reducer with memory (a kernel's ring, a monitor observer's states) has history to warm or carry.
 % if _rpars:
     # A literal inlines and a sourced operator is read once, so a large array never enters this source.
 ${render_observer_constants(_rpars, 'wave observer')}\
@@ -1005,6 +1034,23 @@ def _warmed(monitor, settle):
     if settle is None or not hasattr(monitor, "carry_warmup"):
         return monitor
     return monitor.carry_warmup(settle)
+
+
+def _kept_variable_names(result, voi, pattern="{name}"):
+    """The names of the variables *voi* selects from *result*, each written through *pattern*, which a monitor whose output keeps tvboptim's ``[time, variable, node]`` layout reports as its ``variable_names``; None when *result* names none."""
+    names = getattr(result, "variable_names", None)
+    if names is None:
+        return None
+    try:
+        return tuple(pattern.format(name=name) for name in tuple(names)[voi])
+    except (TypeError, IndexError):
+        return None
+
+
+@jax.jit
+def _traced_call(monitor, result):
+    """``monitor(result)`` traced under ``jax.jit`` with the monitor as an input, as a fit carries it, so a forward value is bit for bit the value the same monitor gives inside a fit and a second run reuses the compiled program."""
+    return monitor(result)
 
 
 def _warm_ring(settle, skip, s_var, ds, rows, n):
@@ -1168,8 +1214,11 @@ class ${class_name}(eqx.Module):
     """
     # External monitor instance
     _monitor: eqx.Module
+% if _ext_warmup:
+    _warmup: jax.Array = None
+% endif
 
-    def __init__(self, voi=${repr(_ref_voi)}, dt: float = ${dt}, **kwargs):
+    def __init__(self, voi=${repr(_ref_voi)}, dt: float = ${dt}${', warmup=None' if _ext_warmup else ''}, **kwargs):
         """Initialize observation using external class.
 
         Args:
@@ -1187,6 +1236,9 @@ class ${class_name}(eqx.Module):
 % endif
 
         self._monitor = _Ext${ext_class_name}(**_init_kwargs)
+% if _ext_warmup:
+        self._warmup = warmup
+% endif
 
     def __call__(self, result):
         """Process the run, reporting only its measured part.
@@ -1200,11 +1252,15 @@ class ${class_name}(eqx.Module):
 <% assert_measured_window_is_stable(experiment, obs_name) %>\
         _data = result.data if hasattr(result, 'data') else result
         _n_settle = max(0, _data.shape[0] - ${n_measured})
+        if self._warmup is not None and _n_settle:
+            raise ValueError("${obs_name}: a carried warm-up and an in-band settle both claim the history before this window, so it would be fed twice. Pass one.")
         _cut = max(0, _n_settle - ${_ext_warmup})
         _pad = ${_ext_warmup} - min(_n_settle, ${_ext_warmup})
         _win, _wt = _data[_cut:], (result.time[_cut:] if getattr(result, "time", None) is not None else None)
         if _pad:
-            _win = jnp.concatenate([jnp.zeros((_pad,) + _win.shape[1:], _win.dtype), _win], axis=0)
+            # A carried warm-up is the history the window continues; without one the class opens on zeros, as at t = 0.
+            _head = jnp.zeros((_pad,) + _win.shape[1:], _win.dtype) if self._warmup is None else self._warmup[-_pad:].astype(_win.dtype)
+            _win = jnp.concatenate([_head, _win], axis=0)
             if _wt is not None:
                 _wt = jnp.concatenate([_wt[:1] - jnp.arange(_pad, 0, -1) * ${dt}, _wt], axis=0)
         _out = self._monitor(type(result)(_wt, _win, dt=getattr(result, "dt", ${dt}), variable_names=getattr(result, "variable_names", None)))
@@ -1213,6 +1269,19 @@ class ${class_name}(eqx.Module):
         # The class emitted over the measured window alone, so it is stamped on the measured clock: sample m at the end of the period it covers.
         return type(_out)((jnp.arange(_out.ys.shape[0]) + 1) * ${_ext_grid * dt}, _out.ys,
                           dt=getattr(_out, "dt", None), variable_names=getattr(_out, "variable_names", None))
+
+    def open_warmup(self, n_nodes):
+        """This monitor holding the zero warm-up a window with no history before it opens on, so a loop that carries it holds one shape from the first window on."""
+        return eqx.tree_at(lambda _m: _m._warmup, self, jnp.zeros((${_ext_warmup}, ${len(var_names)}, n_nodes)), is_leaf=lambda _x: _x is None)
+
+    def carry_warmup(self, result):
+        """This monitor holding the last ${_ext_warmup} steps of *result* behind whatever it held, the history the class reads in front of the next window."""
+        _data = result.data if hasattr(result, 'data') else result
+        _w = _data if self._warmup is None else jnp.concatenate([self._warmup, _data.astype(self._warmup.dtype)], axis=0)
+        _short = ${_ext_warmup} - _w.shape[0]
+        if _short > 0:
+            _w = jnp.concatenate([jnp.zeros((_short,) + _w.shape[1:], _w.dtype), _w], axis=0)
+        return eqx.tree_at(lambda _m: _m._warmup, self, _w[-${_ext_warmup}:], is_leaf=lambda _x: _x is None)
 % else:
         # Memoryless (no warmup declared): one output per period with nothing behind it, so the settle's own output samples are the ones to drop. Codegen has required the settle to span whole periods, so this cut lands on a sample boundary.
         _out = self._monitor(result)
@@ -1225,27 +1294,100 @@ class ${class_name}(eqx.Module):
 
 % elif obs['reduction'] is not None:
 ## A host monitor backed by `_reduction_${obs_name}`: the observer is the definition, so the whole-trajectory fold equals the value the grid streams.
+<%
+    _red = obs['reduction']
+    # a monitor reports at its declared period; a folded statistic or a convolution collapses to one value (dt)
+    _obs_period = repr(float(to_numeric(obs['period']))) if _red.get('kind') == 'monitor' else 'dt'
+    _carries = reduction_has_memory(_red)
+    _carry_period = int(_red['ds_steps']) * int(_red['tr_stride']) if _red.get('kind') == 'convolution' else int(_red.get('period_steps') or 1)
+    _input_stride = int(_red.get('stride') or 1) if _red.get('kind') == 'monitor' else 1
+    _memory_of = '_acc[0]' if _red.get('kind') == 'convolution' else 'tuple(_acc[:-2])'
+%>\
 class ${class_name}(AbstractMonitor):
     """${docstring_text(obs['label'] or obs_name)} observation (dynamics observer)."""
     dt: float = eqx.field(static=True, default=${dt})
+% if _carries:
+    _warmup: object = None
+% endif
 
-<%
-    # a monitor reports at its declared period; a folded statistic or a convolution collapses to one value (dt)
-    _obs_period = repr(float(to_numeric(obs['period']))) if obs['reduction'].get('kind') == 'monitor' else 'dt'
-%>\
-    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}, **kwargs):
+    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${', warmup=None' if _carries else ''}, **kwargs):
         self.voi = voi
         self.period = period if period is not None else ${_obs_period}
         self.dt = dt
+% if _carries:
+        self._warmup = warmup
+% endif
 
     def __call__(self, result):
         # One big block over the whole window == the post-scan reduction, less the settle. The settle is DERIVED from the window handed in rather than declared, because this call holds that window: a caller integrating a shorter one -- a fitting loop's tuning window -- would otherwise be cut by a settle it never ran.
         _data = result.data if hasattr(result, 'data') else result
-        _init, _update, _finalize = _reduction_${obs_name}(
-            s_var=${state_idx}, dt=self.dt, skip=max(0, _data.shape[0] - ${n_measured}))
+        _skip = max(0, _data.shape[0] - ${n_measured})
+% if _carries:
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, skip=_skip, memory=self._warmup)
+% else:
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, skip=_skip)
+% endif
         _acc = _init(_data[0], _data.shape[0])
         _acc = _update(_acc, _data)
+<% _ts_code = time_stamps_code(obs, obs_name) %>\
+% if _ts_code:
+        # A declared time axis makes the readout a solution laid out [time, variable, node], the readout its one variable.
+        _final = _finalize(_acc)[:, None, :]
+        _time = result.time[_skip:] if getattr(result, "time", None) is not None else None
+        _n_out = _final.shape[0]
+        _ts = ${_ts_code}
+        _names = _kept_variable_names(result, slice(${state_idx}, ${state_idx} + 1), ${repr(obs['output_variable_name'])})
+        return NativeSolution(ts=_ts, ys=_final, dt=${observation_scalars(obs)['period']}, variable_names=_names)
+% else:
         return _finalize(_acc)
+% endif
+% if _carries:
+
+    def open_warmup(self, n_nodes):
+        """This monitor holding the memory a window with no history before it opens on, the reducer's own cold start: a zero ring for a kernel, the declared initial states for an observer. A loop seeds its carry with it, so the carry has one shape from the first window on."""
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt)
+        _acc = _init(jnp.zeros((1, n_nodes)), 0)
+        return eqx.tree_at(lambda _m: _m._warmup, self, ${_memory_of}, is_leaf=lambda _x: _x is None)
+
+    def carry_warmup(self, result):
+        """This monitor with its memory advanced over *result*, so the window after it continues where *result* ended, as one fold over both would.
+
+        Holding a memory, *result* is the window just reported, and must be a whole number of ${_carry_period}-step output periods: the memory continues only on the grid it was built on, and the next window's samples are laid on that grid. Holding none, *result* is a settle that ran as a scan of its own before the measured window, of any length, and fills the memory from its last step back, as an in-band settle folded ahead of the window would.
+        """
+        _data = result.data if hasattr(result, 'data') else result
+        if self._warmup is not None and _data.shape[0] % ${_carry_period}:
+            raise ValueError(
+                f"${obs_name}: a carried memory continues only across whole ${_carry_period}-step output periods, "
+                f"and the window handed to carry_warmup is {_data.shape[0]} steps. Size the loop's window from the period."
+            )
+% if _input_stride > 1:
+        if _data.shape[0] % ${_input_stride}:
+            raise ValueError(
+                f"${obs_name}: the observer takes every ${_input_stride}th input, so a window of {_data.shape[0]} steps would shift which inputs the next window takes."
+            )
+% endif
+% if _red.get('kind') == 'convolution':
+        if self._warmup is None:
+            _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, settle=_data)
+            _acc = _init(_data[0], 0)
+        else:
+            _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, memory=self._warmup)
+            _acc = _update(_init(_data[0], _data.shape[0]), _data)
+% else:
+        _init, _update, _finalize = _reduction_${obs_name}(s_var=${state_idx}, dt=self.dt, memory=self._warmup)
+        _acc = _init(_data[0], _data.shape[0])
+        # Whole periods fold as the monitor emits them; what a settle has left over only advances the states.
+        _whole = _data.shape[0] - _data.shape[0] % ${_carry_period}
+        if _whole:
+            _acc = _update(_acc, _data[:_whole])
+        if _whole < _data.shape[0]:
+            _acc = _update(_acc, _data[_whole:])
+% endif
+        _memory = ${_memory_of}
+        if self._warmup is not None:
+            _memory = jax.tree_util.tree_map(lambda _new, _old: _new.astype(_old.dtype), _memory, self._warmup)
+        return eqx.tree_at(lambda _m: _m._warmup, self, _memory, is_leaf=lambda _x: _x is None)
+% endif
 
 % else:
 ## =============================================================================
@@ -1270,8 +1412,8 @@ class ${class_name}(AbstractMonitor):
     aggregation = obs.get('aggregation')  # Aggregation type (mean, last, first, etc.)
 
     # Identify precomputable steps (kernels) and history steps
-    static_steps = []  # Kernel generators - computed in __init__, stored as static
-    dynamic_steps = []  # Everything else - computed in __call__
+    static_steps = []  # Kernel generators, evaluated where the monitor is called
+    dynamic_steps = []  # Everything else
 
     for step in pipeline:
         step_name = step['name']
@@ -1320,6 +1462,25 @@ class ${class_name}(AbstractMonitor):
                 if prefix in observations:
                     referenced_observations.add(prefix)
 
+    # Joined per segment, the steps before the kernel's consumer run on the history and on the window separately and meet at its input, as tvboptim's HRFBold joins its `history`.
+    _kernel_outputs = {step_output_var(st)[1:] for st in static_steps} | {st['name'] for st in static_steps}
+    _join_idx = next((i for i, st in enumerate(pipeline) if st not in static_steps and any(str(get_attr(v, 'value', v)) in _kernel_outputs for v in (st.get('arguments') or {}).values())), None)
+    _segmented = bool(_carries_warmup and obs.get('history_join') == 'per_segment' and _join_idx is not None)
+    _pre_steps = [st for st in pipeline[:_join_idx] if st not in static_steps] if _segmented else []
+    _segment_out = step_output_var(_pre_steps[-1]) if _pre_steps else '_data'
+    # A step before the join runs inside `_segment`, so its output reaches the result only as the joined segment output.
+    _segment_only = {o.strip() for st in _pre_steps for o in (st.get('output') or st['name']).split(',')} - {_segment_out[1:]}
+    named_outputs = [o for o in named_outputs if o not in _segment_only]
+    _kernel_rows = _kernel_sample_count(_kernel_step['name'], _kernel_step.get('arguments'), functions_by_name, observation_scalars(obs)) if _segmented else 0
+    for _st in _pre_steps:
+        for _v in (_st.get('arguments') or {}).values():
+            _v = get_attr(_v, 'value', _v)
+            if isinstance(_v, str) and (_v in var_names or _v.split('.')[0] in referenced_observations):
+                raise ValueError(
+                    f"Observation {obs_name!r} step {_st['name']!r} reads {_v!r}, but joined per segment (history_join: per_segment) "
+                    "the steps before the kernel run on the history as well as the window, so they may read only the source and "
+                    "earlier steps. Read it after the kernel, or declare history_join: continuous."
+                )
 %>
 
 class ${class_name}(AbstractMonitor):
@@ -1333,47 +1494,68 @@ class ${class_name}(AbstractMonitor):
     # AbstractMonitor fields (voi and period are inherited)
     dt: float = eqx.field(static=True, default=${dt})
 
-% for step in static_steps:
-    # Precomputed: ${step['name']} (kernel)
-    _${step['name']}: jax.Array
-% endfor
 % for ref_obs in referenced_observations:
     # Referenced observation monitor: ${ref_obs}
     _${ref_obs}_monitor: eqx.Module = None
 % endfor
-% if _carries_warmup:
+% if _segmented:
+    # The ${_kernel_rows} kernel-rate rows the steps before the kernel made of the history in front of this window; None opens the kernel on zeros.
+    _warmup: jax.Array = None
+    # The trajectory of a solution handed over as history, which the steps before the kernel process where the monitor runs, under the caller's jit as tvboptim's HRFBold processes it.
+    _history: jax.Array = None
+% elif _carries_warmup:
     # The ${_warmup_steps} steps in front of this window, for a caller that hands over successive windows; None when the window brings its own settle.
     _warmup: jax.Array = None
 % endif
 
-    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}${', warmup=None' if _carries_warmup else ''}):
+    def __init__(self, voi: int = ${state_idx}, period: float = None, dt: float = ${dt}${''.join([f", {step['name']}_params=None" for step in static_steps])}${', history=None' if _segmented else (', warmup=None' if _carries_warmup else '')}):
         self.voi = self._normalize_voi(voi)
         self.period = period if period is not None else dt
         self.dt = dt
-% if _carries_warmup:
+% if _segmented:
+        # A solution is processed like the window and cut to the kernel's rows; an array is taken as already processed, as tvboptim's HRFBold takes it.
+        self._history = self._window(history) if hasattr(history, 'ys') else None
+        self._warmup = None if history is None or hasattr(history, 'ys') else jnp.asarray(history)
+% elif _carries_warmup:
         self._warmup = None if warmup is None else self._fit_warmup(jnp.asarray(warmup))
 % endif
 
-% for step in static_steps:
-<%
-    step_name = step['name']
-    fn_def = functions_by_name.get(step_name)
-    # Build default args from function definition (arguments keyed by name)
-    default_args = []
-    for arg_name, arg in (get_attr(fn_def, 'arguments') or {}).items():
-        arg_val = get_attr(arg, 'value')
-        if arg_name and arg_val is not None:
-            default_args.append(f"{arg_name}={to_numeric(arg_val)}")
-%>
-        self._${step_name} = ${step_name}(${', '.join(default_args)})
-% endfor
 
 
 % for ref_obs in referenced_observations:
         self._${ref_obs}_monitor = ${monitor_class_name(ref_obs)}(voi=voi, dt=dt)
 % endfor
 
-% if _carries_warmup:
+% if _segmented:
+    @staticmethod
+    def _fit_history(h):
+        """`h`, cut or zero-opened to the ${_kernel_rows} rows the kernel's support spans."""
+        h = h[-${_kernel_rows}:]
+        _short = ${_kernel_rows} - h.shape[0]
+        return h if not _short else jnp.vstack([jnp.zeros((_short,) + h.shape[1:], dtype=h.dtype), h])
+
+    def _held(self):
+        """The kernel-rate rows in front of this window, or None where the kernel opens on zeros."""
+        return self._warmup if self._history is None else self._fit_history(self._segment(self._history))
+
+    def _window(self, result):
+        """The trajectory this pipeline reads, whole."""
+        return result.data${'[:, self.voi, :]' if obs_source else ''}
+
+    def open_warmup(self, n_nodes):
+        """A copy whose kernel opens on zeros and carries its history forward, for a caller whose windows bring no settle of their own."""
+        return eqx.tree_at(lambda _m: _m._warmup, self, jnp.zeros((${_kernel_rows}, ${1 if obs_source else len(var_names)}, n_nodes)), is_leaf=lambda _x: _x is None)
+
+    def carry_warmup(self, result):
+        """A copy carrying this window, processed on its own, as the next window's history."""
+        _w, _held = self._segment(self._window(result)), self._held()
+        # Cast back, so a scan carrying this monitor sees one dtype however the window it is handed was integrated.
+        _w = self._fit_history(_w) if _held is None else self._fit_history(jnp.concatenate([_held, _w], axis=0)).astype(_held.dtype)
+        return eqx.tree_at(lambda _m: (_m._warmup, _m._history), self, (_w, None), is_leaf=lambda _x: _x is None)
+
+    def _segment(self, _data):
+        """The steps before the kernel, run on one segment, the history or the window, on its own."""
+% elif _carries_warmup:
     @staticmethod
     def _fit_warmup(w):
         """`w`, cut or zero-opened to the ${_warmup_steps} steps the kernel's support spans."""
@@ -1399,6 +1581,7 @@ class ${class_name}(AbstractMonitor):
         return eqx.tree_at(lambda _m: _m._warmup, self, _w)
 
 % endif
+% if not _segmented:
     def __call__(self, result):
 % for ref_obs in referenced_observations:
         _${ref_obs}_result = self._${ref_obs}_monitor(result)
@@ -1414,6 +1597,9 @@ class ${class_name}(AbstractMonitor):
         _data = result.data
 % endif
         _time = result.time
+% if not network_edge_label:
+        _variable_names = _kept_variable_names(result, ${'self.voi' if obs_source else 'slice(None)'}, ${repr(obs['output_variable_name'])})
+% endif
 % if _takes_settle:
 <% assert_measured_window_is_stable(experiment, obs_name) %>\
         # The settle THIS window carries: its own length, less the measured window the recipe declares. Read from the shape, which is known while tracing, so an algorithm's tuning window — shorter than the measurement, and settled already — is seen to carry none.
@@ -1438,9 +1624,44 @@ class ${class_name}(AbstractMonitor):
             _data = jnp.concatenate([_head, _data], axis=0)
 % endif
 % endif
+% endif
 
 
 % for step_idx, step in enumerate(pipeline):
+% if _segmented and step_idx == _join_idx:
+        return ${_segment_out}
+
+    def __call__(self, result):
+% for ref_obs in referenced_observations:
+        _${ref_obs}_result = self._${ref_obs}_monitor(result)
+% endfor
+        _data = self._window(result)
+        _time = result.time
+        _variable_names = _kept_variable_names(result, ${'self.voi' if obs_source else 'slice(None)'}, ${repr(obs['output_variable_name'])})
+% if not _takes_settle:
+        _head = self._held()
+% else:
+<% assert_measured_window_is_stable(experiment, obs_name) %>\
+        # The settle THIS window carries: its own length, less the measured window the recipe declares. Read from the shape, which is known while tracing, so an algorithm's tuning window, shorter than the measurement and settled already, is seen to carry none.
+        _n_settle = max(0, _data.shape[0] - ${n_measured})
+        if _n_settle:
+            # A settle carried in the window is its history: processed on its own and joined at the kernel's input like one handed over.
+            _head = self._fit_history(self._segment(_data[:_n_settle]))
+            _data = _data[_n_settle:]
+            if _time is not None:
+                _time = _time[_n_settle:]
+        else:
+            _head = self._held()
+% endif
+% for _kst in static_steps:
+% if pipeline.index(_kst) < _join_idx:
+        ${step_output_var(_kst)} = ${kernel_call(_kst, observation_scalars(obs))}
+% endif
+% endfor
+        _window_segment = self._segment(_data)
+        # Without a history the kernel opens on zeros, in the default float dtype as tvboptim's HRFBold pads.
+        ${_segment_out} = jnp.vstack([jnp.zeros((${_kernel_rows},) + _window_segment.shape[1:]) if _head is None else _head, _window_segment])
+% endif
 <%
     step_name = step['name']
     step_output = step.get('output') or step_name
@@ -1456,9 +1677,16 @@ class ${class_name}(AbstractMonitor):
 
     prefixed_output = prefix_outputs(step_output)
 
-    # Determine input variable
-    if step_idx == 0:
-        # Every step reads the window it is given; the settle is its head.
+    # A declared `input` names the source (`integration.result`) or an earlier step; otherwise the first step reads the window it is given, the settle its head, and every later one the step before it.
+    _declared_input = step.get('input')
+    _input_step = next((st for st in pipeline[:step_idx] if st['name'] == str(_declared_input)), None) if _declared_input else None
+    if _input_step is not None:
+        input_var = step_output_var(_input_step)
+    elif _declared_input and parse_reference(_declared_input)[0] == 'integration':
+        input_var = '_data'
+    elif _declared_input:
+        input_var = f"_{str(_declared_input).strip()}"
+    elif step_idx == 0:
         input_var = '_data'
         _step_dims = _pipeline_input_dims
     else:
@@ -1473,7 +1701,9 @@ class ${class_name}(AbstractMonitor):
         _step_dims = (_reduction_dims({'kind': _kind}) or None) if _kind else None
 %>
 % if is_static:
-        ${prefixed_output} = self._${step_name}
+% if not (_segmented and step_idx < _join_idx):
+        ${prefixed_output} = ${kernel_call(step, observation_scalars(obs))}
+% endif
 % elif step_callable and step_callable.get('full_call'):
 <%
     full_call = step_callable['full_call']
@@ -1612,16 +1842,11 @@ class ${class_name}(AbstractMonitor):
         ${prefixed_output} = ${step['source_code'].replace('_input', input_var)}
 % elif step.get('equation'):
 <%
-    # What the monitor says it computes, emitted. The scalars an argument may be derived from are the experiment's own: the integration step and the observation's reporting period.
-    _scope = {'dt': dt, 'period': to_numeric(obs.get('period')) if obs.get('period') is not None else dt}
-    _expr = resolve_step_expression(
-        step['equation'], input_var, step.get('equation_params'), step.get('equation_derived'),
-        _scope, f"Observation {obs_name!r} step {step_name!r}",
+    _emitted = equation_step_code(
+        step['equation'], input_var, {**obs['agg_params'], **(step.get('equation_params') or {})}, step.get('equation_derived'),
+        observation_scalars(obs), f"Observation {obs_name!r} step {step_name!r}", user_functions, _step_dims,
+        bound={_a: f"_{_v}" for _a, _v in (step.get('arguments') or {}).items() if isinstance(_v, str) and _v in step_names},
     )
-    try:
-        _emitted = jaxcode(_expr, dims={input_var: _step_dims} if _step_dims else None)
-    except ValueError as _error:
-        raise ValueError(f"Observation {obs_name!r} step {step_name!r}: {_error}") from None
     _step_dims = _equation_dims(step['equation'], _step_dims)
 %>\
         ${prefixed_output} = ${_emitted}
@@ -1691,6 +1916,9 @@ class ${class_name}(AbstractMonitor):
     # Determine primary data - last output name or 'data'
     final_outputs = [o.strip() for o in final_key.split(',')]
     primary_output = final_outputs[-1] if final_outputs else 'data'
+    _out_dims = _all_obs_dims.get(obs_name, ())
+    _t_axis = _out_dims.index('time') if 'time' in _out_dims else 0
+    _n_t = 'len(_final)' if _t_axis == 0 else f'_final.shape[{_t_axis}]'  # the declared time axis, not the leading one
 %>
         _final = _${primary_output}
         if isinstance(_final, NativeSolution):
@@ -1706,11 +1934,17 @@ class ${class_name}(AbstractMonitor):
             return _final
 % endif
 
+<% _ts_code = time_stamps_code(obs, obs_name) %>\
+% if _ts_code:
+        _n_out = _final.shape[${_t_axis}]
+        _ts = ${_ts_code}
+        _out_dt = ${observation_scalars(obs)['period']}
+% else:
         _is_scalar = _final.ndim == 0 if hasattr(_final, 'ndim') else True
         if _is_scalar:
             _ts = None  # Scalar result has no time dimension
             _out_dt = self.dt
-        elif _time is not None and len(_time) == len(_final):
+        elif _time is not None and len(_time) == ${_n_t}:
             _ts = _time
             _out_dt = self.dt
 <%
@@ -1724,41 +1958,42 @@ class ${class_name}(AbstractMonitor):
     _window_stamped = last_sampling_kind(step['equation'] for step in pipeline) == 'window'
 %>
 % if tail_samples and not (_decl_period and _decl_period > float(dt)):
-        elif _time is not None and len(_time) > len(_final) > 1:
+        elif _time is not None and len(_time) > ${_n_t} > 1:
             # A trailing window keeps the samples it cut, so it keeps their own time stamps.
-            _ts = _time[-len(_final):]
+            _ts = _time[-${_n_t}:]
             _out_dt = self.dt
 % endif
 % if _decl_period and _decl_period > float(dt):
-        elif _time is not None and len(_time) > len(_final) > 1:
+        elif _time is not None and len(_time) > ${_n_t} > 1:
             # A sample that reports a period covers it, so it is stamped at the END of the period it covers: the first lands one whole period into the measured window, not on its first step. Verified against where a delta actually moves the output, not read off the emitting code.
-            _ts = _time[0] - self.dt + (jnp.arange(len(_final)) + 1) * ${_decl_period}
+            _ts = _time[0] - self.dt + (jnp.arange(${_n_t}) + 1) * ${_decl_period}
 % if _window_stamped:
 ## A window's mean is stamped instead at the mean time of the samples it averages, as tvboptim's TemporalAverage labels it.
             _ts = _ts - (${_decl_period} - self.dt) / 2
 % endif
             _out_dt = ${_decl_period}
 % else:
-        elif _time is not None and len(_time) > len(_final) > 1:
-            # The pipeline subsampled the time series but declares no output period;
-            # spread the outputs uniformly across the recorded span as a fallback.
-            _ts = jnp.linspace(_time[0], _time[-1], len(_final))
-            _out_dt = (_time[-1] - _time[0]) / (len(_final) - 1)
+        elif _time is not None and len(_time) > ${_n_t} > 1:
+            # The pipeline subsampled the time series but declares no output period, so its outputs are spread uniformly across the recorded span.
+            _ts = jnp.linspace(_time[0], _time[-1], ${_n_t})
+            _out_dt = self.dt * (len(_time) - 1) / (${_n_t} - 1)  # from shapes, so it stays a static float under jit
 % endif
         else:
-            _ts = jnp.arange(len(_final)) * self.dt
+            _ts = jnp.arange(${_n_t}) * self.dt
             _out_dt = self.dt
+% endif
 % if named_outputs:
         return ObservationResult(
             ts=_ts,
             ys=_final,
             dt=_out_dt,
+            variable_names=${'_variable_names if jnp.ndim(_final) == 3 else None' if not network_edge_label else 'None'},
 % for out_name in named_outputs:
             ${out_name}=_${out_name},
 % endfor
         )
 % else:
-        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=_out_dt)
+        return NativeSolution(ts=_ts if _ts is not None else jnp.array([0.0]), ys=_final, dt=_out_dt, variable_names=${'_variable_names if jnp.ndim(_final) == 3 else None' if not network_edge_label else 'None'})
 % endif
 
 % endif

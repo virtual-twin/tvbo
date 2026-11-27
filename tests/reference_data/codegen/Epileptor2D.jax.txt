@@ -33,7 +33,7 @@ def dfun(current_state, t, cX, _p):
     zcond = jnp.where(jnp.less(z, 0), -0.1 * z**7, 0)
     h = jnp.where(
         jnp.greater(modification, 0),
-        x0 + 3.0 / (1.0 + 0.00673794699908547 * jnp.exp(-10.0 * x1)),
+        x0 + 3.0 / (1.0 + 0.006737946999085467 * jnp.exp(-10.0 * x1)),
         zcond - 4 * x0 + 4 * x1,
     )
 

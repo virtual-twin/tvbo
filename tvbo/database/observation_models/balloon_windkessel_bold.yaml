@@ -1,0 +1,103 @@
+# tvboptim's BalloonWindkesselBold: the Balloon-Windkessel hemodynamics as an observer on its own step `dt_bw` (`step_size`), every constant and update written as tvboptim's `bw_step` computes it, operation for operation, because floating-point arithmetic is not associative. tests/test_tvboptim_monitor_formalization.py pins the generated monitor to the class bit for bit. BOLD_Balloon is the same model on the integration step, parameterised by name as Friston (2000) writes it.
+
+name: BalloonWindkesselBold
+label: BOLD (Balloon-Windkessel, tvboptim)
+iri: tvbo:BalloonWindkesselBold
+description: >-
+    BOLD signal as tvboptim's BalloonWindkesselBold computes it: the four Balloon-Windkessel states (vasodilatory signal, blood inflow, blood volume, deoxyhaemoglobin) advance by explicit Euler on the seconds grid, driven by the observed firing rate resampled onto `step_size` (each input repeated, or the last of every k taken), and the BOLD signal is read at the end of each `period`.
+
+imaging_modality: BOLD
+period: 2000.0
+step_size: 1.0
+output_variable_name: "BOLD({name})"
+
+time_stamps:
+    rhs: "arange(n) * period + period"
+
+dynamics:
+    name: BalloonWindkesselBold
+    description: Four-variable Balloon-Windkessel hemodynamics driven by the observed signal `x`, as tvboptim's explicit-Euler `bw_step`.
+    system_type: discrete
+
+    parameters:
+        taus:
+            value: 0.65
+            unit: s
+            description: Vasodilatory signal decay time constant
+        tauf:
+            value: 0.41
+            unit: s
+            description: Autoregulatory feedback time constant
+        tauo:
+            value: 0.98
+            unit: s
+            description: Transit time
+        alpha:
+            value: 0.32
+            description: Grubb's vessel stiffness exponent
+        Eo:
+            value: 0.4
+            description: Resting oxygen extraction fraction
+        vo:
+            value: 0.04
+            description: Resting blood volume fraction
+        TE:
+            value: 0.04
+            unit: s
+            description: Echo time
+
+    state_variables:
+        s:
+            initial_value: 0.0
+            equation_type: recurrence
+            equation:
+                rhs: "s + dt_s * (x - itaus * s - itauf * (f - 1.0))"
+            description: Vasodilatory signal
+        f:
+            initial_value: 1.0
+            equation_type: recurrence
+            equation:
+                rhs: "f + dt_s * s"
+            description: Blood inflow
+        v:
+            initial_value: 1.0
+            equation_type: recurrence
+            equation:
+                rhs: "v + dt_s * (itauo * (f - v ** ialpha))"
+            description: Blood volume
+        q:
+            initial_value: 1.0
+            equation_type: recurrence
+            equation:
+                rhs: "q + dt_s * (itauo * (f * (1.0 - (1.0 - Eo) ** (1.0 / f)) / Eo - v ** (ialpha - 1.0) * q))"
+            description: Deoxyhaemoglobin content
+
+    derived_parameters:
+        dt_s:
+            equation: {rhs: "dt / 1000.0"}
+            unit: s
+            description: The observer's step on the seconds grid.
+        itaus:
+            equation: {rhs: "1.0 / taus"}
+        itauf:
+            equation: {rhs: "1.0 / tauf"}
+        itauo:
+            equation: {rhs: "1.0 / tauo"}
+        ialpha:
+            equation: {rhs: "1.0 / alpha"}
+        k1:
+            equation: {rhs: "4.3 * 40.3 * Eo * TE"}
+            description: Extravascular BOLD weighting.
+        k2:
+            equation: {rhs: "25.0 * Eo * TE"}
+            description: Intravascular BOLD weighting.
+        k3:
+            equation: {rhs: "1.0"}
+            description: Volume-change weighting.
+
+    derived_variables:
+        bold:
+            record: true
+            equation:
+                rhs: "vo * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))"
+            description: BOLD signal

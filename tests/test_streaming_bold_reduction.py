@@ -100,8 +100,7 @@ def test_streaming_lifts_the_pipeline_constants():
     assert red["kernel_call"] == "hrf_kernel()"
     assert red["ds_steps"] == 1
     assert red["tr_stride"] == 180
-    assert red["k_1"] == 5.6
-    assert red["V_0"] == 0.02
+    assert red["scaling"] == "volterra_transform(_conv)"
 
 
 def test_predicate_call_without_experiment_is_side_effect_free_and_truthy():
@@ -111,7 +110,7 @@ def test_predicate_call_without_experiment_is_side_effect_free_and_truthy():
 
 
 def test_temporal_average_decimation_is_rejected():
-    # temporal_average is not stream-safe even at period_samples=1 (it shifts by one sample, reproducing tvboptim TemporalAverage); streaming requires a pure subsample decimation.
+    # An averaging window is not the sample the reducer keeps; streaming requires a pure subsample decimation.
     obs, exp = _bold_observation(decimation="temporal_average")
     with pytest.raises(ValueError, match="subsample decimation"):
         resolve_reduction(obs, exp)
@@ -151,8 +150,7 @@ def _bold_red(ds, tr, K):
         "kernel_call": "hrf_kernel()",
         "ds_steps": ds,
         "tr_stride": tr,
-        "k_1": 5.6,
-        "V_0": 0.02,
+        "scaling": "0.02 * 5.6 * (_conv - 1.0)",
         "warmup_steps": K * ds,  # the kernel's span in raw steps, as resolve_reduction reads it off `time_range`
     }
 

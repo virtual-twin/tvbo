@@ -183,6 +183,7 @@ observations:
     description: Target FC matrix from network observations (loaded from BIDS)
     source:
     - network.observations.BoldCorrelation
+    history_join: per_segment
     reconcile: by_label
   bold:
     name: bold
@@ -192,6 +193,7 @@ observations:
     source:
     - S
     period: 1000.0
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: hrf_kernel
@@ -235,6 +237,7 @@ observations:
     description: Pearson correlation matrix from BOLD time series
     source:
     - bold
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -252,13 +255,9 @@ observations:
 functions:
   temporal_average:
     name: temporal_average
-    description: 'Downsample by averaging over non-overlapping windows of `period_samples`
-      samples. Reproduces tvboptim TemporalAverage exactly: window starts are the
-      centered indices (arange(T)+1)[::period_samples] (t0-independent — the simulation
-      start does not shift the result), each window is averaged with a clamped dynamic
-      slice, and the output is trimmed to the centered-index count.
-
-      '
+    description: Downsample by the mean of each complete window of `period_samples`
+      samples, counted from the first sample, as tvboptim's TemporalAverage averages
+      them.
     arguments:
       data:
         name: data
@@ -267,10 +266,8 @@ functions:
         name: period_samples
         description: Samples per averaging window = round(downsample_period / dt)
         value: 1
-    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
-      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
-      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
-      period_samples).shape[0]]'
+    source_code: 'jnp.mean(data[: (data.shape[0] // period_samples) * period_samples].reshape((-1,
+      period_samples) + data.shape[1:]), axis=1)'
   hrf_kernel:
     name: hrf_kernel
     equation:

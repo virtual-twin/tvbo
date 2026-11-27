@@ -7,6 +7,7 @@ parameters:
     name: TR
     value: 2000.0
     unit: ms
+history_join: per_segment
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:
@@ -25,14 +26,22 @@ pipeline:
   acronym: HRF
   equation:
     parameters:
-      mean:
-        name: mean
-        value: 3.0
+      tau:
+        name: tau
+        value: 1.08
+        description: Exponential time constant
         unit: s
-      var:
-        name: var
-        value: 1.5
-    rhs: ((var / mean**2) * t)**(var / mean) * exp(-(var / mean) * t) / abs(t)
+      n:
+        name: n
+        value: 3.0
+        description: Phase delay (shape)
+      a:
+        name: a
+        value: 0.1
+        description: Amplitude after peak normalisation
+    rhs: ((t / tau) ** (n - 1) * exp(-(t / tau))) / (tau * factorial(int(n) - 1))
+      / max(((t / tau) ** (n - 1) * exp(-(t / tau))) / (tau * factorial(int(n) - 1)))
+      * a
     latex: false
   output: hrf_kernel
   arguments:
