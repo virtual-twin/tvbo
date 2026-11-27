@@ -1303,7 +1303,7 @@ from tvbo.templates.tvboptim.callbacks import resolve_exploration_n_vmap   # sav
 % if has_explorations:
 from tvboptim.types import Space, GridAxis, DataAxis, AbstractAxis
 from tvboptim.execution import ParallelExecution, SequentialExecution
-from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells, sweep_slice   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count; grid cells → one stacked pytree; a run's shard or sample → a slice of the sweep
+from tvbo.templates.tvboptim.callbacks import point_indices, progress_ticker, repeats_a_point, resolve_exploration_n_pmap, resolve_exploration_n_vmap, stack_grid_cells, sweep_slice   # array-axis cell → point index; grid-batch progress; n_parallel → vmap width and replica count; grid cells → one stacked pytree; a run's shard or sample → a slice of the sweep
 % endif
 % if _dataset_on_device:
 from tvbo.templates.tvboptim.callbacks import resolve_cohort_batch_size   # dataset.batch_size → subjects per on-device batch
@@ -3325,6 +3325,7 @@ ${sweep.warmstart_sweep_body(expl, dt, warmstart_solver_kwargs)}\
     % endfor
     grid = Space(grid_state, mode="${expl['mode']}")
     _n_cells = len(grid)
+    _sweep = grid
     # A shard or a `--limit` sample is a strided slice of the grid this script built, still vectorised, reassembled by parameter value downstream; a slice that keeps every cell leaves the grid as built.
     _cells = sweep_slice(_n_cells, kwargs.get('shard'), kwargs.get('limit'))
     _taken = len(range(_n_cells)[_cells])
@@ -3959,18 +3960,25 @@ ${map_trials(_pmode, _pbatch, _trial_indices + ['_trial_ics'])}\
     # Each cell's actual parameter values, so coordinates follow the grid's OWN cell order rather than a positional reshape that assumes the declared axis order: a Space emits cells in pytree-leaf order, which differs whenever the swept axes live on different state sub-objects.
     _cell_coords = None
 % if has_axes:
-    _df = grid.to_dataframe()
+    # A shard reads the whole sweep only where an array-valued axis repeats a point, whose copies are told apart by the order of the whole run.
+    _whole = any(getattr(_p, "ndim", 1) > 1 and repeats_a_point(_p) for _p in _array_axis_points.values())
+    _df = (_sweep if _whole else grid).to_dataframe()
     # Both sequences come from one flatten of one tree, so rank pairs each column with the axis that bound it and any mismatch raises.
     _bound = [_l for _l in jax.tree.leaves(grid_state, is_leaf=lambda _x: isinstance(_x, AbstractAxis)) if isinstance(_l, AbstractAxis)]
     _cell_coords = {}
     for _leaf, _col in zip(_bound, _df.columns, strict=True):
         _label = _axis_label_by_id[id(_leaf)]
         _vals = np.asarray(_df[_col].to_numpy())
-        # An array-valued axis coordinates on the point INDEX, so the cells are converted here, where the materialised points are still in scope.
+        # An array-valued axis coordinates on the point INDEX, converted here, where the materialised points are still in scope.
         _pts = _array_axis_points.get(_label)
         if _pts is not None and getattr(_pts, "ndim", 1) > 1:
+% if expl['mode'] == 'product':
+            _vals = point_indices(_vals, _pts, others=[_df[_c].to_numpy() for _c in _df.columns if _c != _col])
+% else:
             _vals = point_indices(_vals, _pts)
-        _cell_coords[_label] = _vals
+% endif
+            _df[_col] = _vals
+        _cell_coords[_label] = _vals[_cells] if _whole else _vals
 % endif
 
 % if returns_bunch:
