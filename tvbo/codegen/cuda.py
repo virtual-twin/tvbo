@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
-from tvbo.adapters.base import dense_matrix, edge_needs, require_edge_attributes
+from tvbo.adapters.base import dense_matrix, edge_needs, refuse_declared_delays, require_edge_attributes
 
 if TYPE_CHECKING:
     from tvbo.classes.experiment import SimulationExperiment
@@ -93,6 +93,7 @@ def run_cuda(
         n_steps = int(float(experiment.integration.duration) / dt)
 
     # Network data from experiment
+    refuse_declared_delays(experiment.network, "cuda")
     require_edge_attributes(experiment.network, "cuda", edge_needs(experiment.network))
     weights = dense_matrix(experiment.network, "weight", dtype=np.float32)
     lengths = dense_matrix(experiment.network, "length", dtype=np.float32)

@@ -12,6 +12,7 @@ parameters:
       Only used when no precomputed gain is available.
     unit: S_per_m
 period: 0.9765625
+history_join: per_segment
 imaging_modality: SEEG
 data_source:
   name: sensor_network

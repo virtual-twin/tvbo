@@ -28,11 +28,10 @@ from tvboptim.observations.tvb_monitors import (
 )
 
 from tvbo import Coupling, Dynamics, Network, Observation, SimulationExperiment
+from tvbo.datamodel import Argument, Equation, Function, FunctionCall, Parameter
 from tvbo.templates.tvboptim.utils import monitor_class_name
 
-pytestmark = pytest.mark.xfail(
-    reason="phase 2 of dev/Observation-Formalization.md: curated specs, schema slots and codegen not landed yet", strict=False
-)
+pytestmark = pytest.mark.backend_tvboptim
 
 N_NODES = 3
 CONCRETE = re.compile(
@@ -59,24 +58,27 @@ def _observation(spec, declared):
     return observation
 
 
-def _experiment(spec, dt, duration, **declared):
-    """A two-node experiment measuring *duration* at step *dt*, observed only through the curated spec *spec* with *declared* set on it."""
+def _experiment(spec, dt, duration, functions=None, **declared):
+    """A two-node experiment measuring *duration* at step *dt*, observed only through the curated spec *spec* with *declared* set on it, declaring *functions* beside the ones the spec brings."""
     network = Network.from_matrix(
         weights=np.array([[0.0, 0.2], [0.1, 0.0]]), lengths=np.zeros((2, 2)), labels=["left", "right"]
     )
     network.coupling["Linear"] = Coupling.from_db("Linear")
-    return SimulationExperiment(
+    experiment = SimulationExperiment(
         dynamics=Dynamics.from_db("ReducedWongWang"),
         network=network,
         integration={"method": "Heun", "duration": duration, "step_size": dt},
         observations=[_observation(spec, declared)],
     )
+    for name, function in (functions or {}).items():
+        experiment.functions[name] = function
+    return experiment
 
 
-def _generated(spec, sol, history=None, **declared):
-    """The monitor tvbo generates for *spec* with *declared* set on it, for an experiment that measures exactly *sol* (a longer trajectory would carry its excess as the settle), warm-started on *history* when one is given."""
+def _generated(spec, sol, history=None, functions=None, **declared):
+    """The monitor tvbo generates for *spec* with *declared* set on it, for an experiment that measures exactly *sol* (a longer trajectory would carry its excess as the settle) and declares *functions*, warm-started on *history* when one is given."""
     module = types.ModuleType(f"generated_{spec}")
-    code = _experiment(spec, sol.dt, sol.ts.shape[0] * sol.dt, **declared).render_code("tvboptim")
+    code = _experiment(spec, sol.dt, sol.ts.shape[0] * sol.dt, functions, **declared).render_code("tvboptim")
     exec(compile(code, f"<generated {spec}>", "exec"), module.__dict__)
     monitor = getattr(module, monitor_class_name(spec))
     return monitor() if history is None else monitor(history=history)
@@ -248,6 +250,7 @@ def test_a_streaming_monitor_carried_through_a_scan_reports_what_one_jitted_fold
 
 @pytest.mark.parametrize(("spec", "extra"), [("BOLD_HRF_strided", 0), ("BOLD_HRF_strided", 7), ("BalloonWindkesselBold", 0)])
 def test_a_settle_run_as_its_own_scan_warms_a_streaming_monitor_as_an_in_band_settle_does(spec, extra):
+    """The two ways of handing over a settle fill the same memory. The observer then reports the same bits; the kernel reports them to rounding, because one fold contracts the settle's windows and the measured ones in a single product and the other only the measured ones, and a matrix product's summation order depends on its size."""
     dt, period, declared = CARRYING[spec]
     settle = _solution(30 * period + extra * dt, dt, seed=1, scale=5.0)
     measured = _solution(10 * period, dt, seed=2, scale=5.0)
@@ -258,7 +261,11 @@ def test_a_settle_run_as_its_own_scan_warms_a_streaming_monitor_as_an_in_band_se
         variable_names=measured.variable_names,
     )
     monitor = _generated(spec, measured, **declared)
-    assert np.array_equal(_ys(monitor.carry_warmup(settle)(measured)), _ys(monitor(joined)))
+    carried, in_band = _ys(monitor.carry_warmup(settle)(measured)), _ys(monitor(joined))
+    if spec == "BalloonWindkesselBold":
+        assert np.array_equal(carried, in_band)
+    else:
+        np.testing.assert_allclose(carried, in_band, rtol=1e-12, atol=0.0)
 
 
 @pytest.mark.parametrize(
@@ -282,3 +289,51 @@ def test_generated_code_uses_only_abstract_tvboptim_classes(spec):
     ]
     offending = [line for line in imports if CONCRETE.search(line)]
     assert not offending, offending
+
+
+VOLTERRA_FUNCTION = Function(
+    name="volterra_transform",
+    equation=Equation(
+        rhs="k_1 * V_0 * (data - 1.0)",
+        parameters={"k_1": Parameter(name="k_1", value=5.6), "V_0": Parameter(name="V_0", value=0.02)},
+    ),
+    arguments={"data": Argument(name="data")},
+)
+"""The Volterra scaling declared as a Function a pipeline step calls, as the curated FFT experiments declare it."""
+
+SCALINGS = {
+    "inline": "_samples = (_conv - 1.0) * 5.6 * 0.02",
+    "function": "_samples = volterra_transform(data=_conv)",
+    "none": "_samples = _conv",
+}
+"""How the strided BOLD pipeline closes, and the line its streamed reducer emits for that close."""
+
+
+def _strided(scaling):
+    """The curated strided BOLD pipeline closing on its own inline `volterra_transform` step, on a call to the declared Function, or on no scaling, with the functions it calls."""
+    pipeline = list(Observation.from_db("BOLD_HRF_strided").pipeline)
+    if scaling == "inline":
+        return {"pipeline": pipeline}
+    if scaling == "none":
+        return {"pipeline": pipeline[:-1]}
+    call = FunctionCall(
+        function="volterra_transform", output="Bold", arguments={"data": Argument(name="data", value="bold_convolve")}
+    )
+    return {"pipeline": [*pipeline[:-1], call], "functions": {"volterra_transform": VOLTERRA_FUNCTION}}
+
+
+@pytest.mark.parametrize("scaling", list(SCALINGS))
+def test_a_streamed_bold_emits_its_pipelines_own_scaling_step(scaling):
+    """The Volterra scaling is a step of the pipeline like any other: the streamed reducer emits that step as the materialised monitor emits it, the inline equation in its authored order or the call to the declared Function, and no scaling where the pipeline declares none."""
+    dt, period, streamed = CARRYING["BOLD_HRF_strided"]
+    code = _experiment("BOLD_HRF_strided", dt, 30 * period, **_strided(scaling), **streamed).render_code("tvboptim")
+    assert [line.strip() for line in code.splitlines() if line.strip().startswith("_samples =")] == [SCALINGS[scaling]]
+
+
+@pytest.mark.parametrize("scaling", list(SCALINGS))
+def test_a_streamed_bold_reports_what_its_materialised_pipeline_reports(scaling):
+    dt, period, streamed = CARRYING["BOLD_HRF_strided"]
+    sol = _solution(30 * period, dt, scale=5.0)
+    folded = _ys(_generated("BOLD_HRF_strided", sol, **_strided(scaling), **streamed)(sol))
+    materialised = _ys(_generated("BOLD_HRF_strided", sol, **_strided(scaling))(sol))
+    assert np.array_equal(folded.reshape(materialised.shape), materialised)

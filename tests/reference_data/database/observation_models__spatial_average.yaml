@@ -9,6 +9,7 @@ parameters:
     description: Vector of length N_nodes mapping each node to a region index (0-indexed).
       Inferred from network topology if not provided.
 period: 0.9765625
+history_join: per_segment
 reconcile: by_label
 pipeline:
 - name: spatial_average

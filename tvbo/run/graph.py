@@ -21,9 +21,11 @@ class GraphRunner:
     Args:
         connectome: Connectome whose weights and node/edge structure define the network. Its `create_graph` method supplies the graph snapshot, and its declared nodes the per-node states, parameters and labels.
         normalize_weights: When `True`, normalize the connectome weights via the connectome's schema-safe `normalize_weights` method before building the graph. Failures during normalization are ignored.
+        dt: The integration step the network is run with.
+        time_unit: The clock *dt* is in. A connectome that declares its delays builds its graph from both (`Network.integrated_delays`).
     """
 
-    def __init__(self, connectome, normalize_weights=True):
+    def __init__(self, connectome, normalize_weights=True, dt=None, time_unit=None):
         if normalize_weights:
             # Normalize using Connectome's schema-safe method
             try:
@@ -32,7 +34,7 @@ class GraphRunner:
                 pass
         self.connectome = connectome
         self.coupling = None
-        graph = connectome.create_graph()
+        graph = connectome.create_graph(dt=dt, time_unit=time_unit)
         if isinstance(graph, (nx.MultiDiGraph, nx.MultiGraph)):
             if any(key > 0 for _, _, key in graph.edges(keys=True)):
                 raise ValueError("GraphRunner integrates one edge per node pair; collapse parallel edges before running.")

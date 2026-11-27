@@ -242,12 +242,13 @@ def flatten_reservoir(
 def _macro_weights(net: dict):
     """The macro structural connectivity, with every weight transform the network declares applied.
 
-    Applied by `Network` itself, which runs a declared `transforms:` entry through `tvbo.codegen.transforms`, so a transform means here exactly what it means on every backend however it is written — ``weight / max(weight)``, a masked reduction, or a callable.
+    Applied by `Network` itself, which runs a declared `transforms:` entry through `tvbo.codegen.transforms`, so a transform means here exactly what it means on every backend however it is written — ``weight / max(weight)``, a masked reduction, or a callable. The network read here holds the weights alone, so it keeps the weight transforms alone: one the recipe declares on another layer has no layer to rewrite here.
     """
     from tvbo.classes.network import Network
     from tvbo.graph_generators import catalog
 
     network = Network.from_matrix(weights=catalog.load_matrix(net["iri"]), transforms=net.get("transforms") or [])
+    network.transforms = network.transforms_for("weight")
     return network.matrix("weight", format="dense")
 
 

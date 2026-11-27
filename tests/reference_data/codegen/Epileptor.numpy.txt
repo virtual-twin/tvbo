@@ -42,7 +42,7 @@ def dfun(current_state, t, cX, _p):
     f2 = np.where(np.less(x2, -0.25), 0, aa * (0.25 + x2))
     h = np.where(
         np.greater(modification, 0),
-        x0 + 3 / (1 + 0.00673794699908547 * np.exp(-10.0 * x1)),
+        x0 + 3 / (1 + 0.006737946999085467 * np.exp(-10.0 * x1)),
         -4 * x0 + 4 * x1 + np.where(np.less(z, 0), -0.1 * z**7, 0),
     )
     lfp = x2 - x1

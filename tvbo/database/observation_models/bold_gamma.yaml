@@ -42,13 +42,18 @@ pipeline:
           hi: duration
           step: stock_dt
       equation:
-          rhs: "((var / mean**2) * t)**(var / mean) * exp(-(var / mean) * t) / abs(t)"
+          rhs: "((t / tau) ** (n - 1) * exp(-(t / tau))) / (tau * factorial(int(n) - 1)) / max(((t / tau) ** (n - 1) * exp(-(t / tau))) / (tau * factorial(int(n) - 1))) * a"
           parameters:
-              mean:
-                  value: 3.0
+              tau:
+                  value: 1.08
                   unit: s
-              var:
-                  value: 1.5
+                  description: "Exponential time constant"
+              n:
+                  value: 3.0
+                  description: "Phase delay (shape)"
+              a:
+                  value: 0.1
+                  description: "Amplitude after peak normalisation"
       arguments:
           duration:
               value: 20

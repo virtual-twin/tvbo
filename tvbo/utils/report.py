@@ -25,7 +25,7 @@ from typing import Any, NamedTuple
 
 from tvbo.codegen.dims import shape_terms
 from tvbo.data import db
-from tvbo.utils import as_list, keyed_items, normalize_params
+from tvbo.utils import as_list, delay_declaration, keyed_items, normalize_params
 from tvbo.utils.yaml_loader import looks_like_path
 
 _EMPTY_MARKERS = {"", "—", "-", "None", "nan"}
@@ -1894,6 +1894,15 @@ def _edge_delay_text(net, unit=None):
     return f"{time_text(delays[0], unit)}-{time_text(delays[-1], unit)}"
 
 
+def _delay_text(net, unit=None):
+    """The delays a run integrates, as a table cell: the per-edge delays (`_edge_delay_text`), else the conduction speed, and for a network that declares its delays (`Network.delay_declaration`) the declaration. A ``delay`` layer is what runs whatever the speed says, so it stands alone; a transform on ``delay`` rewrites what the edges or the speed give, so it follows them."""
+    derived = _edge_delay_text(net, unit) or _speed_text(slot(net, "conduction_speed"))
+    declared = delay_declaration(net)
+    if declared is None:
+        return derived
+    return declared if net.delay_source() == "layer" else f"{derived}, then {declared}"
+
+
 def _run_frame(experiment):
     """``(network, integrator, time unit, node count)`` of an experiment, the frame both its table row and its settings sentence describe.
 
@@ -1917,7 +1926,7 @@ def experiment_facts(experiment, shared_parameters=()):
     swept = sweep_axes(experiment)
     facts = {"Exp": str(slot(experiment, "id", "")), "Fig": _reference_text(experiment)}
     facts["Nodes"] = "" if nodes is None else str(nodes)
-    facts["Delays"] = _edge_delay_text(net, unit) or _speed_text(slot(net, "conduction_speed"))
+    facts["Delays"] = _delay_text(net, unit)
     facts["Method"] = str(slot(integ, "method", "") or "")
     facts["$\\Delta t$"] = time_text(slot(integ, "step_size", None), unit)
     facts["Duration"] = time_text(slot(integ, "duration", None), unit)

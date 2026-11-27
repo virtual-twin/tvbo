@@ -5,6 +5,7 @@ Provides `TimeSeries`, a JAX-pytree-aware, xarray-backed time-series container w
 
 import copy
 import dataclasses
+import json
 import logging
 import re
 from copy import deepcopy
@@ -931,6 +932,16 @@ class SimulationResult:
         return f"SimulationResult{shape_str}{obs_str}"
 
 
+def _first_finite_record(records) -> int:
+    """Index of the first record, along the leading axis, whose entries are all finite; zero where fewer than two records are, or where the records are not numbers."""
+    try:
+        finite = np.isfinite(np.asarray(records, dtype=float))
+    except (TypeError, ValueError):
+        return 0
+    finite = finite.reshape(finite.shape[0], -1).all(axis=1)
+    return int(np.argmax(finite)) if int(finite.sum()) >= 2 else 0
+
+
 class AlgorithmResult:
     """Result of an iterative algorithm (FIC, EIB, etc.).
 
@@ -954,6 +965,8 @@ class AlgorithmResult:
         Algorithm hyperparameters used (eta, window_size, etc.)
     convergence : Bunch
         Convergence metrics (final values, deltas, etc.)
+    last_window : Bunch
+        Each observation the loop computes over a sliding window, over the window its last iteration read. Absent for an algorithm that has none.
     """
 
     def __init__(
@@ -999,14 +1012,17 @@ class AlgorithmResult:
         self.convergence = self._compute_convergence()
 
     def _compute_convergence(self):
-        """Compute convergence metrics from history."""
+        """Convergence metrics from history: for every recorded quantity its last record as `<quantity>_final` and, with more than one record, `<quantity>_delta`.
+
+        The delta is the last record minus the first finite one. A record that is not a number says the quantity was not defined yet, as a windowed quantity is before its first full window under `window_fill: in_stage`, so the delta spans the stretch over which the quantity is defined. With fewer than two finite records it is not a number, and so is a final record taken before the quantity was defined.
+        """
         conv = Bunch()
         if self.history:
             for key, vals in self.history.items():
                 if hasattr(vals, "__len__") and len(vals) > 0:
                     conv[f"{key}_final"] = vals[-1] if hasattr(vals, "__getitem__") else vals
                     if len(vals) > 1:
-                        conv[f"{key}_delta"] = vals[-1] - vals[0]
+                        conv[f"{key}_delta"] = vals[-1] - vals[_first_finite_record(vals)]
         return conv
 
     def __getattr__(self, name):
@@ -2019,6 +2035,24 @@ class ObservationResult(Bunch):
         """Time array (alias for ts)."""
         return getattr(self, "ts", None)
 
+    def _pytree_leaves(self) -> dict:
+        return {k: v for k, v in self.items() if k != "variable_names"}
+
+    def _pytree_static(self) -> str:
+        """The names of the variables a ``[time, variable, node]`` output keeps, static as a tvboptim solution's are, so a result carrying them passes through ``jax.jit``."""
+        if "variable_names" not in self:
+            return ""
+        names = self["variable_names"]
+        return json.dumps(None if names is None else list(names))
+
+    @classmethod
+    def _pytree_build(cls, static, leaves):
+        result = cls(leaves)
+        if static:
+            names = json.loads(static)
+            result["variable_names"] = None if names is None else tuple(names)
+        return result
+
 
 def _algo_tuned_params(source) -> dict:
     """Map each algorithm name to the set of parameters it FITS.
@@ -2053,6 +2087,21 @@ def _algo_tuned_params(source) -> dict:
         return out
 
     return {name: _tuned(name, set()) for name in by_name}
+
+
+def _last_window_attrs(name, algo) -> dict:
+    """What a ``last_window__`` variable of algorithm *name* states about itself in the container.
+
+    ``iteration`` is ``"last"``: the window is the one the last iteration of the last stage read. A selection restores the tuned parameters and the settled state of its best iterate and leaves the window buffer where the loop ended, so under one the ``estimate__`` values and the evaluation beside the window are the restored iteration's, which need not be the window's. ``selected_iteration`` then names that iteration as the algorithm's own ``selected_iteration`` variable counts it (its last entry under ``scope: stage``; -1 where no iteration was eligible and the last one was kept), and ``description`` says the same in words.
+    """
+    attrs = {"iteration": "last"}
+    selected = getattr(algo, "_extras", {}).get("selected_iteration")
+    if selected is not None:
+        attrs["selected_iteration"] = int(np.asarray(selected).reshape(-1)[-1])
+        attrs["description"] = (
+            f"The window the last iteration read, with tuning still running. The tuned values (estimate__*) and the evaluation after tuning (the algorithm__{name}__<observation> variables) are those of the iteration the selection restored: selected_iteration, counted as algorithm__{name}__selected_iteration counts it, and -1 where no iteration was eligible and the last one was kept."
+        )
+    return attrs
 
 
 class ExperimentResult:
@@ -2441,17 +2490,17 @@ class ExperimentResult:
                 _dims_cache.append(_declared_observation_dims(self.source))
             return _dims_cache[0]
 
-        def _write_fit_observations(observations, prefix_for):
-            """Persist a fit's achieved observations (simulated FC + reconciled empirical target) under ``prefix_for(name)``.
+        def _write_fit_observations(observations, prefix_for, attrs=None):
+            """Persist a fit's observations under ``prefix_for(name)``: what the evaluation achieved (simulated FC + reconciled empirical target) and, for a tuning algorithm, what its loop computed over the window the last iteration read.
 
-            Saving these makes the fit OUTCOME legible from the artifact, not only the tuned parameters. Each keeps the axes its declared reduction implies, so a per-node result lands on a labelled `node` axis like the `estimate__` params beside it rather than an unnamed one.
+            Saving these makes the fit OUTCOME legible from the artifact, not only the tuned parameters. Each keeps the axes its declared reduction implies, so a per-node result lands on a labelled `node` axis like the `estimate__` params beside it rather than an unnamed one. *attrs* is written on every variable of the call, for a group whose name does not say which point of the run it describes.
             """
             for obs_name, obs in (observations or {}).items():
                 for var, da in _numeric_leaves(
                     prefix_for(obs_name), _unwrap_observation(obs), dims=_declared_dims().get(str(obs_name))
                 ):
                     if var not in data_vars:
-                        data_vars[var] = da
+                        data_vars[var] = da.assign_attrs(attrs) if attrs else da
 
         for opt_name, opt in (self.optimizations or {}).items():
             # The loss trajectory is one value per optimization step, named so a convergence panel selects on the step rather than on a positional axis — the same naming the algorithms' `iteration` history uses beside it.
@@ -2529,6 +2578,12 @@ class ExperimentResult:
                 da = _numeric_da(key, value, dims=_tracked_dims(shape, _declared_dims().get(str(track))))
                 if da is not None:
                     data_vars[key] = da
+            # The loop's windowed observations, whole, as the last iteration read them.
+            _write_fit_observations(
+                getattr(algo, "_extras", {}).get("last_window"),
+                lambda n, _a=algo_name: f"algorithm__{_san(_a)}__last_window__{_san(n)}",
+                attrs=_last_window_attrs(_san(algo_name), algo),
+            )
             # A best-iterate selection (Algorithm.selection) records which iteration the tuned state came from and the criterion value that chose it; a scalar for the run, or one per stage under scope: stage.
             for field in ("selected_iteration", "selected_value"):
                 da = _numeric_da(field, getattr(algo, "_extras", {}).get(field), dims=("stage",))

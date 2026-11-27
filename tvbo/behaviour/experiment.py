@@ -686,7 +686,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
     def __repr__(self):
         return self.__str__()
 
-    def to_yaml(self, filepath: str | None = None, format: str = "tvbo") -> str:
+    def to_yaml(self, filepath: str | None = None, format: str = "tvbo", edges: bool = True) -> str:
         """Export the experiment to YAML format.
 
         Parameters
@@ -695,6 +695,8 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
             Path to write the YAML file. If None, returns the YAML string.
         format : str
             Output format: "tvbo" (default) or "pyrates".
+        edges : bool
+            For "pyrates", whether the circuit is run with the edges written here (`to_pyrates_yaml_string`); the PyRates adapter passes False where it adds the edges from the matrices.
 
         Returns:
         -------
@@ -736,6 +738,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
                     network=network,
                     filepath=filepath,
                     seed=run_seed(self),
+                    edges=edges,
                 )
             else:
                 return to_pyrates_yaml_string(
@@ -743,6 +746,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
                     network=network,
                     filepath=filepath,
                     seed=run_seed(self),
+                    edges=edges,
                 )
         else:
             from pathlib import Path as _Path
@@ -768,34 +772,34 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
     def configure(self):
         """Resolve coupling declarations and normalize delay flags.
 
-        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the connectome has no path lengths or the conduction speed is infinite (all delays zero). Tract lengths that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes. An optimization's ``trajectory_observations`` and its loss are checked here too (`_validate_trajectory_observations`, `_validate_optimization_losses`), so one set after construction is refused before any backend renders it.
+        Runs at the execution boundary and is backend-agnostic and idempotent: the resolved state persists on the experiment so YAML re-serialization and metadata export reflect what was actually executed. Delayed integration/coupling is disabled when the network has no delays (`Network.integrated_delays`, asked with this experiment's integration step and clock) or they are all zero, as with an infinite conduction speed. Tract lengths or a delay layer that depend on a ``used:`` reference, their own or an argument's of a transform on them (:meth:`Network.reads_references`), have no values until a run binds the network's references (:meth:`Network.bind_references`), so until then the declared delay flags stand, and once they are bound an error reading them is raised here. So is an error reading the delays of a network that declares them (:meth:`Network.declares_delays`): a delay layer in a unit that is no time is refused, not answered with an undelayed run. Declarative stimulus events are lowered at the same boundary, turning `target_variable` into a name and `target_regions` into node indices — the fields codegen consumes. An optimization's ``trajectory_observations`` and its loss are checked here too (`_validate_trajectory_observations`, `_validate_optimization_losses`), so one set after construction is refused before any backend renders it.
         """
         _resolve_coupling(self)
         self._resolve_events()
         self._validate_trajectory_observations()
         self._validate_optimization_losses()
 
-        lengths_bound = False
-        # Disable delayed logic if the connectome has no path lengths or conduction speed is infinite
+        must_read = False
+        # Delayed logic is switched off where the network's delays are absent or all zero.
         try:
             network = getattr(self, "network", None)
             if network is None:
                 return
 
             conn = network if isinstance(network, _dm().Network) else _dm().Network.from_datamodel(network)
+            step, clock = self._delay_step(), self._clock()
 
-            if conn.reads_references("length"):
-                if not conn._binding():
-                    # Tract lengths that read a reference are lengths even while no run has named what it resolves against: the declared delay flags stand.
-                    return
-                lengths_bound = True
-                delays = conn.calculate_delays()
-            else:
-                # Try to get delays from explicit edge delays or length / speed.
-                try:
-                    delays = conn.calculate_delays()
-                except Exception:
-                    delays = None
+            reads_references = conn.reads_references("length") or conn.reads_references("delay")
+            if reads_references and not conn._binding():
+                # Tract lengths that read a reference are lengths even while no run has named what it resolves against: the declared delay flags stand.
+                return
+            must_read = reads_references or conn.declares_delays()
+            try:
+                delays = conn.integrated_delays(step, clock)
+            except Exception:
+                if must_read:
+                    raise
+                delays = None  # any other network is read best-effort: the declared flags stand where the read fails
 
             if delays is None or np.allclose(np.nan_to_num(delays, nan=0.0), 0):
                 if getattr(self, "integration", None) is not None:
@@ -804,7 +808,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
                 for coup in network_couplings(self.network).values():
                     coup.delayed = False
         except Exception as e:
-            if lengths_bound:
+            if must_read:
                 raise
             # Best-effort; keep defaults if anything goes wrong
             import warnings
@@ -1545,7 +1549,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
 
             # One delayed coupling is enough to need the matrix, however many there are.
             any_delayed = any(getattr(coup, "delayed", False) for coup in network_couplings(self.network).values())
-            delay_matrix = self.network.calculate_delays() if any_delayed else None
+            delay_matrix = self.network_delays() if any_delayed else None
 
             net_obs = self.bound_observations()
             if not getattr(self, "_active_subject", None) and self.dataset_on_device():
@@ -1668,7 +1672,7 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
                 ts = self.dynamics.run(format="python", t=_step_grid(total, dt), integration=self.integration, u_0=opening)
             else:
                 # normalize_weights=False: weight transforms are declared in the spec; the runner must not mutate the experiment's network in place.
-                bnm = _Network(net, normalize_weights=False)
+                bnm = _Network(net, normalize_weights=False, dt=dt, time_unit=self._clock())
                 bnm.add_local_model(self.dynamics)
                 bnm.add_coupling(BaseAdapter(self).get_default_coupling())
                 ts = bnm.run(duration=total, dt=dt, integration=self.integration, seed=run_seed(self))
@@ -2126,14 +2130,34 @@ class SimulationExperimentBehaviour(Copyable, YamlDocument):
         with drawing_from(_stated_seed(self.execution)):
             return self.network.trial_realisations(n_trials)
 
+    def _delay_step(self) -> float | None:
+        """This experiment's integration step, which a transform on the network's ``delay`` may name as ``dt`` (`Network.calculate_delays`), or ``None`` without an integration."""
+        step = getattr(getattr(self, "integration", None), "step_size", None)
+        return None if step is None else float(step)
+
+    def _clock(self) -> str:
+        """The time unit this experiment integrates in: the integration's, else the experiment's, else ms (`time_unit_of`)."""
+        from tvbo.utils.units import time_unit_of
+
+        return time_unit_of(getattr(self, "integration", None), self)
+
+    def network_delays(self):
+        """The delay of every connection as this experiment integrates it: `Network.integrated_delays` with this experiment's integration step and clock.
+
+        The one read behind the delay matrix a run hands its graph, the longest delay the history is sized by and the check that switches delayed logic off, so the three cannot disagree. A network that declares its delays comes back in the integration's clock; one that declares none comes back as stated.
+        """
+        return self.network.integrated_delays(self._delay_step(), self._clock())
+
     @property
     def max_delay(self) -> float:
-        """Compute the maximum delay (ms) from the current network/connectome."""
+        """The longest delay of the current network as this experiment integrates it (`network_delays`); zero for a network with no delays."""
         if self.network is None:
             return 0.0
         try:
-            delays = self.network.calculate_delays()
+            delays = self.network_delays()
         except ValueError:
+            if self.network.declares_delays():
+                raise
             return 0.0  # the network declares neither tract lengths nor edge delays
         # Use nanmax to ignore NaN values for non-existent edges
         max_val = np.nanmax(delays)

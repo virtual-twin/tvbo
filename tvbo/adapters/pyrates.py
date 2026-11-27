@@ -187,6 +187,9 @@ class PyRatesAdapter(BaseAdapter):
     DELAY_CARRIERS = ("delay", "length")
     """Explicit per-edge delays are used as they are; tract lengths are converted through `Network.calculate_delays`."""
 
+    READS_DECLARED_DELAYS = True
+    """`_get_delays` asks `SimulationExperiment.network_delays`, so a stored ``delay`` layer and the transforms on ``delay`` are what the edges added from the matrices carry (`_declared_delays_by_matrix`)."""
+
     def __init__(self, experiment: SimulationExperiment):
         """Initialize adapter with experiment reference.
 
@@ -252,7 +255,9 @@ class PyRatesAdapter(BaseAdapter):
         # Check network size for matrix-based edges
         network = getattr(exp, "network", None)
         n_nodes = self._get_node_count(network)
-        use_matrix_edges = n_nodes > matrix_edge_threshold and hasattr(network, "matrix")
+        use_matrix_edges = hasattr(network, "matrix") and (
+            n_nodes > matrix_edge_threshold or self._declared_delays_by_matrix(network)
+        )
 
         # ── Shared setup: single YAML export + circuit load ──────────
         circuit, tmpdir, pkg_name = self._load_circuit_from_yaml(include_edges=not use_matrix_edges)
@@ -626,7 +631,7 @@ class PyRatesAdapter(BaseAdapter):
         exp = self.experiment
 
         # Export to PyRates YAML
-        yaml_content = exp.to_yaml(format="pyrates")
+        yaml_content = exp.to_yaml(format="pyrates", edges=include_edges)
 
         # For large networks, strip edges from YAML
         if not include_edges:
@@ -699,7 +704,7 @@ class PyRatesAdapter(BaseAdapter):
 
         # Source: prefer output, fallback to first state variable
         if first_dyn.output:
-            src_var = f"{dyn_name}_op/{list(first_dyn.output.keys())[0]}"
+            src_var = f"{dyn_name}_op/{next(iter(first_dyn.output))}"
         elif first_dyn.state_variables:
             src_var = f"{dyn_name}_op/{list(first_dyn.state_variables.keys())[0]}"
         else:
@@ -727,21 +732,18 @@ class PyRatesAdapter(BaseAdapter):
                 min_weight=1e-12,
             )
 
+    @staticmethod
+    def _declared_delays_by_matrix(network) -> bool:
+        """Whether *network* declares its delays (`Network.declares_delays`) and lists no edge between two nodes, so its edges are added from the matrices with the delays `_get_delays` reads, however few nodes it has. A network that lists its edges keeps the circuit written from them, which `to_pyrates_yaml_string` refuses for a declared delay."""
+        return network.declares_delays() and not network._placed_edges()
+
     def _get_delays(self, network):
-        """Get delay matrix from network."""
-        delays = None
-
-        # Check for explicit delays from edges
-        if hasattr(network, "_delays_from_edges"):
-            delays = network._delays_from_edges()
-
-        # If no explicit delays, compute from lengths/distances
-        if delays is None:
+        """The network's delays as this experiment integrates them (`SimulationExperiment.network_delays`), or ``None`` for a network that states no delay and has no tract of positive length."""
+        if not network.states_delays():
             lengths = getattr(network, "lengths_matrix", None)
-            if lengths is not None and np.any(lengths > 0):
-                delays = network.calculate_delays()
-
-        return delays
+            if lengths is None or not np.any(lengths > 0):
+                return None
+        return self.experiment.network_delays()
 
     def _build_outputs(self) -> dict:
         """Build PyRates outputs dict from dynamics state variables.

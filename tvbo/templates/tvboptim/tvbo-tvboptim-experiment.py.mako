@@ -8,6 +8,26 @@
 <%namespace name="compact" file="tvbo-tvboptim-compact-coupling.py.mako"/>\
 <%namespace name="delay_carry" file="tvbo-tvboptim-delay-carry.py.mako"/>\
 <%namespace name="events" file="/base/model-events.mako"/>\
+<%def name="forward_observations(observation_names, network_observation_names, derived_observation_names, traced_observation_names)">\
+<% from tvbo.templates.tvboptim.utils import monitor_class_name %>\
+        observations = Bunch()
+% for obs_name in observation_names:
+% if obs_name in network_observation_names:
+        observations.${obs_name} = ${obs_name}
+% elif obs_name in derived_observation_names:
+% elif obs_name in traced_observation_names:
+        observations.${obs_name} = _traced_call(_warmed(${monitor_class_name(obs_name)}(), result_transient), result)
+% else:
+        observations.${obs_name} = _warmed(${monitor_class_name(obs_name)}(), result_transient)(result)
+% endif
+% endfor
+
+        # Seeded with the traced values above, so a derived observation reads what a fit would, not an eager recomputation.
+        _all_obs = compute_all_observations(result, state, settle=result_transient, precomputed={_n: observations[_n] for _n in ${repr(sorted(n for n in traced_observation_names if n in observation_names))}})
+% for obs_name in sorted(derived_observation_names):
+        observations.${obs_name} = _all_obs.${obs_name}
+% endfor
+</%def>\
 <%
 from tvbo.codegen import render_expression
 from tvbo.classes.optimization import fitted_parameters as _fitted_parameters
@@ -18,14 +38,14 @@ from tvbo.templates.tvboptim.utils import (
     get_observation_refs, parse_loss_function,
     parse_exploration, normalize_n_parallel, get_param_info, get_node_param_overrides,
     materialise_lazy_params,
-    normalize_coupling_aliases, resolve_coupling_input_map,
+    normalize_coupling_aliases, coupling_input_wiring,
     get_node_state_overrides, render_jax_default, get_mode_layout,
     get_all_observations_from_algo, get_transitive_observations_from_algo, get_include_info, get_all_hyperparams, network_axis_leaf, network_leaf_is_matrix,
     classify_network_obs_inputs, coupling_param_keys,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, trajectory_dims, parameter_keypath,
-    has_host_pipeline, pipeline_stage_is_host, observation_closure, data_source_arrays, selection_settings, monitor_class_name,
-    analysis_settings, set_literal,
+    has_host_pipeline, pipeline_stage_is_host, observation_closure, data_source_arrays, selection_settings, stage_clock_settings, stage_definitions, monitor_class_name,
+    analysis_settings, set_literal, forward_traced_observations, functions_by_name,
     resolve_distribution, distribution_family, draw_expression, initial_condition_draw, initial_state_distribution,
     stochastic_moments, resolve_parameter_starts, refuse_axis_on_parameter_start, refuse_initial_value_on_parameter_start, free_parameter_ref,
     refuse_seed_outside_key_range, refuse_trial_starts_under_algorithms,
@@ -131,12 +151,8 @@ all_couplings = context['all_couplings']
 from tvbo.templates.tvboptim.utils import active_stimulus_events as _active_stimulus_events
 external_input_keys = {str(ev.name) for ev in _active_stimulus_events(experiment)}
 
-# Coupling-input → coupling-function mapping (+ local-term drop) resolved in the
-# tvboptim Python layer, not here — see resolve_coupling_input_map.
-ci_coupling_map, func_to_first_ci = resolve_coupling_input_map(model, all_couplings)
-
-# Translate function-name coupling key to ci name for tvboptim state access
-_to_ci_key = lambda k: func_to_first_ci.get(k, k) if k else None
+# Which coupling feeds each coupling input (local terms dropped), and the coupling-input key tvboptim's state holds a coupling under.
+ci_coupling_map, _to_ci_key = coupling_input_wiring(model, all_couplings)
 # The shared dotted-reference resolver, bound to this experiment's couplings and external inputs.
 _parameter_keypath = lambda ref: parameter_keypath(ref, couplings=all_couplings, coupling_key=_to_ci_key, external=external_input_keys)
 
@@ -148,10 +164,13 @@ has_delay = any(c.delayed for c in all_couplings.values() if c)
 # uses the stock delay graph that derives max_delay from the delays.
 interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
-# Lengths → DenseLengthGraph, per-edge delays → DenseDelayGraph; the representation is decided once, in Python, where the run path asks the same question.
+# The graph the network's delays call for (`graph_selection`) and its representation are decided once, in Python, where the run path asks the same question.
 from tvbo.templates.tvboptim.utils import emitted_graph as _emitted_graph
 use_length_graph, use_delay_graph, _representation = _emitted_graph(network, has_delay)
 use_sparse = _representation == "sparse"
+# Where the delays are handed in and none stand in, the emitted code refuses to build its graph without them.
+from tvbo.templates.tvboptim.utils import network_declares_delays as _network_declares_delays
+delays_handed = use_delay_graph and _network_declares_delays(network)
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -571,6 +590,8 @@ unrecorded_observation_names = {n for n, o in _all_observations.items() if getat
 
 # True when an observation reaches HOST (non-JAX) pipeline code, which the exploration observable can only run outside jit; a jax-native callable traces and must not cost the sweep its vmap (see utils.pipeline_stage_is_host).
 has_host_pipeline_obs = has_host_pipeline(list(observations.values()) + list(derived_observations_dict.values()))
+# Raw observations a forward run traces under jit, as a loss traces them (see utils.forward_traced_observations).
+traced_observation_names = forward_traced_observations(observations, functions_by_name(experiment))
 
 def get_obs(name):
     """Look up observation by name from observations dict."""
@@ -1577,6 +1598,10 @@ def create_network(
 % endfor
 % endif
 
+    % if delays_handed:
+    if delays is None:
+        raise ValueError("create_network: this network states its delays itself, so the graph is built from the delay matrix it gives (Network.integrated_delays with the integration step and its unit) and nothing stands in for it; pass delays=")
+    % endif
     % if use_length_graph:
     # Recomputed each forward pass so speed stays a live graph leaf, with max_delay_bound sizing the static history buffer.
     if distances is None:
@@ -2211,24 +2236,7 @@ def run_simulation(
         % if _state_only_aux:
         result = _realign_state_auxiliaries(result, network.params.dynamics)
         % endif
-        observations = Bunch()
-% for obs_name in observation_names:
-% if obs_name in network_observation_names:
-        observations.${obs_name} = ${obs_name}
-% elif obs_name in derived_observation_names:
-% else:
-<%
-    obs_class = monitor_class_name(obs_name)
-%>
-        observations.${obs_name} = _warmed(${obs_class}(), result_transient)(result)
-% endif
-% endfor
-
-        # Compute derived observations
-        _all_obs = compute_all_observations(result, state, settle=result_transient)
-% for obs_name in sorted(derived_observation_names):
-        observations.${obs_name} = _all_obs.${obs_name}
-% endfor
+${forward_observations(observation_names, network_observation_names, derived_observation_names, traced_observation_names)}
 % endif
 
         # Analysis observations (operate on the solve/loss, not result.data)
@@ -4168,10 +4176,16 @@ def run_experiment(
     network = create_network(weights, distances=distances, ${weight_transform_network_arg}${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % elif use_delay_graph:
     # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
+    % if delays_handed:
+    if delays is None:
+        raise ValueError("run_experiment: this network states its delays itself, so the graph is built from the delay matrix it gives (Network.integrated_delays with the integration step and its unit) and nothing stands in for it; pass delays=")
+    delays = jnp.array(delays)
+    % else:
     if delays is None:
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
+    % endif
     network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
     network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
@@ -4265,23 +4279,7 @@ def run_experiment(
         observations = sim_result.observations
 % else:
     if run_main and result is not None:
-        observations = Bunch()
-% for obs_name in observation_names:
-% if obs_name in network_observation_names:
-        observations.${obs_name} = ${obs_name}
-% elif obs_name in derived_observation_names:
-% else:
-<%
-    obs_class = monitor_class_name(obs_name)
-%>
-        observations.${obs_name} = _warmed(${obs_class}(), result_transient)(result)
-% endif
-% endfor
-
-        _all_obs = compute_all_observations(result, state, settle=result_transient)
-% for obs_name in sorted(derived_observation_names):
-        observations.${obs_name} = _all_obs.${obs_name}
-% endfor
+${forward_observations(observation_names, network_observation_names, derived_observation_names, traced_observation_names)}
 
         # Analysis observations (operate on the solve/loss, not result.data)
 % if analysis_observations_dict:
@@ -4477,6 +4475,7 @@ def run_experiment(
     # The plan the algorithm template reads too, so the two sides cannot drift: non-empty `names` means the post-tuning model folds in-carry and materialises no trajectory.
     _pp_names = _base_plan['names']
     _pp_bs = _base_plan['period_in_steps']
+    any_stage_resets = any(bool(getattr(_st, 'reset_state', False) or False) for _st in (getattr(algo, 'stages', None) or []))
 %>
             if algorithm_name == '${algo_name}':
                 # Create algorithm-specific model_fn with simulation_period
@@ -4563,21 +4562,9 @@ def run_experiment(
                     algo_source_obs_needed.add(src_name)
     algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
 
-    # Multi-stage schedule (Algorithm.stages): resolve per-stage n_iterations +
-    # hyperparameter values (stage overrides fall back to algo defaults).
-    algo_stages = list(getattr(algo, 'stages', None) or [])
-    has_stages = len(algo_stages) > 0
-    stage_defs = []
-    for _st in algo_stages:
-        _over = {}
-        for _arg in (getattr(_st, 'arguments', None) or []):
-            _over[str(_arg.name)] = _arg.value
-        _sd = {'n_iterations': int(_st.n_iterations),
-               'reset_state': bool(getattr(_st, 'reset_state', False) or False)}
-        for _hp_name, _hp_val in hyperparams_dict.items():
-            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
-        stage_defs.append(_sd)
-    any_stage_resets = any(sd.get('reset_state') for sd in stage_defs)
+    # Multi-stage schedule (Algorithm.stages): per-stage n_iterations and hyperparameter values, a stage's own arguments over the algorithm's.
+    stage_defs = stage_definitions(algo, hyperparams_dict)
+    has_stages = len(stage_defs) > 0
     # Algorithm.evaluate: False keeps only the tuned state, skipping a full-duration post-fold.
     _ev = getattr(algo, 'evaluate', None)
     algo_evaluate = True if _ev is None else bool(_ev)
@@ -4585,6 +4572,8 @@ def run_experiment(
     _sel_a = selection_settings(algo)
     algo_sel_on = _sel_a is not None
     algo_sel_per_stage = algo_sel_on and _sel_a['per_stage']
+    # Algorithm.window_fill: in_stage hands the stage clock from stage to stage like the buffer; the algorithm template refuses the declaration on an algorithm without a window.
+    algo_clock_on = stage_clock_settings(algo, algo_sim_period, True) is not None
 
     # Own rules plus combined includes (a nested inner tunes inside the outer call, not across stages); each entry is (param_name, coupling_key or None), where None lives on state.dynamics.
     reset_targets = []
@@ -4627,6 +4616,28 @@ def run_experiment(
     cohort_shared_inputs = [i for i in network_obs_inputs if i not in _dataset_target_names]
     use_cohort = _dataset_on_device and len(cohort_batched_inputs) > 0
 %>
+% if any_stage_resets:
+                # A reset stage opens where a run of the experiment opens, never at a dependency's endpoint or the base run's settle: the declared initial condition on the delay history of the network before any settle.
+                _, _opening = prepare(_rebuilt_on(network, network.graph, history=None), get_solver(), t1=${float(algo_sim_period)}, dt=${dt})
+                _reset_base = algo_state.copy()
+                _reset_base.initial_state = Bunch(dynamics=jnp.asarray(${'sim_result.opening' if has_transient else 'initial_state.initial_state.dynamics'}), coupling=_opening.initial_state.coupling, external=_opening.initial_state.external)
+
+                def _carry_tuned_${algo_name}(_tuned):
+                    """The state a reset stage opens from: the experiment's opening state with the parameters this algorithm entered with, and every update rule's target taken from ``_tuned`` (the previous stage's endpoint)."""
+                    _out = _reset_base
+% for _tn, _gk in reset_targets:
+% if _gk is not None:
+                    _out = eqx.tree_at(lambda _s: _s.coupling.${_gk}.${_tn}, _out, _tuned.coupling.${_gk}.${_tn})
+% else:
+                    _out = eqx.tree_at(lambda _s: _s.dynamics.${_tn}, _out, _tuned.dynamics.${_tn})
+% endif
+% endfor
+                    return _out
+
+                def _cold_monitors(_monitors):
+                    """*_monitors* with every carried memory dropped, so the loop reopens each on its cold start as it opens a monitor of its own."""
+                    return None if _monitors is None else {_k: eqx.tree_at(lambda _m: _m._warmup, _mon, None) if getattr(_mon, '_warmup', None) is not None else _mon for _k, _mon in _monitors.items()}
+% endif
 % if use_cohort:
                 # One vectorised ${algo_name} fit over the whole target batch instead of a workflow job per subject, the host unstacking it after run().
                 algo_result = Bunch(
@@ -4642,6 +4653,9 @@ def run_experiment(
                         save_every=kwargs.get('${algo_name}_save_every', kwargs.get('save_every', None)),
                         resync_every=kwargs.get('${algo_name}_resync_every', kwargs.get('resync_every', None)),
                         batch_size=kwargs.get('cohort_batch_size', ${repr(_cohort_batch_size)}),
+% if any_stage_resets:
+                        reopen=_carry_tuned_${algo_name},
+% endif
                     ),
                     subject_ids=${repr(_cohort_subject_ids)},
                 )
@@ -4675,48 +4689,28 @@ def run_experiment(
 % if algo_sel_on:
                 _stage_selection = None   # best-iterate carry, handed from stage to stage
 % endif
+% if algo_clock_on:
+                _stage_clock = None   # periods the trajectory has run when a stage opens; None starts the clock
+% endif
                 _stage_post_fc = []   # per-stage post-tuning FC matrices (r-trajectory)
                 _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
-% if any_stage_resets:
-                _stage_monitors0 = _stage_monitors
-% if algo_needs_buffers:
-% for src_obs in algo_source_obs_needed:
-                _stage_${src_obs}_buffer0 = _stage_${src_obs}_buffer
-% endfor
-% endif
-
-                def _carry_tuned_${algo_name}(_base, _tuned):
-                    """Rebuild the stage's start state: the run's initial conditions, carrying only the tuned parameters.
-
-                    AlgorithmStage.reset_state restarts the simulation each stage, so the state
-                    variables, delay history and observation buffers come from ``_base`` (the
-                    algorithm's entry state) while every update rule's target is taken from
-                    ``_tuned`` (the previous stage's endpoint).
-                    """
-                    _out = _base
-% for _tn, _gk in reset_targets:
-% if _gk is not None:
-                    _out = eqx.tree_at(lambda _s: _s.coupling.${_gk}.${_tn}, _out, _tuned.coupling.${_gk}.${_tn})
-% else:
-                    _out = eqx.tree_at(lambda _s: _s.dynamics.${_tn}, _out, _tuned.dynamics.${_tn})
-% endif
-% endfor
-                    return _out
-% endif
                 for _si, _sd in enumerate(_stage_defs):
                     if algo_verbose:
                         _log(f"  [{algorithm_name} stage {_si+1}/{len(_stage_defs)}] {_sd}")
 % if any_stage_resets:
-                    if _si > 0 and _sd.get('reset_state'):
-                        _stage_state = _carry_tuned_${algo_name}(algo_state, _stage_state)
-                        _stage_monitors = _stage_monitors0
+                    if _sd.get('reset_state'):
+                        _stage_state = _carry_tuned_${algo_name}(_stage_state)
+                        _stage_monitors = _cold_monitors(kwargs.get('monitors', None))
 % if algo_needs_buffers:
 % for src_obs in algo_source_obs_needed:
-                        _stage_${src_obs}_buffer = _stage_${src_obs}_buffer0
+                        _stage_${src_obs}_buffer = None
 % endfor
 % endif
+% if algo_clock_on:
+                        _stage_clock = None
+% endif
                         if algo_verbose:
-                            _log(f"    reset_state: restarted from the initial conditions, carrying the tuned parameters")
+                            _log(f"    reset_state: reopened at the declared initial conditions, carrying the tuned parameters")
 % endif
                     algo_result = run_${algo_name}(
                         state=_stage_state,
@@ -4747,6 +4741,9 @@ def run_experiment(
                         max_window_size=${_max_window},  # fixed ring size -> tuning scan compiles once across stage window sizes
 % endif
 % endif
+% if algo_clock_on:
+                        stage_clock=_stage_clock,
+% endif
                         monitors=_stage_monitors,
 % if algo_sel_on:
                         selection=_stage_selection,
@@ -4767,6 +4764,9 @@ def run_experiment(
                     _stage_monitors = algo_result.get('monitors', _stage_monitors)
 % if algo_sel_on:
                     _stage_selection = algo_result.get('selection', _stage_selection)
+% endif
+% if algo_clock_on:
+                    _stage_clock = algo_result.get('stage_clock', None)
 % endif
                     try:
                         _pt = algo_result.post_tuning.observations

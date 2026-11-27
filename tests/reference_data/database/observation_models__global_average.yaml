@@ -3,6 +3,17 @@ label: Global Spatial Average
 description: Spatial mean across all network nodes at each sampling period. Reduces
   spatial dimension to a single global signal per state variable.
 period: 0.9765625
+history_join: per_segment
+time_stamps:
+  parameters:
+    step:
+      name: step
+      description: Integration steps between recorded samples, as the pipeline decimates.
+      equation:
+        rhs: iround(period / dt)
+        latex: false
+  rhs: subsample(t, step - 1, step)
+  latex: false
 reconcile: by_label
 pipeline:
 - name: subsample
@@ -16,7 +27,7 @@ pipeline:
         equation:
           rhs: iround(period / dt)
           latex: false
-    rhs: subsample(X, step)
+    rhs: subsample(X, step - 1, step)
     latex: false
   description: Decimation to the reporting period, taken before the spatial mean.
     TVB's GlobalAverage emits on `step % istep == 0` and averages what it emits, so
@@ -32,7 +43,7 @@ pipeline:
         derives it here.
 - name: global_mean
   equation:
-    rhs: global_mean(X)
+    rhs: node_mean(X)
     latex: false
   input: subsample
   output: global_averaged

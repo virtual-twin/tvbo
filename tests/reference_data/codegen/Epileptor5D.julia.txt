@@ -9,7 +9,7 @@ function Epileptor5D!(dx, x, p, t = 0)
     x1cond = ifelse(x1 < 0, b .* x1 .- a .* x1 .^ 2, slope .- x2 .+ 0.6 * (-4.0 .+ z) .^ 2)
     y2cond = ifelse(x2 < -0.25, 0.0, aa .* (0.25 .+ x2))
     zcond = ifelse(z < 0, -0.1 * z .^ 7, 0.0)
-    h = ifelse(modification > 0, x0 .+ 3 ./ (1 .+ 0.00673794699908547 * exp(-10.0 * x1)), zcond .- 4 * x0 .+ 4 * x1)
+    h = ifelse(modification > 0, x0 .+ 3 ./ (1 .+ 0.006737946999085467 * exp(-10.0 * x1)), zcond .- 4 * x0 .+ 4 * x1)
 
     dx[1] = tt .* (0.001 * x1 .- 0.01 * g)
     dx[2] = tt .* (Iext .+ y1 .- z .+ Kvf .* c_glob0 .+ local_coupling .* x1 .+ x1 .* x1cond)

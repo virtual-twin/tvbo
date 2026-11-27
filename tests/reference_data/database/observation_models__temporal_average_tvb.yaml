@@ -5,6 +5,7 @@ description: 'Running temporal mean over non-overlapping windows of `period`, wi
   steps 0..istep-1, and `istep` is TVB''s own `iround(period / dt)`. Verified against
   TVB''s own monitor driven through its `sample()` loop.'
 period: 0.9765625
+history_join: per_segment
 reconcile: by_label
 pipeline:
 - name: temporal_average

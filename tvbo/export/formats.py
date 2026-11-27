@@ -80,10 +80,18 @@ def _coupling_evaluation(exp) -> str | None:
     return coupling_evaluation_in_effect(getattr(exp, "integration", None), declared_node_count(getattr(exp, "network", None)))
 
 
+def _refuse_declared_delays(exp, backend: str) -> None:
+    """Refuse a network that declares its delays on *backend*, whose renderer derives them itself (`tvbo.adapters.base.refuse_declared_delays`)."""
+    from tvbo.adapters.base import refuse_declared_delays
+
+    refuse_declared_delays(getattr(exp, "network", None), backend)
+
+
 def _render_tvb(exp, **kw):
     """TVB's simulator computes the coupling once per step and hands it to every stage of its integrator's scheme, so a declared ``coupling_evaluation: per_stage`` is refused wherever it would integrate another system (`_coupling_evaluation`)."""
     from tvbo.classes.experiment import templates
 
+    _refuse_declared_delays(exp, "tvb")
     if _coupling_evaluation(exp) == "per_stage":
         raise NotImplementedError(
             f"integration.coupling_evaluation: per_stage re-evaluates the coupling at every stage of {exp.integration.method}, and TVB's simulator "
@@ -100,6 +108,7 @@ def _render_jax(exp, **kw):
     from tvbo.classes.experiment import templates
     from tvbo.utils import keyed_items
 
+    _refuse_declared_delays(exp, "jax")
     template = templates.lookup.get_template("autodiff/tvbo-jax-sim.py.mako")
     # The same shared resolver the tvboptim runtime uses, so every Python backend agrees.
     dt = exp.integration.step_size
@@ -127,7 +136,9 @@ def _render_jax(exp, **kw):
 def _render_tvboptim(exp, **kw):
     from tvbo.adapters.tvboptim import TvboptimAdapter
     from tvbo.classes.experiment import templates
+    from tvbo.templates.tvboptim.utils import refuse_unrenderable_declared_delays
 
+    refuse_unrenderable_declared_delays(exp)
     template = templates.lookup.get_template("tvboptim/tvbo-tvboptim-experiment.py.mako")
     adapter = TvboptimAdapter(exp)
     # Which couplings this experiment has is the adapter's answer, not the template's.
@@ -220,6 +231,7 @@ def _render_rateml_python(exp, **kw):
 def _render_rateml_cuda(exp, **kw):
     from tvbo.classes.experiment import templates
 
+    _refuse_declared_delays(exp, "cuda")
     template = templates.lookup.get_template("rateml/tvbo-rateml-cuda.c.mako")
     return template.render(model=exp.dynamics, experiment=exp, **kw)
 
@@ -227,6 +239,7 @@ def _render_rateml_cuda(exp, **kw):
 def _render_rateml_driver(exp, **kw):
     from tvbo.classes.experiment import templates
 
+    _refuse_declared_delays(exp, "cuda")
     template = templates.lookup.get_template("rateml/tvbo-rateml-driver.py.mako")
     return template.render(model=exp.dynamics, experiment=exp, **kw)
 

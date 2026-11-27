@@ -10,6 +10,7 @@ parameters:
     value: 20000.0
     unit: ms
 period: 2000.0
+history_join: per_segment
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:

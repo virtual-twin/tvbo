@@ -1,0 +1,163 @@
+name: BalloonWindkesselBold
+label: BOLD (Balloon-Windkessel, tvboptim)
+description: 'BOLD signal as tvboptim''s BalloonWindkesselBold computes it: the four
+  Balloon-Windkessel states (vasodilatory signal, blood inflow, blood volume, deoxyhaemoglobin)
+  advance by explicit Euler on the seconds grid, driven by the observed firing rate
+  resampled onto `step_size` (each input repeated, or the last of every k taken),
+  and the BOLD signal is read at the end of each `period`.'
+iri: tvbo:BalloonWindkesselBold
+period: 2000.0
+history_join: per_segment
+step_size: 1.0
+output_variable_name: BOLD({name})
+time_stamps:
+  rhs: arange(n) * period + period
+  latex: false
+imaging_modality: BOLD
+reconcile: by_label
+dynamics:
+  name: BalloonWindkesselBold
+  parameters:
+    taus:
+      name: taus
+      value: 0.65
+      description: Vasodilatory signal decay time constant
+      unit: s
+    tauf:
+      name: tauf
+      value: 0.41
+      description: Autoregulatory feedback time constant
+      unit: s
+    tauo:
+      name: tauo
+      value: 0.98
+      description: Transit time
+      unit: s
+    alpha:
+      name: alpha
+      value: 0.32
+      description: Grubb's vessel stiffness exponent
+    Eo:
+      name: Eo
+      value: 0.4
+      description: Resting oxygen extraction fraction
+    vo:
+      name: vo
+      value: 0.04
+      description: Resting blood volume fraction
+    TE:
+      name: TE
+      value: 0.04
+      description: Echo time
+      unit: s
+  description: Four-variable Balloon-Windkessel hemodynamics driven by the observed
+    signal `x`, as tvboptim's explicit-Euler `bw_step`.
+  derived_parameters:
+    dt_s:
+      name: dt_s
+      description: The observer's step on the seconds grid.
+      equation:
+        rhs: dt / 1000.0
+        latex: false
+      unit: s
+    itaus:
+      name: itaus
+      equation:
+        rhs: 1.0 / taus
+        latex: false
+    itauf:
+      name: itauf
+      equation:
+        rhs: 1.0 / tauf
+        latex: false
+    itauo:
+      name: itauo
+      equation:
+        rhs: 1.0 / tauo
+        latex: false
+    ialpha:
+      name: ialpha
+      equation:
+        rhs: 1.0 / alpha
+        latex: false
+    k1:
+      name: k1
+      description: Extravascular BOLD weighting.
+      equation:
+        rhs: 4.3 * 40.3 * Eo * TE
+        latex: false
+    k2:
+      name: k2
+      description: Intravascular BOLD weighting.
+      equation:
+        rhs: 25.0 * Eo * TE
+        latex: false
+    k3:
+      name: k3
+      description: Volume-change weighting.
+      equation:
+        rhs: '1.0'
+        latex: false
+  derived_variables:
+    bold:
+      name: bold
+      description: BOLD signal
+      equation:
+        rhs: vo * (k1 * (1.0 - q) + k2 * (1.0 - q / v) + k3 * (1.0 - v))
+        latex: false
+      record: true
+  state_variables:
+    s:
+      name: s
+      description: Vasodilatory signal
+      equation:
+        rhs: s + dt_s * (x - itaus * s - itauf * (f - 1.0))
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 0.0
+    f:
+      name: f
+      description: Blood inflow
+      equation:
+        rhs: f + dt_s * s
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 1.0
+    v:
+      name: v
+      description: Blood volume
+      equation:
+        rhs: v + dt_s * (itauo * (f - v ** ialpha))
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 1.0
+    q:
+      name: q
+      description: Deoxyhaemoglobin content
+      equation:
+        rhs: q + dt_s * (itauo * (f * (1.0 - (1.0 - Eo) ** (1.0 / f)) / Eo - v **
+          (ialpha - 1.0) * q))
+        latex: false
+      record: true
+      variable_of_interest: true
+      coupling_variable: false
+      equation_type: recurrence
+      equation_order: 1
+      initial_value: 1.0
+  number_of_modes: 1
+  system_type: discrete
+  autonomous: true
+  cse: false
+  compile: false

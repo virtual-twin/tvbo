@@ -90,6 +90,7 @@ functions:
           period_samples=1); set it to TR/dt for another grid.
         value: 180
 downsample_period: 4.0
+history_join: per_segment
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:

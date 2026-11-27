@@ -281,6 +281,12 @@ def parameters_acted_on(experiment, dynamics) -> dict[str, str]:
     }
 
 
+def delay_declaration(network) -> str | None:
+    """How *network* declares its delays (`Network.delay_declaration`); ``None`` where it declares none or cannot be asked."""
+    declaration = getattr(network, "delay_declaration", None)
+    return declaration() if callable(declaration) else None
+
+
 def network_couplings(network) -> dict:
     """*network*'s couplings, keyed by the role each fills.
 

@@ -273,7 +273,7 @@ def dfun(current_state, t, cX, _p):
         return (
             0.5
             * jsp.special.erfc(
-                0.707106781186547
+                0.7071067811865475
                 * (
                     -muV(fe, fi, fe_ext, fi_ext, W, E_L_e)
                     + 1000.0 * P_e0
@@ -283,8 +283,8 @@ def dfun(current_state, t, cX, _p):
                     + 1000.0
                     * P_e2
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
                     )
                     + 1000.0
                     * P_e3
@@ -295,8 +295,8 @@ def dfun(current_state, t, cX, _p):
                     + 1000.0
                     * P_e5
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
                     )
                     ** 2
                     + 1000.0
@@ -307,8 +307,8 @@ def dfun(current_state, t, cX, _p):
                     * P_e7
                     * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_e))
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
                     )
                     + 1000.0
                     * P_e8
@@ -318,8 +318,8 @@ def dfun(current_state, t, cX, _p):
                     * P_e9
                     * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_e) / C_m)
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
                     )
                 )
                 / sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_e)
@@ -331,7 +331,7 @@ def dfun(current_state, t, cX, _p):
         return (
             0.5
             * jsp.special.erfc(
-                0.707106781186547
+                0.7071067811865475
                 * (
                     -muV(fe, fi, fe_ext, fi_ext, W, E_L_i)
                     + 1000.0 * P_i0
@@ -341,8 +341,8 @@ def dfun(current_state, t, cX, _p):
                     + 1000.0
                     * P_i2
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
                     )
                     + 1000.0
                     * P_i3
@@ -353,8 +353,8 @@ def dfun(current_state, t, cX, _p):
                     + 1000.0
                     * P_i5
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
                     )
                     ** 2
                     + 1000.0
@@ -365,8 +365,8 @@ def dfun(current_state, t, cX, _p):
                     * P_i7
                     * (6.0 + 0.1 * muV(fe, fi, fe_ext, fi_ext, W, E_L_i))
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
                     )
                     + 1000.0
                     * P_i8
@@ -376,8 +376,8 @@ def dfun(current_state, t, cX, _p):
                     * P_i9
                     * (-0.5 + 1.0 * g_L * T_V(fe, fi, fe_ext, fi_ext, W, E_L_i) / C_m)
                     * (
-                        -0.666666666666667
-                        + 0.166666666666667 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
+                        -0.6666666666666666
+                        + 0.16666666666666666 * sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
                     )
                 )
                 / sigmaV(fe, fi, fe_ext, fi_ext, W, E_L_i)
@@ -470,28 +470,32 @@ def dfun(current_state, t, cX, _p):
     muV_e = muV(E, I, E_input_excitatory, I_input_excitatory, W_e, E_L_e)
     muV_i = muV(E, I, E_input_inhibitory, I_input_inhibitory, W_i, E_L_i)
     d2_fefe_e = (
-        100000000.0 * TF_e(1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
-        + 100000000.0
+        100000000.00000001
+        * TF_e(1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
+        + 100000000.00000001
         * TF_e(-1.0e-7 + E, I, E_input_excitatory, I_input_excitatory, W_e)
-        - 200000000.0 * TFe
+        - 200000000.00000003 * TFe
     )
     d2_fefe_i = (
-        100000000.0 * TF_i(1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
-        + 100000000.0
+        100000000.00000001
+        * TF_i(1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
+        + 100000000.00000001
         * TF_i(-1.0e-7 + E, I, E_input_inhibitory, I_input_inhibitory, W_i)
-        - 200000000.0 * TFi
+        - 200000000.00000003 * TFi
     )
     d2_fifi_e = (
-        100000000.0 * TF_e(E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
-        + 100000000.0
+        100000000.00000001
+        * TF_e(E, 1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
+        + 100000000.00000001
         * TF_e(E, -1.0e-7 + I, E_input_excitatory, I_input_excitatory, W_e)
-        - 200000000.0 * TFe
+        - 200000000.00000003 * TFe
     )
     d2_fifi_i = (
-        100000000.0 * TF_i(E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
-        + 100000000.0
+        100000000.00000001
+        * TF_i(E, 1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
+        + 100000000.00000001
         * TF_i(E, -1.0e-7 + I, E_input_inhibitory, I_input_inhibitory, W_i)
-        - 200000000.0 * TFi
+        - 200000000.00000003 * TFi
     )
 
     # Derivatives
