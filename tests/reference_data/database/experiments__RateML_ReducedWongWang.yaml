@@ -322,6 +322,7 @@ observations:
   bold:
     name: bold
     description: BOLD fMRI observation using BalloonWindkessel dynamics
+    history_join: per_segment
     voi: 0
     imaging_modality: BOLD
     reconcile: by_label

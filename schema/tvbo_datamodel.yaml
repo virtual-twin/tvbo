@@ -231,6 +231,17 @@ enums:
                 description: >-
                     Each stage keeps its own best iterate and restores it before the next stage starts, so every stage restarts from the best state the previous one found; the run records one iteration and value per stage. This is the authors' released feedback-inhibition protocol, where each stage was a separate process that restarted from the previous stage's best checkpoint.
 
+    WindowFill:
+        description: >-
+            Where the simulation periods that fill a sliding observation window sit relative to a tuning stage's iterations.
+        permissible_values:
+            before_stage:
+                description: >-
+                    The window is filled ahead of the stage's first iteration, by as many simulation periods as it still lacks. No update rule is applied in them, nothing is recorded, and neither `n_iterations` nor `update_start` counts them.
+            in_stage:
+                description: >-
+                    The periods that fill the window are iterations of the stage, on one clock with every update rule.
+
     ParallelMode:
         description: >-
             How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise.
@@ -510,6 +521,17 @@ enums:
             none:
                 description: "No reduction (return per-element values)"
 
+    HistoryJoin:
+        description: >-
+            How a kernel observation joins the history in front of its window (see Observation.history_join).
+        permissible_values:
+            per_segment:
+                description: >-
+                    The pipeline steps before the step that consumes the kernel run on the history and on the window separately, and the history's last kernel-length rows are prepended at that step's input: zero rows in front when the history is shorter, all zeros when there is none. This is how tvboptim's HRFBold treats its `history`, so a decimation step's windows restart at the junction.
+            continuous:
+                description: >-
+                    The raw history is prepended to the window and the whole pipeline runs on the joined signal, so a decimation step's windows run across the junction without restarting.
+
     ObservationReductionMode:
         description: >-
             How an observation is evaluated over the trajectory (see Observation.reduce). Absent (the default) keeps the post-scan pipeline: the observation is computed from a materialised trajectory. `streaming` opts the observation into an incremental reducer that is folded into the integrator carry via prepare(reduce=...), so the trajectory is never held — byte-identical to the post-scan value (to f64 rounding), but with O(block) instead of O(n_time) peak memory. Required for whole-brain fits whose per-stage simulation is long enough that the full trajectory would not fit in memory (e.g. the Schirner 2023 BOLD/FC group fit).
@@ -661,8 +683,8 @@ classes:
                 range: ScalarValue
                 description: "Step size. Can be: number, argument name, or expression."
             n:
-                range: integer
-                description: "Number of points (alternative to step for grid exploration)."
+                range: ScalarValue
+                description: "Number of points (alternative to step for grid exploration): an integer, or for a kernel generator's `time_range` an expression over its arguments, e.g. `ceiling(duration / downsample_period)`."
             log_scale:
                 range: boolean
                 ifabsent: "false"
@@ -1120,11 +1142,7 @@ classes:
             Cache-invalidation fingerprint for one ``aux_data`` reference. Captures enough about the upstream artifact that a downstream cache can decide cheaply (via mtime + size) whether to trust the cached result, falling back to a hash recompute on mismatch.
         attributes:
             iri:
-                # uriorcurie (not string) to match the global `iri` slot's range
-                # (xsd:anyURI). A local `string` range here conflicts with the
-                # global anyURI range on the shared `tvbo:iri` property, making
-                # this class unsatisfiable under OWL-DL (a value can't be both
-                # xsd:string and xsd:anyURI).
+                # uriorcurie to match the global `iri` slot's anyURI range; a string range makes this class unsatisfiable under OWL-DL.
                 range: uriorcurie
                 required: true
                 description: "IRI of the referenced artifact (Network, ExperimentResult, BehavioralData, ...)."
@@ -1676,10 +1694,7 @@ classes:
             A small typed pointer to another TVBO entity (Network, Mesh, Observation, …). The ``iri`` identifies the target via the registry; the optional ``field`` is a dotted-path subkey resolved by attribute walk on the loaded target (e.g. ``field: 'weight_alpha'`` picks the ``weight_alpha`` named edge matrix on a Network; ``field: 'mesh.faces'`` picks the mesh face array). Used uniformly anywhere a TVBO entity needs to point at a sub-array of another entity without inlining the data.
         attributes:
             iri:
-                # uriorcurie (not string) to match the global `iri` slot's range
-                # (xsd:anyURI); a local `string` range conflicts with the global
-                # anyURI range on the shared `tvbo:iri` property and makes this
-                # class unsatisfiable under OWL-DL.
+                # uriorcurie to match the global `iri` slot's anyURI range; a string range makes this class unsatisfiable under OWL-DL.
                 range: uriorcurie
                 required: true
                 description: "CURIE or full IRI of the referenced TVBO entity."
@@ -1914,11 +1929,6 @@ classes:
                 range: Function
                 inlined: true
 
-            # Source specification - what this observation derives from.
-            # Each entry is either a state-variable name/ref (raw observation
-            # of an integrated trajectory) or another observation's name/ref
-            # (derived observation). An observation is "derived" iff any item
-            # in source names another observation in the same experiment.
             source:
                 multivalued: true
                 any_of:
@@ -1928,11 +1938,6 @@ classes:
                     Ordered list of inputs this observation derives from. Each entry is either a StateVariable reference (raw observation of an integrated trajectory, e.g. ``S_e``) or an Observation reference (derived observation, e.g. ``bold``). Codegen checks each source name against ``experiment.observations``; names matching an existing observation flag the parent as derived.
                 inlined: false
 
-            # Auxiliary inputs that are NOT state variables (mesh arrays,
-            # empirical reference data, named edge matrices on another
-            # Network, …). Each Reference resolves to a concrete array at
-            # load time via the registry + lazy h5 store; codegen threads
-            # the resolved arrays into pipeline-step argument lists.
             aux_data:
                 range: Reference
                 multivalued: true
@@ -1954,6 +1959,24 @@ classes:
             downsample_period:
                 range: float
                 description: "Intermediate downsampling period (ms). For BOLD: typically matches dt."
+            history_join:
+                range: HistoryJoin
+                ifabsent: string(per_segment)
+                description: >-
+                    How a kernel observation (a pipeline with a kernel-generator step, e.g. an HRF convolution) joins the warm-up history in front of its window: the settle, or a history handed over. Ignored by a pipeline without a kernel.
+            step_size:
+                range: float
+                description: >-
+                    The step (ms) an observer `dynamics` advances on, when it is not the integration step. Each integration step's input is repeated `iround(dt / step_size)` times when that exceeds one, else the last of every `iround(step_size / dt)` inputs is taken, as tvboptim's BalloonWindkesselBold resamples onto its `dt_bw`; the observer's equations read this step as `dt`, and it emits every `period` counted on it. Requires a `period`.
+            output_variable_name:
+                range: string
+                description: >-
+                    How the output names each variable it keeps, as a pattern over the source variable's name `{name}`: `BOLD({name})` reports `S` as `BOLD(S)`. Absent, a kept variable keeps its source name.
+            time_stamps:
+                range: Equation
+                inlined: true
+                description: >-
+                    The output's time axis, as an equation over the measured window's time stamps `t`, the integration step `dt`, the output length `n`, the observation's `period` and its declared parameters: `take(t, 0) - dt + (arange(n) + 1) * period` stamps each sample at the end of the period it reports, `subsample(t, step - 1, step)` keeps the stamp of the sample it took. Printed in the authored operation order, so a backend class's stamps are reproduced bit for bit. An observer `dynamics` that declares its time axis returns a solution laid out `[time, variable, node]`, its readout the one variable. Absent, a sample keeps its input's stamp when the pipeline keeps the length and is stamped at the end of its period otherwise.
             voi:
                 range: integer
                 description: "Variable of interest index (which state variable to monitor). Default: 0."
@@ -2105,9 +2128,6 @@ classes:
                 multivalued: true
                 description: >-
                     Quantity/quantities the analysis is taken with respect to, e.g. a parameter 'c_sigmJR.G' for a gradient/sensitivity. Omitted for analyses that need no explicit differentiation target.
-
-    # ProcessingStep, DataInjection, ArgumentMapping removed
-    # Function now handles input -> process -> output flow directly
 
     Dynamics:
         class_uri: tvbo:Dynamics
@@ -3261,7 +3281,8 @@ classes:
             requires:
                 multivalued: true
                 range: Observation
-                description: Observables required by this update rule
+                description: >-
+                    Observables required by this update rule. Under `window_fill: in_stage` a windowed observation listed here makes the rule wait for the first full window where its equation does not name one.
 
     AlgorithmInclude:
         class_uri: tvbo:AlgorithmInclude
@@ -3301,12 +3322,13 @@ classes:
             n_iterations:
                 range: integer
                 required: true
-                description: Number of outer iterations to run in this stage.
+                description: >-
+                    Number of outer iterations to run in this stage. Under the algorithm's `window_fill: in_stage` this is the stage's whole length in simulation periods, the ones that fill the window among them.
             reset_state:
                 range: boolean
                 ifabsent: 'False'
                 description: >-
-                    Start this stage from the model's declared initial conditions rather than the previous stage's endpoint. The update rules' tuned targets always cross the stage boundary; what resets is the dynamical state — state variables, delay and coupling history, observation window buffers and monitors — and the noise stream, which restarts from the run's seed so each stage samples the same realisation. False, the default, makes the schedule one continuous trajectory; true makes each stage an independent simulation warm-started from the parameters learned so far.
+                    Start this stage from the model's declared initial conditions rather than the previous stage's endpoint. The update rules' tuned targets always cross the stage boundary; what resets is the dynamical state — state variables, delay and coupling history, observation window buffers and monitors — and the noise stream, which restarts from the run's seed so each stage samples the same realisation. False, the default, makes the schedule one continuous trajectory; true makes each stage an independent simulation warm-started from the parameters learned so far. Under `window_fill: in_stage` the stage clock restarts with it.
             arguments:
                 multivalued: true
                 range: Parameter
@@ -3360,7 +3382,7 @@ classes:
                 range: integer
                 ifabsent: integer(0)
                 description: >-
-                    First iteration eligible for selection, counted from the first tuning iteration after the observation window has filled; it continues across stages under `scope: run` and restarts with every stage under `scope: stage`. Use it to skip the iterations a still-settling window makes look good.
+                    First iteration eligible for selection. Absent `window_fill: in_stage` it is counted from the first tuning iteration after the observation window has filled; under `window_fill: in_stage` it is counted in simulation periods, the ones that fill the window among them, and an iteration before the first full window is not eligible when the criterion is computed from the window. Either way the count continues across stages under `scope: run` and restarts with every stage under `scope: stage`. Use it to skip the iterations a still-settling window makes look good.
             scope:
                 range: SelectionScope
                 ifabsent: string(run)
@@ -3430,7 +3452,8 @@ classes:
                     Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations
             n_iterations:
                 range: integer
-                description: Number of iterations to run
+                description: >-
+                    Number of iterations to run. Under `window_fill: in_stage` this is the stage's whole length in simulation periods, the ones that fill the window among them.
             learning_rate_schedule:
                 range: string
                 description: "Learning rate schedule: 'constant', 'linear', 'exponential'"
@@ -3444,7 +3467,16 @@ classes:
             update_start:
                 range: float
                 description: >-
-                    Simulated time, counted from the start of each stage (or of the run when there are no stages), before which the update rules are not applied: an iteration applies its update only if its simulation period ends at or after this time. In the same unit as `simulation_period`. Absent, every iteration applies its update. A rule taken in through `includes` keeps the start of the algorithm it comes from.
+                    Simulated time, counted from the start of each stage (or of the run when there are no stages), before which the update rules are not applied: an iteration applies its update only if its simulation period ends at or after this time. In the same unit as `simulation_period`. Absent, every iteration applies its update. A rule taken in through `includes` keeps the start of the algorithm it comes from. Under `window_fill: in_stage` the time is read on the stage clock, which counts the periods that fill the window and restarts only at a stage that declares `reset_state`.
+            window_fill:
+                range: WindowFill
+                description: >-
+                    Whether the simulation periods that fill a sliding observation window are counted inside a stage's iterations. Absent or `before_stage`, they run ahead of the first iteration with no update rule applied. `in_stage` puts the stage on one clock that counts simulation periods from the algorithm's first stage and from every stage that declares `reset_state`, and runs on through a stage that continues the previous one. An algorithm that depends on another starts its clock at zero as well, although its first stage continues the trajectory the dependency ran. `n_iterations` is then the stage's whole length in periods. An update rule that reads no window is applied in every period from its algorithm's `update_start` on. An update rule that reads the window, by naming a windowed observation in its equation or listing one in `requires`, is applied from the period whose sample completes the first window, or from its algorithm's `update_start` if that is later. A quantity computed from the window is recorded as not-a-number before that period. Refused on an algorithm without a sliding window and on a stage too short to complete its first window.
+            window_start:
+                range: float
+                minimum_value: 0.0
+                description: >-
+                    Simulated time on the stage clock before which no sample enters a sliding observation window: the first sample a window may hold is that of the first simulation period ending at or after this time. In the same unit as `simulation_period`; requires `window_fill: in_stage`. It keeps the opening of a trajectory that starts from its initial conditions out of every window. Samples handed in by an algorithm this one depends on were taken before the clock started, so declaring a start, zero included, keeps them out too. Absent, the first window takes in what was handed in and then the stage's samples from the first. A reduction's own `skip_t` drops the oldest samples of every window; this holds back only the windows at the start of a trajectory.
             functions:
                 multivalued: true
                 range: FunctionCall
@@ -3467,13 +3499,7 @@ classes:
                 description: >-
                     Optional best-iterate selection. Absent, the tuned state is the final iterate. Declared, the iterate with the best `criterion` (across all stages, or per stage under `scope: stage`) is restored before the post-tuning evaluation, and `<algorithm>__selected_iteration` / `<algorithm>__selected_value` record which one it was (one value per stage under `scope: stage`).
 
-    # =============================================================================
-    # Continuation & Bifurcation Analysis
-    # =============================================================================
-    # Abstract metadata — toolkit-agnostic. All attributes must apply to any
-    # continuation engine (BifurcationKit, AUTO-07p, MatCont, COCO, …).
-    # Toolkit-specific string options go in the `options` slot.
-    # =============================================================================
+    # Continuation & bifurcation analysis: toolkit-agnostic; toolkit-specific options go in the `options` slot.
 
     Option:
         class_uri: tvbo:Option
@@ -4800,13 +4826,6 @@ classes:
             mesh:
                 description: "Shared mesh for all field state variables in this PDE."
                 range: Mesh
-            # Use state_variables for PDEs (FieldStateVariable list). The old
-            # single object-valued `field: SpatialField` attribute was removed:
-            # it was deprecated and unused, and its name collided with the
-            # string-valued `field` of Reference/ReferenceFingerprint, which the
-            # OWL generator (keying on the slot name) punned as both an Object-
-            # and a Datatype-property — making those classes unsatisfiable under
-            # OWL-DL (HermiT). state_variables fully supersedes it.
             state_variables:
                 multivalued: true
                 inlined_as_list: true

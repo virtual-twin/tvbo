@@ -23,6 +23,7 @@ Standalone usage (no model context):
 </%doc>
 <%!
 from tvbo.codegen import render_expression, parse_eq
+from tvbo.codegen.code import render_verbatim
 from tvbo.templates.base.utils import docstring_text
 
 # =============================================================================
@@ -288,13 +289,17 @@ def ${func.name}(${signature}):
         If function has 'duration' and 'dt' arguments (no 'ts'), use simple mode.
     
     Time generation:
-    - If time_range.n is set: use linspace(lo, hi, n) for exact sample count
+    - If time_range.n is set: use linspace(lo, hi, n) for exact sample count; an expression `n` is computed from the function's arguments when it is called
     - If time_range.step is set: use arange(lo, hi, step) for exact step size
+
+    The body is printed in its authored operation order where the format allows (render_verbatim), so a kernel written as its reference computes it is reproduced bit for bit.
     """
     lo = func.time_range.lo if func.time_range.lo else 0
     hi = func.time_range.hi
     step = func.time_range.step if hasattr(func.time_range, 'step') and func.time_range.step else None
     n_samples = func.time_range.n if hasattr(func.time_range, 'n') and func.time_range.n else None
+    if isinstance(n_samples, str) and not n_samples.strip().isdigit():
+        n_samples = render_verbatim(n_samples, format='python') or n_samples
 
     # Determine time generation method
     use_linspace = n_samples is not None
@@ -317,7 +322,7 @@ def ${func.name}(${signature}):
     if func.equation and hasattr(func.equation, 'parameters') and func.equation.parameters:
         eq_param_names = list(func.equation.parameters.keys())
     all_params = ['t'] + eq_param_names + args + [n for n, _ in params]
-    body = render_expression(rhs, format=format, parameters=all_params) if rhs else '0.0'
+    body = (render_verbatim(rhs, format=format) or render_expression(rhs, format=format, parameters=all_params)) if rhs else '0.0'
 
     np_module = 'jnp' if format == 'jax' else 'np'
 

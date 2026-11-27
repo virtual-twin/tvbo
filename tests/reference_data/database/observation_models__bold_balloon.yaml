@@ -7,6 +7,7 @@ description: BOLD fMRI observation model using the Balloon-Windkessel hemodynami
   of O(time x nodes).
 iri: tvbo:observation_models/bold_balloon
 period: 720.0
+history_join: per_segment
 imaging_modality: BOLD
 reconcile: by_label
 dynamics:

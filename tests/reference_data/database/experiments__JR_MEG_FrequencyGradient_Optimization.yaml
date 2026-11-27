@@ -277,6 +277,7 @@ observations:
     - node
     - variable
     - frequency
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: subsample
@@ -323,6 +324,7 @@ observations:
     - time
     - variable
     - node
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: subsample
@@ -342,6 +344,7 @@ observations:
     dims:
     - variable
     - node
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -365,6 +368,7 @@ observations:
     - simulated_psd
     dims:
     - frequency
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -382,6 +386,7 @@ observations:
       distance to visual cortex
     dims:
     - node
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: distance_from_seed
@@ -409,6 +414,7 @@ observations:
     dims:
     - node
     - frequency
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: cauchy_pdf
@@ -429,6 +435,7 @@ observations:
     dims:
     - variable
     - frequency
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -452,6 +459,7 @@ observations:
     - simulated_psd
     dims:
     - node
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -493,6 +501,7 @@ observations:
     source:
     - avg_spectrum
     - simulated_psd
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:

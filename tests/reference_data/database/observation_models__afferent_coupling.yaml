@@ -5,6 +5,7 @@ description: Records the afferent (incoming) coupling term at each network node 
   than the model state itself.
 source:
 - coupling
+history_join: per_segment
 reconcile: by_label
 class_reference:
   name: AfferentCoupling

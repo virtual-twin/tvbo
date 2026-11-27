@@ -8,7 +8,7 @@
 
 The third is what keeps the second honest: a pipeline that dropped the settle entirely would satisfy "changing the settle changes nothing" trivially, and would be wrong.
 
-A tuning loop hands the same observation one short window per iteration, and no single one of them carries a settle. The last property covers that case: the observation carries its own warm-up between calls, so the samples it reports across a run of windows are the samples one uninterrupted window would have reported.
+A tuning loop hands the same observation one short window per iteration, and no single one of them carries a settle. The observation carries its own warm-up between calls: joined continuously, the samples it reports across a run of windows are the samples one uninterrupted window would have reported; joined per segment, the default, each window reports what tvboptim's `HRFBold` reports when handed that warm-up as its history.
 """
 
 import types
@@ -24,7 +24,7 @@ jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 import numpy as np
 
-from tvbo import SimulationExperiment, database_path
+from tvbo import Observation, SimulationExperiment, database_path
 from tvbo.export.formats import _render_tvboptim
 
 DT = 4.0
@@ -43,10 +43,15 @@ class _Trajectory:
         self.variable_names = ["S"]
 
 
-def _bold_monitor(transient_ms, duration_ms):
-    """The `Bold` class the codegen emits for a recipe with this settle and this measured window."""
+def _bold_monitor(transient_ms, duration_ms, history_join="per_segment", spec=None):
+    """The `Bold` class the codegen emits for a recipe with this settle, this measured window and this history join, observing through the curated *spec* instead of the recipe's own pipeline when one is named."""
     exp = SimulationExperiment.from_file(str(database_path / "experiments" / "RWW_BOLD_FC_Optimization.yaml"))
     exp.explorations = None
+    if spec is not None:
+        curated = Observation.from_db(spec)
+        curated.source, curated.period = ["S"], TR_MS
+        exp.observations = {**exp.observations, "bold": curated}
+    exp.observations["bold"].history_join = history_join
     exp.integration.step_size = DT
     exp.integration.transient_time = transient_ms
     exp.integration.duration = duration_ms
@@ -114,7 +119,7 @@ def test_the_report_is_stamped_on_the_measured_window(transient_ms, duration_ms)
 def test_each_sample_is_stamped_where_it_actually_sits():
     """A reported sample's timestamp must name the last measured step that can still move it.
 
-    This is the only assertion here that does not take the emitting code's word for the time axis. A sample reports a whole TR, so it covers the steps up to its own timestamp and none after: perturbing the step AT `ts[m]` must move sample `m`, and perturbing the very next step must not. A phase error of one period — stamping the first sample at the window's opening step rather than at the end of the period it integrates — shows up here and nowhere else, which is how it survived the rest of this module.
+    This is the only assertion here that does not take the emitting code's word for the time axis. A sample reports a whole TR, so it covers the steps up to its own timestamp and none after: perturbing the step before `ts[m]` must move sample `m` (the step at `ts[m]` meets the kernel at lag zero, where it is zero), and perturbing the step after `ts[m]` must not. A phase error of one period — stamping the first sample at the window's opening step rather than at the end of the period it integrates — shows up here and nowhere else, which is how it survived the rest of this module.
     """
     transient_ms, duration_ms = 40000.0, 8000.0
     settle_steps = int(round(transient_ms / DT))
@@ -124,8 +129,9 @@ def test_each_sample_is_stamped_where_it_actually_sits():
 
     for m in (0, 1, len(ts) - 1):
         at = int(round(ts[m] / DT))
-        assert m in _responding_outputs(monitor, settle_steps, measured_steps, at), (
-            f"sample {m} is stamped {ts[m]:g}ms but the step at that time does not move it"
+        # The kernel is zero at lag zero, so the last step that moves a sample is the one before its stamp.
+        assert m in _responding_outputs(monitor, settle_steps, measured_steps, at - 1), (
+            f"sample {m} is stamped {ts[m]:g}ms but the step before that time does not move it"
         )
         if at + 1 <= measured_steps:
             assert m not in _responding_outputs(monitor, settle_steps, measured_steps, at + 1), (
@@ -178,16 +184,16 @@ def test_a_settle_shorter_than_the_kernel_opens_on_zeros():
     assert np.isfinite(out).all()
 
 
-def test_successive_windows_report_what_one_window_would_have():
-    """A tuning loop's windows, warmed from one another, convolve as if they had never been cut apart."""
+def test_joined_continuously_successive_windows_report_what_one_window_would_have():
+    """A tuning loop's windows, warmed from one another and joined continuously, convolve as if they had never been cut apart."""
     n_windows = 12
     settle_steps = int(round(KERNEL_MS / DT))
     tr_steps = int(round(TR_MS / DT))
     stream = _window(settle_steps, n_windows * tr_steps, seed=0)
 
-    whole = np.asarray(_bold_monitor(KERNEL_MS, n_windows * TR_MS)(stream).data)
+    whole = np.asarray(_bold_monitor(KERNEL_MS, n_windows * TR_MS, "continuous")(stream).data)
 
-    monitor = _bold_monitor(KERNEL_MS, n_windows * TR_MS).open_warmup(N_NODES)
+    monitor = _bold_monitor(KERNEL_MS, n_windows * TR_MS, "continuous").open_warmup(N_NODES)
     monitor = monitor.carry_warmup(_Trajectory(stream.data[:settle_steps], stream.ts[:settle_steps]))
     pieces = []
     for i in range(n_windows):
@@ -199,6 +205,26 @@ def test_successive_windows_report_what_one_window_would_have():
 
     assert stitched.shape == whole.shape
     assert float(np.max(np.abs(whole - stitched))) < 1e-12 * float(np.max(np.abs(whole)))
+
+
+def test_joined_per_segment_each_window_reports_what_hrfbold_reports_on_the_carried_warmup():
+    """Joined per segment, a tuning loop's window reports bit for bit what tvboptim's `HRFBold` reports when handed the warm-up carried from the windows before it: each window is downsampled on its own, as `HRFBold` downsamples its history apart from its window."""
+    from tvboptim.experimental.network_dynamics.result import NativeSolution
+    from tvboptim.observations.tvb_monitors import HRFBold
+
+    n_windows = 12
+    settle_steps = int(round(KERNEL_MS / DT))
+    tr_steps = int(round(TR_MS / DT))
+    stream = _window(settle_steps, n_windows * tr_steps, seed=0)
+
+    monitor = _bold_monitor(KERNEL_MS, n_windows * TR_MS, spec="HRFBold_FirstOrderVolterra").open_warmup(N_NODES)
+    monitor = monitor.carry_warmup(_Trajectory(stream.data[:settle_steps], stream.ts[:settle_steps]))
+    for i in range(n_windows):
+        lo = settle_steps + i * tr_steps
+        piece = NativeSolution(ts=(jnp.arange(tr_steps) + 1) * DT, ys=stream.data[lo : lo + tr_steps], dt=DT)
+        reference = HRFBold(period=TR_MS, downsample_period=DT, voi=0, history=monitor._warmup)
+        assert np.array_equal(np.asarray(monitor(piece).ys), np.asarray(reference(piece).ys)), f"window {i}"
+        monitor = monitor.carry_warmup(piece)
 
 
 def test_a_window_that_carries_no_warmup_opens_on_zeros():

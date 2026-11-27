@@ -3,15 +3,13 @@
 <%page args="stream_plan=None, own_settle=False"/>\
 <%
 from tvbo.codegen import render_expression
-from tvbo.codegen.streaming_reducers import lookup_streaming_reducer
 from tvbo.templates.tvboptim.utils import (
     safe_name, as_list, get_attr, is_network_observation, is_external_observation,
     get_include_info, get_all_observations_from_algo, get_all_hyperparams,
     streaming_post_eval_plan, selection_settings, monitor_class_name, coupling_param_keys, set_literal,
+    observation_has_memory, streaming_recipe, coupling_input_wiring,
+    stage_clock_settings, first_full_window, periods_ending_before, stage_definitions,
 )
-
-# Backend key this template targets — used for streaming-reducer registry lookups.
-_STREAMING_BACKEND = 'tvboptim'
 
 # Shared with the experiment template, so the two sides cannot drift: non-empty `names` means post_model_fn returns streamed values rather than a trajectory.
 _pp = stream_plan if stream_plan is not None else streaming_post_eval_plan(experiment)
@@ -182,12 +180,13 @@ state_names = state_var_names
 from tvbo.templates.tvboptim.utils import get_recorded_variable_names
 _, _recorded_aux, var_names = get_recorded_variable_names(model, experiment) if model else ([], [], [])
 
-# Build coupling parameter lookup: param_name -> coupling_key
+# Coupling parameter → the coupling-input key tvboptim's state holds it under, resolved as the experiment template resolves it.
 from tvbo.utils import network_couplings
-coupling_param_to_key = coupling_param_keys(network_couplings(experiment.network))
+coupling_param_to_key = coupling_param_keys(network_couplings(experiment.network), coupling_input_wiring(model, context['all_couplings'])[1])
 
+import inspect
 import re as _re_sym
-import math
+from tvbo.templates.base.utils import referenced
 model_param_names = list(model.parameters.keys()) if model and getattr(model, 'parameters', None) else []
 
 def rule_state_params(rule_rhs, target_name, observations, rule_params_dict):
@@ -247,23 +246,40 @@ def obs_mean_lines(obs, obs_def, state_idx, periods):
         '%s = jnp.sum(_%s_ring, axis=0) / _%s_nfill  # Mean over the last %d periods, or all of them while fewer have run' % (obs, obs, obs, periods),
     ])
 
-def update_gate(src_algo, period):
+def handed_rows_copy(src_obs, take):
+    """The lines that write the newest rows of `_passed_buffer`, as many as the variable `take` names and whatever the buffer's rank, into the end of the window buffer of `src_obs`."""
+    _buf = '_%s_buffer' % src_obs
+    return '\n        '.join([
+        'if _passed_buffer.ndim == 3:',
+        '    %s = %s.at[-%s:, :, :].set(_passed_buffer[-%s:])' % (_buf, _buf, take, take),
+        'elif _passed_buffer.ndim == 2:',
+        '    %s = %s.at[-%s:, 0, :].set(_passed_buffer[-%s:, :])' % (_buf, _buf, take, take),
+        'else:',
+        '    %s = %s.at[-%s:, 0, :].set(_passed_buffer[-%s:])' % (_buf, _buf, take, take),
+    ])
+
+def update_gate(src_algo, period, clock=False):
     """The traced condition under which a rule's update applies this iteration, or None when it applies at every one.
 
-    Iteration `_i` of a stage ends at `(_i + 1) * period`, so `update_start` lets the first iteration ending at or after it apply; `apply_every` then keeps every Nth iteration, counted like the `update_every` hyperparameter.
+    Iteration `_i` of a stage ends at `(_i + 1) * period`, so `update_start` lets the first iteration ending at or after it apply; `apply_every` then keeps every Nth iteration, counted like the `update_every` hyperparameter. With `clock` the start is read on the stage clock `_clock`, which counts the periods of the trajectory, the ones that fill the window and those of earlier continuous stages among them.
     """
     _terms = []
     _start = getattr(src_algo, 'update_start', None)
     if _start is not None:
-        _first = max(0, int(math.ceil(float(_start) / float(period) - 1e-9)) - 1)
+        _first = periods_ending_before(_start, period)
         if _first > 0:
-            _terms.append('(_i >= %d)' % _first)
+            _terms.append('(%s >= %d)' % ('_clock' if clock else '_i', _first))
     _every = int(getattr(src_algo, 'apply_every', None) or 1)
     if _every > 1:
         _terms.append('(((_i + 1) %% %d) == 0)' % _every)
     return ' & '.join(_terms) or None
 %>
 % if has_algorithms:
+% if any(str(getattr(_a, 'window_fill', None)) == 'in_stage' for _a in algorithms_list):
+
+${inspect.getsource(first_full_window).rstrip()}
+
+% endif
 
 % for algo in algorithms_list:
 <%
@@ -358,6 +374,37 @@ def update_gate(src_algo, period):
 
     use_sliding_window = has_window_size and len(source_observations_needed) > 0
 
+    def window_call(obs):
+        """How a windowed observation is computed from its source's buffer, as ``(callable path, argument suffix)``: its first pipeline step, called on the buffer with that step's numeric arguments, which the suffix appends to the buffer as ``, name=value``. ``(None, "")`` for an observation with no source observation or no pipeline."""
+        obs_def = derived_observations_dict.get(obs) or observations_dict.get(obs)
+        src_obs = (dependent_observations.get(obs) or [None])[0]
+        if not (src_obs and obs_def and obs_def.pipeline):
+            return None, ""
+        first_step = obs_def.pipeline[0]
+        step_callable = first_step.callable
+        if not step_callable:
+            raise ValueError(f"Derived observation '{obs}' has source_observations but pipeline step lacks callable")
+        if not step_callable.name:
+            raise ValueError(f"Derived observation '{obs}' pipeline has callable without name attribute")
+        if not step_callable.module:
+            raise ValueError(f"Derived observation '{obs}' pipeline callable '{step_callable.name}' missing module - must specify full path")
+        keywords = []
+        for arg_name, arg in (getattr(first_step, 'arguments', None) or {}).items():
+            arg_value = getattr(arg, 'value', None)
+            if not arg_name or arg_value is None or str(arg_value) == src_obs:
+                continue  # the source observation is the buffer, passed positionally
+            if str(arg_value).replace('.', '').replace('-', '').isdigit():
+                keywords.append(f", {arg_name}={arg_value}")
+        return f"{step_callable.module}.{step_callable.name}", "".join(keywords)
+
+    # Every observation the loop computes over a sliding window, with the buffer it reads and its call.
+    window_observations = {}
+    if use_sliding_window:
+        for _obs in simulated_observations:
+            _call, _kwargs = window_call(_obs)
+            if _call:
+                window_observations[_obs] = (dependent_observations[_obs][0], _call, _kwargs)
+
     # A registered streaming form replaces the O(window*N^2)/step recompute with an O(N^2)/step incremental reducer; without one the recompute path stands.
     def _pipeline_reducer_ref(dobs_def):
         """(module, name, skip_t, s_var) of a derived obs's FIRST pipeline step, else None."""
@@ -389,28 +436,59 @@ def update_gate(src_algo, period):
             if not _ref:
                 continue
             _mod, _name, _skip_t, _s_var = _ref
-            _spec = lookup_streaming_reducer(_STREAMING_BACKEND, _mod, _name)
-            # Only step-wise 'window' reducers are wired here; a 'stride' spec keeps the recompute fallback.
-            if _spec is not None and _spec.emit_kind == 'window' and _src_list[0] in source_observations_needed:
+            _spec = streaming_recipe(_mod, _name, 'window')
+            if _spec is not None and _src_list[0] in source_observations_needed:
                 streaming_map[_dobs_name] = dict(
                     src_obs=_src_list[0], spec=_spec,
                     skip_t=_skip_t, s_var=_s_var,
                 )
 
     # Sizing the ring at the largest stage window and tracing window_size compiles the scan once across stages, where a varying window would recompile per stage.
-    _stage_windows = []
-    for _st in (getattr(algo, 'stages', None) or []):
-        _ws_over = None
-        for _arg in (getattr(_st, 'arguments', None) or []):
-            if str(_arg.name) == 'window_size':
-                _ws_over = _arg.value
-        _stage_windows.append(int(_ws_over) if _ws_over is not None else (window_size_val if has_window_size else None))
-    _stage_windows = [w for w in _stage_windows if w is not None]
+    _stage_defs = stage_definitions(algo, hyperparam_dict)
+    _stage_windows = [window_size_val if _sd['window_size'] is None else int(_sd['window_size']) for _sd in _stage_defs if 'window_size' in _sd]
     _varying_window = len(set(_stage_windows)) > 1
     _all_specs_maskable = bool(streaming_map) and all(
         getattr(_si['spec'], 'resync_masked', ()) for _si in streaming_map.values())
     use_maxwin = use_sliding_window and _varying_window and _all_specs_maskable
     _accept_maxwin = use_sliding_window and _varying_window  # accept the kwarg whenever the varying-window caller passes it; the M-ring is only emitted when also maskable (use_maxwin), else it is ignored and the contiguous path runs
+
+    # Every line `window_fill: in_stage` renders is behind `clock_on`; an algorithm that declares none renders none of them.
+    _clk = stage_clock_settings(algo, simulation_period, use_sliding_window, [algorithms_dict.get(_src) for _, _src, _ in all_update_rules_with_source])
+    clock_on = _clk is not None
+    windowed_obs = set()
+    if clock_on:
+        clk_excluded, clk_drops = _clk['excluded'], _clk['drops_handed_in']
+        _grew = True
+        while _grew:
+            _grew = False
+            for _o, _srcs in dependent_observations.items():
+                if _o not in windowed_obs and any(_s in source_observations_needed or _s in windowed_obs for _s in _srcs):
+                    windowed_obs.add(_o)
+                    _grew = True
+        # A stage that cannot complete its first window is refused here wherever the samples it starts with are known: at a reset, and at the first stage when handed-in samples are dropped.
+        _sched = [(_sd['n_iterations'], _w, _sd['reset_state']) for _sd, _w in zip(_stage_defs, _stage_windows)] or [(n_iterations, window_size_val, False)]
+        _c, _v = 0, (0 if clk_drops else None)
+        for _k, (_n, _w, _reset) in enumerate(_sched):
+            if _reset:
+                _c, _v = 0, 0
+            if _v is not None:
+                _ff = first_full_window(_c, min(_v, _w), _w, clk_excluded)
+                if _ff > _n - 1:
+                    raise ValueError(f"Algorithm '{algo.name}' declares `window_fill: in_stage` and stage {_k + 1} of {len(_sched)} runs {_n} periods, but its first window of {_w} samples is complete only in period {_ff + 1}; a stage on the clock has to be long enough to complete its first window.")
+            _c, _v = _c + _n, _w
+
+    def rule_reads_window(rule):
+        """Whether an update rule waits for the first full window on the stage clock: its equation names a windowed observation, or its `requires` lists one."""
+        _req = [str(getattr(_r, 'name', _r)) for _r in as_list(getattr(rule, 'requires', None))]
+        return bool(referenced(windowed_obs, str(rule.equation.rhs))) or any(_r in windowed_obs for _r in _req)
+
+    def func_reads_window(func_call):
+        """Whether an algorithm function is computed from the window, by an argument that names a windowed observation."""
+        return bool(referenced(windowed_obs, *map(str, get_func_args(func_call).values())))
+
+    def recorded_mean(obs):
+        """The per-iteration record of an observation: its mean, and not a number before the first full window where the observation is computed from the window."""
+        return 'jnp.where(_win_full, jnp.mean(%s), jnp.nan)' % obs if obs in windowed_obs else 'jnp.mean(%s)' % obs
 
     tail_rings = {}  # obs -> the number of simulation periods its mean spans
     for _obs in simulated_observations:
@@ -455,6 +533,9 @@ def run_${algo_name}(
 % endif
 % if _accept_maxwin:
     max_window_size: int = None,  # M: fixed ring size (>= every stage's window_size). Set -> masked ring drives the sliding window with a TRACED window_size so the tuning scan compiles ONCE across stages; None (or a non-maskable reducer) -> contiguous per-stage path.
+% endif
+% if clock_on:
+    stage_clock: int = None,  # periods this trajectory has run before this call; None starts the clock here
 % endif
     monitors: dict = None,
     verbose: bool = True,
@@ -547,6 +628,8 @@ def run_${algo_name}(
     # So we don't need dependent_monitors anymore
     _all_monitors = [o for o, _c in pipeline_observations] + [
         s for s, _c in source_monitors if s not in [o[0] for o in pipeline_observations]]
+    # Monitors that read history from before the window they are handed, decided from the spec, so a monitor passed in for one is held to it too.
+    _memory_monitors = [o for o in _all_monitors if observations_dict.get(o) is not None and observation_has_memory(observations_dict[o], experiment)]
 %>
     if monitors is None:
         monitors = {}
@@ -562,9 +645,15 @@ def run_${algo_name}(
 % endif
 % endfor
 % if _all_monitors:
-    # Every window here is one iteration long and brings no settle, so a kernel observation opens on zeros once and carries its own warm-up from then on. Seeded before the scan, because the carry it lives in cannot change shape inside one.
-% for _mon_obs in _all_monitors:
-    if hasattr(_${_mon_obs}_monitor, 'open_warmup') and _${_mon_obs}_monitor._warmup is None:
+    # Every window here is one iteration long and brings no settle, so a monitor with memory opens on its cold start once and carries its history from then on, and one that cannot carry it is refused rather than left to open every window empty. Seeded before the scan, because the carry it lives in cannot change shape inside one.
+% for _mon_obs in _memory_monitors:
+    if not hasattr(_${_mon_obs}_monitor, 'carry_warmup'):
+        raise TypeError(
+            "observation '${_mon_obs}' reads history from before the window it is handed, and its monitor "
+            f"{type(_${_mon_obs}_monitor).__name__} cannot carry it (no open_warmup / carry_warmup), so every window "
+            "of this loop would open on an empty history. Pass a monitor that carries its warm-up, or leave it to the generated one."
+        )
+    if _${_mon_obs}_monitor._warmup is None:
         _${_mon_obs}_monitor = _${_mon_obs}_monitor.open_warmup(n_nodes)
 % endfor
 % endif
@@ -574,6 +663,30 @@ def run_${algo_name}(
     _M = int(max_window_size) if max_window_size is not None else int(window_size)  # physical ring size (== window_size on the contiguous path)
 % endif
 
+% if clock_on:
+    # The fill is part of the stage: no period runs ahead of the scan, the ring opens on what was handed in, and the scan counts which of its samples a window may hold.
+    _clock0 = 0 if stage_clock is None else int(stage_clock)
+    _valid0 = int(window_size)
+% for src_obs in source_observations_needed:
+    _${src_obs}_buffer = jnp.zeros((${'_M' if use_maxwin else 'int(window_size)'}, 1, n_nodes))
+    _${src_obs}_held = 0
+% if clk_drops:
+    if ${src_obs}_buffer is not None and stage_clock is not None:  # samples from before the clock started are kept out with `window_start`
+% else:
+    if ${src_obs}_buffer is not None:
+% endif
+        _passed_buffer = ${src_obs}_buffer
+        _${src_obs}_held = min(int(_passed_buffer.shape[0]), int(window_size))
+    if _${src_obs}_held:
+        ${handed_rows_copy(src_obs, '_%s_held' % src_obs)}
+    _valid0 = min(_valid0, _${src_obs}_held)
+% endfor
+    _first_full = first_full_window(_clock0, _valid0, int(window_size), ${clk_excluded})
+    if _first_full > int(n_iterations) - 1:
+        raise ValueError(f"${algo_name} runs {int(n_iterations)} periods on the stage clock (at period {_clock0} of its trajectory, {_valid0} samples in hand), but its first window of {int(window_size)} samples is complete only in period {_first_full + 1} of the stage; a stage under `window_fill: in_stage` has to be long enough to complete its first window.")
+    if verbose:
+        logger.info(f"  Stage clock at period {_clock0}: {_valid0} of {int(window_size)} window samples in hand, first full window in period {_first_full + 1} of {int(n_iterations)}")
+% else:
 % for src_obs in source_observations_needed:
     # Warmup fill as an inner lax.scan (functional; vmap-safe; == the host for-loop).
     def _warmup_step_${src_obs}(_wc, _):
@@ -596,8 +709,9 @@ def run_${algo_name}(
             _buf = _buf.at[-1, :, :].set(_wd[0, :, :])
         else:
             _buf = _buf.at[-1, 0, :].set(_wd)
-        if hasattr(_mon, 'carry_warmup'):
-            _mon = _mon.carry_warmup(_wr)
+% if src_obs in _memory_monitors:
+        _mon = _mon.carry_warmup(_wr)
+% endif
         return (state, key, _buf, _mon), None
 
     def _run_warmup_${src_obs}(state, key, _buf, _mon, _nsteps):
@@ -614,12 +728,7 @@ def run_${algo_name}(
         _passed_buffer = ${src_obs}_buffer
         _passed_len = _passed_buffer.shape[0]
         _take = min(int(_passed_len), int(window_size))
-        if _passed_buffer.ndim == 3:
-            _${src_obs}_buffer = _${src_obs}_buffer.at[-_take:, :, :].set(_passed_buffer[-_take:])
-        elif _passed_buffer.ndim == 2:
-            _${src_obs}_buffer = _${src_obs}_buffer.at[-_take:, 0, :].set(_passed_buffer[-_take:, :])
-        else:
-            _${src_obs}_buffer = _${src_obs}_buffer.at[-_take:, 0, :].set(_passed_buffer[-_take:])
+        ${handed_rows_copy(src_obs, '_take')}
         _remaining = int(window_size) - _take
         if verbose:
             logger.info(f"  Carried last {_take} ${src_obs} samples into ring (M={_M}); warmup remaining {_remaining}...")
@@ -678,6 +787,7 @@ def run_${algo_name}(
             logger.info(f"  Warmup complete. Buffer filled with {_buffer_idx} samples.")
 % endif
 % endfor
+% endif
 % endif
 
     # Routed through the module-level jitted core, so a multi-stage schedule reuses one compiled scan.
@@ -743,6 +853,10 @@ def run_${algo_name}(
 % endif
 % if use_maxwin:
         _canon_tree(_ws0),
+% endif
+% if clock_on:
+        _canon_tree(jnp.asarray(_clock0, jnp.int32)),
+        _canon_tree(jnp.asarray(_valid0, jnp.int32)),
 % endif
 % if sel_on:
         _canon_tree(selection),
@@ -913,6 +1027,9 @@ def run_${algo_name}(
             ${src_obs}_buffer=_${src_obs}_buffer,
 % endfor
 % endif
+% if clock_on:
+            stage_clock=_clock0 + int(n_iterations),
+% endif
         )
 
     # An update rule with no restoring force can drive estimates non-finite, and returning them would write a NaN result as a "successful" run.
@@ -947,6 +1064,14 @@ def run_${algo_name}(
 % endfor
     )
 
+% if window_observations:
+    # Each windowed observation over the window the last iteration read: whole, where the history keeps one mean per record.
+    _last_window = Bunch(
+% for _wobs, (_wsrc, _wcall, _wkwargs) in window_observations.items():
+        ${_wobs}=${_wcall}(_${_wsrc}_buffer${_wkwargs}),
+% endfor
+    )
+% endif
     return AlgorithmResult(
         name='${algo_name}',
         state=state,
@@ -959,6 +1084,9 @@ def run_${algo_name}(
         state_names=${state_names},
         # Additional fields for algorithm chaining
         monitors=_monitors_out,
+% if window_observations:
+        last_window=_last_window,
+% endif
 % if sel_on:
         selection=_selection,
         selected_iteration=_selected_iteration,
@@ -971,6 +1099,10 @@ def run_${algo_name}(
 % for src_obs in source_observations_needed:
         ${src_obs}_buffer=_${src_obs}_buffer,
 % endfor
+% endif
+% if clock_on:
+        # Where a stage that continues this trajectory picks the clock up; the buffer it is handed is a full window, which every clocked stage ends on.
+        stage_clock=_clock0 + int(n_iterations),
 % endif
     )
 
@@ -1008,6 +1140,10 @@ def _${algo_name}_tuning_core_impl(
 % endif
 % if use_maxwin:
     ws0,
+% endif
+% if clock_on:
+    clock0,
+    valid0,
 % endif
 % if sel_on:
     _sel_in,
@@ -1181,6 +1317,10 @@ def _${algo_name}_tuning_core_impl(
         _rec_${_tn}_buf = _ls['${_tn}__rec']
 % endfor
         _wptr = _ls['wptr']
+% if clock_on:
+        _clock = _ls['clock']  # periods this trajectory ran before this one
+        _nvalid = _ls['nvalid']  # how many of the ring's newest samples a window may hold
+% endif
 % for _tobs in tail_rings:
         _${_tobs}_ring = _ls['${_tobs}__ring']
         _${_tobs}_nfill = _ls['${_tobs}__nfill']
@@ -1253,13 +1393,26 @@ def _${algo_name}_tuning_core_impl(
         _${dobs_name}_acc = _${dobs_name}_reducer.evict(_${dobs_name}_acc, _${dobs_name}_evict)
         _${dobs_name}_acc = _${dobs_name}_reducer.add(_${dobs_name}_acc, _${src_obs}_buffer[-1, ${sinfo['s_var']}, :])
 % endfor
-        if hasattr(_${src_obs}_monitor, 'carry_warmup'):
-            _${src_obs}_monitor = _${src_obs}_monitor.carry_warmup(result)
+% if src_obs in _memory_monitors:
+        _${src_obs}_monitor = _${src_obs}_monitor.carry_warmup(result)
+% endif
 % endfor
+% if clock_on:
+        _win_len = ${('(_ws if use_ring else _%s_buffer.shape[0])' if use_maxwin else '_%s_buffer.shape[0]') % sorted(source_observations_needed)[0]}
+        _was_full = _nvalid >= _win_len
+% if clk_excluded:
+        # A sample whose period ends before `window_start` enters no window and breaks the run of samples that may; the window is full once its newest `window_size` samples all count.
+        _nvalid = jnp.where(_clock >= ${clk_excluded}, jnp.minimum(_nvalid + 1, _win_len), 0)
+% else:
+        # Without `window_start` every sample counts, so the window is full once the samples handed in and the ones taken since make up `window_size`.
+        _nvalid = jnp.minimum(_nvalid + 1, _win_len)
+% endif
+        _win_full = _nvalid >= _win_len
+% endif
 % for dobs_name, sinfo in streaming_map.items():
-        # Periodic exact re-sync (float-drift reset; add/evict not exactly reversible); resync_every<=0 disables it.
+        # Periodic exact re-sync (float-drift reset; add/evict not exactly reversible); resync_every<=0 disables it.${' The period that completes the first window on the stage clock re-syncs too.' if clock_on else ''}
         _${dobs_name}_acc = jax.lax.cond(
-            (_${dobs_name}_resync_every > 0) & ((_i + 1) % jnp.maximum(_${dobs_name}_resync_every, 1) == 0),
+            (_${dobs_name}_resync_every > 0) & ((_i + 1) % jnp.maximum(_${dobs_name}_resync_every, 1) == 0)${' | (_win_full & ~_was_full)' if clock_on else ''},
 % if use_maxwin:
             (lambda _a: _${dobs_name}_reducer.resync_masked(_${sinfo['src_obs']}_buffer, _ws))
             if use_ring
@@ -1303,52 +1456,15 @@ def _${algo_name}_tuning_core_impl(
     else:
         state_idx = None
 
-    # For dependent observations, extract the primary pipeline function
-    # to call directly on buffer (e.g., compute_fc for fc observation)
-    direct_call = None
-    direct_call_args = []  # Additional keyword args from pipeline
-    if src_obs_for_this and has_pipeline:
-        pipeline = effective_obs_def.pipeline
-        if pipeline and len(pipeline) > 0:
-            first_step = pipeline[0]
-            step_callable = first_step.callable
-            if step_callable:
-                callable_name = step_callable.name
-                callable_module = step_callable.module
-                if callable_name and callable_module:
-                    direct_call = f"{callable_module}.{callable_name}"
-                    # Extract additional arguments from pipeline (e.g., skip_t=20)
-                    if hasattr(first_step, 'arguments') and first_step.arguments:
-                        for arg_name, arg in first_step.arguments.items():
-                            arg_value = getattr(arg, 'value', None)
-                            # Skip the source observation argument (that's passed as the buffer)
-                            if arg_name and arg_value is not None:
-                                val_str = str(arg_value)
-                                # Skip observation references (those are handled by buffer)
-                                if val_str == src_obs_for_this:
-                                    continue
-                                # Include numeric arguments as keyword args
-                                if val_str.replace('.', '').replace('-', '').isdigit():
-                                    direct_call_args.append(f"{arg_name}={val_str}")
-                elif callable_name:
-                    raise ValueError(f"Derived observation '{obs}' pipeline callable '{callable_name}' missing module - must specify full path")
-                else:
-                    raise ValueError(f"Derived observation '{obs}' pipeline has callable without name attribute")
-            else:
-                raise ValueError(f"Derived observation '{obs}' has source_observations but pipeline step lacks callable")
-        else:
-            raise ValueError(f"Derived observation '{obs}' has source_observations '{src_obs_for_this}' but no pipeline defined")
-
-    # Build argument string (buffer is first positional, then keyword args from pipeline)
-    direct_call_kwargs = ", ".join(direct_call_args) if direct_call_args else ""
+    direct_call, direct_call_kwargs = window_call(obs)
 %>
 % if obs in streaming_map:
         # emit() equals ${direct_call}(buffer) up to float rounding, at O(N^2)/step rather than O(window*N^2)/step.
         ${obs} = _${obs}_reducer.emit(_${obs}_acc)
 % elif src_obs_for_this:
         # ${obs} depends on ${src_obs_for_this} - compute directly from accumulated buffer
-        # Call: ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
-        ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
+        # Call: ${direct_call}(buffer${direct_call_kwargs})
+        ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${direct_call_kwargs})
 % elif obs_def and obs_source and state_idx is not None:
         ${obs_mean_lines(obs, obs_def, state_idx, tail_rings.get(obs))}
 % elif has_pipeline and obs not in source_observations_needed:
@@ -1413,8 +1529,9 @@ def _${algo_name}_tuning_core_impl(
         else:
             _${obs}_collect = ${obs}
 % endif
-        if hasattr(_${obs}_monitor, 'carry_warmup'):
-            _${obs}_monitor = _${obs}_monitor.carry_warmup(result)
+% if obs in _memory_monitors:
+        _${obs}_monitor = _${obs}_monitor.carry_warmup(result)
+% endif
 
 % else:
 <%
@@ -1444,6 +1561,9 @@ def _${algo_name}_tuning_core_impl(
     func_call_str = f"{func_name}({call_args})"
 %>
         _${func_name}_val = ${func_call_str}
+% if func_reads_window(func_call):
+        _${func_name}_val = jnp.where(_win_full, _${func_name}_val, jnp.nan)  # computed from the window, so not a number before the first full one
+% endif
 % endfor
         _do_rec = ((_i + 1) % save_every == 0) | (_i == 0)
         def _rec_write(_carry_rec):
@@ -1477,7 +1597,7 @@ def _${algo_name}_tuning_core_impl(
         # Best-iterate selection: ${sel_criterion} was measured on the parameters in effect this iteration, so they and the settled state are its snapshot; the offset makes the index global across stages.
         _sel_gi = _sel['offset'] + _i
         _sel_crit = ${sel_expr}
-        _sel_better = (${sel_elig} >= ${sel_from}) & (_sel_crit ${sel_cmp} _sel['value'])
+        _sel_better = (${sel_elig} >= ${sel_from}) & (_sel_crit ${sel_cmp} _sel['value'])${' & _win_full' if sel_criterion in windowed_obs or any(get_func_name(_fc) == sel_criterion and func_reads_window(_fc) for _fc in algo_functions) else ''}
         _sel = {
             'value': jnp.where(_sel_better, _sel_crit, _sel['value']).astype(_sel['value'].dtype),
             'iteration': jnp.where(_sel_better, _sel_gi, _sel['iteration']).astype(_sel['iteration'].dtype),
@@ -1526,9 +1646,9 @@ def _${algo_name}_tuning_core_impl(
         return repr(pval) if (_inc and hyperparam_dict.get(pname, pval) != pval) else pname
 
     rule_state = rule_state_params(rule_rhs, target_name, observations, rule_params_dict)
-    rule_gate = update_gate(source_algo if source_algo is not None else algo, simulation_period)
-    # One gate per rule: the traced `update_every` cadence and the static `update_start` / `apply_every` terms, conjoined; the parameter holds its value on every other iteration.
-    cadence_gate = ' & '.join((['_apply_update'] if 'update_every' in hyperparam_dict else []) + ([rule_gate] if rule_gate else []))
+    rule_gate = update_gate(source_algo if source_algo is not None else algo, simulation_period, clock=clock_on)
+    # One gate per rule: the traced `update_every` cadence, the static `update_start` / `apply_every` terms and, on the stage clock, the first full window for a rule that reads it, conjoined; the parameter holds its value on every other iteration.
+    cadence_gate = ' & '.join((['_apply_update'] if 'update_every' in hyperparam_dict else []) + ([rule_gate] if rule_gate else []) + (['_win_full'] if rule_reads_window(rule) else []))
 %>
         new_${target_name} = ${rule_name}(
 % if is_coupling_param:
@@ -1584,7 +1704,7 @@ def _${algo_name}_tuning_core_impl(
 <%
     _prog_names = list(progress_items)
     _sim_obs_names = [str(o) for o in simulated_observations]
-    _prog_vals = ['jnp.mean(%s)' % _pn if _pn in _sim_obs_names else '_%s_val' % _pn for _pn in _prog_names]
+    _prog_vals = [recorded_mean(_pn) if _pn in _sim_obs_names else '_%s_val' % _pn for _pn in _prog_names]
 %>
         if verbose:  # trace-time gate: batched/vmap runs (verbose=False) emit no host callback
             def _log_cb(_ii, *_vals):
@@ -1600,7 +1720,7 @@ def _${algo_name}_tuning_core_impl(
         # Per-step ys: obs-mean/function scalars (subsampled after) + collectible raw samples (kept in full for chaining).
         _ys = (
 % for obs in simulated_observations:
-            jnp.mean(${obs}),
+            ${recorded_mean(obs)},
 % endfor
 % for func_call in algo_functions:
             _${get_func_name(func_call)}_val,
@@ -1630,6 +1750,9 @@ def _${algo_name}_tuning_core_impl(
             '${_tn}__rec': _rec_${_tn}_buf,
 % endfor
             'wptr': _wptr,
+% if clock_on:
+            'clock': _clock + 1, 'nvalid': _nvalid,
+% endif
 % for _tobs in tail_rings:
             '${_tobs}__ring': _${_tobs}_ring,
             '${_tobs}__nfill': _${_tobs}_nfill,
@@ -1667,6 +1790,9 @@ def _${algo_name}_tuning_core_impl(
         '${_tn}__rec': _rec_${_tn}_buf0,
 % endfor
         'wptr': jnp.asarray(0),
+% if clock_on:
+        'clock': clock0, 'nvalid': valid0,
+% endif
 % for _tobs, _tk in tail_rings.items():
         '${_tobs}__ring': jnp.zeros((${_tk},) + _tail_ring_row.shape, _tail_ring_row.dtype),
         '${_tobs}__nfill': jnp.asarray(0, jnp.int32),
@@ -1693,18 +1819,8 @@ _${algo_name}_tuning_core = jax.jit(
     shared_inputs = [i for i in external_inputs if i not in _ds_targets]
     emit_cohort = bool(getattr(experiment, 'dataset_on_device', lambda: False)()) and len(batched_inputs) > 0
     # One schedule either way: Algorithm.stages, or a single synthetic stage from the algo defaults.
-    _c_stages = list(getattr(algo, 'stages', None) or [])
-    c_stage_defs = []
-    for _st in _c_stages:
-        _over = {}
-        for _arg in (getattr(_st, 'arguments', None) or []):
-            _over[str(_arg.name)] = _arg.value
-        _sd = {'n_iterations': int(_st.n_iterations)}
-        for _hp_name, _hp_val in hyperparam_dict.items():
-            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
-        c_stage_defs.append(_sd)
-    if not c_stage_defs:
-        c_stage_defs = [{'n_iterations': n_iterations, **dict(hyperparam_dict)}]
+    c_stage_defs = [{_k: _v for _k, _v in _sd.items() if _k != 'reset_state' or _v} for _sd in _stage_defs] or [{'n_iterations': n_iterations, **dict(hyperparam_dict)}]
+    _c_resets = any(sd.get('reset_state') for sd in c_stage_defs)
 %>
 % if emit_cohort:
 def run_cohort_${algo_name}(
@@ -1720,6 +1836,9 @@ def run_cohort_${algo_name}(
     save_every: int = None,
     resync_every: int = None,
     batch_size: int = None,
+% if _c_resets:
+    reopen=None,
+% endif
 ):
     """On-device cohort: vectorise the full ${algo_name} fit over subjects.
 
@@ -1735,7 +1854,13 @@ def run_cohort_${algo_name}(
     budget resolves one). Each slice is a plain ``vmap`` run on its own, so only one
     slice's working memory is live at a time. A narrower slice changes XLA's fusion
     order, so per-subject results match the whole-cohort ``vmap`` to floating-point
-    rounding (~1 ULP), not bit-for-bit."""
+    rounding (~1 ULP), not bit-for-bit.${'''
+
+    ``reopen`` maps a stage's tuned state to the state a ``reset_state`` stage opens from, as the single-subject schedule reopens it; such a stage also opens its monitors and window buffers cold and draws its noise from the lane's own key.''' if _c_resets else ''}"""
+% if _c_resets:
+    if reopen is None:
+        raise TypeError("run_cohort_${algo_name}: a stage declares reset_state, so the call needs `reopen`, the map from a tuned state to the state that stage opens from")
+% endif
     _n_subjects = ${batched_inputs[0]}.shape[0]
     _keys = jax.random.split(key, _n_subjects)
     _stage_defs = [
@@ -1754,9 +1879,24 @@ def run_cohort_${algo_name}(
         _buf_${src_obs} = None
 % endfor
 % endif
+% if clock_on:
+        _clock = None
+% endif
         for _si, _sd in enumerate(_stage_defs):
+% if _c_resets:
+            if _sd.get('reset_state'):
+                _st, _mon = reopen(_st), None
+% if use_sliding_window:
+% for src_obs in source_observations_needed:
+                _buf_${src_obs} = None
+% endfor
+% endif
+% if clock_on:
+                _clock = None
+% endif
+% endif
             _r = run_${algo_name}(
-                _st, model_fn, jax.random.fold_in(_skey, _si), _sd['n_iterations'],
+                _st, model_fn, ${"(_skey if _sd.get('reset_state') else jax.random.fold_in(_skey, _si))" if _c_resets else 'jax.random.fold_in(_skey, _si)'}, _sd['n_iterations'],
 % for hp in hyperparam_dict.keys():
                 ${hp}=_sd['${hp}'],
 % endfor
@@ -1772,6 +1912,9 @@ def run_cohort_${algo_name}(
 % endfor
                 resync_every=resync_every,
 % endif
+% if clock_on:
+                stage_clock=_clock,
+% endif
                 monitors=_mon, raw=True, run_post_tuning=False, verbose=False,
                 save_every=save_every,
 % if sel_on:
@@ -1786,6 +1929,9 @@ def run_cohort_${algo_name}(
 % for src_obs in source_observations_needed:
             _buf_${src_obs} = _r.get('${src_obs}_buffer', _buf_${src_obs})
 % endfor
+% endif
+% if clock_on:
+            _clock = _r.get('stage_clock', None)
 % endif
             _mon = _r.get('monitors', _mon)
         return _st

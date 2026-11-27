@@ -14,6 +14,7 @@ parameters:
     value: true
     description: Apply Fisher z-transformation to correlations
 period: 720.0
+history_join: per_segment
 reconcile: by_label
 pipeline:
 - name: bandpass_filter

@@ -45,7 +45,7 @@ class TowelMap(Model):
     state_variable_dfuns = Final(
         label="Drift functions",
         default={
-            "x": "-(1 - 2*z)*(0.0175 + 0.05*y) + 3.8*x*(1 - x)",
+            "x": "-(1 - 2*z)*(0.017499999999999998 + 0.05*y) + 3.8*x*(1 - x)",
             "y": "(1 - 1.9*x)*(-0.1 + 0.1*(1 - 2*z)*(0.35 + y))",
             "z": "b*y + 3.78*z*(1 - z)",
         },
@@ -78,7 +78,9 @@ class TowelMap(Model):
         # homogeneous array alongside node-shaped ones, matching TVB's own
         # ``numpy.full_like`` handling of constant drifts.
         _derivs = np.broadcast_arrays(
-            np.asarray(-(1 - 2 * z) * (0.0175 + 0.05 * y) + 3.8 * x * (1 - x)),  # x
+            np.asarray(
+                -(1 - 2 * z) * (0.017499999999999998 + 0.05 * y) + 3.8 * x * (1 - x)
+            ),  # x
             np.asarray((1 - 1.9 * x) * (-0.1 + 0.1 * (1 - 2 * z) * (0.35 + y))),  # y
             np.asarray(b * y + 3.78 * z * (1 - z)),  # z
         )

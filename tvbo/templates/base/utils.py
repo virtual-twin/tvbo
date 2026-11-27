@@ -197,6 +197,27 @@ def referenced_parameters(model, names=None, within=None):
     return [name for name in (model.parameters if names is None else names) if str(name) in reading]
 
 
+def parse_list_elements(rhs_str: str) -> list[str]:
+    """Split a ``[a, b, c]`` list-literal string into top-level element strings, respecting nested brackets/parens (so ``[f(x, y), g(z)]`` yields two elements)."""
+    inner = rhs_str[1:-1]  # strip [ ]
+    elements: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for c in inner:
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == "," and depth == 0:
+            elements.append("".join(current).strip())
+            current = []
+            continue
+        current.append(c)
+    if current:
+        elements.append("".join(current).strip())
+    return elements
+
+
 def coupling_bindings(model, coupling):
     r"""Resolve which names a coupling's ``pre``/``post`` bodies must bind, and to what.
 
@@ -221,8 +242,6 @@ def coupling_bindings(model, coupling):
     Raises:
         ValueError: a local state the model does not declare, or a source state that is read but never transmitted — both of which would emit an unbound name.
     """
-    from tvbo.templates.tvboptim.utils import parse_list_elements
-
     incoming = as_list(getattr(coupling, "incoming_states", None))
     local = as_list(getattr(coupling, "local_states", None))
     states = list(model.state_variables.keys()) if model is not None else list(dict.fromkeys(incoming + local))
@@ -445,83 +464,3 @@ def sample_expression(dist):
     """Julia drawing one value of a per-node parameter uniform on its *dist*'s `domain` from the NetworkDynamics.jl module's `rng`, the one parameter draw that backend makes: another family is refused (`refuse_undrawn_starts`), and so is a draw over time (`refuse_draws_over_time`)."""
     lo, hi = dist.domain.lo, dist.domain.hi
     return f"{lo} .+ ({hi} - {lo}) .* rand(rng)"
-
-
-# ── Graph generator utilities: dispatch is database-driven, one YAML per generator type ──
-def _get_gen_params(gen):
-    """Extract parameter values from a GraphGenerator as a dict."""
-    params = getattr(gen, "parameters", None) or {}
-    result = {}
-    items = params.values() if hasattr(params, "values") else params
-    for p in items:
-        name = str(getattr(p, "name", ""))
-        val = getattr(p, "value", None)
-        if name and val is not None:
-            try:
-                result[name] = int(float(val)) if float(val) == int(float(val)) else float(val)
-            except (ValueError, TypeError):
-                result[name] = val
-    return result
-
-
-# Cache of generator-type → bindings dict, loaded lazily from the database to avoid YAML parse overhead on every codegen invocation.
-_BINDINGS_CACHE: dict[str, dict] = {}
-
-
-def _load_bindings(gtype: str) -> dict:
-    """Load (and cache) the `bindings:` block of a generator's database entry.
-
-    Returns a dict mapping backend name → {callable, args, ...}. Raises ValueError if the generator type is not found in the database.
-    """
-    if gtype in _BINDINGS_CACHE:
-        return _BINDINGS_CACHE[gtype]
-
-    import yaml
-
-    from tvbo.data.registry import resolve
-
-    try:
-        path = resolve("GraphGenerator", gtype)
-    except FileNotFoundError as e:
-        raise ValueError(
-            f"Unknown graph generator type {gtype!r}. Add a YAML file under tvbo/database/graph_generators/ to register it."
-        ) from e
-
-    with open(path) as f:
-        entry = yaml.safe_load(f) or {}
-    bindings = entry.get("bindings", {}) or {}
-    _BINDINGS_CACHE[gtype] = bindings
-    return bindings
-
-
-def graph_generator_call(gen, n_nodes, backend="julia"):
-    """Generate a graph constructor call string from a GraphGenerator object.
-
-    Args:
-        gen: GraphGenerator with .type, .parameters, .seed, .directed
-        n_nodes: number of nodes (from Network.number_of_nodes)
-        backend: 'julia', 'networkx', 'python', or any other key declared in the generator's `bindings:` block in the database.
-
-    Returns:
-        str: constructor call, e.g. 'barabasi_albert(20, 4)'
-    """
-    gtype = str(gen.type)
-    params = _get_gen_params(gen)
-    params["n"] = n_nodes
-
-    bindings = _load_bindings(gtype)
-    binding = bindings.get(backend)
-    if not binding:
-        available = sorted(bindings.keys())
-        raise ValueError(
-            f"GraphGenerator {gtype!r} has no binding for backend {backend!r}. "
-            f"Available backends in its database entry: {available}"
-        )
-
-    callable_name = binding.get("callable")
-    arg_order = binding.get("args", [])
-    if not callable_name:
-        raise ValueError(f"Binding for {gtype}/{backend} is missing the `callable:` field.")
-
-    args = [str(params[a]) for a in arg_order if a in params]
-    return f"{callable_name}({', '.join(args)})"

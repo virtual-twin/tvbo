@@ -294,6 +294,7 @@ observations:
     - V
     dims:
     - time
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: subsample_ts
@@ -310,6 +311,7 @@ observations:
     - recorded_ts
     dims:
     - time
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: add_recording_noise

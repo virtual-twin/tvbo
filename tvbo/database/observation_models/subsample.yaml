@@ -1,10 +1,9 @@
-# Subsample - temporal decimation without averaging
+# TVB's SubSample and tvboptim's SubSampling are one monitor: both keep the last integration step of each period (TVB records when `step % istep == 0`, tvboptim takes `[istep - 1::istep]`) and stamp it with that step's time.
 
 name: SubSample
 label: Temporal Decimation
 description: >-
-    Temporal decimation of selected state variables. Records every N-th
-    integration step without any averaging or smoothing.
+    Temporal decimation of selected state variables. Records the last integration step of every `period`, without any averaging or smoothing, stamped with that step's time. TVB's SubSample and tvboptim's SubSampling.
 
 period: 0.9765625  # ms (~1024 Hz default)
 
@@ -16,7 +15,7 @@ pipeline:
     - name: subsample
       output: subsampled
       equation:
-          rhs: "subsample(X, step)"
+          rhs: "subsample(X, step - 1, step)"
           parameters:
               step:
                   equation: {rhs: "iround(period / dt)"}
@@ -25,3 +24,10 @@ pipeline:
           step:
               description: "Decimation factor. Its value is declared on the equation parameter of the same name; a backend that has not yet been migrated to read that still derives it here."
       apply_on_dimension: time
+
+time_stamps:
+    rhs: "subsample(t, step - 1, step)"
+    parameters:
+        step:
+            equation: {rhs: "iround(period / dt)"}
+            description: "Integration steps between recorded samples, as the pipeline decimates."

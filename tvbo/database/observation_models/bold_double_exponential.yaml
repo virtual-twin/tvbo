@@ -42,18 +42,33 @@ pipeline:
           hi: duration
           step: stock_dt
       equation:
-          rhs: "A1 * exp(-t / tau_1) + A2 * exp(-t / tau_2)"
+          rhs: "((amp_1 * exp(-t / tau_1) * sin(2.0 * pi * f_1 * t)) - (amp_2 * exp(-t / tau_2) * sin(2.0 * pi * f_2 * t))) / max((amp_1 * exp(-t / tau_1) * sin(2.0 * pi * f_1 * t)) - (amp_2 * exp(-t / tau_2) * sin(2.0 * pi * f_2 * t))) * a"
           parameters:
-              A1:
-                  value: 3.87
               tau_1:
-                  value: 0.9
+                  value: 7.22
                   unit: s
-              A2:
-                  value: 0.18
+                  description: "Time constant of the first exponential"
+              f_1:
+                  value: 0.03
+                  unit: Hz
+                  description: "Frequency of the first sine"
+              amp_1:
+                  value: 0.1
+                  description: "Amplitude of the first exponential"
               tau_2:
-                  value: 9.5
+                  value: 7.4
                   unit: s
+                  description: "Time constant of the second exponential"
+              f_2:
+                  value: 0.12
+                  unit: Hz
+                  description: "Frequency of the second sine"
+              amp_2:
+                  value: 0.1
+                  description: "Amplitude of the second exponential"
+              a:
+                  value: 0.1
+                  description: "Amplitude after peak normalisation"
       arguments:
           duration:
               value: 20

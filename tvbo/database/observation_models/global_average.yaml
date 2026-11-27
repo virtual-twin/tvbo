@@ -21,7 +21,7 @@ pipeline:
           pipeline that only averages reports one sample per integration step and
           ignores the declared period entirely.
       equation:
-          rhs: "subsample(X, step)"
+          rhs: "subsample(X, step - 1, step)"
           parameters:
               step:
                   equation: {rhs: "iround(period / dt)"}
@@ -35,8 +35,15 @@ pipeline:
       input: subsample
       output: global_averaged
       equation:
-          rhs: "global_mean(X)"
+          rhs: "node_mean(X)"
       aggregate:
           over: node
           type: mean
       apply_on_dimension: node
+
+time_stamps:
+    rhs: "subsample(t, step - 1, step)"
+    parameters:
+        step:
+            equation: {rhs: "iround(period / dt)"}
+            description: "Integration steps between recorded samples, as the pipeline decimates."

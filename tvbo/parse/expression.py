@@ -93,6 +93,9 @@ ARRAY_FUNCTIONS = {
     "concatenate": Function("concatenate"),
     # Python-specific semantics; the printers expand these to the right JAX / NumPy call.
     "window_mean": Function("window_mean"),  # window_mean(X, w) → jnp.mean(X.reshape(-1, w, *X.shape[1:]), axis=1)
+    "complete_window_mean": Function(
+        "complete_window_mean"
+    ),  # complete_window_mean(X, w) → the mean of each complete window of w samples from the first, a trailing partial window dropped
     "subsample": Function("subsample"),  # subsample(X, step[, start]) → X[start::step]
     # Structural slice/shape ops.
     "slice_axis": Function("slice_axis"),  # slice_axis(X, axis, start, stop[, step]) → bounded slice of one axis (keeps ndim)
@@ -101,6 +104,7 @@ ARRAY_FUNCTIONS = {
     ),  # slice_from(X, axis, start)               → open-ended slice of one axis (to the end)
     "shape": Function("shape"),  # shape(X, axis)                           → length of X along axis
     "global_mean": Function("global_mean"),  # global_mean(X) → jnp.mean(X, axis=-2, keepdims=True)
+    "node_mean": Function("node_mean"),  # node_mean(X) → mean over the node axis (2) of X, keepdims
     "transpose": Function("transpose"),  # transpose(X) → X.T
     "mode_dot": Function("mode_dot"),  # mode_dot(X, M) → X·M contracted over the mode axis ({np,jnp}.dot)
     "mode_sum": Function(
@@ -114,11 +118,15 @@ ARRAY_FUNCTIONS = {
     "strided_convolve": Function(
         "strided_convolve"
     ),  # strided_convolve(X, k, s) → 'valid' conv of X⊛k evaluated only at the [s::s] output indices (fuses convolve+subsample; no full FFT)
+    "sampled_convolve": Function(
+        "sampled_convolve"
+    ),  # sampled_convolve(X, k, s) → the samples of strided_convolve, on the route (direct or FFT) the printer's backend takes
     # A 2-D gather, a single-axis reduction, and Pearson correlation.
     "take": Function("take"),  # take(x, idx) → gather x by an int index array (result has idx.shape)
     "scatter_sum": Function(
         "scatter_sum"
     ),  # scatter_sum(values, index, size) → size slots, each the sum of the values whose index names it (np.add.at)
+    "arange": Function("arange"),  # arange(n) → 0, 1, …, n - 1
     "sum_axis": Function("sum_axis"),  # sum_axis(x, axis) → reduce one axis ({np,jnp}.sum(x, axis=..))
     "pearson": Function(
         "pearson"

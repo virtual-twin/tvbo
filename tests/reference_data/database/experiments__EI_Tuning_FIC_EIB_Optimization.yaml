@@ -334,6 +334,7 @@ observations:
     - variable
     - node
     period: 720.0
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: hrf_kernel
@@ -380,6 +381,7 @@ observations:
     dims:
     - variable
     - node
+    history_join: per_segment
     reconcile: by_label
     aggregation: mean
   mean_S_e_final:
@@ -391,6 +393,7 @@ observations:
     dims:
     - variable
     - node
+    history_join: per_segment
     reconcile: by_label
     tail_samples: 500
     aggregation: mean
@@ -403,6 +406,7 @@ observations:
     dims:
     - variable
     - node
+    history_join: per_segment
     reconcile: by_label
     aggregation: mean
   fc_target:
@@ -414,6 +418,7 @@ observations:
     dims:
     - node_i
     - node_j
+    history_join: per_segment
     reconcile: by_label
   fc:
     name: fc
@@ -425,6 +430,7 @@ observations:
     dims:
     - node_i
     - node_j
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -449,6 +455,7 @@ observations:
     dims:
     - node_i
     - node_j
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -472,6 +479,7 @@ observations:
     dims:
     - node_i
     - node_j
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -492,6 +500,7 @@ observations:
     source:
     - fc
     - fc_target
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: fc_corr
@@ -509,6 +518,7 @@ observations:
     source:
     - fc
     - fc_target
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: fc_rmse
@@ -555,11 +565,9 @@ functions:
       log_scale: false
   temporal_average:
     name: temporal_average
-    description: 'Downsample by averaging over non-overlapping windows of `period_samples`
-      samples (centered indices, t0-independent) — reproduces tvboptim TemporalAverage
-      exactly.
-
-      '
+    description: Downsample by the mean of each complete window of `period_samples`
+      samples, counted from the first sample, as tvboptim's TemporalAverage averages
+      them.
     arguments:
       data:
         name: data
@@ -568,10 +576,8 @@ functions:
         name: period_samples
         description: Samples per window = round(downsample_period / dt)
         value: 1
-    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
-      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
-      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
-      period_samples).shape[0]]'
+    source_code: 'jnp.mean(data[: (data.shape[0] // period_samples) * period_samples].reshape((-1,
+      period_samples) + data.shape[1:]), axis=1)'
   volterra_transform:
     name: volterra_transform
     equation:
