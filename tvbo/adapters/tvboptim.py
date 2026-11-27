@@ -70,6 +70,9 @@ class TvboptimAdapter(BaseAdapter):
     DELAY_CARRIERS = ("length", "delay")
     """Tract lengths build a ``DenseLengthGraph`` (delays = lengths / speed, differentiable); explicit per-edge delays build a ``DenseDelayGraph``."""
 
+    READS_DECLARED_DELAYS = True
+    """A network that declares its delays builds a delay graph over `Network.integrated_delays` (`graph_selection`)."""
+
     def resolve_couplings(self):
         """The network's couplings, one key per distinct coupling.
 
@@ -143,14 +146,21 @@ def handed_network(namespace, network) -> dict:
     return {"transform_network": network} if takes else {}
 
 
-def _build_graph(network: Network, delays: bool = True, max_delay: float | None = None):
+def _build_graph(
+    network: Network,
+    delays: bool = True,
+    max_delay: float | None = None,
+    dt: float | None = None,
+    time_unit: str | None = None,
+):
     """Build a tvboptim graph from a tvbo Network, by what the network measures.
 
+    - delays the network declares (`Network.declares_delays`) → a delay graph over `Network.integrated_delays`, dense or sparse as the weights are;
     - tract lengths present → ``DenseLengthGraph`` (delays = lengths / conduction_speed, so conduction speed is a live sweepable/differentiable leaf);
     - only explicit per-edge delays → ``DenseDelayGraph``;
     - no delays (or *delays* False) → ``DenseGraph``.
 
-    ``max_delay`` sets the graph's ``max_delay_bound`` (static history-buffer size); ``None`` defaults it to the build-speed maximum delay.
+    ``max_delay`` sets the graph's ``max_delay_bound`` (static history-buffer size); ``None`` defaults it to the build-speed maximum delay. *dt* is the integration step and *time_unit* the clock it is in, which the declared delays are read with.
     """
     import jax.numpy as jnp
     from jax.experimental.sparse import BCOO
@@ -171,7 +181,8 @@ def _build_graph(network: Network, delays: bool = True, max_delay: float | None 
             return SparseGraph(weights, region_labels=labels)
         return DenseGraph(weights=weights, region_labels=labels)
 
-    lengths = dense_matrix(network, "length")
+    declared = network.declares_delays()
+    lengths = None if declared else dense_matrix(network, "length")
     if lengths is not None and np.any(lengths > 0):
         lengths = jnp.asarray(lengths, dtype=float)
         cs = getattr(network, "conduction_speed", None)
@@ -191,11 +202,8 @@ def _build_graph(network: Network, delays: bool = True, max_delay: float | None 
             max_delay_bound=bound,
         )
 
-    # No tract lengths: use explicit per-edge delays if the network carries them.
-    try:
-        edge_delays = network._delays_from_edges()
-    except Exception:
-        edge_delays = None
+    # No tract lengths: the declared delays, else the per-edge delays of a network that states them.
+    edge_delays = network.integrated_delays(dt, time_unit) if network.states_delays() else None
     if edge_delays is not None:
         delay_matrix = jnp.nan_to_num(jnp.asarray(edge_delays, dtype=float))
         if isinstance(weights, BCOO):
@@ -259,6 +267,8 @@ def to_tvboptim(
     noise=None,
     max_delay: float | None = None,
     interpolate_delays: bool = False,
+    dt: float | None = None,
+    time_unit: str | None = None,
     **kwargs,
 ):
     """Export a tvbo Network to a tvboptim Network or graph object.
@@ -284,6 +294,10 @@ def to_tvboptim(
         Concrete upper bound on the delay, forwarded to ``DenseDelayGraph`` to size the static history buffer. Pass it when the delays are meant to vary differentiably (e.g. ``delays = lengths / speed`` with ``speed`` optimised) so the buffer length stays static while the delays may be JAX tracers. When ``None``, derived from the concrete delays.
     interpolate_delays : bool, default=False
         When True, enable linear interpolation between bracketing history steps on every delayed coupling, making the coupling differentiable w.r.t. the continuous delay (and hence conduction speed). Works with each of tvboptim's buffer strategies (``"roll"``, ``"circular"``, ``"preallocated"``).
+    dt : float, optional
+        The integration step of the run the network is built for.
+    time_unit : str, optional
+        The clock *dt* is in. A network that declares its delays is read with both (`Network.integrated_delays`).
     **kwargs
         Extra keyword arguments forwarded to the tvboptim ``Network`` constructor.
 
@@ -295,7 +309,11 @@ def to_tvboptim(
     if delays is None:
         delays = any(getattr(coup_obj, "delayed", False) for coup_obj in network_couplings(network).values())
 
-    graph = _build_graph(network, delays=delays, max_delay=max_delay)
+    if delays:
+        from tvbo.templates.tvboptim.utils import refuse_interpolated_delay_function
+
+        refuse_interpolated_delay_function(network, every_coupling=interpolate_delays)
+    graph = _build_graph(network, delays=delays, max_delay=max_delay, dt=dt, time_unit=time_unit)
 
     if return_type == "graph":
         return graph
@@ -461,6 +479,8 @@ def to_heterogeneous_network(
     default_dynamics: str | None = None,
     delays: bool | None = None,
     max_delay: float | None = None,
+    dt: float | None = None,
+    time_unit: str | None = None,
 ):
     """Build a tvboptim ``HeterogeneousNetwork`` from a heterogeneous tvbo Network.
 
@@ -474,7 +494,7 @@ def to_heterogeneous_network(
         ``{name: Dynamics}`` resolving each ``Node.dynamics`` reference. Defaults to ``network.dynamics``.
     default_dynamics : str, optional
         Name used for nodes that declare no ``dynamics`` of their own (``Node.dynamics`` is optional — the experiment's dynamics is the documented fallback).
-    delays, max_delay : optional
+    delays, max_delay, dt, time_unit : optional
         Forwarded to :func:`_build_graph`; ``delays=None`` auto-infers from the network's couplings (any ``delayed=True``).
     """
     from tvboptim.experimental.network_dynamics import (
@@ -506,7 +526,7 @@ def to_heterogeneous_network(
         delays = any(getattr(c, "delayed", False) for c in network_couplings(network).values()) or any(
             getattr(getattr(e, "coupling", None), "delayed", False) for e in (getattr(network, "edges", None) or [])
         )
-    graph = _build_graph(network, delays=delays, max_delay=max_delay)
+    graph = _build_graph(network, delays=delays, max_delay=max_delay, dt=dt, time_unit=time_unit)
 
     # --- NodeGroups (+ per-group AbstractDynamics for readout validation)
     groups = {}
@@ -700,10 +720,12 @@ def run_heterogeneous_tvboptim(experiment, *, dynamics_lib=None, seed=None, **kw
             "a grouped network steps one state per group, and the per-step event wrapper applies one model's events to one state",
         )
     default_dyn = next(iter(lib), None) if dynamics_lib is None else None
-    het = to_heterogeneous_network(network, dynamics_lib=lib, default_dynamics=default_dyn)
-
     window = adapter.get_integration_info()
     dt, method, n_transient = window["dt"], window["method"], window["n_transient"]
+    het = to_heterogeneous_network(
+        network, dynamics_lib=lib, default_dynamics=default_dyn, dt=dt, time_unit=experiment._clock()
+    )
+
     n_steps = max(1, n_transient + window["n_measured"])
     _cls = solver_class(method)
     if _cls == "DiffraxSolver":  # takes the diffrax solver to wrap, not a block size, so it is not buildable here

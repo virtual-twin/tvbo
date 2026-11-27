@@ -523,6 +523,7 @@ class Brian2Adapter(BaseAdapter):
                 "settle_ms is gone: the settle is the recipe's own `integration.transient_time`, prepended to the "
                 "measured `duration`. A caller-side override is what let run() and render() measure different windows."
             )
+        self.refuse_unread_delays()
         if codegen_target:
             brian2.prefs.codegen.target = codegen_target
         model = self.prepare_context()

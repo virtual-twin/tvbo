@@ -317,7 +317,9 @@ def to_pyrates_network_yaml(
         YAML string (or filepath if written to file).
     """
     from tvbo import templates
+    from tvbo.adapters.base import refuse_declared_delays
 
+    refuse_declared_delays(network, "pyrates-yaml", delayed=True)
     template = templates.lookup.get_template("tvbo-pyrates-network.yaml.mako")
     yaml_str = str(template.render(model=dynamics, network=network))
 
@@ -335,6 +337,7 @@ def to_pyrates_yaml_string(
     filepath: str | None = None,
     fortran: bool = False,
     seed: int | None = 0,
+    edges: bool = True,
 ) -> str:
     """Export to complete PyRates experiment YAML (model + network, ready to run).
 
@@ -352,6 +355,8 @@ def to_pyrates_yaml_string(
         Whether the YAML is compiled by PyRates's Fortran backend, which the AUTO-07p continuation uses; its operators then rename the symbols that differ only in case (`pyrates_names`).
     seed : int or None, optional
         The run's seed, on which each operator opens at the draw tvb and jax open on (`operator_template`); None for a continuation, which starts from each variable's initial value.
+    edges : bool, optional
+        Whether the circuit is run with the edges written here. Each carries the delay its own edge states, else its distance over the conduction speed, so a network that declares its delays (`Network.declares_delays`) is refused; a caller that replaces the edges passes False.
 
     Returns:
     -------
@@ -359,7 +364,10 @@ def to_pyrates_yaml_string(
         YAML string (or filepath if written to file).
     """
     from tvbo import templates
+    from tvbo.adapters.base import refuse_declared_delays
 
+    if edges:
+        refuse_declared_delays(network, "pyrates-yaml", delayed=True)
     template = templates.lookup.get_template("tvbo-pyrates-experiment.yaml.mako")
 
     if isinstance(dynamics, dict):

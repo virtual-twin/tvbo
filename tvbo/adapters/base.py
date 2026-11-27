@@ -29,7 +29,7 @@ from tvbo.templates.base.utils import (
     samples_over_time,
     samples_per_trial,
 )
-from tvbo.utils import initial_value, keyed_items, network_couplings, noise_sigma, normalize_params
+from tvbo.utils import delay_declaration, initial_value, keyed_items, network_couplings, noise_sigma, normalize_params
 
 
 def dense_matrix(network, name: str, dtype=float) -> np.ndarray | None:
@@ -523,6 +523,24 @@ def require_edge_attributes(network, backend: str, needs) -> None:
         )
 
 
+def refuse_declared_delays(network, backend: str, delayed=None) -> None:
+    """Raise where *backend* would integrate a delayed coupling over a network that declares its delays (`Network.declares_delays`) and read none of the declaration.
+
+    A backend that derives its delays from tract lengths in its own code, or reads them off the explicit edges, integrates those whatever the network's ``delay`` layer or the transforms on it say, and reports success. *delayed* is the names of the delayed couplings, a bool, or ``None`` to read them off the network's own couplings; with none delayed nothing reads a delay and nothing is refused. An object without `declares_delays` is left to the caller.
+    """
+    declared = delay_declaration(network)
+    if declared is None:
+        return
+    if delayed is None:
+        delayed = any(getattr(coupling, "delayed", False) for coupling in network_couplings(network).values())
+    if not delayed:
+        return
+    raise NotImplementedError(
+        f"the {backend} backend takes the delay of a delayed coupling from tract lengths or per-edge values in its own code, and {network} declares its delays itself, by {declared}, which that code would not read. "
+        "Run it on tvboptim or the python backend, which integrate the declared delays, or on pyrates where the network lists no edge between two nodes; or drop the declaration."
+    )
+
+
 class BaseAdapter:
     """Base class for backend adapters.
 
@@ -542,6 +560,9 @@ class BaseAdapter:
 
     DELAY_CARRIERS: tuple[str, ...] = ("length",)
     """Edge attributes this backend derives a delayed coupling's delays from, any one sufficing. Tract lengths over a conduction speed is what TVB and the CUDA kernel size their history buffer with; a backend that also takes explicit per-edge delays lists ``delay``."""
+
+    READS_DECLARED_DELAYS: bool = False
+    """Whether this backend takes its delays from `Network.integrated_delays`, the one read that honours a stored ``delay`` layer and the transforms on ``delay`` on the integration's clock. A backend that derives them itself leaves this false, and `refuse_unrenderable` refuses a network that declares its delays (:func:`refuse_declared_delays`)."""
 
     def __init__(self, experiment: SimulationExperiment):
         self.experiment = experiment
@@ -708,9 +729,15 @@ class BaseAdapter:
     def refuse_unrenderable(self) -> None:
         """Raise where this backend's templates would drop part of the declaration and emit well-formed code for the rest.
 
-        By default this is `refuse_missing_edge_attributes`: a delayed coupling over a network with no tract lengths is the case every backend here would otherwise integrate instantaneous and report as a success. A backend overrides it — calling up — to name what else its templates do not lower, a delayed coupling with no history path, a declared observation with no monitor path, because rendering is not evidence: code that compiles and then answers a different question is indistinguishable from support to every caller that does not already know the answer.
+        Unless the backend `READS_DECLARED_DELAYS`, this is first :func:`refuse_declared_delays`: a network that declares its delays would otherwise be integrated at tract length over conduction speed, and it is told so before it is asked for tract lengths it has no use for. Then `refuse_missing_edge_attributes`: a delayed coupling over a network with no tract lengths is the case every backend here would otherwise integrate instantaneous and report as a success. A backend overrides it — calling up — to name what else its templates do not lower, a delayed coupling with no history path, a declared observation with no monitor path, because rendering is not evidence: code that compiles and then answers a different question is indistinguishable from support to every caller that does not already know the answer.
         """
+        self.refuse_unread_delays()
         self.refuse_missing_edge_attributes()
+
+    def refuse_unread_delays(self) -> None:
+        """This adapter's :func:`refuse_declared_delays`, which a backend that `READS_DECLARED_DELAYS` passes."""
+        if not self.READS_DECLARED_DELAYS:
+            refuse_declared_delays(getattr(self.experiment, "network", None), self.backend, self.delayed_couplings())
 
     def refuse_network(self, reach: str) -> None:
         """This adapter's :func:`refuse_network`: raise if the experiment declares a network the backend would integrate one node of."""

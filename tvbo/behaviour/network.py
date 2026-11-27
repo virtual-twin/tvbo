@@ -193,6 +193,7 @@ def _fill_unstated(mine, theirs) -> None:
 
 
 _LENGTH_TARGETS = ("length", "lengths")
+_DELAY_TARGETS = ("delay", "delays")
 _FORMER_WEIGHT_NAMES = ("weights", "sc", "streamlinecount", "streamlinedensity")
 """Names a weight is often given that tvbo does not read as the weights (register WT1): a network that holds an edge of one of them and neither a ``weight`` edge nor a ``primary_weight`` is refused naming it, and so is a transform aimed at one no layer of the network has, since either would otherwise read as an unconnected network."""
 
@@ -320,14 +321,21 @@ def _is_length_name(name) -> bool:
     return low in _LENGTH_TARGETS or low in _LENGTH_MEASURES
 
 
+def _is_delay_name(name) -> bool:
+    """Whether *name* spells the conduction-delay property."""
+    return str(name).lower() in _DELAY_TARGETS
+
+
 def _alias_group(name) -> tuple:
-    """Every spelling of the edge property *name* names, canonical spellings first: the tract length has several, and every other name, ``weight`` among them, is its own.
+    """Every spelling of the edge property *name* names, canonical spellings first: the tract length has several, the delay has two, and every other name, ``weight`` among them, is its own.
 
     The ONE place spellings are grouped. `Network.matrix` resolves a matrix through it and `Network.transforms_for` selects transforms through it, so a lookup and its transform cannot disagree about whether two names mean the same property. Which edge a network's weights are is the network's own declaration (:meth:`Network._matrix_names`).
     Names are lowercase; callers match source keys case-insensitively.
     """
     if _is_length_name(name):
         return _LENGTH_TARGETS + tuple(sorted(_LENGTH_MEASURES.difference(_LENGTH_TARGETS)))
+    if _is_delay_name(name):
+        return _DELAY_TARGETS
     return (str(name).lower(),)
 
 
@@ -4089,20 +4097,28 @@ class NetworkBehaviour(YamlDocument, Pytree):
         self,
         conduction_speed: float | None = None,
         output_unit: str | None = None,
+        dt: float | None = None,
     ) -> np.ndarray | JaxArray:
-        """Calculate signal propagation delays between regions.
+        """The signal propagation delay of every connection, as the network declares it.
 
-        Supports two network representations:
+        The delay is read in this order, and the first source that answers is the one used (`delay_source` names it):
 
-        1. **Matrix-based** — delays are ``lengths / conduction_speed``, with optional unit conversion via *output_unit*.
-        2. **Edge-based** — delays are extracted from explicit edge objects that carry ``source``, ``target``, and a ``"delay"`` parameter.
+        1. **A stored ``delay`` layer**, an edge matrix of that name. It states its unit as ``unit:`` on its entry under ``edges:``, which must be a time; without one it is in the network's time unit.
+        2. **Per-edge delays**, explicit edges that carry ``source``, ``target`` and a positive ``delay`` parameter, in the network's time unit.
+        3. **Tract length over conduction speed**, ``lengths / conduction_speed``, in the distance unit over the speed's unit (ms for mm and mm/ms).
+
+        The ``transforms:`` entries whose target is ``delay`` are then applied in declaration order. Inside such an equation ``delay`` is the value read above, any other edge layer is readable by name, and ``dt`` is the integration step of the experiment running the network, which the caller passes as *dt*.
+
+        With *output_unit* the delays come back in that unit whatever their source. Each source is converted from the unit it is stated in before the transforms run, so ``delay`` and ``dt`` meet in one unit; the network's time unit is ms unless it declares one, and a conduction speed that states no unit is distance per that unit. Without *output_unit* a stored layer that states a ``unit:`` is brought to the network's time unit and the other two sources are returned as stated. `integrated_delays` is the read a run makes.
 
         Parameters
         ----------
         conduction_speed : float, optional
-            Override conduction speed. If *None*, uses ``self.conduction_speed``.
+            Conduction speed for the third source. If *None*, uses ``self.conduction_speed``. A stored layer and per-edge delays do not depend on it.
         output_unit : str, optional
-            Desired output time unit (e.g. ``"ms"``, ``"s"``). When given, sympy unit conversion is applied. If *None*, the result is in the network's native time unit (defaults to ms).
+            The time unit the delays are returned in (e.g. ``"ms"``, ``"s"``), which is also the unit of *dt*.
+        dt : float, optional
+            The integration step for a transform on ``delay`` that names ``dt``, in *output_unit*, or in the network's time unit where none is asked for.
 
         Returns:
         -------
@@ -4112,7 +4128,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
         Raises:
         ------
         ValueError
-            If neither lengths matrix nor edge-based delays are available.
+            If no source answers, if the stored layer's unit is not a time, or if a transform on ``delay`` names ``dt`` and none was passed.
 
         Examples:
         --------
@@ -4124,31 +4140,153 @@ class NetworkBehaviour(YamlDocument, Pytree):
         plt.colorbar(label='Delay (ms)')
         ```
         """
-        # --- Edge-based path: edges with source/target indices ---
-        if hasattr(self, "edges") and self.edges:
-            # Only use edge path when edges are actual connections (have source/target)
-            edge_delays = self._delays_from_edges()
-            if edge_delays is not None:
-                return edge_delays
+        return self._delays_or_raise(conduction_speed=conduction_speed, dt=dt, unit=output_unit)
 
-        # --- Matrix-based path: lengths / conduction_speed ---
-        if conduction_speed is None:
-            cs_param = getattr(self, "conduction_speed", None)
-            if cs_param and hasattr(cs_param, "value"):
-                conduction_speed = cs_param.value  # type: ignore[attr-defined]
-            else:
-                conduction_speed = 3.0  # default fallback
+    def integrated_delays(self, dt: float | None = None, time_unit: str | None = None) -> np.ndarray | JaxArray:
+        """The delay of every connection as a run integrates it, the one read every site that builds or sizes a delayed run makes.
 
+        *dt* is the integration step and *time_unit* the clock it is in, ``None`` standing for the network's own time unit. A network that declares its delays (`declares_delays`) is read in that clock, as `calculate_delays` reads it with *dt* and *time_unit*, so a ``delay`` layer in its own unit, the source a function rewrites and the step it names meet in one unit. One that declares no time unit takes the clock for its own, as every scope without a unit takes the one outside it (`time_unit_of`). A network that declares no delay is returned as stated, tract length over conduction speed or the per-edge values, because that is the number each backend's own code integrates.
+        """
+        if not self.declares_delays():
+            return self.calculate_delays()
+        from tvbo.utils.units import time_unit_of
+
+        home = time_unit_of(self, {"time_unit": time_unit})
+        return self._delays_or_raise(dt=dt, unit=time_unit or home, home=home)
+
+    def _delays_or_raise(self, **read) -> np.ndarray | JaxArray:
+        """`_delays` for a caller that needs an answer: the delays as an array, a ``delay`` layer stored sparse made dense, or a ``ValueError`` for a network with neither a delay nor a tract length."""
+        from scipy import sparse
+
+        delays, _ = self._delays(**read)
+        if delays is None:
+            raise ValueError("Lengths matrix is not available")
+        return delays.toarray() if sparse.issparse(delays) else delays
+
+    def delay_source(self) -> str | None:
+        """The source `calculate_delays` reads, in its order: ``"layer"`` for a ``delay`` layer, stored or declared under ``edges:``, ``"edges"`` for a positive delay on an explicit edge, ``"lengths"`` for tract lengths, ``None`` for a network that carries none of them.
+
+        Decided from the header and the declaration, without reading a matrix. Every reader that has to know where the delays come from asks here, so the order is stated once.
+        """
+        if self._delay_layer_declared():
+            return "layer"
+        if any((edge_param(edge, "delay") or 0) > 0 for edge in self._placed_edges()):
+            return "edges"
+        return "lengths" if self.carries("length") else None
+
+    def declares_delays(self) -> bool:
+        """Whether this network states its delays itself instead of leaving them to tract length over conduction speed or to its explicit edges: by a ``delay`` layer, stored or declared under ``edges:``, or by a ``transforms:`` entry on ``delay``.
+
+        What a backend asks before it derives delays from tract lengths in its own code, since a network that answers true here integrates other delays than that derivation gives.
+        """
+        return self.delay_declaration() is not None
+
+    def delay_declaration(self) -> str | None:
+        """How this network declares its delays, in the words a message uses: a ``delay`` layer, a transform on ``delay``, or both; ``None`` where it declares neither."""
+        forms = []
+        if self._delay_layer_declared():
+            forms.append("a `delay` layer")
+        if self.transforms_for("delay"):
+            forms.append("a transform on `delay`")
+        return " and ".join(forms) or None
+
+    def states_delays(self) -> bool:
+        """Whether this network states its delays itself, by declaring them (`declares_delays`) or on its explicit edges (`delay_source`), so that a reader has a delay matrix to take from it and not a tract length to divide."""
+        return self.declares_delays() or self.delay_source() == "edges"
+
+    def _delay_layer_declared(self) -> bool:
+        """Whether a ``delay`` layer exists under either spelling: a matrix in hand or on file, or a layer entry under ``edges:`` of that label."""
+        if set(_DELAY_TARGETS) & {str(n).lower() for n in self.matrix_names}:
+            return True
+        return self._delay_layer_edge() is not None
+
+    def _delay_layer_edge(self):
+        """The layer entry under ``edges:`` (no endpoints, no other network) that names the ``delay`` layer, or ``None``."""
+        for edge in self.edges or []:
+            if (
+                _is_template_edge(edge)
+                and not _is_route(edge)
+                and str(getattr(edge, "label", "") or "").lower() in _DELAY_TARGETS
+            ):
+                return edge
+        return None
+
+    def _delays(
+        self,
+        conduction_speed: float | None = None,
+        dt: float | None = None,
+        apply_transforms: bool = True,
+        unit: str | None = None,
+        home: str | None = None,
+    ):
+        """``(delays, source)``: every connection's delay and the source that answered (`delay_source`), the one read `matrix`, `calculate_delays` and `integrated_delays` share.
+
+        The delays are brought into *unit* from the unit their source states, *home* being the network's time unit for a source that states none (`_delay_unit_factor`), and the transforms on ``delay`` are applied there, with *dt* in the same unit, unless *apply_transforms* is off. ``(None, None)`` for a network with no delay and no tract length to derive one from. A ``delay`` layer declared without values raises instead of falling through to the next source.
+        """
+        from scipy import sparse
+
+        source, delays = self.delay_source(), None
+        if source == "layer":
+            delays = self._stored("delay")[0]
+            if delays is None:
+                raise ValueError(
+                    f"{self} declares a `delay` layer under `edges:` that carries no values. Store the matrix (the companion dataset edges/delay, set_matrix('delay', ...), or a `used:` reference), or drop the entry to derive delays from tract lengths."
+                )
+        elif source == "edges":
+            delays = self._delays_from_edges()
+        if delays is None:
+            delays, source = self._delays_from_lengths(conduction_speed), "lengths"
+        if delays is None:
+            return None, None
+        factor = self._delay_unit_factor(source, unit, home)
+        if factor != 1.0:
+            delays = delays * factor
+        if apply_transforms:
+            for transform in self.transforms_for("delay"):
+                delays = self._apply_transform(
+                    delays
+                    if isinstance(delays, JaxArray)
+                    else delays.toarray()
+                    if sparse.issparse(delays)
+                    else np.asarray(delays),
+                    transform,
+                    dt=dt,
+                )
+        return delays, source
+
+    def _delays_from_lengths(self, conduction_speed: float | None = None):
+        """Tract length over *conduction_speed* (the network's own, else 3.0, when ``None``), or ``None`` for a network without tract lengths."""
         lengths = self.lengths_matrix
         if lengths is None:
-            raise ValueError("Lengths matrix is not available")
+            return None
+        if conduction_speed is None:
+            cs_param = getattr(self, "conduction_speed", None)
+            conduction_speed = cs_param.value if cs_param and hasattr(cs_param, "value") else 3.0  # type: ignore[attr-defined]
+        return lengths / conduction_speed  # type: ignore[operator]
 
-        delays = lengths / conduction_speed  # type: ignore[operator]
+    def _delay_unit_factor(self, source: str, unit: str | None, home: str | None = None) -> float:
+        """The factor that brings the delays read from *source* into *unit*, or, with ``None``, into the unit `calculate_delays` returns them in unasked.
 
-        if output_unit is not None:
-            delays = delays * self._unit_conversion_factor(output_unit)
+        A stored layer is stated in the ``unit:`` of its entry under ``edges:``, else in the network's time unit, as per-edge delays are. Tract length over conduction speed is stated in the distance unit over the speed's unit and is converted only where a unit is asked for. *home* is the network's time unit as the caller resolved it, `time_unit_of` this network alone when ``None``.
 
-        return delays
+        Raises:
+            ValueError: The layer's unit is not a time.
+        """
+        from tvbo.utils.units import time_unit_factor, time_unit_of
+
+        home = home or time_unit_of(self)
+        if source == "lengths":
+            return 1.0 if unit is None else self._unit_conversion_factor(unit, home)
+        edge = self._delay_layer_edge() if source == "layer" else None
+        layer_unit = getattr(edge, "unit", None) if edge is not None else None
+        try:
+            return float(time_unit_factor({"unit": str(layer_unit) if layer_unit else home}, {"unit": unit or home}))
+        except ValueError as error:
+            if not layer_unit:
+                raise
+            raise ValueError(
+                f"the `delay` layer of {self} declares unit {str(layer_unit)!r}, and a delay is a time: {error}. Give the layer a time unit (ms, s), or name the matrix for what it holds (a tract length is `length`)."
+            ) from error
 
     def _delays_from_edges(self) -> np.ndarray | None:
         """Explicit per-edge delays, or ``None`` when no edge declares a positive one.
@@ -4160,8 +4298,8 @@ class NetworkBehaviour(YamlDocument, Pytree):
             return None
         return delays
 
-    def _unit_conversion_factor(self, output_unit: str) -> float:
-        """Compute multiplicative factor to convert native delay units to *output_unit*."""
+    def _unit_conversion_factor(self, output_unit: str, time_unit: str | None = None) -> float:
+        """Compute multiplicative factor to convert native delay units to *output_unit*; a conduction speed that states no unit is distance per *time_unit*, the network's own when ``None``."""
         import sympy.physics.units as u
         from sympy import nsimplify
         from sympy.parsing.sympy_parser import parse_expr
@@ -4175,7 +4313,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
         speed_unit_str = (
             unit_to_symbol(cs_param.unit)
             if cs_param and cs_param.unit
-            else f"{distance_unit_str}/{unit_to_symbol(time_unit_of(self))}"
+            else f"{distance_unit_str}/{unit_to_symbol(time_unit or time_unit_of(self))}"
         )
         target_time_str = unit_to_symbol(output_unit)
 
@@ -4186,7 +4324,9 @@ class NetworkBehaviour(YamlDocument, Pytree):
         converted = u.convert_to(native_delay, target_unit)
         return float(nsimplify(converted / target_unit))
 
-    def create_graph(self, weight_threshold: float = 0) -> nx.MultiDiGraph:
+    def create_graph(
+        self, weight_threshold: float = 0, dt: float | None = None, time_unit: str | None = None
+    ) -> nx.MultiDiGraph:
         """Create NetworkX graph from network structure.
 
         Prioritizes explicit nodes/edges representation over weight matrices.
@@ -4196,6 +4336,10 @@ class NetworkBehaviour(YamlDocument, Pytree):
         ----------
         weight_threshold : float, default=0
             Minimum weight for including an edge in the graph
+        dt : float, optional
+            The integration step of the run the graph is built for.
+        time_unit : str, optional
+            The clock *dt* is in. Both are passed on to `integrated_delays`, which a network that declares its delays (`declares_delays`) is read through.
 
         Returns:
         -------
@@ -4242,14 +4386,22 @@ class NetworkBehaviour(YamlDocument, Pytree):
             # Only surviving edges count as declared: a reverse edge dropped for being too weak must not suppress the mirror and leave the pair one-directional.
             kept = [e for e in pair_edges if (edge_param(e, "weight") or 0.0) > weight_threshold]
             declared_pairs = {(e.source, e.target) for e in kept}
+            declared_delays = (
+                np.nan_to_num(np.asarray(self.integrated_delays(dt, time_unit))) if self.declares_delays() else None
+            )
+            index = self.node_index_map()
             for edge in kept:
                 source = edge.source
                 target = edge.target
                 weight = edge_param(edge, "weight") or 0.0
+                if declared_delays is None:
+                    delay = edge_param(edge, "delay") or 0.0
+                else:
+                    delay = float(declared_delays[index.get(target, target), index.get(source, source)])
 
                 edge_attrs = {
                     "weight": weight,
-                    "delay": edge_param(edge, "delay") or 0.0,
+                    "delay": delay,
                     "distance": edge_param(edge, "distance") or 0.0,
                     "directed": edge.directed,
                     "source_var": edge.source_var,
@@ -4257,13 +4409,18 @@ class NetworkBehaviour(YamlDocument, Pytree):
                 }
                 G.add_edge(source, target, **edge_attrs)
                 if not edge.directed and source != target and (target, source) not in declared_pairs:
+                    if declared_delays is not None:
+                        edge_attrs = {
+                            **edge_attrs,
+                            "delay": float(declared_delays[index.get(source, source), index.get(target, target)]),
+                        }
                     G.add_edge(target, source, **edge_attrs)
 
             return G
 
         # Priority 2: Fall back to weight matrix representation
         W = self._weights_matrix()
-        D = self.calculate_delays() if self.lengths_matrix is not None else None
+        D = self.integrated_delays(dt, time_unit) if self.lengths_matrix is not None or self.declares_delays() else None
         N_regions = self.number_of_regions
 
         if N_regions is None or W is None:
@@ -5214,7 +5371,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
     def materialize(self, *paths: str) -> "Network":
         """A copy of this network with ``paths`` resident, and nothing else newly read.
 
-        The explicit point at which arrays are read: ``net.materialize("weight", "length")`` reads two datasets of however many the companion holds, and the copy's `arrays` then holds exactly what a solver or a gradient will see. A bare name is an edge matrix; ``mesh/vertices`` names any dataset. An edge matrix only the explicit edges declare is built from them, untransformed, because the edges are not part of the pytree and would otherwise leave the network unconnected inside a JAX transformation. The copy shares the arrays already resident here (references, not copies) and the lazy store; its residency is its own.
+        The explicit point at which arrays are read: ``net.materialize("weight", "length")`` reads two datasets of however many the companion holds, and the copy's `arrays` then holds exactly what a solver or a gradient will see. A bare name is an edge matrix; ``mesh/vertices`` names any dataset. An edge matrix only the explicit edges declare is built from them, untransformed, because the edges are not part of the pytree and would otherwise leave the network unconnected inside a JAX transformation. A ``delay`` the network derives from its tract lengths is not one of them: held as a matrix it would be a ``delay`` layer the network never declared (`declares_delays`). The copy shares the arrays already resident here (references, not copies) and the lazy store; its residency is its own.
 
         Raises ``KeyError`` for a path neither resident, in the companion, nor declared by the edges, so a typo is a typo and not an absent leaf.
         """
@@ -5226,7 +5383,8 @@ class NetworkBehaviour(YamlDocument, Pytree):
         for path in paths:
             if out.array(path) is not None:
                 continue
-            declared = None if "/" in path else out.matrix(path, apply_transforms=False)
+            derived = _is_delay_name(path) and out.delay_source() == "lengths"
+            declared = None if "/" in path or derived else out.matrix(path, apply_transforms=False)
             if declared is None:
                 raise KeyError(f"{path!r} is neither resident, in the companion, nor declared by the edges of {self}")
             out.set_array(path, declared)
@@ -5314,6 +5472,8 @@ class NetworkBehaviour(YamlDocument, Pytree):
         """Whether ``matrix(name)`` would answer, decided from the header and the declaration without reading a value.
 
         A resident array or a companion dataset under any spelling of *name* answers. So do the explicit edges, from which ``weight`` (an edge with none counts as 1), ``length`` (declared as ``length`` or ``distance``, or the Euclidean distance between two positioned nodes) and a positive ``delay`` are built; any other name is a per-edge parameter the edges declare. ``weight`` also answers on a bare node set, where `matrix` returns zeros, because an unconnected network is a legitimate one — `has_connectome` is the question of whether anything is connected. What a backend asks before it lowers, so a missing attribute is named at the declaration rather than met as a ``None`` in the middle of a build.
+
+        ``delay`` is the one name for which this is narrower than `matrix`: it answers for the delays a network states, as a stored layer or per edge, and not for the delay `matrix` derives from tract lengths, which is carried as ``length``. A backend that reads per-edge delays and one that reads tract lengths ask different questions of the same network, and this keeps them apart.
         """
         spellings = set(self._matrix_names(name))
         if spellings & {str(n).lower() for n in self.matrix_names}:
@@ -5327,8 +5487,8 @@ class NetworkBehaviour(YamlDocument, Pytree):
             if any(edge_param(e, "length") or edge_param(e, "distance") for e in placed):
                 return True
             return any(self._compute_euclidean_distance(e.source, e.target) is not None for e in placed)
-        if str(name).lower() == "delay":
-            return any((edge_param(e, "delay") or 0) > 0 for e in placed)
+        if _is_delay_name(name):
+            return self.delay_source() == "edges"
         return any(edge_param(e, name) is not None for e in placed)
 
     def stored_format(self, name: str) -> str | None:
@@ -5414,6 +5574,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
         name: str,
         format: str | None = None,
         apply_transforms: bool = True,
+        dt: float | None = None,
     ):
         """Get a named edge matrix, optionally in a specific format.
 
@@ -5421,15 +5582,21 @@ class NetworkBehaviour(YamlDocument, Pytree):
 
         Being canonical means subsuming what the deprecated properties returned, so a WEIGHT target on a node set with no edges yields zeros rather than ``None``: an unconnected network is a legitimate one, and every consumer of this builds an ``(n, n)`` array from the result.
 
+        ``delay`` is a layer like the others with one more source behind the explicit edges: a network that stores none and declares none per edge answers with tract length over conduction speed (`calculate_delays` states the order and the units).
+
+        A declared transform whose target names no layer of this network is refused here, on any read, rather than accepted and never applied (`refuse_transforms_without_a_layer`).
+
         Parameters
         ----------
         name : str
-            Matrix name (e.g. ``"weight"``, ``"length"``). ``weight`` and the edge ``primary_weight`` names are the weights; the spellings of a length (``lengths``, ``tractLength``) resolve to the same matrix.
+            Matrix name (e.g. ``"weight"``, ``"length"``, ``"delay"``). ``weight`` and the edge ``primary_weight`` names are the weights; the spellings of a length (``lengths``, ``tractLength``) and of a delay (``delays``) resolve to the same matrix.
         format : str, optional
             Return format: ``"dense"``, ``"csr"``, ``"coo"``, ``"lil"``.
             If ``None``, returns the matrix in whatever format it is currently stored in.
         apply_transforms : bool
             Apply the declared ``transforms:`` targeting this matrix. Pass ``False`` for the raw matrix — the tvboptim codegen path does, so a frozen kit keeps raw SC in the network file and the declared op visible in the rendered script rather than hidden in this runtime.
+        dt : float, optional
+            The integration step a transform on ``delay`` may name as ``dt``; no other layer reads it.
 
         Returns:
         -------
@@ -5438,8 +5605,53 @@ class NetworkBehaviour(YamlDocument, Pytree):
         from scipy import sparse
         from scipy.sparse import coo_matrix, csr_matrix, lil_matrix
 
+        self.refuse_transforms_without_a_layer()
+        delay = _is_delay_name(name)
+        weights = "weight" in self._layer_names(name)
+        mat, unheld = (self._delays(dt=dt, apply_transforms=apply_transforms)[0], None) if delay else self._stored(name)
+        if mat is None:
+            if weights:
+                mat = self._weights_from_edges()
+            elif _is_length_name(name):
+                mat = self._lengths_from_edges()
+
+        # No edges is zero weights, not absent ones: a single-node model and an uncoupled ensemble are both legitimate, and every consumer builds an (n, n) array from this.
+        _unconnected = False
+        if mat is None and weights:
+            if unheld is not None:
+                raise _unheld_weight(unheld, getattr(self, "_store", None))
+            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
+            if n > 0:
+                mat, _unconnected = np.zeros((n, n), dtype=np.float64), True
+
+        if mat is None:
+            return None
+        live = isinstance(mat, JaxArray)
+
+        # A declared transform describes real connectivity; over an all-zero stand-in a normalisation like `W / mean(W[W > 0])` yields nan rather than zeros.
+        if apply_transforms and not _unconnected and not delay:
+            for t in self.transforms_for(name):
+                mat = self._apply_transform(
+                    mat if live else mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
+                    t,
+                )
+
+        if format is None or live:
+            return mat
+        elif format == "dense":
+            return mat.toarray() if sparse.issparse(mat) else np.asarray(mat)
+        elif format == "csr":
+            return csr_matrix(mat)
+        elif format == "coo":
+            return coo_matrix(mat)
+        elif format == "lil":
+            return lil_matrix(mat)
+        else:
+            raise ValueError(f"Unknown format: {format!r}")
+
+    def _stored(self, name: str):
+        """``(matrix, unheld)``: the matrix *name* as the network holds it, resident or in the companion file, under any name its layer goes by, or ``None``, and the name of a layer the companion declares without holding it, or ``None``. `matrix`'s first two sources, with no fallback to the explicit edges and no transform applied."""
         candidates = self._matrix_names(name)
-        weights = "weight" in candidates
         self._read_sourced_layers(candidates)
         arrays = self._get_arrays()
         store = getattr(self, "_store", None)
@@ -5461,57 +5673,19 @@ class NetworkBehaviour(YamlDocument, Pytree):
                     return folded[cand]
             return None
 
-        mat = None
-        unheld = False
         found = _spelled(self.edge_arrays())
         if found is not None:
-            mat = arrays[_array_key(found)]
-        elif store is not None:
-            found = _spelled(getattr(store, "names", None) or getattr(store, "arrays", {}).keys())
-            if found is not None:
-                # A declared layer the companion does not hold reads as it would in memory, and only a weight that would be served as zeros raises below; a layer it holds is read, and an error reading it is raised.
-                unheld = found not in store
-                if not unheld:
-                    mat = arrays[_array_key(found)] = _read_held(store, found)
-        if mat is None:
-            if weights:
-                mat = self._weights_from_edges()
-            elif _is_length_name(name):
-                mat = self._lengths_from_edges()
-
-        # No edges is zero weights, not absent ones: a single-node model and an uncoupled ensemble are both legitimate, and every consumer builds an (n, n) array from this.
-        _unconnected = False
-        if mat is None and weights:
-            if unheld:
-                raise _unheld_weight(found, store)
-            n = len(self.nodes) if self.nodes else (self.number_of_nodes or self.number_of_regions or 0)
-            if n > 0:
-                mat, _unconnected = np.zeros((n, n), dtype=np.float64), True
-
-        if mat is None:
-            return None
-        live = isinstance(mat, JaxArray)
-
-        # A declared transform describes real connectivity; over an all-zero stand-in a normalisation like `W / mean(W[W > 0])` yields nan rather than zeros.
-        if apply_transforms and not _unconnected:
-            for t in self.transforms_for(name):
-                mat = self._apply_transform(
-                    mat if live else mat.toarray() if sparse.issparse(mat) else np.asarray(mat),
-                    t,
-                )
-
-        if format is None or live:
-            return mat
-        elif format == "dense":
-            return mat.toarray() if sparse.issparse(mat) else np.asarray(mat)
-        elif format == "csr":
-            return csr_matrix(mat)
-        elif format == "coo":
-            return coo_matrix(mat)
-        elif format == "lil":
-            return lil_matrix(mat)
-        else:
-            raise ValueError(f"Unknown format: {format!r}")
+            return arrays[_array_key(found)], None
+        if store is None:
+            return None, None
+        found = _spelled(getattr(store, "names", None) or getattr(store, "arrays", {}).keys())
+        if found is None:
+            return None, None
+        # A declared layer the companion does not hold reads as it would in memory, and only a weight that would be served as zeros raises, in `matrix`; a layer it holds is read, and an error reading it is raised.
+        if found not in store:
+            return None, found
+        mat = arrays[_array_key(found)] = _read_held(store, found)
+        return mat, None
 
     def add_edge(
         self,
@@ -5683,10 +5857,10 @@ class NetworkBehaviour(YamlDocument, Pytree):
 
         return prepare(exp, what=f"transform {transform_target(func) or '?'!r}")
 
-    def _transform_operand(self, func, M):
+    def _transform_operand(self, func, M, dt: float | None = None):
         """A resolver from a transform symbol to the live array it names.
 
-        The transform's own target binds to *M*, the value flowing through the chain, so a second transform in a chain sees the first one's output — and so a length-target transform does not re-enter itself by asking the network for the matrix it is busy producing. An argument declared with ``used:`` binds to the array that reference names (:meth:`_sourced`), which is how a transform reads a cohort aggregate. Every other edge attribute binds to the network's stored matrix through the same :func:`tvbo.utils.edge_label` the emitters use, and a declared per-node parameter binds as an ``(n, 1)`` column, so ``weight / roi_size`` divides each target row by that region's size and broadcasts across the source axis.
+        The transform's own target binds to *M*, the value flowing through the chain, so a second transform in a chain sees the first one's output — and so a length-target transform does not re-enter itself by asking the network for the matrix it is busy producing. An argument declared with ``used:`` binds to the array that reference names (:meth:`_sourced`), which is how a transform reads a cohort aggregate. In a transform on ``delay`` the name ``dt`` binds to *dt*, the integration step (`_integration_step`). Every other edge attribute binds to the network's stored matrix through the same :func:`tvbo.utils.edge_label` the emitters use, and a declared per-node parameter binds as an ``(n, 1)`` column, so ``weight / roi_size`` divides each target row by that region's size and broadcasts across the source axis.
         """
         from tvbo.utils import edge_label
 
@@ -5697,6 +5871,8 @@ class NetworkBehaviour(YamlDocument, Pytree):
         def resolve(name):
             if str(name) in sourced:
                 return self._sourced(sourced[str(name)].used, f"transform {target!r}, argument {name!r}")
+            if str(name) == "dt" and _is_delay_name(target):
+                return self._integration_step(dt)
             label = edge_label(name) or name
             if str(label).lower() in own:
                 return M
@@ -5710,10 +5886,47 @@ class NetworkBehaviour(YamlDocument, Pytree):
 
         return resolve
 
-    def _apply_transform(self, M, func):
+    def _integration_step(self, dt: float | None) -> float:
+        """*dt* as a transform on ``delay`` reads it, or a ``ValueError`` saying that the step is missing: a network asked on its own has none, and a stand-in would shift every delay without a trace."""
+        if dt is None:
+            raise ValueError(
+                f"a transform on `delay` of {self} names `dt`, the integration step, and the network was asked for its delays without one. Ask through the experiment that runs the network, or pass the step: calculate_delays(dt=...)."
+            )
+        return float(dt)
+
+    def refuse_transforms_without_a_layer(self) -> None:
+        """Raise where a ``transforms:`` entry targets a layer this network does not have, since it would be accepted and never applied.
+
+        A target has a layer when it is the weights (which a bare node set answers too), when it spells the length or the delay and the network carries tract lengths or delays, when a matrix of that name is in hand or on file, when an entry under ``edges:`` carries that label, or when an explicit edge declares a parameter of that name. Decided from the header and the declaration, without reading a value. A network whose graph is generated in the emitted code is not checked, because its layers do not exist before that code runs, and a target that is a name a weight is often given is left to `transforms_for`, which names the remedy.
+        """
+        if not self.transforms or getattr(self, "graph_generator", None) is not None:
+            return
+        from tvbo.utils import edge_label
+
+        held = None
+        for transform in self.transforms:
+            target = edge_label(transform_target(transform)) or transform_target(transform)
+            if target is None or str(target).lower() in _FORMER_WEIGHT_NAMES:
+                continue
+            names = self._layer_names(target)
+            if "weight" in names:
+                continue
+            if held is None:
+                held = {str(name).lower() for name in self.matrix_names} | {
+                    str(getattr(edge, "label", "") or "").lower() for edge in self.edges or []
+                }
+            if set(names) & held:
+                continue
+            if (_is_delay_name(target) and self.delay_source() is not None) or self.carries(target):
+                continue
+            raise ValueError(
+                f"{self} declares a transform on {str(target)!r} and has no layer of that name (it holds {', '.join(sorted(held - {''})) or 'no edge matrix'}), so the transform would never be applied. Name the layer it rewrites (weight, length, delay, or an edge matrix this network holds), or add that layer."
+            )
+
+    def _apply_transform(self, M, func, dt: float | None = None):
         """Apply a Function transform to matrix *M*, at *M*'s precision (`_precision_of`).
 
-        Supports equation-based (symbolic) or callable-based (software) transforms via the Function class.
+        Supports equation-based (symbolic) or callable-based (software) transforms via the Function class. *dt* is the integration step a transform on ``delay`` may name (`_transform_operand`); a callable on ``delay`` that takes a ``dt`` argument is handed it.
         """
         # Callable-based transform
         c = getattr(func, "callable", None)
@@ -5739,6 +5952,8 @@ class NetworkBehaviour(YamlDocument, Pytree):
                 if "L" in sig.parameters:
                     _is_length = transform_target(func) in _LENGTH_TARGETS
                     kwargs.setdefault("L", M if _is_length else self.lengths_matrix)
+                if "dt" in sig.parameters and "dt" not in kwargs and _is_delay_name(transform_target(func)):
+                    kwargs["dt"] = self._integration_step(dt)
                 with _precision_of(M):
                     return fn(M, **kwargs)
 
@@ -5750,7 +5965,7 @@ class NetworkBehaviour(YamlDocument, Pytree):
         from tvbo.codegen.transforms import edge_symbols, runtime_env
 
         with _precision_of(M):
-            env = runtime_env(self._transform_operand(func, M), edge_symbols(exp, masks), jnp, jsp)
+            env = runtime_env(self._transform_operand(func, M, dt), edge_symbols(exp, masks), jnp, jsp)
             for symbol, mask in masks.items():
                 env[str(symbol)] = eval(render_expression(mask, format="jax"), env)
             code_str = render_expression(exp, format="jax")

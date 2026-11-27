@@ -1,0 +1,1041 @@
+"""Leaky tvboptim Experiment."""
+
+import copy
+import logging
+import time  # per-phase elapsed in the run log (tuning vs post-tuning wall-time)
+
+# Shares the ``tvbo`` logger hierarchy, so ``TVBO_LOG_LEVEL`` controls it the same way in-process and standalone.
+logger = logging.getLogger("tvbo.run")
+
+import jax
+
+jax.config.update("jax_enable_x64", True)  # Required for stable gradient computation
+import jax.numpy as jnp
+import jax.scipy.signal
+import equinox as eqx
+from typing import Tuple, Dict, Any
+
+from tvboptim.experimental.network_dynamics import Network, prepare
+from tvboptim.experimental.network_dynamics.result import NativeSolution
+from tvboptim.experimental.network_dynamics.core.bunch import Bunch
+from tvboptim.experimental.network_dynamics.dynamics.base import AbstractDynamics
+from tvboptim.experimental.network_dynamics.coupling.base import DelayedCoupling
+from tvboptim.experimental.network_dynamics.graph import DenseDelayGraph
+from tvboptim.experimental.network_dynamics.solvers import Euler
+
+# Result classes from tvbo
+from tvbo.data.types import SimulationResult
+
+
+def get_solver(block_size=None, solver_kwargs=None):
+    """Configured solver, wrapped as every solve of this experiment needs it (a declared clamp, the model's events, a noise covariance). ``block_size`` (native solvers only) sets the nested-block-scan granularity so a streaming reduction (``prepare(reduce=...)``) folds the observable in-carry instead of materializing the trajectory; ``None`` keeps the single scan. ``solver_kwargs`` replaces the run's own integrator settings, for a sweep or analysis solve that drops the differentiation window."""
+    _solver_kwargs = dict() if solver_kwargs is None else dict(solver_kwargs)
+    if block_size is not None:
+        _solver_kwargs["block_size"] = block_size
+    base_solver = Euler(**_solver_kwargs)
+    solver = base_solver
+    return solver
+
+
+class Leaky(AbstractDynamics):
+    """Leaky neural mass model."""
+
+    STATE_NAMES = ("x",)
+    INITIAL_STATE = (0.1,)
+    AUXILIARY_NAMES = ()
+
+    DEFAULT_PARAMS = Bunch(
+        I=0.3,
+        tau=8.0,
+    )
+
+    COUPLING_INPUTS = {
+        "c": 1,
+    }
+
+    def dynamics(
+        self,
+        t: float,
+        state: jnp.ndarray,
+        params: Bunch,
+        coupling: Bunch,
+        external: Bunch,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        I = params.I
+        tau = params.tau
+
+        x = state[0]
+
+        c = jnp.atleast_1d(coupling.c)[0] if hasattr(coupling, "c") else 0.0
+
+        dx_dt = (-x + I + c) / tau
+
+        # Determine per-node shape from the first state variable; broadcast
+        # any scalar derivatives or auxiliaries so jnp.stack sees uniform
+        # rank-1 arrays.
+        _per_node_shape = jnp.atleast_1d(dx_dt).shape
+
+        derivatives = jnp.stack(
+            [
+                jnp.broadcast_to(jnp.atleast_1d(dx_dt), _per_node_shape),
+            ],
+            axis=0,
+        )
+
+        auxiliaries = jnp.array([])
+
+        return derivatives, auxiliaries
+
+
+_TVBO_DYNAMICS_CLS = Leaky
+
+
+import equinox as _eqx
+import numpy as _np
+from tvboptim.experimental.network_dynamics.graph import SparseGraph as _SparseGraph
+
+
+class CompactDelayedCoupling(DelayedCoupling):
+    """A DelayedCoupling that visits only the connectome's nonzero edges and sums them without a scatter.
+
+    The stock dense path gathers every one of the N^2 delayed source states each step, applies ``pre`` and weights to all of them, and reduces over the source axis, so a connectome with most entries zero pays for edges that carry nothing; the stock sparse path visits only the stored edges but reduces them with a scatter-add. Here the edges (a dense graph's nonzero entries at prepare() time, a sparse graph's stored ones) are laid out as row-contiguous slots, padded per target to whole chunks of ``COMPACT_CHUNK``; each step reads its delayed states with one flat gather from the history buffer, applies ``pre`` and the weights per slot, and sums every chunk with a ones-contraction and every target's chunks with a small gather. The coupling is the stock one up to floating-point summation order.
+
+    The edge list is fixed at prepare(), as a sparse graph's is. Weights may change value on it (sweeps, fits, per-TR updates of edge parameters); on a dense graph a weight that turns nonzero off it raises rather than being dropped, and a sparse graph cannot grow an entry. The gradient with respect to a structurally-zero weight is zero, as for a sparse graph. The compact path covers what tvbo emits, a delay graph, dense or sparse, read without interpolation or clamp warnings through a roll or a circular buffer, by the coupling's own ``buffer_strategy``: a roll buffer's read offsets are fixed once per forward pass, a circular buffer's rows follow its write pointer each step. Any other configuration (a preallocated buffer, an interpolated read, clamp warnings), or a nearly full graph, takes the stock path unchanged.
+    """
+
+    COMPACT_CHUNK = 32
+    COMPACT_MAX_DENSITY = 0.75
+
+    def prepare(self, network, dt, t0, t1):
+        data, state = super().prepare(network, dt, t0, t1)
+        graph = network.graph
+        weights = getattr(graph, "weights", None)
+        if (
+            self.buffer_strategy not in ("roll", "circular")
+            or self.history_interpolation is not None
+            or self.warn_on_delay_clamp
+            or getattr(weights, "ndim", None) != 2
+            or not hasattr(graph, "delays")
+        ):
+            return data, state
+        try:
+            edges, off_pattern = _compact_edge_list(graph)
+        except jax.errors.TracerArrayConversionError:
+            return data, state
+        n_target, n_source = weights.shape
+        if edges.shape[0] > self.COMPACT_MAX_DENSITY * n_target * n_source:
+            return data, state
+        data = Bunch(data)
+        data._compact = _compact_edge_slots(
+            edges, n_target, self.COMPACT_CHUNK, off_pattern
+        )
+        data._compact_dt = dt
+        data._compact_channels, data._compact_sources = (
+            state.history.shape[1],
+            state.history.shape[2],
+        )
+        return data, state
+
+    def precompute(self, coupling_data, params, graph):
+        slots = coupling_data.get("_compact")
+        if slots is None:
+            return super().precompute(coupling_data, params, graph)
+        data = Bunch(coupling_data)
+        target, source = slots.target, slots.source
+        sparse = isinstance(graph, _SparseGraph)
+        if sparse:
+            delays = graph.delays.data[slots.edge]
+            slot_weights = jnp.where(slots.valid, graph.weights.data[slots.edge], 0.0)
+        else:
+            delays = graph.delays[target, source]
+            slot_weights = _eqx.error_if(
+                jnp.where(slots.valid, graph.weights[target, source], 0.0),
+                jnp.any((graph.weights != 0) & slots.off_pattern),
+                "A delayed coupling's weights gained a nonzero entry outside the pattern prepare() compacted; "
+                "prepare the network again on the new weights.",
+            )
+        steps = jnp.clip(
+            jnp.rint(delays / data._compact_dt).astype(jnp.int32),
+            0,
+            data.max_delay_steps,
+        )
+        data._compact_lanes = (
+            jnp.arange(data._compact_channels)[:, None] * data._compact_sources
+            + source[None, :]
+        )
+        if self.buffer_strategy == "roll":
+            data._compact_offsets = self._compact_slot_offsets(
+                data, data.max_delay_steps - steps
+            )
+        else:
+            data._compact_steps = steps
+        data._compact_weights = slot_weights
+        pre_params = Bunch(params)
+        for name in self.EDGE_PARAMS:
+            value = jnp.asarray(params[name])
+            if value.ndim == 2:
+                pre_params[name] = value[target, source]
+            elif sparse:
+                pre_params[name] = value[slots.edge]
+            else:
+                pre_params[name] = value.reshape(graph.weights.shape)[target, source]
+        data._compact_pre_params = pre_params
+        return data
+
+    def compute(self, t, state, coupling_data, coupling_state, params, graph):
+        slots = coupling_data.get("_compact")
+        if slots is None:
+            return super().compute(
+                t, state, coupling_data, coupling_state, params, graph
+            )
+        local_states = state[coupling_data.local_indices]
+        if self.buffer_strategy == "roll":
+            offsets = coupling_data._compact_offsets
+        else:
+            rows = (
+                coupling_state.write_idx - 1 - coupling_data._compact_steps
+            ) % coupling_data.buffer_size
+            offsets = self._compact_slot_offsets(coupling_data, rows)
+        delayed = (
+            coupling_state.history.reshape(-1).at[offsets].get(mode="promise_in_bounds")
+        )
+        target_states = local_states[:, slots.target] if self.PRE_USES_LOCAL else None
+        messages = self.pre(delayed, target_states, coupling_data._compact_pre_params)
+        n_out = messages.shape[0]
+        chunk = self.COMPACT_CHUNK
+        weighted = (messages * coupling_data._compact_weights[None, :]).reshape(
+            n_out, -1, chunk
+        )
+        chunk_sums = weighted @ jnp.ones((chunk,), dtype=weighted.dtype)
+        chunk_sums = jnp.concatenate(
+            [chunk_sums, jnp.zeros((n_out, 1), dtype=chunk_sums.dtype)], axis=1
+        )
+        return self.post(
+            chunk_sums[:, slots.chunk_table].sum(axis=-1), local_states, params
+        )
+
+    @staticmethod
+    def _compact_slot_offsets(data, rows):
+        """The flat history offsets of every slot's channels, ``(n_channels, n_slots)``, when each slot reads the buffer row *rows* gives it."""
+        return (
+            rows[None, :] * (data._compact_channels * data._compact_sources)
+            + data._compact_lanes
+        )
+
+
+def _compact_edge_list(graph):
+    """The graph's edges as a concrete ``(n_edges, 2)`` array of (target, source), in the order its per-edge data follows, and the entries a dense weight must keep at zero.
+
+    A sparse graph's edges are its stored indices, which its ``weights.data`` and ``delays.data`` follow, and it has no off-pattern entries to guard (None). A dense graph's edges are the nonzero entries of its weight matrix at prepare() time, and every other entry must stay zero.
+    """
+    if isinstance(graph, _SparseGraph):
+        return _np.asarray(graph.edge_indices), None
+    pattern = _np.asarray(graph.weights) != 0
+    return _np.argwhere(pattern), ~pattern
+
+
+def _compact_edge_slots(edges, n_target, chunk, off_pattern):
+    """Row-contiguous slots for *edges* (``(n_edges, 2)`` target/source pairs), each target padded to whole chunks.
+
+    Returns a Bunch: ``target`` / ``source`` / ``edge`` per slot (``edge`` indexes *edges*; a padding slot points at its own row, source 0 and edge 0, so every read stays in bounds), ``valid`` (False on padding), ``chunk_table`` (each target's chunks, padded with the index of an extra all-zero chunk) and, for a dense graph, ``off_pattern`` (the entries a live weight must keep at zero).
+    """
+    target_e = _np.asarray(edges[:, 0], dtype=_np.int64)
+    source_e = _np.asarray(edges[:, 1], dtype=_np.int64)
+    order = _np.argsort(target_e, kind="stable")
+    counts = _np.bincount(target_e, minlength=n_target)
+    padded = -(-counts // chunk) * chunk
+    n_slots = int(padded.sum())
+    first = _np.concatenate([[0], _np.cumsum(padded)[:-1]])
+    starts = _np.concatenate([[0], _np.cumsum(counts)[:-1]])
+    row = target_e[order]
+    slot = first[row] + _np.arange(order.size) - starts[row]
+    target = _np.repeat(_np.arange(n_target), padded)
+    source = _np.zeros(n_slots, dtype=_np.int64)
+    edge = _np.zeros(n_slots, dtype=_np.int64)
+    valid = _np.zeros(n_slots, dtype=bool)
+    source[slot], edge[slot], valid[slot] = source_e[order], order, True
+    per_target = padded // chunk
+    width = max(1, int(per_target.max(initial=0)))
+    first_chunk = _np.concatenate([[0], _np.cumsum(per_target)[:-1]])
+    column = _np.arange(width)
+    chunk_table = _np.where(
+        column[None, :] < per_target[:, None],
+        first_chunk[:, None] + column[None, :],
+        n_slots // chunk,
+    )
+    slots = Bunch(
+        target=jnp.asarray(target, dtype=jnp.int32),
+        source=jnp.asarray(source, dtype=jnp.int32),
+        edge=jnp.asarray(edge, dtype=jnp.int32),
+        valid=jnp.asarray(valid),
+        chunk_table=jnp.asarray(chunk_table, dtype=jnp.int32),
+    )
+    if off_pattern is not None:
+        slots.off_pattern = jnp.asarray(off_pattern)
+    return slots
+
+
+class lin(CompactDelayedCoupling):
+    """lin coupling function."""
+
+    N_OUTPUT_STATES = 1
+
+    DEFAULT_PARAMS = Bunch(
+        G=1.5,
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(incoming_states=["x"], **kwargs)
+
+    def pre(self, incoming_states, local_states, params):
+
+        x_j = incoming_states[0]
+        x_j = incoming_states[0]
+
+        coupling_term = x_j
+        return jnp.expand_dims(coupling_term, axis=0)
+
+    def post(self, summed_inputs, local_states, params):
+        G = params.G
+        gx = summed_inputs
+        return G * gx
+
+
+_DELAY_LINES = {}
+"""Coupling-input name -> (the state variables a delayed coupling transmits, the ``buffer_strategy`` of its history buffer), filled by create_network() from each built coupling; _carry_delay_history() reads it to rebuild each history buffer."""
+
+
+def _carry_delay_history(state, result):
+    """Hand a finished solve's delay history on to the next one, so chained solves integrate one continuous run.
+
+    A prepared solve starts every delayed coupling from the history buffer in ``state.initial_state.coupling``, and returns only its trajectory. A loop that chains solves (one TR each) and carries only ``initial_state.dynamics`` would restart every delay line from that stale buffer. The buffer a continuous run would hold at this point is its old rows followed by the newly integrated rows of the transmitted states, truncated to its length, which is what this writes back, oldest first, the order tvboptim's ``prepare`` lays a roll and a circular buffer out in: a circular buffer is read oldest first from its write pointer, and the pointer then restarts at 0. A buffer of any other kind (``preallocated``) is refused by name. Raises when a transmitted state is not among the recorded variables, since the history cannot then be rebuilt.
+    """
+    _names = tuple(getattr(result, "variable_names", None) or ())
+    for _cn in list(state.initial_state.coupling.keys()):
+        _cs = state.initial_state.coupling[_cn]
+        if "history" not in _cs:
+            continue
+        _sent, _kind = _DELAY_LINES.get(_cn, (None, None))
+        if _sent is None or any(_v not in _names for _v in _sent):
+            raise ValueError(
+                f"coupling {_cn!r}: cannot carry its delay history, the transmitted states {_sent} are not all recorded in {_names}"
+            )
+        if _kind not in ("roll", "circular"):
+            raise NotImplementedError(
+                f"coupling {_cn!r}: carrying a delay history across chained solves does not support the {_kind!r} buffer"
+            )
+        if not _sent:
+            continue
+        _old = (
+            jnp.roll(_cs.history, -_cs.write_idx, axis=0)
+            if _kind == "circular"
+            else _cs.history
+        )
+        _rows = result.data[:, jnp.asarray([_names.index(_v) for _v in _sent]), :]
+        _line = {
+            "history": jnp.concatenate([_old, _rows.astype(_old.dtype)], axis=0)[
+                -_old.shape[0] :
+            ]
+        }
+        if _kind == "circular":
+            _line["write_idx"] = jnp.zeros_like(_cs.write_idx)
+        state = eqx.tree_at(
+            lambda _s: [_s.initial_state.coupling[_cn][_k] for _k in _line],
+            state,
+            list(_line.values()),
+        )
+    return state
+
+
+def _refill_history(state):
+    """Fill every delay line of *state* with the opening it integrates from, as TVB fills its history with the initial conditions.
+
+    tvboptim's ``prepare`` fills each delayed coupling's history buffer from the network's initial state, which on a network without a stored history is the dynamics' ``INITIAL_STATE`` on every node, and this module then writes the opening (a draw, a node's declared state, a seeded operating point, the working-point ramp, a swept initial condition, a trial's draw) into ``initial_state.dynamics`` alone. Every site that writes an opening hands the state here after the write, and every row of every buffer becomes the opening's transmitted states: the buffer ``prepare`` builds on a network whose initial state is that opening, in the buffer's own shape, so a dense and a compact coupling are filled alike. A buffer that continues a settle or an earlier solve is no opening and is never refilled. Without a delayed coupling *state* is returned as it is.
+    """
+    _lines = [
+        _cn for _cn, _cs in state.initial_state.coupling.items() if "history" in _cs
+    ]
+    if not _lines:
+        return state
+    _opening = jnp.asarray(state.initial_state.dynamics)
+    _rows = []
+    for _cn in _lines:
+        _buffer = state.initial_state.coupling[_cn].history
+        _sent = _opening[state._internal.coupling[_cn].incoming_indices].astype(
+            _buffer.dtype
+        )
+        _rows.append(jnp.broadcast_to(_sent, _buffer.shape))
+    return eqx.tree_at(
+        lambda _s: [_s.initial_state.coupling[_cn].history for _cn in _lines],
+        state,
+        _rows,
+    )
+
+
+def create_network(
+    weights: jnp.ndarray,
+    delays: jnp.ndarray = None,
+    region_labels: list = None,
+    dynamics_params: dict = None,
+    coupling_params: dict = None,
+    noise_sigma: float = 0.0,
+    max_delay: float = None,
+) -> Network:
+
+    # Per-edge delays used directly; non-edge entries arrive as NaN, so zero-fill first.
+    if delays is None:
+        delays = jnp.zeros_like(weights)
+    delays = jnp.nan_to_num(delays)
+    graph = DenseDelayGraph(
+        weights, delays, region_labels=region_labels, max_delay_bound=max_delay
+    )
+
+    _dynamics_params = {
+        "I": 0.3,
+        "tau": 8.0,
+    }
+    if dynamics_params:
+        _dynamics_params.update(dynamics_params)
+    dynamics = _TVBO_DYNAMICS_CLS(**_dynamics_params)
+
+    coupling_dict = {}
+
+    _lin_params = {
+        "G": 1.5,
+    }
+    if coupling_params and "lin" in coupling_params:
+        _lin_params.update(coupling_params["lin"])
+
+    coupling_dict["c"] = lin(**dict(_lin_params))
+    _DELAY_LINES.update(
+        {
+            _k: (
+                list(
+                    getattr(_c, "SOURCE_STATE_NAMES", None) or _c.INCOMING_STATE_NAMES
+                ),
+                _c.buffer_strategy,
+            )
+            for _k, _c in coupling_dict.items()
+            if isinstance(_c, DelayedCoupling)
+        }
+    )
+
+    noise = None
+
+    return Network(
+        dynamics=dynamics,
+        coupling=coupling_dict,
+        graph=graph,
+        noise=noise,
+    )
+
+
+# Every IC site builds the same way — sampled defaults, declared per-node overrides, then an optional supplied operating point — applied by name through _STATE_INDEX.
+_STATE_INDEX = {"x": 0}
+
+
+def _set_rows(state, name_to_vals):
+    """Set per-node values of named state variables in initial_state.dynamics ([n_states, n_nodes]), placing each by its canonical row index _STATE_INDEX[name], and refill the delay lines from the result."""
+    for _name, _vals in name_to_vals.items():
+        state.initial_state.dynamics = state.initial_state.dynamics.at[
+            _STATE_INDEX[_name]
+        ].set(jnp.asarray(_vals))
+    return _refill_history(state)
+
+
+# Per-node initial state declared via node ``state:`` YAML entries, keyed by name.
+_NODE_STATE_OVERRIDES = {}
+
+
+def _apply_node_overrides(state):
+    return _set_rows(state, _NODE_STATE_OVERRIDES)
+
+
+# The settled operating point another experiment reached, keyed by state-variable name; None is a no-op.
+_SEED_DYNAMICS = None
+
+
+def _apply_seed_dynamics(state):
+    return state if _SEED_DYNAMICS is None else _set_rows(state, _SEED_DYNAMICS)
+
+
+# The source run's whole recorded branch, which a branch-restart exploration reads for its per-cell value and state pairs; None is a no-op.
+_BRANCH_SEED = None
+
+# Model-parameter values from the source run's operating point, keyed by parameter name, holding per-node vectors and per-edge matrices alike.
+_SEED_PARAMS = None
+
+# The recordings sourced data-driven stimuli play, keyed by event name and laid out (trial, sample, channel); injected by the caller, never inlined.
+_STIMULUS_DATA = None
+
+
+def _stimulus_samples(name):
+    """The recording stimulus ``name`` plays, as handed to run_experiment(stimulus_data=...)."""
+    if _STIMULUS_DATA is None or name not in _STIMULUS_DATA:
+        raise ValueError(
+            f"stimulus {name!r} plays another run's recording, which was not supplied. Experiment.run resolves the "
+            f"event's `data` DataRef and passes it as run_experiment(stimulus_data={{{name!r}: array}})."
+        )
+    return jnp.asarray(_STIMULUS_DATA[name])
+
+
+# Coupling home for each seedable coupling parameter (dynamics params route to dynamics).
+_SEED_PARAM_COUPLING = {
+    "G": "c",
+}
+
+
+def _apply_seed_params(state):
+    if _SEED_PARAMS is not None:
+        for _name, _vals in _SEED_PARAMS.items():
+            _v = jnp.asarray(_vals)
+            _ck = _SEED_PARAM_COUPLING.get(_name)
+            if _ck is not None:
+                setattr(
+                    state.coupling[_ck], _name, _v
+                )  # per-edge coupling param (e.g. wLRE)
+            else:
+                state.dynamics[_name] = _v  # per-node dynamics param (e.g. g)
+    return state
+
+
+# observation name -> the axis names its reduction declares (utils.reduction_dims).
+_OBSERVATION_DIMS = {}
+# Steps of settle at the head of the scan, the last of them at t=0 — the cut index on the trajectory, and what a caller needs to read the window this module integrated.
+_N_TRANSIENT = 0
+
+
+def _run_compiled(fn, state):
+    """Execute a prepared solve under ``jax.jit``.
+
+    ``prepare()`` hands back an UN-jitted callable that dispatches op by op for every step of
+    the solve instead of running compiled — about 4.5x the wall time of the same call under
+    ``jax.jit``. Every host-side evaluation of a prepared callable belongs here.
+
+    *fn* itself is never rebound, because the same callables reach places that must keep the raw
+    identity: a tuning core takes one as a STATIC argument to key its own jit cache on, and a
+    loss function is traced by the optimizer.
+    """
+    return jax.jit(fn)(state)
+
+
+def _history_window(sol, network, dt, opening=None):
+    """The tail of a settle long enough to serve every delay, which is all ``update_history`` reads.
+
+    Delay lookups reach back at most ``network.max_delay`` and the initial condition is the last slot, so a long settle need not be handed over whole. Keeping its tail bounds the stored history at the delay horizon instead of the settle length — a 300 s settle at dt=1 would otherwise park the entire trajectory in the network for the rest of the run.
+
+    A solve records the state after each of its steps, never the *opening* it integrated from, and tvboptim pads a stored history that covers less than the longest delay with its first sample (``extract_history_window``). Given the *opening*, a settle handed over whole leads with it, one step before its first recorded sample, so a settle no longer than the longest delay pads the delay lines with the state it started from, as ``_own_settle``'s carry and TVB do; the delay lines of a longer settle never reach back to it, so they read the same rows as without it.
+    """
+    if sol is None:
+        return None
+    _md = float(getattr(network, "max_delay", 0.0) or 0.0)
+    _n = (-int(-_md // dt) + 2) if _md > 0 else 2
+    if sol.ys.shape[0] > _n:
+        _ts, _ys = sol.ts[-_n:], sol.ys[-_n:]
+    elif opening is None:
+        return sol
+    else:
+        _cols = jnp.asarray(
+            [sol.variable_names.index(_v) for _v in network.dynamics.STATE_NAMES]
+        )
+        _ts = jnp.concatenate([sol.ts[:1] - dt, sol.ts])
+        _ys = jnp.concatenate(
+            [
+                sol.ys[:1].at[0, _cols].set(jnp.asarray(opening).astype(sol.ys.dtype)),
+                sol.ys,
+            ]
+        )
+    return NativeSolution(
+        ts=_ts,
+        ys=_ys,
+        dt=getattr(sol, "dt", None),
+        variable_names=getattr(sol, "variable_names", None),
+    )
+
+
+def _join_settle(settle, measured):
+    """The settle and the measured window as one buffer on one clock, for reporting only.
+
+    The two are integrated as separate scans so the settle stays off the gradient tape, but they
+    abut — the settle closes at t=0 and the measured window opens there — so rejoining them
+    reconstructs the axis `.full` and `.transient` read, with the settle on negative timestamps.
+    Returns the measured window unchanged when nothing was settled, and the number of settle
+    samples, which is the cut index between the two views.
+    """
+    if settle is None or measured is None:
+        return measured, 0
+    _n = settle.ys.shape[0]
+    return (
+        NativeSolution(
+            ts=jnp.concatenate([settle.ts, measured.ts]),
+            ys=jnp.concatenate([settle.ys, measured.ys]),
+            dt=getattr(measured, "dt", None),
+            variable_names=getattr(measured, "variable_names", None),
+        ),
+        _n,
+    )
+
+
+def run_simulation(
+    network: Network,
+    t1: float = 40.0,
+    dt: float = 1.0,
+    t0: float = 0.0,
+    t_transient: float = 0.0,
+    run_main: bool = True,
+    **kwargs,
+) -> Bunch:
+    solver = get_solver(block_size=None)
+
+    def _open_window(_st):
+        """The initial condition a scan opens from: sampled defaults, declared per-node overrides, then any supplied operating point."""
+        _st = _apply_node_overrides(_st)
+        return _apply_seed_params(_apply_seed_dynamics(_st))
+
+    result_transient = None
+    _settled = False
+
+    model_fn, state = prepare(network, solver, t0=t0, t1=t0 + t1, dt=dt)
+    # A settle already opened the window and `update_history` carried its endpoint over, so the IC is reconstructed only when this scan is the opening one; a parameter sourced from another run is the model's own and holds in every scan.
+    state = _apply_seed_params(state) if _settled else _open_window(state)
+
+    result = None
+    observations = None
+    if run_main:
+        result = _run_compiled(model_fn, state)
+        observations = Bunch()
+
+        # Seeded with the traced values above, so a derived observation reads what a fit would, not an eager recomputation.
+        _all_obs = compute_all_observations(
+            result,
+            state,
+            settle=result_transient,
+            precomputed={_n: observations[_n] for _n in []},
+        )
+
+        # Analysis observations (operate on the solve/loss, not result.data)
+
+    return Bunch(
+        model_fn=model_fn,
+        state=state,
+        result=result,
+        result_transient=result_transient,
+        opening=state.initial_state.dynamics,  # the state the run opens on, before any settle
+        observations=observations,
+    )
+
+
+"""Observation classes derived from AbstractMonitor for tvboptim."""
+
+import equinox as eqx
+import jax
+import jax.numpy as jnp
+from tvboptim.experimental.network_dynamics.result import NativeSolution
+
+
+def _load_constant(path, key):
+    """Load a lazily-stored observer constant (a sourced/produced operator too large to
+    inline) as a jax array. Read once when the reducer is built, so it is captured as a
+    concrete constant in the traced update — never re-read per step. Reuses tvbo's
+    array store, so an h5 or zarr companion is read the same way the network is.
+
+    A packed kit stages these constants into its own ``constants/`` dir, so when the author's
+    absolute path is absent (a frozen kit run on another machine) the file is resolved by
+    basename under ``$TVBO_CONSTANTS_DIR`` or the run dir's ``constants/``."""
+    from tvbo.data.matrix_io import LazyArrayStore, resolve_staged_path
+
+    return jnp.asarray(LazyArrayStore(resolve_staged_path(path), {}).read_dataset(key))
+
+
+def _measured_grid(skip, period):
+    """Where an output grid anchored to MEASUREMENT falls on a buffer written from the scan.
+
+    A streaming reducer folds one window whose leading ``skip`` steps are the declared settle, and reports a series over what follows. Sample m of that series covers the steps ``(skip + m*period, skip + (m+1)*period]`` and is stamped at the last of them, so the grid it sits on is the measured one: its phase is ``(skip - 1) % period``, and it coincides with the scan-anchored phase ``period - 1`` exactly when the settle spans whole periods.
+
+    Anchoring here rather than requiring alignment is what lets a recipe declare its own settle: a settle that is not a whole number of output samples used to offset every reported timestamp by a fraction of a period, silently, and had to be refused. Returns the grid's phase in integration steps and the number of its samples that fall inside the settle -- the latter rounded up, because a sample straddling t=0 covers settle as well as measurement and belongs to neither window.
+    """
+    return (skip - 1) % period, -(-skip // period)
+
+
+def _warmed(monitor, settle):
+    """A monitor warmed on the settle that ran before its window, for a caller that integrated the two as separate scans.
+
+    A kernel observation convolves against its own past, so what it reports over the first support-length of its window is decided by what preceded that window. Where the settle is the head of the same scan the monitor eats it in-band and needs nothing from anyone. Where the settle is a scan of its own, that past exists but is not in the window the monitor is handed, and the convolution opens on zeros instead — the same shape, finite throughout, correctly stamped, and wrong by the whole warm-up. Measured on RWW's HRF: the first 20 TRs, which is exactly the kernel's 20000 ms support, out by up to 29%.
+
+    Continuity here is a fact and not a coincidence: the measured window continues the settle step for step, so the settle's tail IS the signal the kernel would have convolved against had the two been one scan. That is what separates this caller from a tuning loop, which is handed successive short windows it does not continue and must carry its warm-up from the window before it instead — the distinction ``carry_warmup`` exists to keep, and the reason a settle is a legitimate source here where a handed-over ``history=`` was not.
+
+    A monitor whose pipeline has no kernel carries no ``carry_warmup`` and is returned untouched, as is any monitor when there is no settle to warm on.
+    """
+    if settle is None or not hasattr(monitor, "carry_warmup"):
+        return monitor
+    return monitor.carry_warmup(settle)
+
+
+def _kept_variable_names(result, voi, pattern="{name}"):
+    """The names of the variables *voi* selects from *result*, each written through *pattern*, which a monitor whose output keeps tvboptim's ``[time, variable, node]`` layout reports as its ``variable_names``; None when *result* names none."""
+    names = getattr(result, "variable_names", None)
+    if names is None:
+        return None
+    try:
+        return tuple(pattern.format(name=name) for name in tuple(names)[voi])
+    except (TypeError, IndexError):
+        return None
+
+
+@jax.jit
+def _traced_call(monitor, result):
+    """``monitor(result)`` traced under ``jax.jit`` with the monitor as an input, as a fit carries it, so a forward value is bit for bit the value the same monitor gives inside a fit and a second run reuses the compiled program."""
+    return monitor(result)
+
+
+def _warm_ring(settle, skip, s_var, ds, rows, n):
+    """The decimated tail of a settle that ran before the measured window, as a ring a 'valid' convolution starts full.
+
+    A kernel-bearing reducer reports its first sample only once it holds `rows` decimated samples of history. Started cold that history is zeros, and every sample inside the kernel's support is wrong by the whole of it -- 28.77% on the first 20 s of an RWW BOLD run, which is exactly the kernel's own length. Decimation takes the last raw step of each bin, so row j sits `(rows - 1 - j) * ds` steps before the measured window opens and the last row is the step immediately before it. A settle too short to supply them all leaves the earliest rows zero, which is the cold answer for precisely the span no settle covered.
+    """
+    if settle is None:
+        return jnp.zeros((rows, n))
+    if skip:
+        # The two ways of supplying the settle are exclusive: `skip` says it is the head of the window being folded, `settle` that it is a scan of its own. Both means the same signal warms the ring and is folded again, so every reported sample carries the settle twice — the same shape, finite, correctly stamped, and wrong.
+        raise ValueError(
+            f"a reducer was given both skip={skip} and a settle to warm on. skip means the settle is "
+            "the head of the window being folded; settle means it ran as a separate scan. Pass one."
+        )
+    _tail = settle[:, s_var, :]
+    _need = (rows - 1) * ds + 1
+    _short = _need - _tail.shape[0]
+    if _short > 0:
+        _tail = jnp.concatenate([jnp.zeros((_short, n), _tail.dtype), _tail])
+    return _tail[-_need:][::ds]
+
+
+_KERNEL_REACH_STEPS = max([0])
+"""Integration steps of settle the longest kernel of any observation here convolves back over, streamed or not, which is what a settle folded to its tail has to keep for them."""
+
+
+# Simple callable imports (direct, no wrapper needed)
+
+# Complex callable imports (prefixed, wrapper will be generated)
+
+# User-defined functions (generated via base function-def.mako)
+
+
+_OWN_HISTORY = object()
+
+
+def _rebuilt_on(network, graph, history=_OWN_HISTORY):
+    """The same network over a rebuilt graph, keeping everything the graph does not carry.
+
+    prepare() sizes the delay history buffer once from the graph it is handed, so an axis that can lengthen a delay is served by replacing the graph before the run rather than per cell.
+
+    The external inputs and the settled history travel with it. Both belong to the network rather than to the graph, so a rebuild that dropped them would leave a delay-axis sweep unstimulated beside a bare run of the same experiment that is driven.
+
+    *history* replaces the settled history instead; ``None`` is the network before any settle, which is where a run of the experiment opens.
+    """
+    return type(network)(
+        network.dynamics,
+        network.coupling,
+        graph,
+        noise=network.noise,
+        history=(
+            getattr(network, "_history", None) if history is _OWN_HISTORY else history
+        ),
+        external_input=network.externals,
+    )
+
+
+def _obs_data(_o):
+    """Underlying array of an observation value. Monitor results wrap the array in
+    ``.data``; a bare array (numpy/jax — has ``.dtype``) is returned as-is, since its
+    own ``.data`` would be a raw buffer, not the array."""
+    return _o if hasattr(_o, "dtype") else getattr(_o, "data", _o)
+
+
+def _windowed_corr(_reduce, *_args, **_kw):
+    """Guard a windowed correlation reducer (e.g. compute_fc) against a degenerate
+    window. Pearson correlation is undefined over fewer than two retained
+    timepoints, where jnp.corrcoef collapses to a 0-d scalar that then crashes the
+    diagonal write. A window like this arises when a derived FC observation is
+    materialized on a short simulation (e.g. one BOLD sample) — the value is not
+    meaningful there, so return a NaN (n, n) matrix instead of aborting the whole
+    observation pipeline. Windows with >= 2 retained samples are passed through to
+    ``_reduce`` exactly as they arrived, so full FC stays byte-identical.
+
+    The timeseries is whichever argument is an array, because a recipe binds a
+    reducer's arguments by the callable's own parameter names: ``compute_fc`` takes
+    its window as ``timeseries=``, and a guard that insisted on a positional one
+    would only ever see the reducers that happen to be called that way."""
+    _ts = (
+        _args[0]
+        if _args
+        else next((_v for _v in _kw.values() if hasattr(_v, "shape")), None)
+    )
+    if _ts is not None and _ts.shape[0] - int(_kw.get("skip_t", 0)) < 2:
+        _n = _ts.shape[-1]
+        return jnp.full((_n, _n), jnp.nan).at[jnp.diag_indices(_n)].set(0)
+    return _reduce(*_args, **_kw)
+
+
+UNRECORDED_OBSERVATIONS = []
+
+
+def keep_recorded(obs):
+    """Drop the observations declared ``record: false`` from one grid point's bundle.
+
+    They are computed, because what the recipe does keep is derived from them, but they are
+    not stacked over the sweep: an intermediate trajectory is typically an order of magnitude
+    larger than every deliverable together, and the sweep returns one per cell. Filtering
+    here rather than at save time is what keeps it out of the gather. A filter that would
+    empty the bundle is ignored, so a recipe marking everything unrecorded still returns
+    something to package.
+    """
+    if not UNRECORDED_OBSERVATIONS:
+        return obs
+    kept = {k: v for k, v in obs.items() if k not in UNRECORDED_OBSERVATIONS}
+    return Bunch(**kept) if kept else obs
+
+
+def compute_all_observations(
+    result,
+    state,
+    only=None,
+    network_obs=None,
+    precomputed=None,
+    analysis_names=None,
+    network=None,
+    settle=None,
+):
+    # ``only`` restricts computation to the named observations, keeping a non-jittable one out of the trace; ``precomputed`` seeds values folded in-carry elsewhere so derived observations need no trajectory.
+    obs = Bunch()
+
+    # A `network_obs` entry wins over the module-level constant, so a caller scoring against its own target is not scored against whatever was last bound.
+
+    # Seeded from the in-carry fold, so derived observations need no materialised trajectory.
+    for _pk, _pv in (precomputed or {}).items():
+        obs[_pk] = _pv
+
+    # Simulated observations (computed from result) - these derive from simulation state
+
+    # Derived observations in dependency order: one whose source is itself derived must follow it, or its `hasattr(obs, src)` guard is false and it is silently skipped.
+
+    return obs
+
+
+n_nodes = N_nodes = N_NODES = 5
+
+
+def run_experiment(
+    weights: jnp.ndarray,
+    distances: jnp.ndarray = None,
+    delays: jnp.ndarray = None,
+    region_labels: list = None,
+    mode: str = "all",
+    stage: str = None,
+    state: Bunch = None,
+    seed_dynamics=None,
+    seed_params=None,
+    branch_seed=None,
+    **kwargs,
+) -> Dict[str, Any]:
+    """Run complete experiment workflow. Mode: simulation, optimization, exploration, algorithms, or all.
+
+    seed_dynamics: optional {state_var_name: (n_nodes,)} operating point (InitialState.
+    from_experiment) that overrides the sampled IC at every construction site.
+    seed_params: optional {param_name: (n_nodes,)} per-node model parameters
+    (InitialState.seed_parameters) loaded from the source run, e.g. a control mask.
+    branch_seed: optional whole recorded branch (InitialState.from_experiment,
+    source_point='branch') a branch-restart exploration replays per cell.
+    """
+    global _SEED_DYNAMICS, _SEED_PARAMS, _BRANCH_SEED, _STIMULUS_DATA
+    _STIMULUS_DATA = kwargs.pop("stimulus_data", None)
+    _SEED_DYNAMICS = seed_dynamics
+    _BRANCH_SEED = branch_seed
+    _SEED_PARAMS = seed_params
+
+    # This graph is dense, so a BCOO or scipy matrix is densified: the run path hands a BCOO for a sparse store when the network's delays vanish once bound, after this script was rendered with them.
+    weights = jnp.array(weights.todense() if hasattr(weights, "todense") else weights)
+    # ``quiet=True`` silences this call whatever the configured level; otherwise the tvbo logger level decides.
+    _quiet = kwargs.pop("quiet", False)
+
+    _run_t0 = time.perf_counter()
+
+    def _log(msg):
+        if not _quiet:
+            logger.info("[+%.0fs] %s" % (time.perf_counter() - _run_t0, msg))
+
+    _log("STEP 1: Running simulation...")
+
+    # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
+    if delays is None:
+        delays = (
+            jnp.array(distances) / 2.0
+            if (distances is not None and 2.0 > 0)
+            else jnp.zeros_like(weights)
+        )
+    else:
+        delays = jnp.array(delays)
+    network = create_network(
+        weights, delays=delays, region_labels=region_labels, noise_sigma=0.0
+    )
+
+    # Whether the base forward-sim is materialised at all. Algorithm/optimization/exploration modes run their own simulations, so the base trajectory is prepared but never integrated.
+
+    run_main = mode in ("simulation", "all", None)
+
+    # The settle runs first, on (-0.0, 0]; `model_fn` integrates the measured window alone, from the state it left behind.
+    sim_result = run_simulation(
+        network,
+        t1=40.0,
+        dt=1.0,
+        t_transient=0.0,
+        run_main=run_main,
+        random_seed=kwargs.get("random_seed"),
+    )
+    model_fn = sim_result.model_fn
+    default_state = sim_result.state
+    result_transient = sim_result.result_transient
+    _log(f"  Simulation period: 40.0 ms, dt: 1.0 ms")
+
+    # Use custom state if provided (e.g., from previous optimization)
+    if state is not None:
+        # Merge custom state parameters into the default state structure
+        # This preserves internal state (_internal, coupling history, etc.)
+        # while using the custom dynamics/coupling parameters
+        use_state = copy.deepcopy(default_state)
+
+        # `getattr(...) is not None` rather than `hasattr`, which a Bunch always answers True, so a partial custom state does not reach `None.keys()` below.
+        if getattr(state, "dynamics", None) is not None:
+            for key in state.dynamics.keys():
+                if not key.startswith("_"):
+                    val = state.dynamics[key]
+                    # Extract value from Parameter if needed
+                    if hasattr(val, "value"):
+                        val = val.value
+                    use_state.dynamics[key] = val
+
+        # Copy coupling parameters from custom state (partial-state-safe, see above).
+        if getattr(state, "coupling", None) is not None:
+            for coupling_name in state.coupling.keys():
+                if (
+                    not coupling_name.startswith("_")
+                    and coupling_name in use_state.coupling
+                ):
+                    src_coupling = state.coupling[coupling_name]
+                    dst_coupling = use_state.coupling[coupling_name]
+                    for key in src_coupling.keys():
+                        if not key.startswith("_"):
+                            val = src_coupling[key]
+                            # Extract value from Parameter if needed
+                            if hasattr(val, "value"):
+                                val = val.value
+                            dst_coupling[key] = val
+
+        # Re-run simulation with custom parameters (only if main simulation was requested)
+        _custom_stream = None
+        if run_main:
+            result = _run_compiled(model_fn, use_state)
+        else:
+            result = None
+        state = use_state
+    else:
+        _custom_stream = None
+        state = default_state
+        # Use raw result directly (run_simulation now returns raw results)
+        result = sim_result.result
+
+    # Compute observations only if main simulation was run
+    if run_main and result is not None:
+        observations = Bunch()
+
+        # Seeded with the traced values above, so a derived observation reads what a fit would, not an eager recomputation.
+        _all_obs = compute_all_observations(
+            result,
+            state,
+            settle=result_transient,
+            precomputed={_n: observations[_n] for _n in []},
+        )
+
+        # Analysis observations (operate on the solve/loss, not result.data)
+    else:
+        observations = None
+
+    _main_sel, _n_settle = _join_settle(result_transient, result)
+    main_result = (
+        SimulationResult(
+            result=_main_sel,
+            observations=observations,
+            state_names=["x"],
+            nodes=region_labels,
+            observation_dims=_OBSERVATION_DIMS,
+            n_transient=_n_settle,
+        )
+        if (_main_sel is not None or observations is not None)
+        else None
+    )
+
+    results = Bunch(
+        # Core simulation infrastructure (always present)
+        model_fn=model_fn,
+        state=state,
+        network=network,
+        # Integration result (mirrors integration section in YAML)
+        # Access: results.integration.get_state(...), .data (measured) / .transient (settle) / .full
+        integration=main_result,
+    )
+    _log("  Simulation complete.")
+
+    _log("Experiment complete.")
+
+    return results
+
+
+if __name__ == "__main__":
+    import pickle
+    from pathlib import Path
+    from tvbo.data.types import ExperimentResult
+    from tvbo.log import configure_logging
+
+    # Progress on stderr under TVBO_LOG_LEVEL, the same switch as ``tvbo run``.
+    configure_logging()
+
+    logger.info("Leaky Experiment - Standalone Execution")
+
+    # No BIDS dir: the caller injects these (weights RAW — create_network applies transforms).
+    weights = globals().get("weights")
+    if weights is None:
+        logger.error(
+            "Network weights not defined. Either configure network.bids_dir in "
+            "YAML or call run_experiment() with weights."
+        )
+        import sys
+
+        sys.exit(1)
+    distances = globals().get("distances")
+    region_labels = globals().get("region_labels")
+
+    # Run the experiment
+    # Order: 1) Simulation → 2) Explorations → 3) Algorithms → 4) Optimization
+    raw_results = run_experiment(
+        weights,
+        distances=distances,
+        region_labels=region_labels,
+        mode="all",
+    )
+
+    # Wrap in ExperimentResult for consistent access and export
+    results = ExperimentResult(raw_results, experiment_name="declared_delay_layer")
+
+    # Save results
+    output_path = Path(__file__).parent / "declared_delay_layer_results.pkl"
+    with open(output_path, "wb") as f:
+        pickle.dump(results, f)
+    logger.info("Results saved to: %s", output_path)
+
+    # Export BIDS-compatible output
+    bids_output = Path(__file__).parent / "derivatives"
+    results.export(bids_output, description="declared_delay_layer")
+    logger.info("BIDS output: %s", bids_output)
+
+    # Summary — the results object itself is the script's stdout payload.
+    logger.info("Results summary:")
+    print(results)

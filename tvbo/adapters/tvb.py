@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from tvbo import datamodel as tvbo_datamodel
-from tvbo.adapters.base import dense_matrix, edge_needs, require_edge_attributes
+from tvbo.adapters.base import dense_matrix, edge_needs, refuse_declared_delays, require_edge_attributes
 
 if TYPE_CHECKING:
     from tvbo.classes.network import Network
@@ -918,6 +918,7 @@ def to_tvb(network):
     """
     from tvb.datatypes.connectivity import Connectivity
 
+    refuse_declared_delays(network, "tvb")
     require_edge_attributes(network, "tvb", edge_needs(network))
     _weights = dense_matrix(network, "weight")
     if _weights is None:

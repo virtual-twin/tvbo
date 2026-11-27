@@ -164,10 +164,13 @@ has_delay = any(c.delayed for c in all_couplings.values() if c)
 # uses the stock delay graph that derives max_delay from the delays.
 interpolate_delays = any(bool(getattr(c, 'interpolate_delays', False)) for c in all_couplings.values() if c)
 
-# Lengths → DenseLengthGraph, per-edge delays → DenseDelayGraph; the representation is decided once, in Python, where the run path asks the same question.
+# The graph the network's delays call for (`graph_selection`) and its representation are decided once, in Python, where the run path asks the same question.
 from tvbo.templates.tvboptim.utils import emitted_graph as _emitted_graph
 use_length_graph, use_delay_graph, _representation = _emitted_graph(network, has_delay)
 use_sparse = _representation == "sparse"
+# Where the delays are handed in and none stand in, the emitted code refuses to build its graph without them.
+from tvbo.templates.tvboptim.utils import network_declares_delays as _network_declares_delays
+delays_handed = use_delay_graph and _network_declares_delays(network)
 
 # Collect all coupling parameters (for optimization)
 all_coupling_params = {}  # (coupling_key, param_name) -> param_obj
@@ -1595,6 +1598,10 @@ def create_network(
 % endfor
 % endif
 
+    % if delays_handed:
+    if delays is None:
+        raise ValueError("create_network: this network states its delays itself, so the graph is built from the delay matrix it gives (Network.integrated_delays with the integration step and its unit) and nothing stands in for it; pass delays=")
+    % endif
     % if use_length_graph:
     # Recomputed each forward pass so speed stays a live graph leaf, with max_delay_bound sizing the static history buffer.
     if distances is None:
@@ -4169,10 +4176,16 @@ def run_experiment(
     network = create_network(weights, distances=distances, ${weight_transform_network_arg}${start_seed_arg}${fitted_max_delay_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % elif use_delay_graph:
     # explicit per-edge delays → DenseDelayGraph over the delay matrix directly.
+    % if delays_handed:
+    if delays is None:
+        raise ValueError("run_experiment: this network states its delays itself, so the graph is built from the delay matrix it gives (Network.integrated_delays with the integration step and its unit) and nothing stands in for it; pass delays=")
+    delays = jnp.array(delays)
+    % else:
     if delays is None:
         delays = jnp.array(distances) / ${conduction_speed} if (distances is not None and ${conduction_speed} > 0) else jnp.zeros_like(weights)
     else:
         delays = jnp.array(delays)
+    % endif
     network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}delays=delays, ${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})
     % else:
     network = create_network(weights, ${weight_transform_distances_arg}${weight_transform_network_arg}${start_seed_arg}region_labels=region_labels, noise_sigma=${noise_sigma_value})

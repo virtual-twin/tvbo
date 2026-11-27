@@ -14,10 +14,13 @@ dynamics:
     x: {equation: {rhs: "k - x"}, initial_value: 0.0}
 network:
   number_of_nodes: 2
+  nodes: [{id: 0, label: a}, {id: 1, label: b}]
+  edges:
+    - {source: 0, target: 1, parameters: {distance: {value: 10.0}}}
   transforms:
     - name: weight
-      callable: {module: jax.numpy, name: power}
-      arguments: {x2: {value: 2}}
+      callable: {module: jax.numpy, name: round}
+      arguments: {decimals: {value: 2}}
     - name: length
       equation: {rhs: "length / 2"}
     - name: delay
@@ -36,7 +39,7 @@ def _rows() -> dict[str, str]:
 
 
 def test_a_callable_transform_shows_the_call_it_runs():
-    assert _rows()["weight"] == "`jax.numpy.power(M, x2=2)`"
+    assert _rows()["weight"] == "`jax.numpy.round(M, decimals=2)`"
 
 
 def test_an_equation_transform_shows_its_equation():

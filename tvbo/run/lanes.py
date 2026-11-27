@@ -113,7 +113,7 @@ def lane_parameters(experiment, lanes: xr.Dataset | None = None, *, results_root
 
 
 def build_network(experiment, namespace):
-    """The emitted module's network over the spec's own weights, its tract lengths where `create_network` takes them, and the experiment's network where a weight transform reads it (`tvbo.adapters.tvboptim.handed_network`)."""
+    """The emitted module's network as `SimulationExperiment.run` builds it: the raw weights, whose declared transforms `create_network` applies itself, the tract lengths as the network gives them (`Network.lengths_matrix`, transforms applied) where `create_network` takes them, the delays (`SimulationExperiment.network_delays`) where it takes those, and the experiment's network where a weight transform reads it (`tvbo.adapters.tvboptim.handed_network`)."""
     import inspect
 
     import jax.numpy as jnp
@@ -121,10 +121,13 @@ def build_network(experiment, namespace):
     from tvbo.adapters.tvboptim import handed_network
 
     weights = jnp.asarray(np.asarray(experiment.network.matrix("weight", format="dense", apply_transforms=False), dtype=float))
-    lengths = experiment.network.matrix("length", format="dense", apply_transforms=False)
+    takes = inspect.signature(namespace.create_network).parameters
     kwargs = handed_network(namespace, experiment.network)
-    if lengths is not None and "distances" in inspect.signature(namespace.create_network).parameters:
+    lengths = experiment.network.matrix("length", format="dense") if "distances" in takes else None
+    if lengths is not None:
         kwargs["distances"] = jnp.asarray(np.asarray(lengths, dtype=float))
+    if "delays" in takes:
+        kwargs["delays"] = jnp.asarray(np.asarray(experiment.network_delays(), dtype=float))
     return namespace.create_network(weights, **kwargs)
 
 

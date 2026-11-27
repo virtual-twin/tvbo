@@ -40,6 +40,7 @@ from tvbo.templates.base.utils import safe_name as _base_safe_name
 from tvbo.utils import (  # noqa: F401  re-exported for the mako templates
     _NETWORK_EDGE_ALIASES,
     as_list,
+    delay_declaration,
     edge_label,
     is_array_valued,
     keyed_items,
@@ -835,6 +836,7 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
 
     Returns ``(use_length_graph, use_delay_graph)``:
 
+    - **delays the network declares** (`Network.declares_delays`: a stored ``delay`` layer, or a transform on ``delay``) → a delay graph over `Network.integrated_delays`, whatever else the network measures → ``(False, True)``.
     - **tract lengths present** → ``DenseLengthGraph`` (delays = lengths / conduction_speed, so the conduction speed is a live, sweepable and differentiable graph leaf) → ``(True, False)``.
     - **only explicit per-edge ``delay`` attributes** (no lengths) → ``DenseDelayGraph`` over those delays → ``(False, True)``.
     - **no delays** (``has_delay`` False) → ``DenseGraph`` → ``(False, False)``.
@@ -843,6 +845,8 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
     """
     if not has_delay:
         return False, False
+    if network_declares_delays(network):
+        return False, True
     has_lengths = False
     try:
         lengths = network.matrix("length")
@@ -856,6 +860,79 @@ def graph_selection(network, has_delay: bool) -> tuple[bool, bool]:
         has_edge_delays = False
     use_delay_graph = has_edge_delays and not has_lengths
     return (not use_delay_graph), use_delay_graph
+
+
+def network_declares_delays(network) -> bool:
+    """Whether *network* declares its delays (`Network.declares_delays`); false for an object that cannot be asked."""
+    return delay_declaration(network) is not None
+
+
+def refuse_interpolated_delay_function(network, every_coupling: bool = False) -> None:
+    """Raise where a coupling of *network* reads between two stored steps of its history (`interpolate_delays`, or *every_coupling* for a caller that switches it on for all of them) and the network rewrites its ``delay`` by a transform.
+
+    The function is evaluated once before the graph is built, a rounding for one, and has no slope for an interpolated delay to follow. A stored ``delay`` layer is read as it is and passes.
+    """
+    from tvbo.utils import network_couplings
+
+    transforms_for = get_attr(network, "transforms_for", None)
+    if not callable(transforms_for) or not transforms_for("delay"):
+        return
+    named = [
+        str(name) for name, coupling in network_couplings(network).items() if get_attr(coupling, "interpolate_delays", False)
+    ]
+    if not (named or every_coupling):
+        return
+    asked = (
+        f"coupling {', '.join(named)} declares interpolate_delays"
+        if named
+        else "interpolate_delays is asked of every delayed coupling"
+    )
+    raise NotImplementedError(
+        f"{asked}, and {network} declares a transform on `delay`, which is evaluated once before the graph is built and has no slope for an interpolated delay to follow. "
+        "Drop interpolate_delays, or store the delays as a `delay` layer."
+    )
+
+
+def refuse_unrenderable_declared_delays(experiment) -> None:
+    """Raise where *experiment* runs a network that declares its delays (`Network.declares_delays`) and the declaration cannot be read, or leaves no room for something else the experiment asks.
+
+    The emitted graph of such a network holds the declared delays themselves, computed once before it is built, so they are read here once as the experiment integrates them (`SimulationExperiment.network_delays`): a ``delay`` layer in a unit that is no time, or one without values, is refused where the code is rendered and not met as an undelayed run. A layer read through a ``used:`` reference has no values until a run binds it and is read then. A network built anew for each trial (``realisation: trial``) is refused, because every trial would integrate the delays read from the first realisation. A `network.conduction_speed` or tract-length exploration axis, or a fitted conduction speed, would write a graph leaf that does not exist and move nothing. And a transform on ``delay`` under `interpolate_delays` is refused by `refuse_interpolated_delay_function`. A network that declares no delay is not asked anything, and neither is one none of whose couplings is delayed, since nothing then reads a delay.
+    """
+    from tvbo.classes.network import realised_per_trial
+    from tvbo.utils import network_couplings
+
+    network = get_attr(experiment, "network", None)
+    if not network_declares_delays(network):
+        return
+    if not any(get_attr(coupling, "delayed", False) for coupling in network_couplings(network).values()):
+        return
+    declared = network.delay_declaration()
+    if realised_per_trial(network):
+        raise NotImplementedError(
+            f"{network} declares its delays itself, by {declared}, and `realisation: trial`: the declared delays are read once before the graph is built, so every trial would integrate those of the first realisation. "
+            "Drop `realisation: trial`, or drop the declaration to derive each trial's delays as length over conduction_speed."
+        )
+    if network._binding() or not (network.reads_references("delay") or network.reads_references("length")):
+        experiment.network_delays()
+
+    asked = []
+    for name, exploration in keyed_items(get_attr(experiment, "explorations", None), "explorations"):
+        for key, axis in keyed_items(get_attr(exploration, "space", None), "space"):
+            ref = get_attr(axis, "parameter", None) or key
+            if network_axis_leaf(str(ref)) in ("speed", "lengths"):
+                asked.append(f"the exploration axis {ref} of {name}")
+    for name, optimization in keyed_items(get_attr(experiment, "optimizations", None), "optimizations"):
+        for stage in [optimization, *as_list(get_attr(optimization, "stages", None))]:
+            for free in as_list(get_attr(stage, "free_parameters", None)):
+                ref = free if isinstance(free, str) else get_attr(free, "parameter", None) or get_attr(free, "name", None)
+                if network_axis_leaf(str(ref)) in ("speed", "lengths"):
+                    asked.append(f"the free parameter {ref} of {name}")
+    if asked:
+        raise NotImplementedError(
+            f"{', '.join(asked)}: {network} declares its delays itself, by {declared}, so they do not follow the conduction_speed or the tract lengths while a run is under way. "
+            "Sweep or fit the delays themselves (network.edges.delay), or drop the declaration to derive them as length over conduction_speed."
+        )
+    refuse_interpolated_delay_function(network)
 
 
 def graph_representation(network, use_length_graph: bool, has_weight_transforms: bool) -> str:
