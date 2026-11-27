@@ -243,6 +243,7 @@ observations:
     label: Empirical Functional Connectivity
     source:
     - network.observations.BoldCorrelation
+    history_join: per_segment
     reconcile: by_label
   bold:
     name: bold
@@ -250,6 +251,7 @@ observations:
     source:
     - y0
     period: 720.0
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: hrf_kernel
@@ -292,6 +294,7 @@ observations:
     label: Simulated Functional Connectivity
     source:
     - bold
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -312,6 +315,7 @@ observations:
     source:
     - fc
     - empirical_fc
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: rmse
@@ -326,6 +330,7 @@ observations:
     name: lyapunov
     label: Top Lyapunov exponent
     description: Largest Lyapunov exponent on a short segment (marks the chaos onset)
+    history_join: per_segment
     reconcile: by_label
     analysis:
       parameters:
@@ -347,6 +352,7 @@ observations:
     label: AD gradient of loss w.r.t. G
     description: Reverse-mode autodiff gradient of the FC-RMSE loss w.r.t. global
       coupling G
+    history_join: per_segment
     reconcile: by_label
     analysis:
       parameters:
@@ -366,6 +372,7 @@ observations:
       the tape-free ground-truth reference for the AD gradient in the chaotic band.
 
       '
+    history_join: per_segment
     reconcile: by_label
     analysis:
       parameters:
@@ -395,6 +402,7 @@ observations:
       mean.
 
       '
+    history_join: per_segment
     reconcile: by_label
     analysis:
       parameters:
@@ -442,17 +450,17 @@ functions:
       log_scale: false
   temporal_average:
     name: temporal_average
-    description: Centered window-average downsample (reproduces HRFBold TemporalAverage)
+    description: Downsample by the mean of each complete window of `period_samples`
+      samples, counted from the first sample, as tvboptim's TemporalAverage averages
+      them.
     arguments:
       data:
         name: data
       period_samples:
         name: period_samples
         value: 4
-    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
-      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
-      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
-      period_samples).shape[0]]'
+    source_code: 'jnp.mean(data[: (data.shape[0] // period_samples) * period_samples].reshape((-1,
+      period_samples) + data.shape[1:]), axis=1)'
   volterra_transform:
     name: volterra_transform
     equation:

@@ -1,0 +1,113 @@
+name: HRFBold_MixtureOfGammas
+label: BOLD (HRF convolution, mixture-of-gammas kernel)
+description: 'BOLD signal as tvboptim''s HRFBold computes it: the source is averaged
+  onto the `downsample_period` grid, joined to its history (the settle, or a warm-start
+  history averaged on its own) or to zeros, convolved (''valid'') with a gamma density
+  less `c` times a later one (Glover 1999), tvboptim''s MixtureOfGammasHRFKernel,
+  sampled over its support on that grid, scaled by the Volterra coefficients as `k_1
+  V_0 (x - 1)`, and sampled at the end of each `period`.'
+iri: tvbo:HRFBold_MixtureOfGammas
+parameters:
+  k_1:
+    name: k_1
+    value: 5.6
+    description: Signal scaling factor
+  V_0:
+    name: V_0
+    value: 0.02
+    description: Resting blood volume fraction
+functions:
+  hrf_mixture_of_gammas:
+    name: hrf_mixture_of_gammas
+    equation:
+      parameters:
+        a_1:
+          name: a_1
+          value: 6.0
+          description: Shape of the response
+        a_2:
+          name: a_2
+          value: 13.0
+          description: Shape of the undershoot
+        l:
+          name: l
+          value: 1.0
+          description: Rate
+          unit: per_s
+        c:
+          name: c
+          value: 0.4
+          description: Undershoot ratio
+      rhs: (l * (t / 1000.0)) ** (a_1 - 1) * exp(-l * (t / 1000.0)) / gamma(a_1) -
+        c * (l * (t / 1000.0)) ** (a_2 - 1) * exp(-l * (t / 1000.0)) / gamma(a_2)
+      latex: false
+    description: A gamma density less `c` times a later one (Glover 1999), tvboptim's
+      MixtureOfGammasHRFKernel, sampled on `ceiling(duration / downsample_period)`
+      points of [0, duration] ms.
+    arguments:
+      duration:
+        name: duration
+        description: Kernel support
+        value: 20000.0
+        unit: ms
+      downsample_period:
+        name: downsample_period
+        description: Grid the kernel is sampled on, bound to the observation's own
+        value: 4.0
+        unit: ms
+    time_range:
+      enforce: none
+      lo: 0.0
+      hi: duration
+      n: ceiling(duration / downsample_period)
+      log_scale: false
+period: 1000.0
+downsample_period: 4.0
+history_join: per_segment
+output_variable_name: BOLD({name})
+time_stamps:
+  rhs: take(t, 0) - dt + (arange(n) + 1) * period
+  latex: false
+imaging_modality: BOLD
+reconcile: by_label
+pipeline:
+- function: hrf_mixture_of_gammas
+- name: downsample
+  equation:
+    parameters:
+      window_size:
+        name: window_size
+        description: Integration steps per averaging window
+        equation:
+          rhs: iround(downsample_period / dt)
+          latex: false
+    rhs: complete_window_mean(X, window_size)
+    latex: false
+  input: integration.result
+  output: downsampled
+  apply_on_dimension: time
+- name: convolve
+  equation:
+    parameters:
+      step:
+        name: step
+        description: Kernel-grid samples per BOLD period; the first sample is taken
+          once one period has completed
+        equation:
+          rhs: iround(period / downsample_period)
+          latex: false
+    rhs: sampled_convolve(X, kernel, step)
+    latex: false
+  input: downsampled
+  output: convolved
+  apply_on_dimension: time
+  arguments:
+    kernel:
+      name: kernel
+      value: hrf_mixture_of_gammas
+- name: volterra_transform
+  equation:
+    rhs: k_1 * V_0 * (X - 1.0)
+    latex: false
+  input: convolved
+  output: bold

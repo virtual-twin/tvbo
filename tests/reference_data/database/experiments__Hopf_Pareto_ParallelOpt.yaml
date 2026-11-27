@@ -218,6 +218,7 @@ observations:
     label: Welch PSD (per node)
     source:
     - x
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: welch_psd
@@ -231,6 +232,7 @@ observations:
     label: Soft-argmax peak frequency (per node)
     source:
     - x
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: welch_psd
@@ -250,6 +252,7 @@ observations:
     label: Empirical FC (dk_average BOLD correlation)
     source:
     - network.observations.BoldCorrelation
+    history_join: per_segment
     reconcile: by_label
   bold:
     name: bold
@@ -257,6 +260,7 @@ observations:
     source:
     - x
     period: 1000.0
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: hrf_kernel
@@ -311,6 +315,7 @@ observations:
     label: Simulated FC
     source:
     - bold
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -328,6 +333,7 @@ observations:
     label: FC correlation (simulated vs empirical)
     source:
     - fc
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - callable:
@@ -346,6 +352,7 @@ observations:
     label: 1 - FC correlation (GA objective, lower is better)
     source:
     - fc
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: one_minus_fc_fn
@@ -362,6 +369,7 @@ observations:
     label: PSD MAE to uniform 9 Hz
     source:
     - x
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: welch_psd
@@ -387,6 +395,7 @@ observations:
     label: Correlation of fitted peaks to target frequency gradient
     source:
     - x
+    history_join: per_segment
     reconcile: by_label
     pipeline:
     - function: welch_psd
@@ -562,17 +571,17 @@ functions:
     source_code: data[:, voi:voi + 1, :]
   temporal_average:
     name: temporal_average
-    description: Downsample by mean over non-overlapping windows (tvboptim TemporalAverage).
+    description: Downsample by the mean of each complete window of `period_samples`
+      samples, counted from the first sample, as tvboptim's TemporalAverage averages
+      them.
     arguments:
       data:
         name: data
       period_samples:
         name: period_samples
         value: 1
-    source_code: 'jax.vmap(lambda _i: jnp.mean(jax.lax.dynamic_slice(data, (_i,) +
-      (0,) * (data.ndim - 1), (period_samples,) + data.shape[1:]), axis=0))((jnp.arange(data.shape[0])
-      + 1)[::period_samples])[: jnp.arange((period_samples - 2) // 2, data.shape[0],
-      period_samples).shape[0]]'
+    source_code: 'jnp.mean(data[: (data.shape[0] // period_samples) * period_samples].reshape((-1,
+      period_samples) + data.shape[1:]), axis=1)'
   hrf_kernel:
     name: hrf_kernel
     equation:

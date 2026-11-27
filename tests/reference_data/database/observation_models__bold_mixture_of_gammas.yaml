@@ -8,6 +8,7 @@ parameters:
     name: TR
     value: 2000.0
     unit: ms
+history_join: per_segment
 imaging_modality: BOLD
 reconcile: by_label
 pipeline:
@@ -26,30 +27,25 @@ pipeline:
   acronym: HRF
   equation:
     parameters:
-      a1:
-        name: a1
+      a_1:
+        name: a_1
         value: 6.0
-      b1:
-        name: b1
+        description: Shape of the response
+      a_2:
+        name: a_2
+        value: 13.0
+        description: Shape of the undershoot
+      l:
+        name: l
         value: 1.0
-      d1:
-        name: d1
-        value: 6.0
+        description: Rate
+        unit: per_s
       c:
         name: c
-        value: 0.35
-        description: Ratio of undershoot to positive response
-      a2:
-        name: a2
-        value: 1.0
-      b2:
-        name: b2
-        value: 1.0
-      d2:
-        name: d2
-        value: 16.0
-    rhs: a1 * t**(d1 - 1) * exp(-b1 * t) / gamma(d1) - c * a2 * t**(d2 - 1) * exp(-b2
-      * t) / gamma(d2)
+        value: 0.4
+        description: Undershoot ratio
+    rhs: (l * t) ** (a_1 - 1) * exp(-l * t) / gamma(a_1) - c * (l * t) ** (a_2 - 1)
+      * exp(-l * t) / gamma(a_2)
     latex: false
   output: hrf_kernel
   arguments:

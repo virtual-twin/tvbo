@@ -218,7 +218,7 @@ class Epileptor5D(Model):
         self.zcond = zcond = np.where(np.less(z, 0), -0.1 * z**7, 0.0)
         self.h = h = np.where(
             np.greater(modification, 0),
-            x0 + 3 / (1 + 0.00673794699908547 * np.exp(-10.0 * x1)),
+            x0 + 3 / (1 + 0.006737946999085467 * np.exp(-10.0 * x1)),
             zcond - 4 * x0 + 4 * x1,
         )
 

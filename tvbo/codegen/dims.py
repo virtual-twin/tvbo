@@ -120,6 +120,8 @@ _RULES: dict[str, Callable] = {
     "window_mean": _keep,
     "subsample": _keep,
     "global_mean": _keep,
+    "node_mean": _keep,
+    "complete_window_mean": _keep,
     "mode_sum": _keep,
     "mode_dot": _keep,
     "take": _keep,

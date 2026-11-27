@@ -18,6 +18,7 @@ parameters:
       that electrode signal - "average": subtract mean across all channels - null:
       ideal reference-free recording'
 period: 0.9765625
+history_join: per_segment
 imaging_modality: EEG
 data_source:
   name: sensor_network

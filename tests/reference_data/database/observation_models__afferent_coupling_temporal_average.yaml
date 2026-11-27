@@ -5,6 +5,7 @@ description: Temporally averaged afferent coupling input at each node. Combines 
 source:
 - coupling
 period: 0.9765625
+history_join: per_segment
 reconcile: by_label
 pipeline:
 - name: temporal_average
