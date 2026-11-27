@@ -231,6 +231,17 @@ enums:
                 description: >-
                     Each stage keeps its own best iterate and restores it before the next stage starts, so every stage restarts from the best state the previous one found; the run records one iteration and value per stage. This is the authors' released feedback-inhibition protocol, where each stage was a separate process that restarted from the previous stage's best checkpoint.
 
+    WindowFill:
+        description: >-
+            Where the simulation periods that fill a sliding observation window sit relative to a tuning stage's iterations.
+        permissible_values:
+            before_stage:
+                description: >-
+                    The window is filled ahead of the stage's first iteration, by as many simulation periods as it still lacks. No update rule is applied in them, nothing is recorded, and neither `n_iterations` nor `update_start` counts them.
+            in_stage:
+                description: >-
+                    The periods that fill the window are iterations of the stage, on one clock with every update rule.
+
     ParallelMode:
         description: >-
             How a trial / grid-point axis is realised at JAX codegen time. The choice trades peak memory against throughput: vmap batches in parallel (fast, n_trials × working-set memory), lax_map runs sequentially via ``jax.lax.map`` (memory bounded by one trial), pmap shards across devices, auto picks vmap when the estimated batched memory fits and lax_map otherwise.
@@ -3270,7 +3281,8 @@ classes:
             requires:
                 multivalued: true
                 range: Observation
-                description: Observables required by this update rule
+                description: >-
+                    Observables required by this update rule. Under `window_fill: in_stage` a windowed observation listed here makes the rule wait for the first full window where its equation does not name one.
 
     AlgorithmInclude:
         class_uri: tvbo:AlgorithmInclude
@@ -3310,12 +3322,13 @@ classes:
             n_iterations:
                 range: integer
                 required: true
-                description: Number of outer iterations to run in this stage.
+                description: >-
+                    Number of outer iterations to run in this stage. Under the algorithm's `window_fill: in_stage` this is the stage's whole length in simulation periods, the ones that fill the window among them.
             reset_state:
                 range: boolean
                 ifabsent: 'False'
                 description: >-
-                    Start this stage from the model's declared initial conditions rather than the previous stage's endpoint. The update rules' tuned targets always cross the stage boundary; what resets is the dynamical state — state variables, delay and coupling history, observation window buffers and monitors — and the noise stream, which restarts from the run's seed so each stage samples the same realisation. False, the default, makes the schedule one continuous trajectory; true makes each stage an independent simulation warm-started from the parameters learned so far.
+                    Start this stage from the model's declared initial conditions rather than the previous stage's endpoint. The update rules' tuned targets always cross the stage boundary; what resets is the dynamical state — state variables, delay and coupling history, observation window buffers and monitors — and the noise stream, which restarts from the run's seed so each stage samples the same realisation. False, the default, makes the schedule one continuous trajectory; true makes each stage an independent simulation warm-started from the parameters learned so far. Under `window_fill: in_stage` the stage clock restarts with it.
             arguments:
                 multivalued: true
                 range: Parameter
@@ -3369,7 +3382,7 @@ classes:
                 range: integer
                 ifabsent: integer(0)
                 description: >-
-                    First iteration eligible for selection, counted from the first tuning iteration after the observation window has filled; it continues across stages under `scope: run` and restarts with every stage under `scope: stage`. Use it to skip the iterations a still-settling window makes look good.
+                    First iteration eligible for selection. Absent `window_fill: in_stage` it is counted from the first tuning iteration after the observation window has filled; under `window_fill: in_stage` it is counted in simulation periods, the ones that fill the window among them, and an iteration before the first full window is not eligible when the criterion is computed from the window. Either way the count continues across stages under `scope: run` and restarts with every stage under `scope: stage`. Use it to skip the iterations a still-settling window makes look good.
             scope:
                 range: SelectionScope
                 ifabsent: string(run)
@@ -3439,7 +3452,8 @@ classes:
                     Linear warmup of learning rate from 0 to learning_rate over n_iterations. eta_effective = eta * (i+1) / n_iterations
             n_iterations:
                 range: integer
-                description: Number of iterations to run
+                description: >-
+                    Number of iterations to run. Under `window_fill: in_stage` this is the stage's whole length in simulation periods, the ones that fill the window among them.
             learning_rate_schedule:
                 range: string
                 description: "Learning rate schedule: 'constant', 'linear', 'exponential'"
@@ -3453,7 +3467,16 @@ classes:
             update_start:
                 range: float
                 description: >-
-                    Simulated time, counted from the start of each stage (or of the run when there are no stages), before which the update rules are not applied: an iteration applies its update only if its simulation period ends at or after this time. In the same unit as `simulation_period`. Absent, every iteration applies its update. A rule taken in through `includes` keeps the start of the algorithm it comes from.
+                    Simulated time, counted from the start of each stage (or of the run when there are no stages), before which the update rules are not applied: an iteration applies its update only if its simulation period ends at or after this time. In the same unit as `simulation_period`. Absent, every iteration applies its update. A rule taken in through `includes` keeps the start of the algorithm it comes from. Under `window_fill: in_stage` the time is read on the stage clock, which counts the periods that fill the window and restarts only at a stage that declares `reset_state`.
+            window_fill:
+                range: WindowFill
+                description: >-
+                    Whether the simulation periods that fill a sliding observation window are counted inside a stage's iterations. Absent or `before_stage`, they run ahead of the first iteration with no update rule applied. `in_stage` puts the stage on one clock that counts simulation periods from the algorithm's first stage and from every stage that declares `reset_state`, and runs on through a stage that continues the previous one. An algorithm that depends on another starts its clock at zero as well, although its first stage continues the trajectory the dependency ran. `n_iterations` is then the stage's whole length in periods. An update rule that reads no window is applied in every period from its algorithm's `update_start` on. An update rule that reads the window, by naming a windowed observation in its equation or listing one in `requires`, is applied from the period whose sample completes the first window, or from its algorithm's `update_start` if that is later. A quantity computed from the window is recorded as not-a-number before that period. Refused on an algorithm without a sliding window and on a stage too short to complete its first window.
+            window_start:
+                range: float
+                minimum_value: 0.0
+                description: >-
+                    Simulated time on the stage clock before which no sample enters a sliding observation window: the first sample a window may hold is that of the first simulation period ending at or after this time. In the same unit as `simulation_period`; requires `window_fill: in_stage`. It keeps the opening of a trajectory that starts from its initial conditions out of every window. Samples handed in by an algorithm this one depends on were taken before the clock started, so declaring a start, zero included, keeps them out too. Absent, the first window takes in what was handed in and then the stage's samples from the first. A reduction's own `skip_t` drops the oldest samples of every window; this holds back only the windows at the start of a trajectory.
             functions:
                 multivalued: true
                 range: FunctionCall

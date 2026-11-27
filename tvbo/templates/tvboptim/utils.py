@@ -20,6 +20,7 @@ Usage in templates:
 """
 
 import ast
+import inspect
 import math
 import re
 from collections.abc import Callable, Iterable, Mapping
@@ -1229,7 +1230,6 @@ def _callable_wants(ref, argument: str, source_dir=None) -> bool:
         source_dir: The recipe's directory, put on the path for the import.
     """
     import importlib
-    import inspect
 
     from tvbo.behaviour.network import _source_dir_on_path
 
@@ -4631,6 +4631,72 @@ def selection_settings(algo: Any) -> dict | None:
         "from_iteration": int(getattr(sel, "from_iteration", None) or 0),
         "per_stage": str(getattr(sel, "scope", None) or "run") == "stage",
     }
+
+
+def periods_ending_before(time: float, period: float) -> int:
+    """How many simulation periods end before ``time``, which is also the index, counted from zero, of the first period that ends at or after it.
+
+    Period ``i`` ends at ``(i + 1) * period``. ``Algorithm.update_start`` and ``Algorithm.window_start`` are both read through this, so a time that falls on the end of a period includes that period for both.
+    """
+    return max(0, int(math.ceil(float(time) / float(period) - 1e-9)) - 1)
+
+
+def stage_definitions(algo: Any, hyperparams: dict) -> list[dict]:
+    """``Algorithm.stages`` resolved for codegen, one mapping per declared stage, empty for an algorithm that declares none.
+
+    Each mapping holds the stage's ``n_iterations``, its ``reset_state`` as a bool, and every hyperparameter of ``hyperparams`` at the value the stage runs with: the stage's own ``arguments`` entry where it has one, the algorithm's value otherwise.
+    """
+    definitions = []
+    for stage in getattr(algo, "stages", None) or []:
+        own = {str(arg.name): arg.value for arg in (getattr(stage, "arguments", None) or [])}
+        definition = {
+            "n_iterations": int(stage.n_iterations),
+            "reset_state": bool(getattr(stage, "reset_state", False) or False),
+        }
+        for name, value in hyperparams.items():
+            definition[name] = own.get(name, value)
+        definitions.append(definition)
+    return definitions
+
+
+def stage_clock_settings(algo: Any, period: float, has_window: bool, rule_sources: Iterable[Any] = ()) -> dict | None:
+    """``Algorithm.window_fill`` and ``Algorithm.window_start`` resolved for codegen, or None when the window is filled ahead of the stage.
+
+    Returns ``excluded``, the number of simulation periods that end before ``window_start`` and whose samples therefore enter no window, and ``drops_handed_in``, true when ``window_start`` is declared, so samples handed in from before the clock started are left out with them. ``period`` is the algorithm's ``simulation_period`` and ``has_window`` says whether it slides an observation window at all. ``rule_sources`` are the algorithms whose update rules run in this one's loop. Refuses a clock declared on an included one of them, ``in_stage`` on an algorithm without a sliding window, and a ``window_start`` declared without ``in_stage``; a negative ``window_start`` is the schema's to refuse and counts here as zero. Shared by the algorithm and experiment templates so the two cannot disagree on whether a stage is on the clock.
+    """
+    fill = getattr(algo, "window_fill", None)
+    fill = "before_stage" if fill is None else str(fill)
+    start = getattr(algo, "window_start", None)
+    name = getattr(algo, "name", "?")
+    for source in rule_sources:
+        if source is not algo and (
+            getattr(source, "window_fill", None) is not None or getattr(source, "window_start", None) is not None
+        ):
+            raise ValueError(
+                f"Algorithm '{name}' includes '{getattr(source, 'name', '?')}', which declares `window_fill` or `window_start`; an included rule runs on the clock of the algorithm that includes it, so the declaration belongs on '{name}'."
+            )
+    if fill != "in_stage":
+        if start is not None:
+            raise ValueError(
+                f"Algorithm '{name}' declares window_start {start} without `window_fill: in_stage`; the time is read on the stage clock, which only `in_stage` starts."
+            )
+        return None
+    if not has_window:
+        raise ValueError(
+            f"Algorithm '{name}' declares `window_fill: in_stage` but slides no observation window (it needs a `window_size` hyperparameter and an observation derived from another observation), so there is no fill to put on the stage clock."
+        )
+    excluded = 0 if start is None else periods_ending_before(start, period)
+    return {"excluded": excluded, "drops_handed_in": start is not None}
+
+
+def first_full_window(clock: int, valid: int, window: int, excluded: int) -> int:
+    """The period of a stage, counted from zero, whose sample completes the first full window.
+
+    The stage starts with the clock at ``clock`` periods and ``valid`` countable samples in a window of ``window``; a sample counts when its period is not among the first ``excluded`` of the trajectory.
+    """
+    if clock < excluded:
+        return (excluded - clock) + window - 1
+    return max(window - valid - 1, 0)
 
 
 def _include_is_nested(inc: Any) -> bool:

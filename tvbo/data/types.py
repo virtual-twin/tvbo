@@ -932,6 +932,16 @@ class SimulationResult:
         return f"SimulationResult{shape_str}{obs_str}"
 
 
+def _first_finite_record(records) -> int:
+    """Index of the first record, along the leading axis, whose entries are all finite; zero where fewer than two records are, or where the records are not numbers."""
+    try:
+        finite = np.isfinite(np.asarray(records, dtype=float))
+    except (TypeError, ValueError):
+        return 0
+    finite = finite.reshape(finite.shape[0], -1).all(axis=1)
+    return int(np.argmax(finite)) if int(finite.sum()) >= 2 else 0
+
+
 class AlgorithmResult:
     """Result of an iterative algorithm (FIC, EIB, etc.).
 
@@ -1000,14 +1010,17 @@ class AlgorithmResult:
         self.convergence = self._compute_convergence()
 
     def _compute_convergence(self):
-        """Compute convergence metrics from history."""
+        """Convergence metrics from history: for every recorded quantity its last record as `<quantity>_final` and, with more than one record, `<quantity>_delta`.
+
+        The delta is the last record minus the first finite one. A record that is not a number says the quantity was not defined yet, as a windowed quantity is before its first full window under `window_fill: in_stage`, so the delta spans the stretch over which the quantity is defined. With fewer than two finite records it is not a number, and so is a final record taken before the quantity was defined.
+        """
         conv = Bunch()
         if self.history:
             for key, vals in self.history.items():
                 if hasattr(vals, "__len__") and len(vals) > 0:
                     conv[f"{key}_final"] = vals[-1] if hasattr(vals, "__getitem__") else vals
                     if len(vals) > 1:
-                        conv[f"{key}_delta"] = vals[-1] - vals[0]
+                        conv[f"{key}_delta"] = vals[-1] - vals[_first_finite_record(vals)]
         return conv
 
     def __getattr__(self, name):

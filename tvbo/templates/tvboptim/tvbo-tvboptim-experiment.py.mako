@@ -44,7 +44,7 @@ from tvbo.templates.tvboptim.utils import (
     classify_network_obs_inputs, coupling_param_keys,
     initial_conditions_axis_sv, noise_axis_param,
     graph_selection, observation_dims, trajectory_dims, parameter_keypath,
-    has_host_pipeline, pipeline_stage_is_host, observation_closure, data_source_arrays, selection_settings, monitor_class_name,
+    has_host_pipeline, pipeline_stage_is_host, observation_closure, data_source_arrays, selection_settings, stage_clock_settings, stage_definitions, monitor_class_name,
     analysis_settings, set_literal, forward_traced_observations, functions_by_name,
     resolve_distribution, distribution_family, draw_expression, initial_condition_draw, initial_state_distribution,
     stochastic_moments, resolve_parameter_starts, refuse_axis_on_parameter_start, refuse_initial_value_on_parameter_start, free_parameter_ref,
@@ -4549,20 +4549,9 @@ ${forward_observations(observation_names, network_observation_names, derived_obs
                     algo_source_obs_needed.add(src_name)
     algo_needs_buffers = algo_has_window_size and len(algo_source_obs_needed) > 0
 
-    # Multi-stage schedule (Algorithm.stages): resolve per-stage n_iterations +
-    # hyperparameter values (stage overrides fall back to algo defaults).
-    algo_stages = list(getattr(algo, 'stages', None) or [])
-    has_stages = len(algo_stages) > 0
-    stage_defs = []
-    for _st in algo_stages:
-        _over = {}
-        for _arg in (getattr(_st, 'arguments', None) or []):
-            _over[str(_arg.name)] = _arg.value
-        _sd = {'n_iterations': int(_st.n_iterations),
-               'reset_state': bool(getattr(_st, 'reset_state', False) or False)}
-        for _hp_name, _hp_val in hyperparams_dict.items():
-            _sd[_hp_name] = _over.get(_hp_name, _hp_val)
-        stage_defs.append(_sd)
+    # Multi-stage schedule (Algorithm.stages): per-stage n_iterations and hyperparameter values, a stage's own arguments over the algorithm's.
+    stage_defs = stage_definitions(algo, hyperparams_dict)
+    has_stages = len(stage_defs) > 0
     # Algorithm.evaluate: False keeps only the tuned state, skipping a full-duration post-fold.
     _ev = getattr(algo, 'evaluate', None)
     algo_evaluate = True if _ev is None else bool(_ev)
@@ -4570,6 +4559,8 @@ ${forward_observations(observation_names, network_observation_names, derived_obs
     _sel_a = selection_settings(algo)
     algo_sel_on = _sel_a is not None
     algo_sel_per_stage = algo_sel_on and _sel_a['per_stage']
+    # Algorithm.window_fill: in_stage hands the stage clock from stage to stage like the buffer; the algorithm template refuses the declaration on an algorithm without a window.
+    algo_clock_on = stage_clock_settings(algo, algo_sim_period, True) is not None
 
     # Own rules plus combined includes (a nested inner tunes inside the outer call, not across stages); each entry is (param_name, coupling_key or None), where None lives on state.dynamics.
     reset_targets = []
@@ -4685,6 +4676,9 @@ ${forward_observations(observation_names, network_observation_names, derived_obs
 % if algo_sel_on:
                 _stage_selection = None   # best-iterate carry, handed from stage to stage
 % endif
+% if algo_clock_on:
+                _stage_clock = None   # periods the trajectory has run when a stage opens; None starts the clock
+% endif
                 _stage_post_fc = []   # per-stage post-tuning FC matrices (r-trajectory)
                 _stage_conv = []      # per-stage convergence Bunch (working-point trajectory)
                 for _si, _sd in enumerate(_stage_defs):
@@ -4698,6 +4692,9 @@ ${forward_observations(observation_names, network_observation_names, derived_obs
 % for src_obs in algo_source_obs_needed:
                         _stage_${src_obs}_buffer = None
 % endfor
+% endif
+% if algo_clock_on:
+                        _stage_clock = None
 % endif
                         if algo_verbose:
                             _log(f"    reset_state: reopened at the declared initial conditions, carrying the tuned parameters")
@@ -4731,6 +4728,9 @@ ${forward_observations(observation_names, network_observation_names, derived_obs
                         max_window_size=${_max_window},  # fixed ring size -> tuning scan compiles once across stage window sizes
 % endif
 % endif
+% if algo_clock_on:
+                        stage_clock=_stage_clock,
+% endif
                         monitors=_stage_monitors,
 % if algo_sel_on:
                         selection=_stage_selection,
@@ -4751,6 +4751,9 @@ ${forward_observations(observation_names, network_observation_names, derived_obs
                     _stage_monitors = algo_result.get('monitors', _stage_monitors)
 % if algo_sel_on:
                     _stage_selection = algo_result.get('selection', _stage_selection)
+% endif
+% if algo_clock_on:
+                    _stage_clock = algo_result.get('stage_clock', None)
 % endif
                     try:
                         _pt = algo_result.post_tuning.observations
