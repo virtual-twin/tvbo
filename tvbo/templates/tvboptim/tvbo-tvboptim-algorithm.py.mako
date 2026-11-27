@@ -374,6 +374,37 @@ ${inspect.getsource(first_full_window).rstrip()}
 
     use_sliding_window = has_window_size and len(source_observations_needed) > 0
 
+    def window_call(obs):
+        """How a windowed observation is computed from its source's buffer, as ``(callable path, argument suffix)``: its first pipeline step, called on the buffer with that step's numeric arguments, which the suffix appends to the buffer as ``, name=value``. ``(None, "")`` for an observation with no source observation or no pipeline."""
+        obs_def = derived_observations_dict.get(obs) or observations_dict.get(obs)
+        src_obs = (dependent_observations.get(obs) or [None])[0]
+        if not (src_obs and obs_def and obs_def.pipeline):
+            return None, ""
+        first_step = obs_def.pipeline[0]
+        step_callable = first_step.callable
+        if not step_callable:
+            raise ValueError(f"Derived observation '{obs}' has source_observations but pipeline step lacks callable")
+        if not step_callable.name:
+            raise ValueError(f"Derived observation '{obs}' pipeline has callable without name attribute")
+        if not step_callable.module:
+            raise ValueError(f"Derived observation '{obs}' pipeline callable '{step_callable.name}' missing module - must specify full path")
+        keywords = []
+        for arg_name, arg in (getattr(first_step, 'arguments', None) or {}).items():
+            arg_value = getattr(arg, 'value', None)
+            if not arg_name or arg_value is None or str(arg_value) == src_obs:
+                continue  # the source observation is the buffer, passed positionally
+            if str(arg_value).replace('.', '').replace('-', '').isdigit():
+                keywords.append(f", {arg_name}={arg_value}")
+        return f"{step_callable.module}.{step_callable.name}", "".join(keywords)
+
+    # Every observation the loop computes over a sliding window, with the buffer it reads and its call.
+    window_observations = {}
+    if use_sliding_window:
+        for _obs in simulated_observations:
+            _call, _kwargs = window_call(_obs)
+            if _call:
+                window_observations[_obs] = (dependent_observations[_obs][0], _call, _kwargs)
+
     # A registered streaming form replaces the O(window*N^2)/step recompute with an O(N^2)/step incremental reducer; without one the recompute path stands.
     def _pipeline_reducer_ref(dobs_def):
         """(module, name, skip_t, s_var) of a derived obs's FIRST pipeline step, else None."""
@@ -1033,6 +1064,14 @@ def run_${algo_name}(
 % endfor
     )
 
+% if window_observations:
+    # Each windowed observation over the window the last iteration read: whole, where the history keeps one mean per record.
+    _last_window = Bunch(
+% for _wobs, (_wsrc, _wcall, _wkwargs) in window_observations.items():
+        ${_wobs}=${_wcall}(_${_wsrc}_buffer${_wkwargs}),
+% endfor
+    )
+% endif
     return AlgorithmResult(
         name='${algo_name}',
         state=state,
@@ -1045,6 +1084,9 @@ def run_${algo_name}(
         state_names=${state_names},
         # Additional fields for algorithm chaining
         monitors=_monitors_out,
+% if window_observations:
+        last_window=_last_window,
+% endif
 % if sel_on:
         selection=_selection,
         selected_iteration=_selected_iteration,
@@ -1414,52 +1456,15 @@ def _${algo_name}_tuning_core_impl(
     else:
         state_idx = None
 
-    # For dependent observations, extract the primary pipeline function
-    # to call directly on buffer (e.g., compute_fc for fc observation)
-    direct_call = None
-    direct_call_args = []  # Additional keyword args from pipeline
-    if src_obs_for_this and has_pipeline:
-        pipeline = effective_obs_def.pipeline
-        if pipeline and len(pipeline) > 0:
-            first_step = pipeline[0]
-            step_callable = first_step.callable
-            if step_callable:
-                callable_name = step_callable.name
-                callable_module = step_callable.module
-                if callable_name and callable_module:
-                    direct_call = f"{callable_module}.{callable_name}"
-                    # Extract additional arguments from pipeline (e.g., skip_t=20)
-                    if hasattr(first_step, 'arguments') and first_step.arguments:
-                        for arg_name, arg in first_step.arguments.items():
-                            arg_value = getattr(arg, 'value', None)
-                            # Skip the source observation argument (that's passed as the buffer)
-                            if arg_name and arg_value is not None:
-                                val_str = str(arg_value)
-                                # Skip observation references (those are handled by buffer)
-                                if val_str == src_obs_for_this:
-                                    continue
-                                # Include numeric arguments as keyword args
-                                if val_str.replace('.', '').replace('-', '').isdigit():
-                                    direct_call_args.append(f"{arg_name}={val_str}")
-                elif callable_name:
-                    raise ValueError(f"Derived observation '{obs}' pipeline callable '{callable_name}' missing module - must specify full path")
-                else:
-                    raise ValueError(f"Derived observation '{obs}' pipeline has callable without name attribute")
-            else:
-                raise ValueError(f"Derived observation '{obs}' has source_observations but pipeline step lacks callable")
-        else:
-            raise ValueError(f"Derived observation '{obs}' has source_observations '{src_obs_for_this}' but no pipeline defined")
-
-    # Build argument string (buffer is first positional, then keyword args from pipeline)
-    direct_call_kwargs = ", ".join(direct_call_args) if direct_call_args else ""
+    direct_call, direct_call_kwargs = window_call(obs)
 %>
 % if obs in streaming_map:
         # emit() equals ${direct_call}(buffer) up to float rounding, at O(N^2)/step rather than O(window*N^2)/step.
         ${obs} = _${obs}_reducer.emit(_${obs}_acc)
 % elif src_obs_for_this:
         # ${obs} depends on ${src_obs_for_this} - compute directly from accumulated buffer
-        # Call: ${direct_call}(buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
-        ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${', ' + direct_call_kwargs if direct_call_kwargs else ''})
+        # Call: ${direct_call}(buffer${direct_call_kwargs})
+        ${obs} = ${direct_call}(_${src_obs_for_this}_buffer${direct_call_kwargs})
 % elif obs_def and obs_source and state_idx is not None:
         ${obs_mean_lines(obs, obs_def, state_idx, tail_rings.get(obs))}
 % elif has_pipeline and obs not in source_observations_needed:
