@@ -134,7 +134,7 @@
       <DerivedVariable name="h" dimension="none" value="1.1 - 1.0/(1.0 + 24.5325301971094*exp(-8.0*n))"/>
       <DerivedVariable name="minf" dimension="none" value="1.0/(1.0 + exp((Cmna - V)/DCmna))"/>
       <DerivedVariable name="ninf" dimension="none" value="1.0/(1.0 + exp((Cnk - V)/DCnk))"/>
-      <DerivedVariable name="r" dimension="none" value="R_minus*x/pi"/>
+      <DerivedVariable name="r" dimension="none" value="R_minus*x/3.141592653589793"/>
       <DerivedVariable name="DK_o" dimension="none" value="-DKi*beta"/>
       <DerivedVariable name="DNa_o" dimension="none" value="-DNa_i*beta"/>
       <DerivedVariable name="Na_i" dimension="none" value="DNa_i + Na_i0"/>
@@ -149,8 +149,8 @@
       <DerivedVariable name="I_pump" dimension="none" value="1.0*rho/((1.0 + exp((Ckp - K_o)/DCkp))*(1.0 + exp((Cnap - Na_i)/DCnap)))"/>
       <DerivedVariable name="V_temp" dimension="none" value="(-1.0*I_Cl - 1.0*I_K - 1.0*I_Na - 1.0*I_pump)/Cm"/>
       <ConditionalDerivedVariable name="Vcond" dimension="none">
-        <Case condition="V .leq. Vstar" value="V_temp + eta - R_minus*x^2 + R_minus*c_glob*(E - V)/pi"/>
-        <Case value="V_temp + eta - R_plus*x^2 + R_minus*c_glob*(E - V)/pi"/>
+        <Case condition="V .leq. Vstar" value="V_temp + eta - R_minus*x^2 + R_minus*c_glob*(E - V)/3.141592653589793"/>
+        <Case value="V_temp + eta - R_plus*x^2 + R_minus*c_glob*(E - V)/3.141592653589793"/>
       </ConditionalDerivedVariable>
 
       <!-- ── Flat dynamics (no spike events) ── -->

@@ -42,3 +42,22 @@ keywords:
 - graph-based
 issue_tracker: https://github.com/pyrates-neuroscience/PyRates/issues
 is_accessible_for_free: true
+modules:
+- pyrates
+interfaces:
+  pyrates.clear:
+    name: pyrates.clear
+    kind:
+    - call
+    - import
+    checked_version: 1.2.3
+  pyrates.frontend.CircuitTemplate:
+    name: pyrates.frontend.CircuitTemplate
+    kind:
+    - import
+    checked_version: 1.2.3
+  pyrates.frontend.CircuitTemplate.from_yaml:
+    name: pyrates.frontend.CircuitTemplate.from_yaml
+    kind:
+    - call
+    checked_version: 1.2.3

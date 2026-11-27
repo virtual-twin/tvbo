@@ -66,6 +66,44 @@ def schema(
 # C5 stubs: bids / sedml / omex / all
 
 
+@app.command("backend", help="Check that the code generated for a model states the model's equations.")
+def backend(
+    model: str = typer.Argument(..., help="A Dynamics: path, `model:<name>` or a database name."),
+    formats: list[str] = typer.Option(
+        None, "--format", "-f", help="Code format to check; repeat for several. Every format a reader covers by default."
+    ),
+) -> None:
+    """Render *model* in each format, read the output back, and compare every derivative with the specification.
+
+    Exits non-zero unless every state variable reads back `equal` in every format checked. A format that cannot render the model, such as NeuroML for a multi-mode model, or whose reader is not installed, such as Julia without `tvbo[julia]`, is reported as not checked with the error's own message, and fails the command only when `--format` names it. A reader that raises on the code it was given fails the command whatever the formats.
+    """
+    from tvbo.analysis.backend_check import CHECKED_FORMATS, check_backend
+
+    kind, dynamics = _common.resolve_spec(model)
+    if kind != "dynamics":
+        _common.die(f"{model!r} is a {kind}; `validate backend` checks a Dynamics.")
+    failed = False
+    for format in formats or CHECKED_FORMATS:
+        try:
+            code = dynamics.render_code(format=format)
+        except Exception as error:  # noqa: BLE001 — an emitter that refuses the model is this format's result, and the next format is still checked
+            unchecked = error
+        else:
+            try:
+                verdicts, unchecked = check_backend(dynamics, format, code=code), None
+            except ImportError as error:
+                unchecked = error
+        if unchecked is not None:
+            typer.echo(f"{format}: not checked ({unchecked})")
+            failed = failed or bool(formats)
+            continue
+        for verdict in verdicts:
+            typer.echo(f"{format}: {verdict.name}: {verdict.status} ({verdict.detail})")
+        failed = failed or not all(verdicts)
+    if failed:
+        raise typer.Exit(code=1)
+
+
 @app.command("bids", help="Validate a BIDS dataset directory.")
 def bids(
     path: Path = typer.Argument(..., exists=True, file_okay=False, dir_okay=True, readable=True, help="BIDS dataset root."),

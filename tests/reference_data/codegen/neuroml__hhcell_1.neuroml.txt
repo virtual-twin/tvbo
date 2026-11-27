@@ -48,28 +48,45 @@
 
 
   <!-- ════════════════════════════════════════════════════════════════
-       ComponentType: StefanescuJirsa2D
-       Generated from TVBO Dynamics: StefanescuJirsa2D
+       ComponentType: hhcell_1
+       Generated from TVBO Dynamics: hhcell_1
        ════════════════════════════════════════════════════════════════ -->
-  <ComponentType name="StefanescuJirsa2D">
+  <ComponentType name="hhcell_1">
 
     <!-- Parameters -->
-    <Parameter name="tau" dimension="none"/>
-    <Parameter name="a" dimension="none"/>
-    <Parameter name="b" dimension="none"/>
-    <Parameter name="K11" dimension="none"/>
-    <Parameter name="K12" dimension="none"/>
-    <Parameter name="K21" dimension="none"/>
-    <Parameter name="sigma" dimension="none"/>
-    <Parameter name="mu" dimension="none"/>
+    <Parameter name="C" dimension="none"/>
+    <Parameter name="g_Na" dimension="none"/>
+    <Parameter name="g_K" dimension="none"/>
+    <Parameter name="g_L" dimension="none"/>
+    <Parameter name="E_Na" dimension="none"/>
+    <Parameter name="E_K" dimension="none"/>
+    <Parameter name="E_L" dimension="none"/>
+    <Parameter name="thresh" dimension="none"/>
+    <Parameter name="rate_am" dimension="none"/>
+    <Parameter name="midpoint_am" dimension="none"/>
+    <Parameter name="scale_am" dimension="none"/>
+    <Parameter name="rate_bm" dimension="none"/>
+    <Parameter name="midpoint_bm" dimension="none"/>
+    <Parameter name="scale_bm" dimension="none"/>
+    <Parameter name="rate_ah" dimension="none"/>
+    <Parameter name="midpoint_ah" dimension="none"/>
+    <Parameter name="scale_ah" dimension="none"/>
+    <Parameter name="rate_bh" dimension="none"/>
+    <Parameter name="midpoint_bh" dimension="none"/>
+    <Parameter name="scale_bh" dimension="none"/>
+    <Parameter name="rate_an" dimension="none"/>
+    <Parameter name="midpoint_an" dimension="none"/>
+    <Parameter name="scale_an" dimension="none"/>
+    <Parameter name="rate_bn" dimension="none"/>
+    <Parameter name="midpoint_bn" dimension="none"/>
+    <Parameter name="scale_bn" dimension="none"/>
     <!-- Coupling inputs -->
-    <Parameter name="c_glob" dimension="none"/>
-    <Parameter name="local_coupling" dimension="none"/>
+    <Parameter name="I_syn" dimension="none"/>
     <!-- Initial condition parameters -->
-    <Parameter name="xi_0" dimension="none"/>
-    <Parameter name="eta_0" dimension="none"/>
-    <Parameter name="alpha_0" dimension="none"/>
-    <Parameter name="beta_0" dimension="none"/>
+    <Parameter name="v_0" dimension="none"/>
+    <Parameter name="m_0" dimension="none"/>
+    <Parameter name="h_0" dimension="none"/>
+    <Parameter name="n_0" dimension="none"/>
 
     <!-- Time conversion for derivatives.
          When all parameters and state variables carry proper LEMS dimensions,
@@ -81,47 +98,46 @@
     <Constant name="SEC" dimension="time" value="1ms"/>
 
     <!-- Exposures (one per state variable) -->
-    <Exposure name="xi" dimension="none"/>
-    <Exposure name="eta" dimension="none"/>
-    <Exposure name="alpha" dimension="none"/>
-    <Exposure name="beta" dimension="none"/>
+    <Exposure name="v" dimension="none"/>
+    <Exposure name="m" dimension="none"/>
+    <Exposure name="h" dimension="none"/>
+    <Exposure name="n" dimension="none"/>
 
     <Dynamics>
 
       <!-- State variables -->
-      <StateVariable name="xi" dimension="none" exposure="xi"/>
-      <StateVariable name="eta" dimension="none" exposure="eta"/>
-      <StateVariable name="alpha" dimension="none" exposure="alpha"/>
-      <StateVariable name="beta" dimension="none" exposure="beta"/>
+      <StateVariable name="v" dimension="none" exposure="v"/>
+      <StateVariable name="m" dimension="none" exposure="m"/>
+      <StateVariable name="h" dimension="none" exposure="h"/>
+      <StateVariable name="n" dimension="none" exposure="n"/>
 
       <!-- Derived variables (simple and conditional/piecewise) -->
-      <DerivedVariable name="Aik" dimension="none" value="0.500000000000000"/>
-      <DerivedVariable name="Bik" dimension="none" value="0.500000000000000"/>
-      <DerivedVariable name="Cik" dimension="none" value="0.500000000000000"/>
-      <DerivedVariable name="e_i" dimension="none" value="1.00000000000000"/>
-      <DerivedVariable name="f_i" dimension="none" value="1.00000000000000"/>
-      <DerivedVariable name="IE_i" dimension="none" value="0.0"/>
-      <DerivedVariable name="II_i" dimension="none" value="0.0"/>
-      <DerivedVariable name="m_i" dimension="none" value="a"/>
-      <DerivedVariable name="n_i" dimension="none" value="a"/>
+      <DerivedVariable name="alpha_h" dimension="none" value="rate_ah*exp((v - midpoint_ah)/scale_ah)"/>
+      <DerivedVariable name="alpha_m" dimension="none" value="rate_am*(v - midpoint_am)/(scale_am*(1 - exp((midpoint_am - v)/scale_am)))"/>
+      <DerivedVariable name="alpha_n" dimension="none" value="rate_an*(v - midpoint_an)/(scale_an*(1 - exp((midpoint_an - v)/scale_an)))"/>
+      <DerivedVariable name="beta_h" dimension="none" value="rate_bh/(1 + exp((midpoint_bh - v)/scale_bh))"/>
+      <DerivedVariable name="beta_m" dimension="none" value="rate_bm*exp((v - midpoint_bm)/scale_bm)"/>
+      <DerivedVariable name="beta_n" dimension="none" value="rate_bn*exp((v - midpoint_bn)/scale_bn)"/>
 
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="xi" value="(K11*(-xi + Aik*xi) + tau*(IE_i + c_glob + local_coupling*xi) + tau*(xi - eta - e_i*xi^3/3) - K12*(-xi + Bik*alpha)) / SEC"/>
-      <TimeDerivative variable="eta" value="((m_i + xi - b*eta)/tau) / SEC"/>
-      <TimeDerivative variable="alpha" value="(K21*(-alpha + Cik*xi) + tau*(II_i + c_glob + local_coupling*xi) + tau*(alpha - beta - f_i*alpha^3/3)) / SEC"/>
-      <TimeDerivative variable="beta" value="((alpha + n_i - b*beta)/tau) / SEC"/>
+      <TimeDerivative variable="v" value="((I_syn - g_L*(v - E_L) - g_K*n^4*(v - E_K) - g_Na*h*m^3*(v - E_Na))/C) / SEC"/>
+      <TimeDerivative variable="m" value="(alpha_m*(1 - m) - beta_m*m) / SEC"/>
+      <TimeDerivative variable="h" value="(alpha_h*(1 - h) - beta_h*h) / SEC"/>
+      <TimeDerivative variable="n" value="(alpha_n*(1 - n) - beta_n*n) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>
-        <StateAssignment variable="xi" value="xi_0"/>
-        <StateAssignment variable="eta" value="eta_0"/>
-        <StateAssignment variable="alpha" value="alpha_0"/>
-        <StateAssignment variable="beta" value="beta_0"/>
+        <StateAssignment variable="v" value="v_0"/>
+        <StateAssignment variable="m" value="m_0"/>
+        <StateAssignment variable="h" value="h_0"/>
+        <StateAssignment variable="n" value="n_0"/>
       </OnStart>
 
       <!-- Events (non-spike) -->
+      <OnCondition test="v .gt. thresh">
+      </OnCondition>
 
     </Dynamics>
 
@@ -131,7 +147,7 @@
   <!-- ════════════════════════════════════════════════════════════════
        Component instances (default parameter values)
        ════════════════════════════════════════════════════════════════ -->
-  <Component id="StefanescuJirsa2D_inst" type="StefanescuJirsa2D" tau="3.0" a="0.45" b="0.9" K11="0.5" K12="0.15" K21="0.15" sigma="0.35" mu="0.0" c_glob="0" local_coupling="0" xi_0="0.1" eta_0="0.1" alpha_0="0.1" beta_0="0.1"/>
+  <Component id="hhcell_1_inst" type="hhcell_1" C="10.0" g_Na="1200.0" g_K="360.0" g_L="3.0" E_Na="50.0" E_K="-77.0" E_L="-54.3" thresh="20.0" rate_am="1.0" midpoint_am="-40.0" scale_am="10.0" rate_bm="4.0" midpoint_bm="-65.0" scale_bm="-18.0" rate_ah="0.07" midpoint_ah="-65.0" scale_ah="-20.0" rate_bh="1.0" midpoint_bh="-35.0" scale_bh="10.0" rate_an="0.1" midpoint_an="-55.0" scale_an="10.0" rate_bn="0.125" midpoint_bn="-65.0" scale_bn="-80.0" I_syn="0" v_0="-65.0" m_0="0.05" h_0="0.6" n_0="0.32"/>
 
 
 

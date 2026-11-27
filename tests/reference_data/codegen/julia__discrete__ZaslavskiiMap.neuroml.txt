@@ -87,8 +87,8 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="x" value="((x + nu*(1 + mu*y) + eps*mu*nu*cos(2*pi*x) + 1*ceil(-(x + nu*(1 + mu*y) + eps*mu*nu*cos(2*pi*x))/(1)))) / SEC"/>
-      <TimeDerivative variable="y" value="((y + eps*cos(2*pi*x))*exp(-r)) / SEC"/>
+      <TimeDerivative variable="x" value="((x + nu*(1 + mu*y) + eps*mu*nu*cos(2*3.141592653589793*x) + 1*ceil(-(x + nu*(1 + mu*y) + eps*mu*nu*cos(2*3.141592653589793*x))/(1)))) / SEC"/>
+      <TimeDerivative variable="y" value="((y + eps*cos(2*3.141592653589793*x))*exp(-r)) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

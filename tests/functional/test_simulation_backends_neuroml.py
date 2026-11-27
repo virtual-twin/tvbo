@@ -30,6 +30,18 @@ NEUROML_EXPERIMENT_FILES = sorted(NEUROML_EXPERIMENTS_DIR.glob("*.yaml"))
 NEUROML_EXPERIMENT_IDS = [f.stem for f in NEUROML_EXPERIMENT_FILES]
 
 
+from tests.test_codegen_golden_corpus import NOT_LEMS
+
+
+def _render_or_refuse(model_file, render):
+    """*render*'s LEMS for the model in *model_file*, or `None` where the backend refuses the model by name (`NOT_LEMS`)."""
+    if Path(model_file).stem in NOT_LEMS:
+        with pytest.raises(ValueError, match="modes|LEMS has no function"):
+            render(Dynamics.from_file(model_file))
+        return None
+    return render(Dynamics.from_file(model_file))
+
+
 # ── Test classes ──────────────────────────────────────────────────────
 
 
@@ -40,9 +52,9 @@ class TestNeuroMLRender:
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_dynamics_render_lems(self, model_file):
         """Dynamics.render_code('lems') produces non-empty XML for every model."""
-        model = Dynamics.from_file(model_file)
-        xml = model.render_code("lems")
-        assert xml is not None
+        xml = _render_or_refuse(model_file, lambda model: model.render_code("lems"))
+        if xml is None:
+            return
         assert len(xml) > 100
         assert "<Lems>" in xml
         assert "<ComponentType" in xml
@@ -50,10 +62,9 @@ class TestNeuroMLRender:
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_experiment_render_lems(self, model_file):
         """SimulationExperiment.render('lems') produces full simulation XML."""
-        model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(dynamics=model)
-        xml = exp.render("lems")
-        assert xml is not None
+        xml = _render_or_refuse(model_file, lambda model: SimulationExperiment(dynamics=model).render("lems"))
+        if xml is None:
+            return
         assert len(xml) > 100
         assert "<Lems>" in xml
         assert "<Simulation" in xml
@@ -61,12 +72,14 @@ class TestNeuroMLRender:
     @pytest.mark.parametrize("model_file", MODEL_FILES, ids=MODEL_IDS)
     def test_render_format_aliases(self, model_file):
         """All format aliases ('lems', 'neuroml', 'nml') produce the same XML."""
-        model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(dynamics=model)
-        xml_lems = exp.render("lems")
-        xml_neuroml = exp.render("neuroml")
-        xml_nml = exp.render("nml")
-        assert xml_lems == xml_neuroml == xml_nml
+
+        def every_alias(model):
+            experiment = SimulationExperiment(dynamics=model)
+            return [experiment.render(alias) for alias in ("lems", "neuroml", "nml")]
+
+        renders = _render_or_refuse(model_file, every_alias)
+        if renders is not None:
+            assert renders[0] == renders[1] == renders[2]
 
 
 @pytest.mark.backend_neuroml
@@ -196,10 +209,14 @@ class TestNeuroMLValidation:
         """
         from tvbo.adapters.neuroml import NeuroMLAdapter
 
-        model = Dynamics.from_file(model_file)
-        exp = SimulationExperiment(dynamics=model)
-        adapter = NeuroMLAdapter(exp)
-        xml = adapter.render_code()
+        def adapter_and_lems(model):
+            adapter = NeuroMLAdapter(SimulationExperiment(dynamics=model))
+            return adapter, adapter.render_code()
+
+        rendered = _render_or_refuse(model_file, adapter_and_lems)
+        if rendered is None:
+            return
+        adapter, xml = rendered
         try:
             adapter.validate(xml)
         except Exception as e:

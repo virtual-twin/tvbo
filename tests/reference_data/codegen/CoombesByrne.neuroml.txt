@@ -95,10 +95,10 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="V" value="(c_glob + eta + V^2 + g*(v_syn - V) - pi^2*r^2) / SEC"/>
+      <TimeDerivative variable="V" value="(c_glob + eta + V^2 + g*(v_syn - V) - 3.141592653589793^2*r^2) / SEC"/>
       <TimeDerivative variable="g" value="(alpha*q) / SEC"/>
-      <TimeDerivative variable="q" value="(alpha*(-g - 2*q + pi*k*r)) / SEC"/>
-      <TimeDerivative variable="r" value="(Delta/pi - g*r + 2*V*r) / SEC"/>
+      <TimeDerivative variable="q" value="(alpha*(-g - 2*q + 3.141592653589793*k*r)) / SEC"/>
+      <TimeDerivative variable="r" value="(Delta/3.141592653589793 - g*r + 2*V*r) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

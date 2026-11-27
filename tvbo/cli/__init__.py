@@ -22,6 +22,9 @@ from . import (
     config as _config_cmd,
 )
 from . import (
+    doctor as _doctor_cmd,
+)
+from . import (
     export as _export_cmd,
 )
 from . import (
@@ -38,6 +41,9 @@ from . import (
 )
 from . import (
     install as _install_cmd,
+)
+from . import (
+    mcp_ as _mcp_cmd,
 )
 from . import (
     migrate_iris as _migrate_iris_cmd,
@@ -118,6 +124,10 @@ app.command("verify", help="Check a study-of-studies is buildable (completeness 
     _verify_cmd.verify
 )
 app.command("version", help="Print the tvbo version.")(_version_cmd.version)
+app.command("doctor", help="Check the installed frameworks still provide every name the generated code reaches.")(
+    _doctor_cmd.doctor
+)
+app.command("mcp", help="Serve the curated database and the backend check to agents over MCP (stdio).")(_mcp_cmd.mcp)
 app.command("migrate-iris", help="Rewrite curated-record IRIs into their `tvbo:<folder>/<file stem>` form.")(
     _migrate_iris_cmd.migrate_iris
 )

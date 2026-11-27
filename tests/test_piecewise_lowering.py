@@ -1,15 +1,13 @@
 """Emitted branch code must *mean* what the `Piecewise` it came from means.
 
-The golden corpus freezes the text every emitter produces. Text identity is not meaning:
-a `Piecewise` lowered to the wrong arithmetic is frozen just as faithfully as one lowered to the right arithmetic, and stays frozen. This module closes that gap for the one lowering that cannot be read at a glance — LEMS, which has no ternary and no `Piecewise` and must express branch selection as a sum of Heaviside-gated terms.
+The golden corpus freezes the text every emitter produces. Text identity is not meaning: a `Piecewise` lowered to the wrong arithmetic is frozen just as faithfully as one lowered to the right arithmetic, and stays frozen. This module closes that gap for the one lowering that cannot be read at a glance — LEMS, which has no ternary and no `Piecewise` and must express branch selection as a sum of Heaviside-gated terms.
 
 It caught four shipped models. `TentMap`, `PomeauMannevilleMap`, `Hopfield` and `EpileptorCodim3` each emitted their else-branch *un-gated*, so it was added to whichever branch was taken rather than replacing it — the tent map differed from its own definition over 63% of its domain. Two independent defects produced that:
 
-* `Piecewise` is first-match-wins, so every term after the first is reachable only when no
-  earlier condition held. Summing the terms un-gated is correct only when the conditions
-  happen to be exclusive *and* the default is zero.
-* The branch value was interpolated without parentheses, so a value that prints as a sum
-  escaped its own gate: `H(x .gt. 0.5) * -4*x + 3` gates `-4*x` and adds `3` always.
+* `Piecewise` is first-match-wins, so every term after the first is reachable only when no earlier condition held. Summing the terms un-gated is correct only when the conditions happen to be exclusive *and* the default is zero.
+* The branch value was interpolated without parentheses, so a value that prints as a sum escaped its own gate: `gate * -4*x + 3` gates `-4*x` and adds `3` always.
+
+A third defect only jLEMS could report: the gate was written `H(x .gt. 0.5)`, and LEMS's `H` takes a number, so every such model failed to load. The gate is arithmetic on `H` of a difference, exact where the operands are equal.
 
 The backend-independent printers are checked alongside it. They lower to `where`/`ifelse` and have no equivalent trap, which is exactly why they belong here: this is the test that says so rather than assuming it.
 """
@@ -36,32 +34,19 @@ CASES = {
     "conjunctive condition": sp.Piecewise((a, sp.And(x > 0, x < 1)), (b, True)),
     "disjunctive condition": sp.Piecewise((a, sp.Or(x < -1, x > 1)), (b, True)),
     "negated condition": sp.Piecewise((a, sp.Not(x > 0)), (b, True)),
+    "minimum of three, which LEMS lacks": sp.Min(a, b, x),
+    "maximum, which LEMS lacks": sp.Max(x, thr),
 }
 
-_LEMS_RELATIONS = ((".geq.", ">="), (".leq.", "<="), (".neq.", "!="), (".gt.", ">"), (".lt.", "<"), (".eq.", "=="))
+
+def _lems_heaviside(value):
+    """LEMS's `H` as jLEMS and PyLEMS evaluate it: `0.5 * (sign(value) + 1)`, so 0.5 at zero."""
+    return 0.5 * (np.sign(value) + 1.0)
 
 
 def _lems_as_python(text: str) -> str:
-    """Read emitted LEMS math back as an evaluable Python expression.
-
-    Each `H(...)` argument is wrapped before `.and.`/`.or.` are translated: LEMS `x .gt. 0 .and. x .lt. 1` is one boolean expression, but Python's `&` binds tighter than `>`, so a direct substitution would mean `x > (0 & x) < 1`.
-    """
-    for lems, python in _LEMS_RELATIONS:
-        text = text.replace(lems, python)
-    text = text.replace("^", "**")
-
-    out, cursor = [], 0
-    for match in re.finditer(r"\bH\(", text):
-        if match.start() < cursor:
-            continue
-        depth, end = 1, match.end()
-        while depth:
-            depth += {"(": 1, ")": -1}.get(text[end], 0)
-            end += 1
-        out.append(text[cursor : match.start()] + f"HEAVISIDE(({text[match.end() : end - 1]}))")
-        cursor = end
-    text = "".join(out) + text[cursor:]
-    return text.replace(".and.", ") & (").replace(".or.", ") | (").replace(".not.", "~")
+    """Read emitted LEMS math back as an evaluable Python expression."""
+    return re.sub(r"\bH\(", "HEAVISIDE(", text.replace("^", "**"))
 
 
 def _sample(seed: int = 0, n: int = 20_000) -> dict:
@@ -84,7 +69,7 @@ def test_lems_branches_evaluate_as_the_piecewise_does(label: str):
     emitted = get_printer("lems").doprint(expr)
 
     env = _sample()
-    env["HEAVISIDE"] = lambda condition: np.where(condition, 1.0, 0.0)
+    env["HEAVISIDE"] = _lems_heaviside
     produced = np.broadcast_to(
         np.asarray(eval(_lems_as_python(emitted), {}, env), dtype=float),  # noqa: S307
         np.shape(env["x"]),
@@ -150,9 +135,33 @@ def test_zero_default_is_not_emitted():
 
 @pytest.mark.backend_core
 def test_branch_value_cannot_escape_its_gate():
-    """A branch whose value prints as a sum stays inside its own `H(...) *` term."""
+    """A branch whose value prints as a sum stays inside its own indicator's term."""
     emitted = get_printer("lems").doprint(sp.Piecewise((-4 * x + 3, x > sp.Rational(1, 2)), (0, True)))
-    assert emitted == "H(x .gt. 1/2) * (3 - 4*x)", emitted
+    assert re.fullmatch(r"H\(H\((x - 1/2|-1/2 \+ x)\) - 0\.75\) \* \(3 - 4\*x\)", emitted), emitted
+
+
+@pytest.mark.backend_core
+@pytest.mark.parametrize("label", list(CASES), ids=list(CASES))
+def test_lems_hands_h_a_number(label: str):
+    """No condition reaches `H`: jLEMS rejects `H(x .lt. 0.5)` with "Wrong node type in function"."""
+    emitted = get_printer("lems").doprint(CASES[label])
+    assert not re.search(r"\.(gt|geq|lt|leq|eq|neq|and|or|not)\.", emitted), emitted
+
+
+@pytest.mark.backend_core
+@pytest.mark.parametrize(
+    ("relation", "holds_at_equality"),
+    [(sp.Lt, False), (sp.Le, True), (sp.Gt, False), (sp.Ge, True), (sp.Eq, True), (sp.Ne, False)],
+)
+def test_lems_takes_one_branch_where_the_operands_are_equal(relation, holds_at_equality: bool):
+    """At `x == thr` the emitted LEMS is the branch the relation selects, not half of each.
+
+    `H` is 0.5 at zero, so gating a branch by `H(thr - x)` alone would add half of `a` to half of `b` on the boundary.
+    """
+    emitted = get_printer("lems").doprint(sp.Piecewise((a, relation(x, thr)), (b, True)))
+    env = {"x": 0.25, "thr": 0.25, "a": 2.0, "b": 7.0, "HEAVISIDE": _lems_heaviside}
+
+    assert eval(_lems_as_python(emitted), {}, env) == (2.0 if holds_at_equality else 7.0), emitted  # noqa: S307
 
 
 @pytest.mark.backend_core

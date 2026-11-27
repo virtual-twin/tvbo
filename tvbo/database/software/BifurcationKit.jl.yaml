@@ -38,3 +38,18 @@ keywords:
 - continuation
 - dynamical systems
 issue_tracker: https://github.com/bifurcationkit/BifurcationKit.jl/issues
+modules:
+- BifurcationKit
+interfaces:
+  BifurcationKit:
+    kind:
+    - import
+  BifurcationKit.getp:
+    kind:
+    - call
+  BifurcationKit.jacobian:
+    kind:
+    - call
+  BifurcationKit.newton_fold:
+    kind:
+    - call

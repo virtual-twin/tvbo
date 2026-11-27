@@ -54,3 +54,205 @@ same_as:
 - https://www.wikidata.org/entity/Q49165099
 - https://scicrunch.org/resolver/RRID:SCR_004841
 issue_tracker: https://github.com/the-virtual-brain/tvb-root/issues
+modules:
+- tvb
+interfaces:
+  tvb.adapters.datatypes.h5.time_series_h5.TimeSeriesRegionH5:
+    kind:
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Attr:
+    kind:
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Final:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Final(default=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Final(doc=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Final(label=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Float:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Float(default=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.List:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.List(choices=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.List(default=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.List(doc=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.List(label=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.List(of=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.NArray:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.NArray(default=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.NArray(doc=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.NArray(domain=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.NArray(label=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Range:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Range(hi=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Range(lo=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.basic.neotraits.api.Range(step=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.datatypes.connectivity.Connectivity:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.common.simple_gen_astr:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.coupling.Coupling:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.coupling.Linear:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.descriptors.NDArray:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.buffer:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.current_state:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.delayed_state:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.delays:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.es_weights:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.nnz_weights:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.history.SparseHistory.weights:
+    kind:
+    - attribute
+    checked_version: 2.10.0
+  tvb.simulator.integrators.Integrator:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.lab.connectivity:
+    kind:
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.lab.connectivity.Connectivity.from_file:
+    kind:
+    - call
+    checked_version: 2.10.0
+  tvb.simulator.lab.connectivity.Connectivity.from_file(source_file=):
+    kind:
+    - keyword
+    checked_version: 2.10.0
+  tvb.simulator.models.base.Model:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0
+    realises:
+    - tvbo:Dynamics
+  tvb.simulator.models.base.ModelNumbaDfun:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.monitors.Monitor:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.noise.Multiplicative:
+    kind:
+    - call
+    - import
+    checked_version: 2.10.0
+  tvb.simulator.simulator.Simulator:
+    kind:
+    - base_class
+    - import
+    checked_version: 2.10.0

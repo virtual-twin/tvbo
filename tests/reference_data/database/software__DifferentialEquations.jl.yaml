@@ -47,3 +47,65 @@ same_as:
 - https://www.wikidata.org/entity/Q111486832
 issue_tracker: https://github.com/SciML/DifferentialEquations.jl/issues
 is_accessible_for_free: true
+modules:
+- OrdinaryDiffEqTsit5
+- OrdinaryDiffEqLowOrderRK
+- OrdinaryDiffEq
+- StochasticDiffEq
+interfaces:
+  OrdinaryDiffEq:
+    name: OrdinaryDiffEq
+    kind:
+    - import
+  OrdinaryDiffEqLowOrderRK:
+    name: OrdinaryDiffEqLowOrderRK
+    kind:
+    - import
+  Euler:
+    name: Euler
+    kind:
+    - call
+  EulerHeun:
+    name: EulerHeun
+    kind:
+    - call
+  Heun:
+    name: Heun
+    kind:
+    - call
+  ODEProblem:
+    name: ODEProblem
+    kind:
+    - call
+  OrdinaryDiffEqTsit5:
+    name: OrdinaryDiffEqTsit5
+    kind:
+    - import
+  SDEProblem:
+    name: SDEProblem
+    kind:
+    - call
+  Tsit5:
+    name: Tsit5
+    kind:
+    - call
+  solve:
+    name: solve
+    kind:
+    - call
+  solve(adaptive=):
+    name: solve(adaptive=)
+    kind:
+    - keyword
+  solve(dt=):
+    name: solve(dt=)
+    kind:
+    - keyword
+  solve(saveat=):
+    name: solve(saveat=)
+    kind:
+    - keyword
+  StochasticDiffEq:
+    name: StochasticDiffEq
+    kind:
+    - import

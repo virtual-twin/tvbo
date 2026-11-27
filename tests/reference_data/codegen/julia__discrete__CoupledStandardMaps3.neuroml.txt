@@ -99,12 +99,12 @@
       <!-- ── Flat dynamics (no spike events) ── -->
 
       <!-- Time derivatives -->
-      <TimeDerivative variable="theta0" value="((p0 + theta0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)) + 2*pi*ceil(-(p0 + theta0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)))/(2*pi)))) / SEC"/>
-      <TimeDerivative variable="p0" value="((p0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)) + 2*pi*ceil(-(p0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)))/(2*pi)))) / SEC"/>
-      <TimeDerivative variable="theta1" value="((p1 + theta1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)) + 2*pi*ceil(-(p1 + theta1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)))/(2*pi)))) / SEC"/>
-      <TimeDerivative variable="p1" value="((p1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)) + 2*pi*ceil(-(p1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)))/(2*pi)))) / SEC"/>
-      <TimeDerivative variable="theta2" value="((p2 + theta2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)) + 2*pi*ceil(-(p2 + theta2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)))/(2*pi)))) / SEC"/>
-      <TimeDerivative variable="p2" value="((p2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)) + 2*pi*ceil(-(p2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)))/(2*pi)))) / SEC"/>
+      <TimeDerivative variable="theta0" value="((p0 + theta0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)) + 2*3.141592653589793*ceil(-(p0 + theta0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)))/(2*3.141592653589793)))) / SEC"/>
+      <TimeDerivative variable="p0" value="((p0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)) + 2*3.141592653589793*ceil(-(p0 + k0*sin(theta0) - Gamma*(-sin(theta0 - theta1) - sin(theta0 - theta2)))/(2*3.141592653589793)))) / SEC"/>
+      <TimeDerivative variable="theta1" value="((p1 + theta1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)) + 2*3.141592653589793*ceil(-(p1 + theta1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)))/(2*3.141592653589793)))) / SEC"/>
+      <TimeDerivative variable="p1" value="((p1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)) + 2*3.141592653589793*ceil(-(p1 + k1*sin(theta1) - Gamma*(-sin(theta1 - theta2) + sin(theta0 - theta1)))/(2*3.141592653589793)))) / SEC"/>
+      <TimeDerivative variable="theta2" value="((p2 + theta2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)) + 2*3.141592653589793*ceil(-(p2 + theta2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)))/(2*3.141592653589793)))) / SEC"/>
+      <TimeDerivative variable="p2" value="((p2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)) + 2*3.141592653589793*ceil(-(p2 + k2*sin(theta2) - Gamma*(sin(theta0 - theta2) + sin(theta1 - theta2)))/(2*3.141592653589793)))) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

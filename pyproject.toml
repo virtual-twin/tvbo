@@ -121,11 +121,14 @@ auto7p = ["pycobi>=0.8.0", "meson>=1.4.0", "ninja>=1.11.0"]
 # PyRates (continuation needs auto7p). networkx is capped because >=3.6 makes graph constructors backend-dispatchable and steals pyrates' backend='fortran' kwarg.
 pyrates = ["pyrates>=1.0.0", "networkx<=3.5", "tvbo[auto7p]"]
 
-# Julia integration
-julia = ["juliacall>=0.9.37"]
+# Julia integration; tree-sitter reads generated Julia back for `tvbo validate backend`.
+julia = ["juliacall>=0.9.37", "tree-sitter>=0.25", "tree-sitter-julia>=0.23"]
 
 # API server
 api = ["fastapi>=0.115.0", "uvicorn>=0.30.0", "docker>=7.1.0"]
+
+# `tvbo mcp`: the curated database and the backend check served to agents.
+mcp = ["mcp>=2.3"]
 
 # TVB integration — same Intel-Mac cap and floor as [audio], since tvb-library pulls numba transitively.
 tvb = [
@@ -154,7 +157,7 @@ zarr = ["zarr>=3"]
 lint = ["ruff>=0.16.1,<0.17"]
 
 # Full install (all features)
-all = ["tvbo[neuroml,neuron,data,pde,mesh,knowledge,audio,api,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,zarr,lint]"]
+all = ["tvbo[neuroml,neuron,data,pde,mesh,knowledge,audio,api,mcp,tvb,tvboptim,docs,pyrates,julia,auto7p,brian2,workflow,zarr,lint]"]
 
 [project.urls]
 homepage = "https://tvbo.charite.de"

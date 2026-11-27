@@ -43,3 +43,10 @@ keywords:
 - neural network
 issue_tracker: https://github.com/JuliaDynamics/NetworkDynamics.jl/issues
 is_accessible_for_free: true
+modules:
+- NetworkDynamics
+interfaces:
+  NetworkDynamics:
+    name: NetworkDynamics
+    kind:
+    - import

@@ -132,6 +132,15 @@ class DynamicsBehaviour(DynamicsRuntime):
 
         return check_units(self, strictness=strictness, time_unit=time_unit)
 
+    def check_backend(self, format: str, code: str | None = None):
+        """Per-state-variable verdicts on whether *format*'s generated code states this model's equations.
+
+        See [`tvbo.analysis.backend_check.check_backend`](../analysis/backend_check.qmd#check_backend). Each verdict is `equal`, `differs` or `unread`; the third names a construct the reader does not interpret, and is not a statement about the backend.
+        """
+        from tvbo.analysis.backend_check import check_backend
+
+        return check_backend(self, format, code=code)
+
     def _items(self):
         """What the LinkML dumpers see: schema slots only.
 

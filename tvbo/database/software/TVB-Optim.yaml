@@ -39,3 +39,340 @@ keywords:
 - parameter optimization
 - whole-brain
 issue_tracker: https://github.com/virtual-twin/tvboptim/issues
+modules:
+- tvboptim
+interfaces:
+  tvboptim.execution.ParallelExecution:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.execution.ParallelExecution(n_pmap=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.execution.ParallelExecution(n_vmap=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.Network:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.Network(coupling=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.Network(dynamics=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.Network(external_input=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.Network(graph=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.Network(noise=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(accessor=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(bothways=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(dt=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(high=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(low=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(n=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(observe=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(skip=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(statistics=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.analysis.adiabatic_scan(t=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.core.bunch.Bunch:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.coupling.base.DelayedCoupling:
+    kind:
+    - base_class
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.coupling.base.InstantaneousCoupling:
+    kind:
+    - base_class
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.coupling.base.InstantaneousCoupling(incoming_states=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+    deprecated: true
+    replaced_by: source
+  tvboptim.experimental.network_dynamics.dynamics.base.AbstractDynamics:
+    kind:
+    - base_class
+    - import
+    checked_version: 0.5.1
+    realises:
+    - tvbo:Dynamics
+  tvboptim.experimental.network_dynamics.external_input.base.AbstractExternalInput:
+    kind:
+    - base_class
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.DenseGraph:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.DenseGraph(region_labels=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.DenseLengthGraph:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.DenseLengthGraph(max_delay_bound=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.DenseLengthGraph(region_labels=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.DenseLengthGraph(speed=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.graph.SparseGraph:
+    kind:
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.noise.AdditiveNoise:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.noise.AdditiveNoise(apply_to=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.noise.AdditiveNoise(key=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.prepare:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.prepare(dt=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.prepare(t0=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.prepare(t1=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.result.NativeSolution:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.result.NativeSolution(dt=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.result.NativeSolution(ts=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.result.NativeSolution(variable_names=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.result.NativeSolution(ys=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.solvers.BoundedSolver:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.solvers.BoundedSolver(high=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.solvers.BoundedSolver(low=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.solvers.Euler:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.experimental.network_dynamics.solvers.Heun:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.observations.observation:
+    kind:
+    - import
+    checked_version: 0.5.1
+  tvboptim.observations.observation.compute_fc:
+    kind:
+    - attribute
+    checked_version: 0.5.1
+  tvboptim.observations.observation.fc_corr:
+    kind:
+    - call
+    checked_version: 0.5.1
+  tvboptim.observations.observation.fc_corr(fc1=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.observations.observation.fc_corr(fc2=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.observations.tvb_monitors.downsampling.AbstractMonitor:
+    kind:
+    - base_class
+    - import
+    checked_version: 0.5.1
+  tvboptim.optim.callbacks.MultiCallback:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.optim.callbacks.SavingLossCallback:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.optim.callbacks.SavingLossCallback(every=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.optim.callbacks.SavingParametersCallback:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.optim.callbacks.SavingParametersCallback(every=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.optim.optax.OptaxOptimizer:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.optim.optax.OptaxOptimizer(callback=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.optim.optax.OptaxOptimizer(has_aux=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.types.AbstractAxis:
+    kind:
+    - import
+    checked_version: 0.5.1
+  tvboptim.types.BoundedParameter:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.types.BoundedParameter(high=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.types.BoundedParameter(low=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.types.DataAxis:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.types.GridAxis:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.types.GridAxis(high=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.types.GridAxis(low=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.types.GridAxis(n=):
+    kind:
+    - keyword
+    checked_version: 0.5.1
+  tvboptim.types.Parameter:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.types.Space:
+    kind:
+    - call
+    - import
+    checked_version: 0.5.1
+  tvboptim.types.Space(mode=):
+    kind:
+    - keyword
+    checked_version: 0.5.1

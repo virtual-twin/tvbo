@@ -42,3 +42,19 @@ keywords:
 - code generation
 - graph-based
 issue_tracker: https://github.com/pyrates-neuroscience/PyRates/issues
+modules:
+- pyrates
+interfaces:
+  pyrates.clear:
+    kind:
+    - call
+    - import
+    checked_version: 1.2.3
+  pyrates.frontend.CircuitTemplate:
+    kind:
+    - import
+    checked_version: 1.2.3
+  pyrates.frontend.CircuitTemplate.from_yaml:
+    kind:
+    - call
+    checked_version: 1.2.3

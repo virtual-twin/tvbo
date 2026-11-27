@@ -183,7 +183,7 @@ jobs:
                   gen-python schema/tvbo_datamodel.yaml > /dev/null
                   gen-pydantic schema/tvbo_datamodel.yaml > /dev/null
             - name: Lint and validate natively
-              run: pytest -v --tb=short -n auto tests/test_native_linkml.py tests/test_behaviour_mixin_discovery.py
+              run: pytest -v --tb=short -n auto tests/test_native_linkml.py tests/test_behaviour_mixin_discovery.py tests/test_spec_gaps.py
             - name: Validate every database YAML against the shipped JSON Schema
               run: |
                   uv run --isolated --no-project --python 3.12 --with "linkml>=1.12.1" python hatch_build.py
@@ -417,6 +417,7 @@ jobs:
                           --ignore=tests/test_database_validation.py
                           --ignore=tests/test_native_linkml.py
                           --ignore=tests/test_behaviour_mixin_discovery.py
+                          --ignore=tests/test_spec_gaps.py
                           --ignore=tests/test_model_loading.py
                           --ignore=tests/test_graph.py
                           --ignore=tests/test_package_structure.py

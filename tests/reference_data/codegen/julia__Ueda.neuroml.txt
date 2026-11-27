@@ -86,7 +86,7 @@
 
       <!-- Time derivatives -->
       <TimeDerivative variable="x" value="(v) / SEC"/>
-      <TimeDerivative variable="v" value="(-x^3 + B*cos(t) - k*v) / SEC"/>
+      <TimeDerivative variable="v" value="(-x^3 + B*cos((t/SEC)) - k*v) / SEC"/>
 
       <!-- Initial conditions -->
       <OnStart>

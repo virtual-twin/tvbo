@@ -155,12 +155,12 @@ def parse_namespace(model) -> dict:
 
 
 def equation_rhs_text(model) -> str:
-    """Concatenated text of every SV / derived-variable / derived-parameter equation.
+    """Concatenated text of every state-variable, derived-variable, derived-parameter and function equation.
 
-    Used to sniff which optional Julia packages the emitted model needs. Resolved through the parser rather than read off `.rhs`, because an equation stated purely as conditional branches has no `rhs` to read: the sniff would see `"None"`, miss the `Piecewise` it contains, and emit a model that uses NaNMath without importing it.
+    Used to sniff which optional Julia packages the emitted model needs. Resolved through the parser rather than read off `.rhs`, because an equation stated purely as conditional branches has no `rhs` to read: the sniff would see `"None"`, miss the `Piecewise` it contains, and emit a model that uses NaNMath without importing it. The model's own functions are emitted as Julia functions, so a call in one of their bodies needs its package as much as one in a state equation: Zerlaut's second-order model reaches `erfc` only through its transfer functions.
     """
     namespace = parse_namespace(model)
-    collections = (model.state_variables, model.derived_variables, model.derived_parameters)
+    collections = (model.state_variables, model.derived_variables, model.derived_parameters, model.functions)
     return " ".join(
         str(parse_eq(element.equation, **namespace))
         for collection in collections

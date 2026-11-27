@@ -99,11 +99,17 @@ def _add_groundings(g: Graph, iri: URIRef, data: dict) -> None:
     `tvbo:surrogate_of` is the semantic, reasoner-visible relation defined in `tvb-o-axioms.ttl`, meaning "X is a surrogate of Y". `oboInOwl:hasDbXref` is the OBO cross-reference convention, kept for interoperability with GO/OBO tooling. A CURIE whose prefix is not in `PREFIX_MAP` raises `ValueError`, so a mistyped prefix cannot drop a grounding unseen.
     """
     for cur in data.get("grounding") or []:
-        u = expand_curie(str(cur))
-        if u is None:
-            raise ValueError(f"{iri}: grounding {cur!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+        u = _known_curie(cur, iri, "grounding")
         g.add((iri, TVBO.surrogate_of, u))
         g.add((iri, OBOINOWL.hasDbXref, u))
+
+
+def _known_curie(curie, iri: URIRef, slot: str) -> URIRef:
+    """*curie*, which *iri* names in *slot*, expanded; a prefix not in `PREFIX_MAP` raises `ValueError`."""
+    expanded = expand_curie(str(curie))
+    if expanded is None:
+        raise ValueError(f"{iri}: {slot} {curie!r} has a prefix gen_abox does not know; known: {', '.join(PREFIX_MAP)}")
+    return expanded
 
 
 def _add_equation(g: Graph, iri: URIRef, data: dict) -> None:
@@ -169,6 +175,28 @@ def emit_derived_variable(g: Graph, parent_iri: URIRef, key: str, dv: dict) -> N
     _add_equation(g, iri, dv)
     _add_groundings(g, iri, dv)
     g.add((parent_iri, TVBO.hasDerivedVariable, iri))
+
+
+def emit_interface(g: Graph, tool_iri: URIRef, name: str, interface: dict) -> None:
+    """A tool's public name as an individual of `tvbo_sw:SoftwareInterface`, linked from the tool by `tvbo_sw:interfaces`.
+
+    The IRI is the tool's with the name as its fragment (`tvbo.data.registry.interface_iri`), so it keeps resolving once codegen stops using the name; the label is the name as the package spells it, unique because it is qualified. `realises` links the name to the TVBO class it implements by `tvbo_sw:realises`, the schema's own predicate.
+    """
+    iri = URIRef(registry.interface_iri(str(tool_iri), name))
+    g.add((iri, RDF.type, OWL.NamedIndividual))
+    g.add((iri, RDF.type, TVBO_SW.SoftwareInterface))
+    g.add((iri, RDFS.label, Literal(name)))
+    for kind in interface.get("kind") or []:
+        g.add((iri, TVBO_SW.kind, Literal(str(kind))))
+    if interface.get("checked_version"):
+        g.add((iri, SCHEMA.softwareVersion, Literal(str(interface["checked_version"]))))
+    if interface.get("deprecated"):
+        g.add((iri, TVBO_SW.deprecated, Literal(True)))
+    if interface.get("replaced_by"):
+        g.add((iri, TVBO_SW.replaced_by, Literal(str(interface["replaced_by"]))))
+    for concept in interface.get("realises") or []:
+        g.add((iri, TVBO_SW.realises, _known_curie(concept, iri, "realises")))
+    g.add((tool_iri, TVBO_SW.interfaces, iri))
 
 
 def emit_model(g: Graph, path: pathlib.Path) -> None:
@@ -315,12 +343,16 @@ def emit_generic_record(g: Graph, folder: str, cls_iri: URIRef, path: pathlib.Pa
     for key, dv in (data.get("derived_variables") or {}).items():
         if isinstance(dv, dict):
             emit_derived_variable(g, iri, key, dv)
+    for name, interface in (data.get("interfaces") or {}).items():
+        if isinstance(interface, dict):
+            emit_interface(g, iri, name, interface)
     return iri
 
 
 def build_graph() -> Graph:
     g = Graph()
     g.bind("tvbo", TVBO)
+    g.bind("tvbo_sw", TVBO_SW)
     g.bind("owl", OWL)
     g.bind("dcterms", DCTERMS)
     g.bind("oboInOwl", OBOINOWL)

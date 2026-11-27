@@ -6,6 +6,7 @@ Array-manipulation primitives are the ones SymPy cannot represent natively. Each
 """
 
 import logging
+import math
 from functools import lru_cache
 
 import sympy.printing.fortran as spf
@@ -1380,7 +1381,7 @@ class LEMSPrinter(StrPrinter):
     - Relational operators use LEMS dot-notation: ``.gt.``, ``.geq.``, ``.lt.``,
       ``.leq.``, ``.eq.``, ``.neq.``
     - Boolean operators: ``.and.``, ``.or.``, ``.not.``
-    - ``Piecewise`` rendered via Heaviside trick (``H(cond)*val)``
+    - ``Piecewise`` rendered as a sum of terms gated by 0/1 indicators built from ``H``
 
     Parameters
     ----------
@@ -1397,6 +1398,11 @@ class LEMSPrinter(StrPrinter):
         "ceiling": "ceil",
         "Heaviside": "H",
     }
+
+    LEMS_FUNCTIONS = frozenset(
+        {"abs", "ceil", "cos", "cosh", "exp", "factorial", "H", "ln", "log", "random", "sin", "sinh", "sqrt", "tan", "tanh"}
+    )
+    """Every function a LEMS expression may call: the ones jLEMS, the reference engine, evaluates."""
 
     def __init__(self, settings=None):
         settings = dict(settings or {})
@@ -1424,6 +1430,12 @@ class LEMSPrinter(StrPrinter):
         # log(x, base) — change of base via natural log
         return f"(log({self._print(expr.args[0])}) / log({self._print(expr.args[1])}))"
 
+    def _print_Pi(self, expr):
+        return repr(math.pi)  # LEMS names no constants, so `pi` would be an unbound variable
+
+    def _print_Exp1(self, expr):
+        return repr(math.e)
+
     def _print_sign(self, expr):
         # sign(x) = H(x) - H(-x) using LEMS built-in Heaviside
         arg = self._print(expr.args[0])
@@ -1435,6 +1447,20 @@ class LEMSPrinter(StrPrinter):
         y = self._print(expr.args[1])
         return f"({x} + {y}*ceil(-({x})/({y})))"
 
+    def _print_Min(self, expr):
+        return self._extremum(expr, lambda first, other: first <= other)
+
+    def _print_Max(self, expr):
+        return self._extremum(expr, lambda first, other: first >= other)
+
+    def _extremum(self, expr, first_wins) -> str:
+        """`Min` or `Max` as the `Piecewise` that picks its first argument where *first_wins* against the extremum of the rest, since LEMS has neither function."""
+        from sympy import Piecewise
+
+        first, *rest = expr.args
+        other = expr.func(*rest) if len(rest) > 1 else rest[0]
+        return self._print(Piecewise((first, first_wins(first, other)), (other, True)))
+
     def _print_Function(self, expr):
         name = expr.func.__name__
         # Safety net: if a model parameter was mis-parsed as a function call (e.g. gamma(x) instead of gamma*x), treat as multiplication.
@@ -1442,6 +1468,10 @@ class LEMSPrinter(StrPrinter):
             args = "*".join(self._print(a) for a in expr.args)
             return f"{name}*{args}" if args else name
         lems_name = self._lems_functions.get(name, name)
+        if lems_name not in self.LEMS_FUNCTIONS:
+            raise ValueError(
+                f"LEMS has no function `{lems_name}`, so {expr} cannot be written in LEMS; its functions are {', '.join(sorted(self.LEMS_FUNCTIONS))}."
+            )
         args = ", ".join(self._print(a) for a in expr.args)
         return f"{lems_name}({args})"
 
@@ -1479,9 +1509,9 @@ class LEMSPrinter(StrPrinter):
     # ── Piecewise → Heaviside product ─────────────────────────────────
 
     def _print_Piecewise(self, expr):
-        """Lower an ordered `Piecewise` to a sum of Heaviside-gated terms.
+        """Lower an ordered `Piecewise` to a sum of indicator-gated terms.
 
-        LEMS has no ternary and no `Piecewise`, so each branch becomes `H(cond) * value` and the branches are summed. `Piecewise` is *first match wins*, so a term is only reached when no earlier condition held — hence the `(1 - H(earlier))` factors. The final `True` branch is gated by all of them and nothing else.
+        LEMS has no ternary and no `Piecewise`, so each branch becomes `indicator * value` and the branches are summed, the indicator being the condition as a number: see `_indicator`. `Piecewise` is *first match wins*, so a term is only reached when no earlier condition held — hence the `(1 - earlier)` factors. The final `True` branch is gated by all of them and nothing else.
 
         Summing the terms un-gated is correct only when the default is zero and the conditions are mutually exclusive. Otherwise the else-branch is added to whichever branch was taken: `TentMap` evaluated to `mu*x + mu*(1 - x)` on its whole lower arm, and `Hopfield` added its entire un-thresholded term to the thresholded one.
 
@@ -1494,29 +1524,59 @@ class LEMSPrinter(StrPrinter):
 
         terms, taken = [], []
         for val, cond in expr.args:
-            unreached = "".join(f"(1 - H({c})) * " for c in taken)
+            unreached = "".join(f"(1 - {c}) * " for c in taken)
             value = self.parenthesize(val, PRECEDENCE["Mul"])
             if cond == sympy_S.true:
                 if not val.is_zero:
                     terms.append(f"{unreached}{value}" if unreached else value)
                 break
-            condition = self._print(cond)
+            condition = self._indicator(cond)
             if not val.is_zero:
-                terms.append(f"{unreached}H({condition}) * {value}")
+                terms.append(f"{unreached}{condition} * {value}")
             taken.append(condition)
         return " + ".join(terms) if terms else "0"
 
+    def _indicator(self, condition) -> str:
+        """*condition* as a LEMS expression that is 1 where it holds and 0 where it does not.
+
+        LEMS's `H` takes a number, not a condition: jLEMS rejects `H(x .lt. 0.5)` with "Wrong node type in function". It is also 0.5 at zero, in jLEMS and PyLEMS alike, so `H(b - a)` alone would take half of each branch where `a` equals `b`. Shifting it and stepping again removes the half: `H(H(d) - 0.75)` is 1 only for a positive `d`, and `H(H(d) - 0.25)` for a positive or zero one.
+
+        Conjunction is a product, negation a complement and disjunction the complement of the product of complements, each exact on 0/1 operands.
+        """
+        from sympy import And, Eq, Ge, Gt, Le, Lt, Ne, Not, Or
+
+        def step(difference, shift: str) -> str:
+            return f"H(H({self._print(difference)}) - {shift})"
+
+        if condition in (S.true, S.false):
+            return "1" if condition == S.true else "0"
+        if isinstance(condition, (Gt, Lt)):
+            return step(condition.gts - condition.lts, "0.75")
+        if isinstance(condition, (Ge, Le)):
+            return step(condition.gts - condition.lts, "0.25")
+        if isinstance(condition, Eq):
+            return self._indicator(And(Ge(*condition.args), Le(*condition.args), evaluate=False))
+        if isinstance(condition, Ne):
+            return self._indicator(Not(Eq(*condition.args), evaluate=False))
+        if isinstance(condition, And):
+            return "(" + " * ".join(self._indicator(operand) for operand in condition.args) + ")"
+        if isinstance(condition, Not):
+            return f"(1 - {self._indicator(condition.args[0])})"
+        if isinstance(condition, Or):
+            return "(1 - " + " * ".join(f"(1 - {self._indicator(operand)})" for operand in condition.args) + ")"
+        raise ValueError(f"LEMS has no arithmetic form for the condition {condition}.")
+
     def parenthesize(self, item, level, strict=False):
-        """Bracket a `Piecewise` operand as the sum this printer renders it into.
+        """Bracket a `Piecewise` operand, or a `Min` or `Max` lowered to one, as the sum this printer renders it into.
 
         SymPy gives `Piecewise` `Func` precedence — right for the printers that emit `np.where(...)` or `ifelse(...)`, which really are atoms, and wrong here, where the output is `H(c) * a + (1 - H(c)) * b`. Without this an enclosing `Mul`, `Pow` or negation binds to the first arm alone.
 
         Declaring the precedence rather than wrapping in `_print_Piecewise` keeps the brackets to the contexts that need them: `parenthesize` is only ever called by an enclosing operator, so a top-level equation stays unwrapped.
         """
-        from sympy import Piecewise
+        from sympy import Max, Min, Piecewise
         from sympy.printing.precedence import PRECEDENCE
 
-        if isinstance(item, Piecewise):
+        if isinstance(item, (Piecewise, Min, Max)):
             printed = self._print(item)
             as_sum = PRECEDENCE["Add"]
             if as_sum < level or (not strict and as_sum <= level):

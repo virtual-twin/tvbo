@@ -51,3 +51,5 @@ same_as:
 - https://scicrunch.org/resolver/RRID:SCR_002998
 issue_tracker: https://github.com/brian-team/brian2/issues
 is_accessible_for_free: true
+modules:
+- brian2

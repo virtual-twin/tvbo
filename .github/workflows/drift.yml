@@ -1,0 +1,53 @@
+# Weekly: resolve every name the generated code reaches against the latest releases of the frameworks, and keep one issue open while a name has drifted, closed once every name resolves again.
+name: Framework drift
+
+on:
+    schedule:
+        - cron: "17 5 * * 1"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+    issues: write
+
+jobs:
+    doctor:
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v6
+            - uses: astral-sh/setup-uv@v8.1.0
+              with:
+                  python-version: "3.12"
+                  activate-environment: true
+            - name: Install tvbo with the newest framework releases
+              run: uv pip install -e ".[tvb,tvboptim,pyrates]" --upgrade
+            - name: Resolve the recorded interfaces
+              id: doctor
+              continue-on-error: true
+              run: |
+                  set -o pipefail
+                  tvbo doctor --strict 2>&1 | tee doctor.txt
+            - name: Open, update or close the drift issue
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  OUTCOME: ${{ steps.doctor.outcome }}
+              run: |
+                  open=$(gh issue list --state open --search 'in:title "Framework drift"' --json number,title --jq '[.[] | select(.title | startswith("Framework drift"))][0].number // empty')
+                  if [ "$OUTCOME" = success ]; then
+                      [ -z "$open" ] || gh issue close "$open" --comment "\`tvbo doctor --strict\` passes against the newest releases on $(date -u +%Y-%m-%d)."
+                      exit 0
+                  fi
+                  {
+                      echo "\`tvbo doctor\` found names the newest framework releases no longer provide. Each line names the interface and why it no longer resolves; \`scripts/update_software_interfaces.py\` records the versions once the templates are updated."
+                      echo
+                      echo '```'
+                      cat doctor.txt
+                      echo '```'
+                  } > body.md
+                  if [ -z "$open" ]; then
+                      gh issue create --title "Framework drift" --body-file body.md
+                  elif [ "$(gh issue view "$open" --json body --jq .body)" != "$(cat body.md)" ]; then
+                      gh issue edit "$open" --body-file body.md
+                      gh issue comment "$open" --body "The drift changed on $(date -u +%Y-%m-%d); the description holds the new \`tvbo doctor\` output."
+                  fi
