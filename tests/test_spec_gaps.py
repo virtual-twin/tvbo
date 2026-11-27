@@ -1,6 +1,6 @@
 """`scripts/spec_gaps.py`: which reader a file counts as, and what it counts as read.
 
-The script reads the schema with LinkML, the build requirement the installed package does not depend on; the ``Schema validation`` job, which installs it, runs these.
+The script reads the schema with ``linkml_runtime``, which the build requirement ``linkml`` brings in and the installed package does not depend on; the ``Schema validation`` job, which installs it, runs these.
 """
 
 from __future__ import annotations

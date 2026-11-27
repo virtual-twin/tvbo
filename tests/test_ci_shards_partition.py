@@ -42,12 +42,39 @@ def test_the_rest_shard_ignores_every_file_another_shard_names():
 
 
 ELSEWHERE = {
-    "tests/test_docs.py": "the `docs` job renders the notebooks it drives",
-    "tests/test_database_validation.py": "the `Schema validation` job runs it against the LinkML schema",
-    "tests/test_native_linkml.py": "the `Schema validation` job runs it with LinkML's own validator, which the test extras do not install",
-    "tests/test_behaviour_mixin_discovery.py": "the `Schema validation` job runs it with LinkML, which the datamodel's generator needs and the test extras do not install",
+    "tests/test_docs.py": ("docker.yml", "test-docs", "it renders the notebooks it drives in the docs container"),
+    "tests/test_database_validation.py": (
+        "ci.yml",
+        "schema-validate",
+        "it validates against the JSON Schema the LinkML build generates",
+    ),
+    "tests/test_native_linkml.py": (
+        "ci.yml",
+        "schema-validate",
+        "it runs LinkML's own validator, which the test extras do not install",
+    ),
+    "tests/test_behaviour_mixin_discovery.py": (
+        "ci.yml",
+        "schema-validate",
+        "it runs the datamodel's generator, which needs LinkML",
+    ),
+    "tests/test_spec_gaps.py": (
+        "ci.yml",
+        "schema-validate",
+        "the script reads the schema with `linkml_runtime`, which the test extras do not install",
+    ),
 }
-"""Files ``rest`` ignores that no other shard names, each with the job that does run them."""
+"""Files ``rest`` ignores that no other shard names, each with the workflow and job that do run them, and why there."""
+
+
+def test_every_file_ignored_into_another_job_runs_there():
+    """An ``ELSEWHERE`` entry holds only while its job's steps still name the file; a job that drops it leaves the file running nowhere."""
+    dropped = []
+    for path, (workflow, job, _why) in ELSEWHERE.items():
+        steps = yaml.safe_load((CI.parent / workflow).read_text(encoding="utf-8"))["jobs"][job]["steps"]
+        if path not in " ".join(str(step.get("run", "")) for step in steps).split():
+            dropped.append(f"{path} ({workflow}: {job})")
+    assert not dropped, f"no step of the job ELSEWHERE names runs: {dropped}"
 
 
 def test_nothing_is_ignored_into_running_nowhere():
